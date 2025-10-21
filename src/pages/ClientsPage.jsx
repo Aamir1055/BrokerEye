@@ -147,15 +147,9 @@ const ClientsPage = () => {
       const response = await brokerAPI.getClients()
       setClients(response.data?.clients || [])
       
-      // Fetch positions and deals for filtering
+      // Fetch positions for filtering
       const positionsResponse = await brokerAPI.getPositions()
       setPositions(positionsResponse.data?.positions || [])
-      
-      const now = Math.floor(Date.now() / 1000)
-      const thirtyDaysAgo = now - (30 * 24 * 60 * 60)
-      // Note: We'll need to fetch deals for each client or use a different approach
-      // For now, we'll just store empty deals array
-      setDeals([])
     } catch (error) {
       console.error('Failed to fetch clients:', error)
       setError('Failed to load clients data')

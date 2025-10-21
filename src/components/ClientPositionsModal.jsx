@@ -42,11 +42,14 @@ const ClientPositionsModal = ({ client, onClose }) => {
   const fetchDeals = async () => {
     try {
       setDealsLoading(true)
-      // Get deals for last 30 days
-      const now = Math.floor(Date.now() / 1000)
-      const thirtyDaysAgo = now - (30 * 24 * 60 * 60)
+      // Get current time as UTC epoch (Unix timestamp in seconds)
+      // This returns seconds since January 1, 1970 00:00:00 UTC
+      // Same format as epochconverter.com
+      const nowUtcEpoch = Math.floor(Date.now() / 1000)
       
-      const response = await brokerAPI.getClientDeals(client.login, thirtyDaysAgo, now)
+      console.log('Fetching deals with epoch:', nowUtcEpoch, 'UTC time:', new Date(nowUtcEpoch * 1000).toUTCString())
+      
+      const response = await brokerAPI.getClientDeals(client.login, 0, nowUtcEpoch)
       setDeals(response.data?.deals || [])
     } catch (error) {
       console.error('Failed to fetch deals:', error)
