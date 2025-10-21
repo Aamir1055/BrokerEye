@@ -21,10 +21,14 @@ const ClientsPage = () => {
   const [positions, setPositions] = useState([])
   const [deals, setDeals] = useState([])
   
+  // Cache for all positions
+  const [allPositionsCache, setAllPositionsCache] = useState(null)
+  
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
   const [resizing, setResizing] = useState(null)
   const tableRef = useRef(null)
+  const hasInitialLoad = useRef(false)
 
   // Default visible columns (matching the screenshot)
   const [visibleColumns, setVisibleColumns] = useState({
@@ -77,7 +81,10 @@ const ClientsPage = () => {
   ]
 
   useEffect(() => {
-    fetchClients()
+    if (!hasInitialLoad.current) {
+      hasInitialLoad.current = true
+      fetchClients()
+    }
   }, [])
 
   useEffect(() => {
@@ -147,9 +154,17 @@ const ClientsPage = () => {
       const response = await brokerAPI.getClients()
       setClients(response.data?.clients || [])
       
-      // Fetch positions for filtering
-      const positionsResponse = await brokerAPI.getPositions()
-      setPositions(positionsResponse.data?.positions || [])
+      // Fetch and cache all positions once (only if not already cached)
+      if (!allPositionsCache) {
+        console.log('Fetching and caching ALL positions on page load')
+        const positionsResponse = await brokerAPI.getPositions()
+        const allPositions = positionsResponse.data?.positions || []
+        setPositions(allPositions)
+        setAllPositionsCache(allPositions)
+      } else {
+        console.log('Using cached positions for filtering')
+        setPositions(allPositionsCache)
+      }
     } catch (error) {
       console.error('Failed to fetch clients:', error)
       setError('Failed to load clients data')
@@ -435,6 +450,11 @@ const ClientsPage = () => {
         <ClientPositionsModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
+          onClientUpdate={fetchClients}
+          allPositionsCache={allPositionsCache}
+          onCacheUpdate={(newAllPositions) => {
+            setAllPositionsCache(newAllPositions)
+          }}
         />
       )}
     </div>

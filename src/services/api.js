@@ -48,8 +48,10 @@ api.interceptors.response.use(
       url: error.config?.url,
       status: error.response?.status,
       message: error.message,
-      data: error.response?.data
+      data: error.response?.data,
+      fullError: error
     })
+    console.error('Full error object:', error)
     return Promise.reject(error)
   }
 )

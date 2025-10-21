@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 
-const ClientPositionsModal = ({ client, onClose }) => {
+const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, onCacheUpdate }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Client data state (for updated balance/credit/equity)
+  const [clientData, setClientData] = useState(client)
   
   // Funds management state
   const [operationType, setOperationType] = useState('deposit')
@@ -16,23 +19,35 @@ const ClientPositionsModal = ({ client, onClose }) => {
   const [operationLoading, setOperationLoading] = useState(false)
   const [operationSuccess, setOperationSuccess] = useState('')
   const [operationError, setOperationError] = useState('')
+  
+  // Prevent duplicate calls in React StrictMode
+  const hasLoadedData = useRef(false)
 
   useEffect(() => {
-    fetchPositions()
-    fetchDeals()
+    if (!hasLoadedData.current) {
+      hasLoadedData.current = true
+      fetchPositions()
+      fetchDeals()
+    }
   }, [])
 
   const fetchPositions = async () => {
     try {
       setLoading(true)
-      const response = await brokerAPI.getPositions()
-      const allPositions = response.data?.positions || []
       
-      // Filter positions by client login
-      const clientPositions = allPositions.filter(pos => pos.login === client.login)
-      setPositions(clientPositions)
+      // Always use cached positions (fetched on page load)
+      if (allPositionsCache && allPositionsCache.length >= 0) {
+        console.log('Loading positions from cache for client:', client.login)
+        // Filter from cached positions
+        const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
+        setPositions(clientPositions)
+      } else {
+        // No cache available - shouldn't happen if page loads correctly
+        console.warn('No positions cache available')
+        setPositions([])
+      }
     } catch (error) {
-      console.error('Failed to fetch positions:', error)
+      console.error('Failed to load positions from cache:', error)
       setError('Failed to load positions')
     } finally {
       setLoading(false)
@@ -42,21 +57,49 @@ const ClientPositionsModal = ({ client, onClose }) => {
   const fetchDeals = async () => {
     try {
       setDealsLoading(true)
-      // Get current time as UTC epoch (Unix timestamp in seconds)
-      // This returns seconds since January 1, 1970 00:00:00 UTC
-      // Same format as epochconverter.com
+      
+      // Fetch deals from API
+      console.log('Fetching deals from API for client:', client.login)
+      // Use a far future timestamp to ensure we get all deals
+      // MT5 server may have deals with future timestamps
       const nowUtcEpoch = Math.floor(Date.now() / 1000)
+      const oneYearInSeconds = 365 * 24 * 60 * 60 // 1 year in seconds
+      const toTime = nowUtcEpoch + oneYearInSeconds
       
-      console.log('Fetching deals with epoch:', nowUtcEpoch, 'UTC time:', new Date(nowUtcEpoch * 1000).toUTCString())
+      console.log('Fetching deals - From: 0, To:', toTime, 'UTC time:', new Date(toTime * 1000).toUTCString())
       
-      const response = await brokerAPI.getClientDeals(client.login, 0, nowUtcEpoch)
-      setDeals(response.data?.deals || [])
+      const response = await brokerAPI.getClientDeals(client.login, 0, toTime)
+      const clientDeals = response.data?.deals || []
+      setDeals(clientDeals)
     } catch (error) {
       console.error('Failed to fetch deals:', error)
       // Set empty deals array on error instead of breaking
       setDeals([])
     } finally {
       setDealsLoading(false)
+    }
+  }
+
+  const fetchUpdatedClientData = async () => {
+    try {
+      console.log('Fetching updated client data for login:', client.login)
+      // Silently fetch updated client data
+      const response = await brokerAPI.getClients()
+      const allClients = response.data?.clients || []
+      const updatedClient = allClients.find(c => c.login === client.login)
+      if (updatedClient) {
+        console.log('Updated client data:', {
+          balance: updatedClient.balance,
+          credit: updatedClient.credit,
+          equity: updatedClient.equity,
+          marginFree: updatedClient.marginFree
+        })
+        setClientData(updatedClient)
+      } else {
+        console.log('Client not found in updated data')
+      }
+    } catch (error) {
+      console.error('Failed to fetch updated client data:', error)
     }
   }
 
@@ -152,9 +195,18 @@ const ClientPositionsModal = ({ client, onClose }) => {
       setAmount('')
       setComment('')
       
-      // Refresh deals to show the new transaction
-      setTimeout(() => {
-        fetchDeals()
+      // Refresh deals and client data silently (no page reload)
+      // Wait a bit for the server to process the transaction
+      setTimeout(async () => {
+        await fetchUpdatedClientData()
+        
+        // Clear positions cache so it refetches on next page load
+        if (onCacheUpdate) {
+          onCacheUpdate(null)
+          console.log('Cleared positions cache after transaction')
+        }
+        
+        await fetchDeals()
       }, 1000)
     } catch (error) {
       console.error('Operation failed:', error)
@@ -215,7 +267,7 @@ const ClientPositionsModal = ({ client, onClose }) => {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Funds Management
+            Money Transactions
           </button>
         </div>
 
@@ -446,7 +498,7 @@ const ClientPositionsModal = ({ client, onClose }) => {
           {activeTab === 'funds' && (
             <div>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Funds Management</h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                 
                 {/* Success Message */}
                 {operationSuccess && (
@@ -570,19 +622,19 @@ const ClientPositionsModal = ({ client, onClose }) => {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white rounded-md p-2 border border-blue-100">
                       <p className="text-xs text-gray-500 mb-0.5">Balance</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(client.balance)}</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.balance)}</p>
                     </div>
                     <div className="bg-white rounded-md p-2 border border-blue-100">
                       <p className="text-xs text-gray-500 mb-0.5">Credit</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(client.credit)}</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.credit)}</p>
                     </div>
                     <div className="bg-white rounded-md p-2 border border-blue-100">
                       <p className="text-xs text-gray-500 mb-0.5">Equity</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(client.equity)}</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.equity)}</p>
                     </div>
                     <div className="bg-white rounded-md p-2 border border-blue-100">
                       <p className="text-xs text-gray-500 mb-0.5">Free Margin</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(client.marginFree)}</p>
+                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.marginFree)}</p>
                     </div>
                   </div>
                 </div>
