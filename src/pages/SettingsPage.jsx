@@ -174,7 +174,7 @@ const SettingsPage = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-6">
+      <main className="flex-1 p-4 lg:p-6 lg:ml-60">
         <div className="max-w-4xl mx-auto">
           {/* Header Section */}
           <div className="mb-5">

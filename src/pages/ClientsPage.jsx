@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import websocketService from '../services/websocket'
 import Sidebar from '../components/Sidebar'
@@ -263,7 +263,7 @@ const ClientsPage = () => {
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
         <div className="max-w-full mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">

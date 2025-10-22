@@ -1,8 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth()
   
   const navigationItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -18,6 +20,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const isActivePath = (path) => {
     return location.pathname === path || (path === '/dashboard' && location.pathname === '/')
   }
+
+  const handleLogout = async () => {
+    await logout()
+    onClose()
+  }
   return (
     <>
       {/* Mobile overlay */}
@@ -31,9 +38,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50 lg:z-auto
+          fixed inset-y-0 left-0 z-50 lg:z-auto
           w-64 lg:w-60 bg-white border-r border-gray-200 shadow-lg lg:shadow-none
           transform lg:transform-none transition-transform duration-300 ease-in-out
+          flex flex-col h-screen
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
@@ -59,7 +67,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Sidebar Content */}
-        <div className="p-3 pt-4">
+        <div className="flex-1 p-3 pt-4 overflow-y-auto">
           <nav className="space-y-1">
             {navigationItems.map((item) => (
               <button
@@ -91,6 +99,19 @@ const Sidebar = ({ isOpen, onClose }) => {
               </button>
             ))}
           </nav>
+        </div>
+
+        {/* Logout Button at Bottom */}
+        <div className="p-3 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md transition-all"
+          >
+            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
         </div>
       </aside>
     </>

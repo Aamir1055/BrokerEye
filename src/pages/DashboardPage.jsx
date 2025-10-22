@@ -5,12 +5,8 @@ import Sidebar from '../components/Sidebar'
 
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await logout()
-  }
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
@@ -18,10 +14,10 @@ const DashboardPage = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       {/* Main Content */}
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
-          {/* Mobile Menu Button & Header */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Mobile Menu Button */}
+          <div className="flex items-center mb-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
@@ -30,34 +26,15 @@ const DashboardPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <button
-              onClick={handleLogout}
-              className="lg:hidden text-gray-600 hover:text-red-600 p-2 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
           </div>
           
           {/* Welcome Section */}
           <div className="mb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Welcome, {user?.full_name || user?.username}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{user?.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="hidden lg:flex text-gray-600 hover:text-red-600 text-sm font-medium transition-colors items-center gap-1.5"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Logout
-              </button>
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
+                Welcome, {user?.full_name || user?.username}
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{user?.email}</p>
             </div>
           </div>
 
