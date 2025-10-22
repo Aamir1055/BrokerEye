@@ -37,17 +37,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       
       // Always use cached positions (fetched on page load)
       if (allPositionsCache && allPositionsCache.length >= 0) {
-        console.log('Loading positions from cache for client:', client.login)
         // Filter from cached positions
         const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
         setPositions(clientPositions)
       } else {
-        // No cache available - shouldn't happen if page loads correctly
-        console.warn('No positions cache available')
         setPositions([])
       }
     } catch (error) {
-      console.error('Failed to load positions from cache:', error)
       setError('Failed to load positions')
     } finally {
       setLoading(false)
@@ -59,20 +55,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       setDealsLoading(true)
       
       // Fetch deals from API
-      console.log('Fetching deals from API for client:', client.login)
       // Use a far future timestamp to ensure we get all deals
       // MT5 server may have deals with future timestamps
       const nowUtcEpoch = Math.floor(Date.now() / 1000)
       const oneYearInSeconds = 365 * 24 * 60 * 60 // 1 year in seconds
       const toTime = nowUtcEpoch + oneYearInSeconds
       
-      console.log('Fetching deals - From: 0, To:', toTime, 'UTC time:', new Date(toTime * 1000).toUTCString())
-      
       const response = await brokerAPI.getClientDeals(client.login, 0, toTime)
       const clientDeals = response.data?.deals || []
       setDeals(clientDeals)
     } catch (error) {
-      console.error('Failed to fetch deals:', error)
       // Set empty deals array on error instead of breaking
       setDeals([])
     } finally {
@@ -82,24 +74,15 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   const fetchUpdatedClientData = async () => {
     try {
-      console.log('Fetching updated client data for login:', client.login)
       // Silently fetch updated client data
       const response = await brokerAPI.getClients()
       const allClients = response.data?.clients || []
       const updatedClient = allClients.find(c => c.login === client.login)
       if (updatedClient) {
-        console.log('Updated client data:', {
-          balance: updatedClient.balance,
-          credit: updatedClient.credit,
-          equity: updatedClient.equity,
-          marginFree: updatedClient.marginFree
-        })
         setClientData(updatedClient)
-      } else {
-        console.log('Client not found in updated data')
       }
     } catch (error) {
-      console.error('Failed to fetch updated client data:', error)
+      // Silent error handling
     }
   }
 
@@ -203,13 +186,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         // Clear positions cache so it refetches on next page load
         if (onCacheUpdate) {
           onCacheUpdate(null)
-          console.log('Cleared positions cache after transaction')
         }
         
         await fetchDeals()
       }, 1000)
     } catch (error) {
-      console.error('Operation failed:', error)
       setOperationError(error.response?.data?.message || 'Operation failed. Please try again.')
     } finally {
       setOperationLoading(false)

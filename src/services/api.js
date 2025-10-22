@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-// Base URL - use proxy in development, direct URL in production
-const BASE_URL = import.meta.env.PROD ? 
-  (import.meta.env.VITE_API_BASE_URL || 'http://185.136.159.142:8080') : 
-  '' // Use proxy in development
+// Base URL configuration
+// Development: empty string uses Vite proxy (no CORS issues)
+// Production: empty string uses Apache proxy (deployed with .htaccess)
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -20,12 +20,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    console.log('API Request:', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL,
-      data: config.data
-    })
     return config
   },
   (error) => {
@@ -33,25 +27,12 @@ api.interceptors.request.use(
   }
 )
 
-// Add response interceptor for debugging
+// Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data
-    })
     return response
   },
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data,
-      fullError: error
-    })
-    console.error('Full error object:', error)
     return Promise.reject(error)
   }
 )

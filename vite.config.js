@@ -44,6 +44,7 @@ export default defineConfig({
         target: 'http://185.136.159.142:8080',
         changeOrigin: true,
         secure: false,
+        ws: true, // Enable WebSocket proxying
         rewrite: (path) => path,
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {

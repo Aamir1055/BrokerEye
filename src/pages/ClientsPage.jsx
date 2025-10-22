@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
+import websocketService from '../services/websocket'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
+import WebSocketIndicator from '../components/WebSocketIndicator'
 
 const ClientsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -84,6 +86,30 @@ const ClientsPage = () => {
     if (!hasInitialLoad.current) {
       hasInitialLoad.current = true
       fetchClients()
+      
+      // Connect to WebSocket
+      websocketService.connect()
+    }
+
+    // Subscribe to WebSocket messages for real-time updates
+    const unsubscribeClients = websocketService.subscribe('clients', (data) => {
+      if (data.data && data.data.clients) {
+        setClients(data.data.clients)
+      }
+    })
+
+    const unsubscribePositions = websocketService.subscribe('positions', (data) => {
+      if (data.data && data.data.positions) {
+        setPositions(data.data.positions)
+        setAllPositionsCache(data.data.positions)
+      }
+    })
+
+    return () => {
+      unsubscribeClients()
+      unsubscribePositions()
+      // Keep WebSocket connected for other pages
+      // websocketService.disconnect()
     }
   }, [])
 
@@ -256,6 +282,7 @@ const ClientsPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <WebSocketIndicator />
               <button
                 onClick={fetchClients}
                 className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors"
