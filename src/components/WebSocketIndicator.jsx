@@ -33,7 +33,11 @@ const WebSocketIndicator = () => {
       case 'connecting':
         return 'bg-yellow-500'
       case 'disconnected':
+        return 'bg-orange-500'
+      case 'error':
         return 'bg-red-500'
+      case 'failed':
+        return 'bg-red-700'
       default:
         return 'bg-gray-500'
     }
@@ -46,7 +50,11 @@ const WebSocketIndicator = () => {
       case 'connecting':
         return 'Connecting...'
       case 'disconnected':
-        return 'Offline'
+        return 'Polling'
+      case 'error':
+        return 'Error'
+      case 'failed':
+        return 'Failed'
       default:
         return 'Unknown'
     }

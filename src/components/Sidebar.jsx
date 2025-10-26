@@ -9,6 +9,10 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navigationItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Clients', path: '/clients', icon: 'clients' },
+    { name: 'Positions', path: '/positions', icon: 'positions' },
+    { name: 'Pending Orders', path: '/pending-orders', icon: 'orders' },
+    { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
+    { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   
@@ -87,6 +91,26 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {item.icon === 'clients' && (
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                )}
+                {item.icon === 'positions' && (
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18M3 9h18M3 15h18M3 21h18" />
+                  </svg>
+                )}
+                {item.icon === 'orders' && (
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-9 4h9M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                  </svg>
+                )}
+                {item.icon === 'margin' && (
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18M3 21h18M5 7h14M5 17h14M8 10h8M8 14h8" />
+                  </svg>
+                )}
+                {item.icon === 'live-dealing' && (
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 )}
                 {item.icon === 'settings' && (

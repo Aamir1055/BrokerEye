@@ -26,11 +26,21 @@ const ClientsPage = () => {
   // Cache for all positions
   const [allPositionsCache, setAllPositionsCache] = useState(null)
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
+  
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
   const [resizing, setResizing] = useState(null)
   const tableRef = useRef(null)
   const hasInitialLoad = useRef(false)
+  const fallbackPollingInterval = useRef(null)
+  const [wsConnectionState, setWsConnectionState] = useState('disconnected')
 
   // Default visible columns (matching the screenshot)
   const [visibleColumns, setVisibleColumns] = useState({
@@ -74,7 +84,7 @@ const ClientsPage = () => {
     { key: 'marginFree', label: 'Margin Free' },
     { key: 'marginLevel', label: 'Margin Level' },
     { key: 'leverage', label: 'Leverage' },
-    { key: 'profit', label: 'Profit' },
+    { key: 'profit', label: 'Floating Profit' },
     { key: 'floating', label: 'Floating' },
     { key: 'currency', label: 'Currency' },
     { key: 'registration', label: 'Registration' },
@@ -93,21 +103,135 @@ const ClientsPage = () => {
 
     // Subscribe to WebSocket messages for real-time updates
     const unsubscribeClients = websocketService.subscribe('clients', (data) => {
-      if (data.data && data.data.clients) {
-        setClients(data.data.clients)
+      console.log('[WebSocket] Received clients update:', data)
+      
+      try {
+        // Validate data structure
+        if (!data || typeof data !== 'object') {
+          console.warn('[WebSocket] Invalid message format - not an object')
+          return
+        }
+        
+        // Check for clients data in the message
+        const newClients = data.data?.clients || data.clients
+        
+        if (!newClients) {
+          console.warn('[WebSocket] No clients data in message:', data)
+          return
+        }
+        
+        if (!Array.isArray(newClients)) {
+          console.warn('[WebSocket] Clients data is not an array:', newClients)
+          return
+        }
+        
+        console.log('[WebSocket] Updating clients state with', newClients.length, 'clients')
+        
+        // Smart merge: Update existing clients or replace all
+        setClients(prevClients => {
+          // If it's a full update or first load, replace all
+          if (data.type === 'full' || prevClients.length === 0) {
+            return newClients
+          }
+          
+          // For incremental updates, merge by login ID
+          if (data.type === 'update' && newClients.length < 100) {
+            const clientMap = new Map(prevClients.map(c => [c.login, c]))
+            
+            // Update or add new clients
+            newClients.forEach(client => {
+              if (client.login) {
+                clientMap.set(client.login, client)
+              }
+            })
+            
+            return Array.from(clientMap.values())
+          }
+          
+          // Default: replace all
+          return newClients
+        })
+      } catch (error) {
+        console.error('[WebSocket] Error processing clients update:', error)
       }
     })
 
     const unsubscribePositions = websocketService.subscribe('positions', (data) => {
-      if (data.data && data.data.positions) {
-        setPositions(data.data.positions)
-        setAllPositionsCache(data.data.positions)
+      console.log('[WebSocket] Received positions update:', data)
+      
+      try {
+        const newPositions = data.data?.positions || data.positions
+        
+        if (newPositions && Array.isArray(newPositions)) {
+          console.log('[WebSocket] Updating positions with', newPositions.length, 'positions')
+          setPositions(newPositions)
+          setAllPositionsCache(newPositions)
+        } else {
+          console.warn('[WebSocket] Invalid positions data:', data)
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error processing positions update:', error)
+      }
+    })
+    
+    // Subscribe to individual account updates (ACCOUNT_UPDATED event)
+    const unsubscribeAccountUpdate = websocketService.subscribe('ACCOUNT_UPDATED', (message) => {
+      console.log('[WebSocket] Received ACCOUNT_UPDATED event:', message)
+      
+      try {
+        const updatedAccount = message.data
+        const accountLogin = message.login || updatedAccount?.login
+        
+        if (!updatedAccount || !accountLogin) {
+          console.warn('[WebSocket] Invalid ACCOUNT_UPDATED data:', message)
+          return
+        }
+        
+        console.log(`[WebSocket] Updating client ${accountLogin} with new data`)
+        
+        // Update the specific client in the array
+        setClients(prevClients => {
+          const clientIndex = prevClients.findIndex(c => c.login === accountLogin)
+          
+          if (clientIndex === -1) {
+            // New client, add to array
+            console.log(`[WebSocket] Adding new client ${accountLogin}`)
+            return [...prevClients, updatedAccount]
+          }
+          
+          // Update existing client
+          const newClients = [...prevClients]
+          newClients[clientIndex] = {
+            ...newClients[clientIndex],
+            ...updatedAccount
+          }
+          
+          return newClients
+        })
+      } catch (error) {
+        console.error('[WebSocket] Error processing ACCOUNT_UPDATED:', error)
+      }
+    })
+
+    // Monitor WebSocket connection state
+    const unsubscribeConnectionState = websocketService.onConnectionStateChange((state) => {
+      console.log('[WebSocket] Connection state changed:', state)
+      setWsConnectionState(state)
+      
+      // Start fallback polling if WebSocket disconnected
+      if (state === 'disconnected' || state === 'failed') {
+        startFallbackPolling()
+      } else if (state === 'connected') {
+        stopFallbackPolling()
       }
     })
 
     return () => {
       unsubscribeClients()
       unsubscribePositions()
+      unsubscribeAccountUpdate()
+      unsubscribeConnectionState()
+      stopFallbackPolling()
       // Keep WebSocket connected for other pages
       // websocketService.disconnect()
     }
@@ -228,7 +352,126 @@ const ClientsPage = () => {
     return filtered
   }
   
-  const displayedClients = getFilteredClients()
+  // Sorting function with type detection
+  const sortClients = (clientsToSort) => {
+    if (!sortColumn) return clientsToSort
+    
+    const sorted = [...clientsToSort].sort((a, b) => {
+      const aVal = a[sortColumn]
+      const bVal = b[sortColumn]
+      
+      // Handle null/undefined values
+      if (aVal == null && bVal == null) return 0
+      if (aVal == null) return 1
+      if (bVal == null) return -1
+      
+      // Detect data type and sort accordingly
+      // Check if it's a number (including balance, equity, profit, etc.)
+      const aNum = Number(aVal)
+      const bNum = Number(bVal)
+      if (!isNaN(aNum) && !isNaN(bNum) && typeof aVal !== 'string') {
+        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
+      }
+      
+      // Check if it's a date/timestamp (registration, lastAccess)
+      if ((sortColumn === 'registration' || sortColumn === 'lastAccess') && !isNaN(aVal) && !isNaN(bVal)) {
+        const aTime = Number(aVal)
+        const bTime = Number(bVal)
+        return sortDirection === 'asc' ? aTime - bTime : bTime - aTime
+      }
+      
+      // Default to string comparison (alphabetical)
+      const aStr = String(aVal).toLowerCase()
+      const bStr = String(bVal).toLowerCase()
+      if (sortDirection === 'asc') {
+        return aStr.localeCompare(bStr)
+      } else {
+        return bStr.localeCompare(aStr)
+      }
+    })
+    
+    return sorted
+  }
+  
+  const filteredClients = sortClients(getFilteredClients())
+  
+  // Handle column header click for sorting
+  const handleSort = (columnKey) => {
+    if (sortColumn === columnKey) {
+      // Toggle direction if same column
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setSortColumn(columnKey)
+      setSortDirection('asc')
+    }
+  }
+  
+  // Generate dynamic pagination options based on data count
+  const generatePageSizeOptions = () => {
+    const options = ['All']
+    const totalCount = filteredClients.length
+    
+    // Generate options incrementing by 50, up to total count
+    for (let i = 50; i < totalCount; i += 50) {
+      options.push(i)
+    }
+    
+    // Always show total count as an option if it's not already included
+    if (totalCount > 0 && totalCount % 50 !== 0 && !options.includes(totalCount)) {
+      options.push(totalCount)
+    }
+    
+    return options
+  }
+  
+  const pageSizeOptions = generatePageSizeOptions()
+  
+  // Pagination logic
+  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
+  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
+  const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
+  const displayedClients = filteredClients.slice(startIndex, endIndex)
+  
+  // Reset to page 1 when filters or items per page changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterByPositions, filterByDeals, itemsPerPage])
+  
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
+    // Scroll to top of table
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(value)
+    setCurrentPage(1)
+  }
+  
+  // Fallback polling when WebSocket is disconnected
+  const startFallbackPolling = () => {
+    // Don't start if already polling
+    if (fallbackPollingInterval.current) return
+    
+    console.log('[Fallback] Starting HTTP polling (WebSocket unavailable)')
+    
+    // Poll every 5 seconds
+    fallbackPollingInterval.current = setInterval(() => {
+      console.log('[Fallback] Polling for updates...')
+      fetchClients().catch(err => {
+        console.error('[Fallback] Polling failed:', err)
+      })
+    }, 5000)
+  }
+  
+  const stopFallbackPolling = () => {
+    if (fallbackPollingInterval.current) {
+      console.log('[Fallback] Stopping HTTP polling (WebSocket connected)')
+      clearInterval(fallbackPollingInterval.current)
+      fallbackPollingInterval.current = null
+    }
+  }
 
   const formatValue = (key, value) => {
     if (value === null || value === undefined || value === '') return '-'
@@ -381,28 +624,62 @@ const ClientsPage = () => {
           )}
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Clients</p>
-              <p className="text-lg font-semibold text-gray-900">{displayedClients.length}</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Total Clients</p>
+              <p className="text-base font-semibold text-gray-900">{filteredClients.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Balance</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {displayedClients.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Total Balance</p>
+              <p className="text-base font-semibold text-gray-900">
+                {filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Equity</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {displayedClients.reduce((sum, c) => sum + (c.equity || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="bg-white rounded-lg shadow-sm border border-green-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Total Credit</p>
+              <p className="text-base font-semibold text-green-600">
+                {filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Profit</p>
-              <p className={`text-lg font-semibold ${displayedClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {displayedClients.reduce((sum, c) => sum + (c.profit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Total Equity</p>
+              <p className="text-base font-semibold text-gray-900">
+                {filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">PNL</p>
+              <p className={`text-base font-semibold ${(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0) - filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0) - filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Total Floating Profit</p>
+              <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+
+          {/* Pagination Controls - Top */}
+          <div className="mb-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <span className="text-sm text-gray-600">entries</span>
+            </div>
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} - {Math.min(endIndex, filteredClients.length)} of {filteredClients.length}
             </div>
           </div>
 
@@ -420,15 +697,37 @@ const ClientsPage = () => {
                       return (
                         <th
                           key={col.key}
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group"
+                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group cursor-pointer hover:bg-blue-100 transition-colors"
                           style={{ width: `${width}%` }}
+                          onClick={() => handleSort(col.key)}
                         >
-                          <div className="truncate" title={col.label}>
-                            {col.label}
+                          <div className="flex items-center gap-1 truncate" title={col.label}>
+                            <span>{col.label}</span>
+                            {sortColumn === col.key && (
+                              <svg 
+                                className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            )}
+                            {sortColumn !== col.key && (
+                              <svg 
+                                className="w-3 h-3 opacity-0 group-hover:opacity-30" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
                           </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-px cursor-col-resize bg-black opacity-30 hover:opacity-60"
                             onMouseDown={(e) => handleResizeStart(e, col.key, width)}
+                            onClick={(e) => e.stopPropagation()}
                             style={{
                               opacity: resizing?.columnKey === col.key ? 0.8 : undefined
                             }}
@@ -468,6 +767,86 @@ const ClientsPage = () => {
               </table>
             </div>
           </div>
+
+          {/* Pagination Controls - Bottom */}
+          {itemsPerPage !== 'All' && totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
+                }`}
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-1">
+                {/* First page */}
+                {currentPage > 3 && (
+                  <>
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
+                    >
+                      1
+                    </button>
+                    {currentPage > 4 && <span className="px-2 py-2 text-gray-500">...</span>}
+                  </>
+                )}
+                
+                {/* Page numbers around current page */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    return page === currentPage || 
+                           page === currentPage - 1 || 
+                           page === currentPage + 1 ||
+                           (currentPage <= 2 && page <= 3) ||
+                           (currentPage >= totalPages - 1 && page >= totalPages - 2)
+                  })
+                  .map(page => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white font-medium'
+                          : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                
+                {/* Last page */}
+                {currentPage < totalPages - 2 && (
+                  <>
+                    {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-500">...</span>}
+                    <button
+                      onClick={() => handlePageChange(totalPages)}
+                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
 
         </div>
       </main>

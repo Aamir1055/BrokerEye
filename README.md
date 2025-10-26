@@ -39,7 +39,7 @@ Start the development server:
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+The app will be available at `http://localhost:3001`
 
 ### Building for Production
 
@@ -89,6 +89,9 @@ src/
 │   ├── MainContent.jsx     # Main responsive content area
 │   └── Footer.jsx          # Responsive footer
 ├── App.jsx                 # Main app component with layout
+├── services/
+│   ├── api.js              # Axios API client (auth + broker endpoints)
+│   └── websocket.js        # WebSocket singleton (connect/reconnect + listeners)
 ├── main.jsx                # App entry point
 └── index.css              # Global styles with Tailwind
 
@@ -135,6 +138,24 @@ Modify `vite.config.js` to update PWA manifest settings, icons, and service work
 - **Desktop**: Chrome 80+, Firefox 75+, Edge 80+, Safari 13+
 
 ## Performance
+
+## Positions module (live updates)
+
+The Positions page (`/positions`) shows open positions with a live WebSocket stream.
+
+- Initial load comes from `GET /api/broker/positions`.
+- Live updates are handled via WebSocket at `ws(s)://<host>/api/broker/ws?token=<access_token>`.
+- Supported events (any of these will be merged appropriately):
+   - `type: 'positions'` with `data.positions` and optional `op` of `full|update|add|delete|pnl`
+   - `POSITION_ADDED|POSITION_CREATED|NEW_POSITION` → add
+   - `POSITION_UPDATED|POSITION_CHANGED|POSITION_MODIFIED` → update
+   - `POSITION_DELETED|POSITION_REMOVED` → delete
+   - `POSITION_PNL_UPDATED|POSITION_NPL_UPDATED` → pnl-only fields (profit/priceCurrent/timeUpdate)
+- If the WebSocket disconnects, the page falls back to HTTP polling every 5 seconds until reconnected.
+
+Dev tips:
+- The Vite dev server runs on port 3001 (see `vite.config.js`).
+- WebSocket proxying is enabled in dev and production (`vite.config.js`, `dist/.htaccess`).
 
 - Fast loading with Vite's optimized bundling
 - Code splitting for optimal performance

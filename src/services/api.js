@@ -1,4 +1,5 @@
 import axios from 'axios'
+const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 // Base URL configuration
 // Development: empty string uses Vite proxy (no CORS issues)
@@ -10,8 +11,28 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 30000, // Increased to 30 seconds for slow endpoints
 })
+
+// A raw axios instance without interceptors, used for token refresh to avoid loops
+const rawApi = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 30000,
+})
+
+// Refresh handling state
+let isRefreshing = false
+let refreshPromise = null
+let requestQueue = [] // queued resolvers waiting for new token
+
+const broadcastTokenRefreshed = (accessToken) => {
+  try {
+    window.dispatchEvent(new CustomEvent('auth:token_refreshed', { detail: { accessToken } }))
+  } catch {}
+}
 
 // Add request interceptor to include auth token
 api.interceptors.request.use(
@@ -32,7 +53,73 @@ api.interceptors.response.use(
   (response) => {
     return response
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+    const status = error?.response?.status
+
+    // If unauthorized and we have a refresh token, attempt a refresh once
+    const hasRefresh = !!localStorage.getItem('refresh_token')
+    const alreadyRetried = originalRequest?._retry
+
+    if (status === 401 && hasRefresh && !alreadyRetried) {
+      originalRequest._retry = true
+
+      try {
+        if (!isRefreshing) {
+          isRefreshing = true
+          const refresh_token = localStorage.getItem('refresh_token')
+          refreshPromise = rawApi
+            .post('/api/auth/broker/refresh', { refresh_token })
+            .then((res) => res.data)
+            .then((data) => {
+              const newAccess = data?.data?.access_token || data?.access_token
+              if (!newAccess) throw new Error('No access_token in refresh response')
+
+              // Save and apply new token
+              localStorage.setItem('access_token', newAccess)
+              api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
+              broadcastTokenRefreshed(newAccess)
+
+              // Flush queue
+              requestQueue.forEach((resolve) => resolve(newAccess))
+              requestQueue = []
+              return newAccess
+            })
+            .finally(() => {
+              isRefreshing = false
+            })
+        }
+
+        // Wait for the in-flight refresh to complete
+        const token = await new Promise((resolve, reject) => {
+          if (refreshPromise) {
+            requestQueue.push(resolve)
+          } else {
+            // Should not happen, but guard anyway
+            reject(new Error('No refresh promise available'))
+          }
+        })
+
+        // Retry the original request with the new token
+        originalRequest.headers = originalRequest.headers || {}
+        originalRequest.headers['Authorization'] = `Bearer ${token}`
+        return api(originalRequest)
+      } catch (refreshErr) {
+        // Refresh failed: clear auth and redirect to login
+        try {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('user_data')
+        } catch {}
+        // Soft redirect to login route
+        if (typeof window !== 'undefined') {
+          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshErr)
+      }
+    }
+
     return Promise.reject(error)
   }
 )
@@ -94,9 +181,9 @@ export const authAPI = {
     return response.data
   },
 
-  // Refresh token
+  // Refresh token (use rawApi to avoid interceptor recursion)
   refreshToken: async (refreshToken) => {
-    const response = await api.post('/api/auth/broker/refresh', {
+    const response = await rawApi.post('/api/auth/broker/refresh', {
       refresh_token: refreshToken
     })
     return response.data
@@ -123,10 +210,46 @@ export const brokerAPI = {
     return response.data
   },
   
+  // Get all pending orders
+  getOrders: async () => {
+    const response = await api.get('/api/broker/orders')
+    return response.data
+  },
+  
   // Get client deals
   getClientDeals: async (login, from, to) => {
     const response = await api.get(`/api/broker/clients/${login}/deals?from=${from}&to=${to}`)
     return response.data
+  },
+  
+  // Get all recent deals (for live dealing page)
+  getAllDeals: async (from, to, limit = 100) => {
+    const endpoints = [
+      `/api/broker/deals?from=${from}&to=${to}&limit=${limit}`,
+      `/api/broker/deals?from=${from}&to=${to}`,
+      `/api/broker/trading/deals?from=${from}&to=${to}&limit=${limit}`,
+      `/api/broker/deals/recent?limit=${limit}`,
+      `/api/broker/deals`,
+      `/api/deals?from=${from}&to=${to}&limit=${limit}`
+    ]
+    
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        const endpoint = endpoints[i]
+        if (DEBUG_LOGS) console.log(`[API] Trying endpoint ${i + 1}/${endpoints.length}: ${endpoint}`)
+        const response = await api.get(endpoint)
+        if (DEBUG_LOGS) console.log(`[API] ✅ SUCCESS! Endpoint works: ${endpoint}`)
+        if (DEBUG_LOGS) console.log('[API] Response data:', response.data)
+        return response.data
+      } catch (error) {
+        if (DEBUG_LOGS) console.log(`[API] ❌ Endpoint ${i + 1} failed (${endpoints[i]}):`, error.response?.status || error.code || error.message)
+        // Continue to next endpoint
+      }
+    }
+    
+    // All attempts failed
+    if (DEBUG_LOGS) console.error('[API] ❌ All endpoint attempts failed. Tried:', endpoints)
+    throw new Error('No working deals endpoint found')
   },
   
   // Deposit funds
