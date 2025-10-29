@@ -41,6 +41,23 @@ const LiveDealingPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+  
+  // Groups states
+  const [dealGroups, setDealGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dealGroups')
+      return saved ? JSON.parse(saved) : []
+    } catch (err) {
+      console.error('Failed to load deal groups:', err)
+      return []
+    }
+  })
+  const [selectedDeals, setSelectedDeals] = useState([])
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [groupSearchQuery, setGroupSearchQuery] = useState('')
+  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
 
   // Persist recent WebSocket deals across refresh
   const WS_CACHE_KEY = 'liveDealsWsCache'
@@ -160,6 +177,16 @@ const LiveDealingPage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSuggestions])
+  
+  // Save deal groups to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('dealGroups', JSON.stringify(dealGroups))
+      console.log('Deal groups saved to localStorage:', dealGroups)
+    } catch (err) {
+      console.error('Failed to save deal groups:', err)
+    }
+  }, [dealGroups])
 
   useEffect(() => {
     if (!hasInitialLoad.current) {
@@ -626,6 +653,62 @@ const LiveDealingPage = () => {
     
     return Array.from(suggestions).slice(0, 10)
   }
+  
+  // Group-related helper functions
+  const getGroupSuggestions = (dealsData) => {
+    if (!groupSearchQuery.trim()) {
+      // Show first 50 deals by default when search is empty
+      return dealsData.slice(0, 50)
+    }
+    
+    const query = groupSearchQuery.toLowerCase()
+    return dealsData.filter(deal => {
+      const dealId = String(deal.id || '').toLowerCase()
+      const login = String(deal.login || '').toLowerCase()
+      const symbol = String(deal.rawData?.symbol || '').toLowerCase()
+      return dealId.includes(query) || login.includes(query) || symbol.includes(query)
+    })
+  }
+  
+  const toggleDealSelection = (dealId) => {
+    setSelectedDeals(prev => {
+      if (prev.includes(dealId)) {
+        return prev.filter(id => id !== dealId)
+      } else {
+        return [...prev, dealId]
+      }
+    })
+  }
+  
+  const createGroupFromSelected = () => {
+    if (!newGroupName.trim()) {
+      return
+    }
+    
+    if (selectedDeals.length === 0) {
+      return
+    }
+    
+    const newGroup = {
+      name: newGroupName.trim(),
+      dealIds: [...selectedDeals]
+    }
+    
+    setDealGroups(prev => {
+      const updatedGroups = [...prev, newGroup]
+      console.log('Deal group created:', newGroup)
+      console.log('Total groups:', updatedGroups.length)
+      return updatedGroups
+    })
+    
+    // Reset states
+    setNewGroupName('')
+    setSelectedDeals([])
+    setGroupSearchQuery('')
+    setShowCreateGroupModal(false)
+    setShowGroupSuggestions(false)
+  }
+
   const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedDeals.length / itemsPerPage)
   const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
   const endIndex = itemsPerPage === 'All' ? sortedDeals.length : startIndex + itemsPerPage
@@ -702,6 +785,17 @@ const LiveDealingPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Groups Button */}
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="text-orange-600 hover:text-orange-700 p-2 rounded-lg hover:bg-orange-50 transition-colors"
+                title="Create deal group"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </button>
+              
               {/* Filter Button */}
               <div className="relative">
                 <button
@@ -1333,6 +1427,116 @@ const LiveDealingPage = () => {
           {/* Pagination - Bottom */}
         </div>
       </main>
+      
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Deal Group</h3>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search and Select Deals
+                </label>
+                <input
+                  type="text"
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  placeholder="Search by deal, login, symbol..."
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
+                />
+                
+                {/* Deal List - Always Visible */}
+                <div className="bg-white rounded-md border border-gray-200">
+                  <div className="px-3 py-2 bg-orange-50 border-b border-orange-200 sticky top-0">
+                    <p className="text-xs font-semibold text-orange-700">
+                      {selectedDeals.length} deal(s) selected • Showing {getGroupSuggestions(sortedDeals).length} deals
+                    </p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {getGroupSuggestions(sortedDeals).length > 0 ? (
+                      getGroupSuggestions(sortedDeals).map((deal, idx) => (
+                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedDeals.includes(deal.id)}
+                            onChange={() => toggleDealSelection(deal.id)}
+                            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                          />
+                          <span className="ml-3 text-sm text-gray-700">
+                            <span className="font-medium">{deal.id}</span> - {deal.login} ({deal.rawData?.symbol || 'N/A'})
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                        No deals found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {selectedDeals.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Selected Deals ({selectedDeals.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
+                    {selectedDeals.map((dealId, idx) => {
+                      const deal = sortedDeals.find(d => d.id === dealId)
+                      return (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
+                          {deal ? `${dealId} - ${deal.rawData?.symbol || 'N/A'}` : dealId}
+                          <button
+                            onClick={() => toggleDealSelection(dealId)}
+                            className="text-orange-900 hover:text-orange-700"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateGroupModal(false)
+                  setNewGroupName('')
+                  setSelectedDeals([])
+                  setGroupSearchQuery('')
+                  setShowGroupSuggestions(false)
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGroupFromSelected}
+                className="px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

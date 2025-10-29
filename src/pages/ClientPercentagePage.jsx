@@ -24,6 +24,23 @@ const ClientPercentagePage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+  
+  // Groups states
+  const [clientPctGroups, setClientPctGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem('clientPctGroups')
+      return saved ? JSON.parse(saved) : []
+    } catch (err) {
+      console.error('Failed to load client percentage groups:', err)
+      return []
+    }
+  })
+  const [selectedClients, setSelectedClients] = useState([])
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [groupSearchQuery, setGroupSearchQuery] = useState('')
+  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
 
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -80,6 +97,16 @@ const ClientPercentagePage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSuggestions])
+  
+  // Save client percentage groups to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('clientPctGroups', JSON.stringify(clientPctGroups))
+      console.log('Client percentage groups saved to localStorage:', clientPctGroups)
+    } catch (err) {
+      console.error('Failed to save client percentage groups:', err)
+    }
+  }, [clientPctGroups])
 
   const fetchAllClientPercentages = async () => {
     try {
@@ -180,6 +207,61 @@ const ClientPercentagePage = () => {
     
     return Array.from(suggestions).slice(0, 10)
   }
+  
+  // Group-related helper functions
+  const getGroupSuggestions = (clientsData) => {
+    if (!groupSearchQuery.trim()) {
+      // Show first 50 clients by default when search is empty
+      return clientsData.slice(0, 50)
+    }
+    
+    const query = groupSearchQuery.toLowerCase()
+    return clientsData.filter(client => {
+      const login = String(client.client_login || '').toLowerCase()
+      const comment = String(client.comment || '').toLowerCase()
+      return login.includes(query) || comment.includes(query)
+    })
+  }
+  
+  const toggleClientSelection = (login) => {
+    setSelectedClients(prev => {
+      if (prev.includes(login)) {
+        return prev.filter(l => l !== login)
+      } else {
+        return [...prev, login]
+      }
+    })
+  }
+  
+  const createGroupFromSelected = () => {
+    if (!newGroupName.trim()) {
+      return
+    }
+    
+    if (selectedClients.length === 0) {
+      return
+    }
+    
+    const newGroup = {
+      name: newGroupName.trim(),
+      clientLogins: [...selectedClients]
+    }
+    
+    setClientPctGroups(prev => {
+      const updatedGroups = [...prev, newGroup]
+      console.log('Client percentage group created:', newGroup)
+      console.log('Total groups:', updatedGroups.length)
+      return updatedGroups
+    })
+    
+    // Reset states
+    setNewGroupName('')
+    setSelectedClients([])
+    setGroupSearchQuery('')
+    setShowCreateGroupModal(false)
+    setShowGroupSuggestions(false)
+  }
+
 
   const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion.replace('%', ''))
@@ -288,6 +370,15 @@ const ClientPercentagePage = () => {
               </div>
             </div>
             <WebSocketIndicator />
+            <button
+              onClick={() => setShowCreateGroupModal(true)}
+              className="text-indigo-600 hover:text-indigo-700 p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+              title="Create client group"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -665,6 +756,116 @@ const ClientPercentagePage = () => {
                 ) : (
                   'Save Percentage'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Client Group</h3>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search and Select Clients
+                </label>
+                <input
+                  type="text"
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  placeholder="Search by login, comment..."
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
+                />
+                
+                {/* Client List - Always Visible */}
+                <div className="bg-white rounded-md border border-gray-200">
+                  <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-200 sticky top-0">
+                    <p className="text-xs font-semibold text-indigo-700">
+                      {selectedClients.length} client(s) selected • Showing {getGroupSuggestions(clients).length} clients
+                    </p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {getGroupSuggestions(clients).length > 0 ? (
+                      getGroupSuggestions(clients).map((client, idx) => (
+                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedClients.includes(client.client_login)}
+                            onChange={() => toggleClientSelection(client.client_login)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <span className="ml-3 text-sm text-gray-700">
+                            <span className="font-medium">{client.client_login}</span> - {client.percentage}% ({client.type})
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                        No clients found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {selectedClients.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Selected Clients ({selectedClients.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
+                    {selectedClients.map((login, idx) => {
+                      const client = clients.find(c => c.client_login === login)
+                      return (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded">
+                          {client ? `${login} - ${client.percentage}%` : login}
+                          <button
+                            onClick={() => toggleClientSelection(login)}
+                            className="text-indigo-900 hover:text-indigo-700"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateGroupModal(false)
+                  setNewGroupName('')
+                  setSelectedClients([])
+                  setGroupSearchQuery('')
+                  setShowGroupSuggestions(false)
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGroupFromSelected}
+                className="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+              >
+                Create Group
               </button>
             </div>
           </div>
