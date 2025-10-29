@@ -621,33 +621,32 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </button>
                   </div>
                 </form>
-
-                {/* Operation Info */}
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <h4 className="text-xs font-semibold text-gray-900 mb-2">Current Balance Information</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white rounded-md p-2 border border-blue-100">
-                      <p className="text-xs text-gray-500 mb-0.5">Balance</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.balance)}</p>
-                    </div>
-                    <div className="bg-white rounded-md p-2 border border-blue-100">
-                      <p className="text-xs text-gray-500 mb-0.5">Credit</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.credit)}</p>
-                    </div>
-                    <div className="bg-white rounded-md p-2 border border-blue-100">
-                      <p className="text-xs text-gray-500 mb-0.5">Equity</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.equity)}</p>
-                    </div>
-                    <div className="bg-white rounded-md p-2 border border-blue-100">
-                      <p className="text-xs text-gray-500 mb-0.5">Free Margin</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(clientData.marginFree)}</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           )}
 
+        </div>
+
+        {/* Stats Cards - Sticky at Bottom */}
+        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200 shadow-sm">
+              <p className="text-xs text-blue-700 font-medium mb-1">Balance</p>
+              <p className="text-2xl font-bold text-blue-900">{formatCurrency(clientData.balance)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200 shadow-sm">
+              <p className="text-xs text-green-700 font-medium mb-1">Equity</p>
+              <p className="text-2xl font-bold text-green-900">{formatCurrency(clientData.equity)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200 shadow-sm">
+              <p className="text-xs text-purple-700 font-medium mb-1">Credit</p>
+              <p className="text-2xl font-bold text-purple-900">{formatCurrency(clientData.credit)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200 shadow-sm">
+              <p className="text-xs text-orange-700 font-medium mb-1">Positions</p>
+              <p className="text-2xl font-bold text-orange-900">{positions.length}</p>
+            </div>
+          </div>
         </div>
 
       </div>
