@@ -4,11 +4,15 @@ import { brokerAPI } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
+import LoginDetailsModal from '../components/LoginDetailsModal'
+import { useData } from '../contexts/DataContext'
 
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const LiveDealingPage = () => {
+  const { positions: cachedPositions } = useData() // Get positions from DataContext
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   
   const [deals, setDeals] = useState([])
   
@@ -1399,7 +1403,14 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.login && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900">
+                        <td 
+                          className="px-2 py-1.5 whitespace-nowrap text-xs font-medium text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedLogin(deal.login)
+                          }}
+                          title="Click to view login details"
+                        >
                           {deal.login}
                         </td>
                       )}
@@ -1630,6 +1641,15 @@ const LiveDealingPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Login Details Modal */}
+      {selectedLogin && (
+        <LoginDetailsModal
+          login={selectedLogin}
+          onClose={() => setSelectedLogin(null)}
+          allPositionsCache={cachedPositions}
+        />
       )}
     </div>
   )
