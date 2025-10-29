@@ -1,153 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import { useData } from '../contexts/DataContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { brokerAPI } from '../services/api'
-import websocketService from '../services/websocket'
-const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
-
-// Extract orders array from various API/WS shapes (supports single object too)
-const extractOrders = (payload) => {
-  if (!payload) return []
-
-  // Common direct forms
-  const directArr =
-    payload.data?.orders ||
-    payload.data?.Orders ||
-    payload.orders ||
-    payload.Orders ||
-    payload.data?.data?.orders ||
-    payload.data?.items ||
-    payload.items ||
-    payload.list ||
-    payload.data?.list ||
-    payload.pending_orders ||
-    payload.data?.pending_orders ||
-    (Array.isArray(payload) ? payload : null)
-  if (Array.isArray(directArr)) return directArr
-
-  // Single object forms
-  const single =
-    payload.data?.order ||
-    payload.order ||
-    payload.item ||
-    (payload && typeof payload === 'object' && (payload.order || payload.ticket || payload.id) ? payload : null)
-  if (single && typeof single === 'object' && !Array.isArray(single)) return [single]
-
-  // Heuristic: find the first array value in payload that looks like orders (has objects with 'order'/'ticket')
-  if (payload && typeof payload === 'object') {
-    for (const v of Object.values(payload)) {
-      if (Array.isArray(v) && v.length && typeof v[0] === 'object') {
-        const looksLikeOrder = v.some((it) => it && (('order' in it) || ('ticket' in it) || ('symbol' in it && 'action' in it)))
-        if (looksLikeOrder) return v
-      }
-    }
-  }
-
-  return []
-}
-
-// Get a stable order id (ticket/order/id)
-const getOrderId = (order) => {
-  const id = order?.order ?? order?.ticket ?? order?.id
-  return id !== undefined && id !== null ? String(id) : undefined
-}
-
-// Identify if an item/event should be ignored because it's a market buy/sell
-const isMarketOrder = (action) => {
-  if (!action) return false
-  const a = action.toString().toUpperCase()
-  return a === 'BUY' || a === 'SELL'
-}
-
-// Compute margin level percent from various possible keys
-const getMarginLevelPercent = (order) => {
-  if (!order || typeof order !== 'object') return undefined
-  let val =
-    order.margin_level ??
-    order.marginLevel ??
-    order.margin_percent ??
-    order.marginPercent ??
-    order.margin
-  if (val === undefined || val === null) return undefined
-  const n = Number(val)
-  if (Number.isNaN(n)) return undefined
-  // If provided as a ratio (0..1) convert to percent
-  if (n > 0 && n <= 1) return n * 100
-  return n
-}
-
-// Normalize incoming WS message to an operation and list of items
-const normalizeWsMessage = (msg) => {
-  try {
-    if (!msg || typeof msg !== 'object') return { op: 'unknown', items: [], raw: msg }
-
-  const type = (msg.type || msg.event || '').toString().toUpperCase()
-
-    // Map common order events to operations
-    const opMap = {
-      ORDER_ADDED: 'add',
-      ORDER_CREATED: 'add',
-      NEW_ORDER: 'add',
-      ORDER_UPDATED: 'update',
-      ORDER_CHANGED: 'update',
-      ORDER_MODIFIED: 'update',
-      ORDER_DELETED: 'delete',
-      ORDER_REMOVED: 'delete',
-      ORDER_CANCELLED: 'delete',
-      ORDER_CANCELED: 'delete',
-      ORDER_FILLED: 'delete', // filled = no longer pending
-    }
-
-    if (opMap[type]) {
-      // Support common shapes: {data:{order}}, {order}, {item}, ticket root, or array
-      let items = []
-      const itemCandidate =
-        msg.data?.order ??
-        msg.order ??
-        msg.data?.item ??
-        msg.item ??
-        msg.payload
-
-      if (Array.isArray(itemCandidate)) {
-        items = itemCandidate
-      } else if (itemCandidate && typeof itemCandidate === 'object') {
-        items = [itemCandidate]
-      } else {
-        // Try to extract from nested arrays if present
-        items = extractOrders(msg)
-      }
-
-      // Ignore market BUY/SELL items
-      const filtered = items.filter((it) => !isMarketOrder(it?.action))
-      return { op: opMap[type], items: filtered, raw: msg }
-    }
-
-    // Generic channel 'orders' / 'ORDERS'
-    if (type === 'ORDERS') {
-      const data = msg.data || msg
-      const items = extractOrders(data).filter((it) => !isMarketOrder(it?.action))
-      const opRaw = (data?.op || data?.operation || data?.mode || data?.type || 'update').toString().toLowerCase()
-      const op = ['full', 'snapshot'].includes(opRaw) ? 'full'
-        : ['add', 'create', 'new'].includes(opRaw) ? 'add'
-        : ['remove', 'delete', 'del', 'cancel', 'cancelled', 'canceled', 'filled'].includes(opRaw) ? 'delete'
-        : 'update'
-      return { op, items, raw: msg }
-    }
-
-    return { op: 'unknown', items: [], raw: msg }
-  } catch (e) {
-    console.error('[PendingOrders] normalizeWsMessage error:', e)
-    return { op: 'unknown', items: [], raw: msg }
-  }
-}
 
 const PendingOrdersPage = () => {
+  // Use cached data from DataContext
+  const { orders: cachedOrders, fetchOrders, loading, connectionState } = useData()
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [connectionState, setConnectionState] = useState('disconnected')
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -157,20 +19,53 @@ const PendingOrdersPage = () => {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   
-  const fallbackPollingInterval = useRef(null)
+  // Search states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchRef = useRef(null)
+  
+  // Column visibility states
+  const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const columnSelectorRef = useRef(null)
+  const [visibleColumns, setVisibleColumns] = useState({
+    order: true,
+    time: true,
+    login: true,
+    type: true,
+    symbol: true,
+    volume: true,
+    priceOrder: true,
+    priceCurrent: true,
+    sl: false,
+    tp: false,
+    state: true
+  })
+
+  const allColumns = [
+    { key: 'order', label: 'Order' },
+    { key: 'time', label: 'Time' },
+    { key: 'login', label: 'Login' },
+    { key: 'type', label: 'Type' },
+    { key: 'symbol', label: 'Symbol' },
+    { key: 'volume', label: 'Volume' },
+    { key: 'priceOrder', label: 'Price Order' },
+    { key: 'priceCurrent', label: 'Price Current' },
+    { key: 'sl', label: 'S/L' },
+    { key: 'tp', label: 'T/P' },
+    { key: 'state', label: 'State' }
+  ]
+
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
+  
   const hasInitialLoad = useRef(false)
   // Transient UI flashes for updated orders
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
-  // Debug: count incoming order-related events and show in a table
-  const [orderEventCounts, setOrderEventCounts] = useState({})
-  const [recentOrderEvents, setRecentOrderEvents] = useState([]) // last 20
-
-  const incEventCount = (evt) => {
-    if (!evt) return
-    const t = evt.toString().toUpperCase()
-    setOrderEventCounts((prev) => ({ ...prev, [t]: (prev[t] || 0) + 1, all: (prev.all || 0) + 1 }))
-  }
 
   const queueFlash = (id, data = {}) => {
     if (!id) return
@@ -188,181 +83,28 @@ const PendingOrdersPage = () => {
     }, 1500)
     flashTimeouts.current.set(key, to)
   }
-
+  
+  // Close suggestions when clicking outside
   useEffect(() => {
-    if (!hasInitialLoad.current) {
-      hasInitialLoad.current = true
-      fetchOrders().finally(() => setLoading(false))
-      websocketService.connect()
-    }
-
-    const unsubState = websocketService.onConnectionStateChange((state) => {
-      setConnectionState(state)
-      if (state === 'connected') stopFallbackPolling()
-      if (state === 'disconnected' || state === 'failed') startFallbackPolling()
-    })
-
-    const unsubOrders = websocketService.subscribe('orders', (msg) => handleWsMessage(msg))
-    const unsubOrdersUpper = websocketService.subscribe('ORDERS', (msg) => handleWsMessage(msg))
-
-    // Specific events
-  const unsubAdded = websocketService.subscribe('ORDER_ADDED', (msg) => handleWsMessage(msg))
-    const unsubCreated = websocketService.subscribe('ORDER_CREATED', (msg) => handleWsMessage(msg))
-  const unsubNew = websocketService.subscribe('NEW_ORDER', (msg) => handleWsMessage(msg))
-    const unsubUpdated = websocketService.subscribe('ORDER_UPDATED', (msg) => handleWsMessage(msg))
-    const unsubChanged = websocketService.subscribe('ORDER_CHANGED', (msg) => handleWsMessage(msg))
-    const unsubModified = websocketService.subscribe('ORDER_MODIFIED', (msg) => handleWsMessage(msg))
-    const unsubDeleted = websocketService.subscribe('ORDER_DELETED', (msg) => handleWsMessage(msg))
-    const unsubRemoved = websocketService.subscribe('ORDER_REMOVED', (msg) => handleWsMessage(msg))
-    const unsubCancelled = websocketService.subscribe('ORDER_CANCELLED', (msg) => handleWsMessage(msg))
-    const unsubCanceled = websocketService.subscribe('ORDER_CANCELED', (msg) => handleWsMessage(msg))
-    const unsubFilled = websocketService.subscribe('ORDER_FILLED', (msg) => handleWsMessage(msg))
-
-    // Debug logging for troubleshooting
-    const unsubAll = websocketService.subscribe('all', (data) => {
-      try {
-        const t = (data?.type || data?.event || '').toString().toUpperCase()
-        const hasOrdersArray = Array.isArray(data?.data?.orders) || Array.isArray(data?.orders)
-        const isOrderEvent = t.includes('ORDER') || t === 'ORDERS'
-        if (hasOrdersArray || isOrderEvent) {
-          if (DEBUG_LOGS) console.log('[PendingOrders][WS][ALL] Incoming message possibly related to orders:', data)
-          // increment event counts
-          incEventCount(t || 'UNKNOWN')
-          // store recent event summary (cap 20)
-          setRecentOrderEvents((prev) => {
-            const summary = {
-              t: t || 'UNKNOWN',
-              at: Date.now(),
-              id: data?.order?.order || data?.order?.ticket || data?.data?.order?.order || data?.data?.order?.ticket || data?.item?.order || data?.item?.ticket,
-            }
-            const next = [summary, ...prev]
-            return next.slice(0, 20)
-          })
-        }
-      } catch {}
-    })
-
-    return () => {
-      unsubState()
-      unsubOrders()
-      unsubOrdersUpper()
-      unsubAdded()
-      unsubCreated()
-      unsubUpdated()
-      unsubChanged()
-      unsubModified()
-      unsubDeleted()
-      unsubRemoved()
-      unsubCancelled()
-      unsubCanceled()
-      unsubFilled()
-      unsubNew()
-      unsubAll()
-      stopFallbackPolling()
-      // Clear flash timers
-      try {
-        flashTimeouts.current.forEach((to) => clearTimeout(to))
-        flashTimeouts.current.clear()
-      } catch {}
-    }
-  }, [])
-
-  const fetchOrders = async () => {
-    try {
-      setError('')
-      const response = await brokerAPI.getOrders()
-      const items = extractOrders(response?.data || response)
-      // Ignore market BUY/SELL and exclude margin level < 50% (they belong in Margin Level module)
-      setOrders(
-        items.filter(
-          (it) => !isMarketOrder(it?.action) && !(getMarginLevelPercent(it) < 50)
-        )
-      )
-    } catch (e) {
-      console.error('[PendingOrders] Failed to fetch orders:', e)
-      setError(e?.response?.data?.message || 'Failed to load orders')
-    }
-  }
-
-  const startFallbackPolling = () => {
-    if (fallbackPollingInterval.current) return
-    fallbackPollingInterval.current = setInterval(() => {
-      fetchOrders().catch(() => {})
-    }, 5000)
-  }
-
-  const stopFallbackPolling = () => {
-    if (fallbackPollingInterval.current) {
-      clearInterval(fallbackPollingInterval.current)
-      fallbackPollingInterval.current = null
-    }
-  }
-
-  const handleWsMessage = (msg) => {
-    const { op, items } = normalizeWsMessage(msg)
-    if (op === 'unknown' || !items || items.length === 0) return
-
-    setOrders((prev) => {
-      const map = new Map(prev.map((o) => [getOrderId(o), o]))
-
-      if (op === 'full') {
-        return items.filter((it) => !isMarketOrder(it?.action) && !(getMarginLevelPercent(it) < 50))
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false)
       }
-
-      if (op === 'add') {
-        items.forEach((it) => {
-          if (isMarketOrder(it?.action) || getMarginLevelPercent(it) < 50) return
-          const id = getOrderId(it)
-          if (!map.has(id)) map.set(id, it)
-          if (id) queueFlash(id, { type: 'add' })
-        })
-        return Array.from(map.values())
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
+        setShowColumnSelector(false)
       }
+    }
+    
+    if (showSuggestions || showColumnSelector) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSuggestions, showColumnSelector])
 
-      if (op === 'update') {
-        const deltas = []
-        items.forEach((it) => {
-          const id = getOrderId(it)
-          const prevItem = map.get(id)
-          // If item now drops below margin < 50, remove it from Pending Orders module
-          if (getMarginLevelPercent(it) < 50) {
-            if (id) map.delete(id)
-            return
-          }
-          // Also ignore market orders entirely
-          if (isMarketOrder(it?.action)) return
-          // compute deltas for visual feedback (prefer priceOrder for pending orders)
-          const pricePrev = prevItem?.priceOrder ?? prevItem?.price ?? prevItem?.priceOpen ?? prevItem?.priceOpenExact ?? prevItem?.open_price
-          const priceNext = it.priceOrder ?? it.price ?? it.priceOpen ?? it.priceOpenExact ?? it.open_price
-          const priceDelta =
-            priceNext !== undefined && pricePrev !== undefined ? Number(priceNext) - Number(pricePrev) : undefined
-
-          const slPrev = prevItem?.priceSL ?? prevItem?.sl ?? prevItem?.stop_loss
-          const slNext = it.priceSL ?? it.sl ?? it.stop_loss
-          const slDelta = slNext !== undefined && slPrev !== undefined ? Number(slNext) - Number(slPrev) : undefined
-
-          const tpPrev = prevItem?.priceTP ?? prevItem?.tp ?? prevItem?.take_profit
-          const tpNext = it.priceTP ?? it.tp ?? it.take_profit
-          const tpDelta = tpNext !== undefined && tpPrev !== undefined ? Number(tpNext) - Number(tpPrev) : undefined
-
-          map.set(id, { ...(prevItem || {}), ...it })
-          if (id && (priceDelta !== undefined || slDelta !== undefined || tpDelta !== undefined)) {
-            deltas.push({ id, priceDelta, slDelta, tpDelta })
-          }
-        })
-        deltas.forEach(({ id, priceDelta, slDelta, tpDelta }) =>
-          queueFlash(id, { type: 'update', priceDelta, slDelta, tpDelta })
-        )
-        return Array.from(map.values())
-      }
-
-      if (op === 'delete') {
-        const idsToRemove = new Set(items.map((it) => getOrderId(it)))
-        return prev.filter((o) => !idsToRemove.has(getOrderId(o)))
-      }
-
-      return Array.from(map.values())
-    })
+  // Helper to get order id
+  const getOrderId = (order) => {
+    const id = order?.order ?? order?.ticket ?? order?.id
+    return id !== undefined && id !== null ? String(id) : undefined
   }
 
   const formatNumber = (n, digits = 2) => {
@@ -375,7 +117,13 @@ const PendingOrdersPage = () => {
     if (!ts) return '-'
     try {
       const d = new Date(ts * 1000)
-      return d.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
     } catch {
       return '-'
     }
@@ -384,7 +132,7 @@ const PendingOrdersPage = () => {
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
     const options = ['All']
-    const totalCount = orders.length
+    const totalCount = cachedOrders.length
     
     // Generate options incrementing by 50, up to total count
     for (let i = 50; i < totalCount; i += 50) {
@@ -400,6 +148,34 @@ const PendingOrdersPage = () => {
   }
   
   const pageSizeOptions = generatePageSizeOptions()
+  
+  // Search function
+  const searchOrders = (ordersToSearch) => {
+    if (!searchQuery.trim()) {
+      return ordersToSearch
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    return ordersToSearch.filter(order => {
+      const login = String(order.login || '').toLowerCase()
+      const symbol = String(order.symbol || '').toLowerCase()
+      const orderId = String(order.order || order.ticket || '').toLowerCase()
+      
+      return login.includes(query) || symbol.includes(query) || orderId.includes(query)
+    })
+  }
+  
+  const handleSuggestionClick = (suggestion) => {
+    const value = suggestion.split(': ')[1]
+    setSearchQuery(value)
+    setShowSuggestions(false)
+  }
+  
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setShowSuggestions(false)
+    }
+  }
   
   // Sorting function with type detection
   const sortOrders = (ordersToSort) => {
@@ -435,7 +211,36 @@ const PendingOrdersPage = () => {
     return sorted
   }
   
-  const sortedOrders = sortOrders(orders)
+  const searchedOrders = searchOrders(cachedOrders)
+  const sortedOrders = sortOrders(searchedOrders)
+  
+  // Get search suggestions
+  const getSuggestions = () => {
+    if (!searchQuery.trim() || searchQuery.length < 1) {
+      return []
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    const suggestions = new Set()
+    
+    sortedOrders.forEach(order => {
+      const login = String(order.login || '')
+      const symbol = String(order.symbol || '')
+      const orderId = String(order.order || order.ticket || '')
+      
+      if (login.toLowerCase().includes(query)) {
+        suggestions.add(`Login: ${login}`)
+      }
+      if (symbol.toLowerCase().includes(query) && symbol) {
+        suggestions.add(`Symbol: ${symbol}`)
+      }
+      if (orderId.toLowerCase().includes(query)) {
+        suggestions.add(`Order: ${orderId}`)
+      }
+    })
+    
+    return Array.from(suggestions).slice(0, 10)
+  }
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -471,14 +276,14 @@ const PendingOrdersPage = () => {
     setCurrentPage(1)
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading.orders) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
-        <div className="max-w-full mx-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden relative">
+        <div className="max-w-full mx-auto relative z-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -510,23 +315,23 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 relative z-0">
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Pending Orders</p>
-              <p className="text-lg font-semibold text-gray-900">{orders.length}</p>
+              <p className="text-lg font-semibold text-gray-900">{cachedOrders.length}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(orders.map(o=>o.login)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{new Set(cachedOrders.map(o=>o.login)).size}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Symbols</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(orders.map(o=>o.symbol)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{new Set(cachedOrders.map(o=>o.symbol)).size}</p>
             </div>
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <select
@@ -542,8 +347,141 @@ const PendingOrdersPage = () => {
               </select>
               <span className="text-sm text-gray-600">entries</span>
             </div>
-            <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} - {Math.min(endIndex, orders.length)} of {orders.length}
+            
+            <div className="flex items-center gap-3">
+              {/* Page Navigation */}
+              {itemsPerPage !== 'All' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === 1
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <span className="text-sm text-gray-700 font-medium px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              
+              {/* Columns Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Columns
+                </button>
+                {showColumnSelector && (
+                  <div
+                    ref={columnSelectorRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
+                    style={{ maxHeight: '400px', overflowY: 'auto' }}
+                  >
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                    </div>
+                    {allColumns.map(col => (
+                      <label
+                        key={col.key}
+                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[col.key]}
+                          onChange={() => toggleColumn(col.key)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Search Bar */}
+              <div className="relative" ref={searchRef}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSuggestions(true)
+                      setCurrentPage(1)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search login, symbol, order..."
+                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  />
+                  <svg 
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('')
+                        setShowSuggestions(false)
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && getSuggestions().length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                    {getSuggestions().map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} - {Math.min(endIndex, sortedOrders.length)} of {sortedOrders.length}
+              </div>
             </div>
           </div>
 
@@ -562,6 +500,21 @@ const PendingOrdersPage = () => {
                 <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                     <tr>
+                      <th 
+                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        onClick={() => handleSort('timeSetup')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Setup
+                          {sortColumn === 'timeSetup' ? (
+                            <span className="text-blue-600">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                          )}
+                        </div>
+                      </th>
                       <th 
                         className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                         onClick={() => handleSort('login')}
@@ -712,21 +665,6 @@ const PendingOrdersPage = () => {
                           )}
                         </div>
                       </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('timeSetup')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Setup
-                          {sortColumn === 'timeSetup' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
@@ -738,6 +676,7 @@ const PendingOrdersPage = () => {
                       const tpDelta = flash?.tpDelta
                       return (
                         <tr key={id ?? index} className={`hover:bg-blue-50 transition-colors`}>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{o.login}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{id}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{o.symbol}</td>
@@ -775,7 +714,6 @@ const PendingOrdersPage = () => {
                               ) : null}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
                         </tr>
                       )
                     })}
@@ -787,80 +725,33 @@ const PendingOrdersPage = () => {
 
           {/* Pagination Controls - Bottom */}
           {itemsPerPage !== 'All' && totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="mt-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm rounded-md transition-colors ${
                   currentPage === 1
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                 }`}
               >
-                Previous
+                ← Previous
               </button>
               
-              <div className="flex gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 py-2 text-gray-500">...</span>}
-                  </>
-                )}
-                
-                {/* Page numbers around current page */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => {
-                    return page === currentPage || 
-                           page === currentPage - 1 || 
-                           page === currentPage + 1 ||
-                           (currentPage <= 2 && page <= 3) ||
-                           (currentPage >= totalPages - 1 && page >= totalPages - 2)
-                  })
-                  .map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white font-medium'
-                          : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
+              <div className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
               </div>
-
+              
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm rounded-md transition-colors ${
                   currentPage === totalPages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
                 }`}
               >
-                Next
+                Next →
               </button>
             </div>
           )}
@@ -870,36 +761,6 @@ const PendingOrdersPage = () => {
             <p className="text-xs text-gray-600">
               <strong>Status:</strong> {connectionState === 'connected' ? 'Live via WebSocket' : connectionState}
             </p>
-          </div>
-
-          {/* Orders WebSocket events monitor */}
-          <div className="mt-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-800">Orders events (live)</h3>
-              <span className="text-xs text-gray-500">Total: {Object.values(orderEventCounts).reduce((s,v)=>s+Number(v||0),0)}</span>
-            </div>
-            <div className="p-3 overflow-x-auto">
-              {Object.keys(orderEventCounts).length === 0 ? (
-                <p className="text-xs text-gray-500">No order events received yet.</p>
-              ) : (
-                <table className="min-w-[420px] w-full text-xs">
-                  <thead>
-                    <tr className="text-gray-600">
-                      <th className="text-left px-2 py-1">Event</th>
-                      <th className="text-left px-2 py-1">Count</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {Object.entries(orderEventCounts).map(([k,v]) => (
-                      <tr key={k}>
-                        <td className="px-2 py-1 font-medium text-gray-800">{k}</td>
-                        <td className="px-2 py-1 text-gray-700">{v}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
           </div>
         </div>
       </main>

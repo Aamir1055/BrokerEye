@@ -1,10 +1,35 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useState, useEffect } from 'react'
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout } = useAuth()
+  const [storedMarginCount, setStoredMarginCount] = useState(0)
+
+  // Read margin count from localStorage on mount and listen for changes
+  useEffect(() => {
+    const updateCount = () => {
+      const count = parseInt(localStorage.getItem('marginLevelCount') || '0', 10)
+      setStoredMarginCount(count)
+    }
+    
+    // Initial load
+    updateCount()
+    
+    // Listen for changes
+    window.addEventListener('marginLevelCountChanged', updateCount)
+    window.addEventListener('storage', updateCount)
+    
+    return () => {
+      window.removeEventListener('marginLevelCountChanged', updateCount)
+      window.removeEventListener('storage', updateCount)
+    }
+  }, [])
+
+  // Use either passed prop or stored count (stored count takes priority for cross-page visibility)
+  const displayCount = storedMarginCount || marginLevelCount
   
   const navigationItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -13,12 +38,15 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Pending Orders', path: '/pending-orders', icon: 'orders' },
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
     { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
+    { name: 'Client Percentage', path: '/client-percentage', icon: 'percentage' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   
   const handleNavigate = (path) => {
     navigate(path)
-    onClose() // Close sidebar on mobile after navigation
+    if (typeof onClose === 'function') {
+      onClose() // Close sidebar on mobile after navigation
+    }
   }
   
   const isActivePath = (path) => {
@@ -27,7 +55,9 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const handleLogout = async () => {
     await logout()
-    onClose()
+    if (typeof onClose === 'function') {
+      onClose()
+    }
   }
   return (
     <>
@@ -35,7 +65,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={onClose}
+          onClick={() => typeof onClose === 'function' && onClose()}
         />
       )}
 
@@ -61,7 +91,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             <span className="text-sm font-semibold text-white lg:text-gray-900">Broker Eyes</span>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => typeof onClose === 'function' && onClose()}
             className="lg:hidden text-white hover:bg-white hover:bg-opacity-10 p-2 rounded transition-colors"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,13 +143,23 @@ const Sidebar = ({ isOpen, onClose }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 )}
+                {item.icon === 'percentage' && (
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                )}
                 {item.icon === 'settings' && (
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 )}
-                {item.name}
+                <span className="flex-1">{item.name}</span>
+                {item.icon === 'margin' && displayCount > 0 && (
+                  <span className="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {displayCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>

@@ -1,40 +1,10 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { useData } from '../contexts/DataContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { brokerAPI } from '../services/api'
-import websocketService from '../services/websocket'
 
 // Helpers
-const extractAccounts = (payload) => {
-  if (!payload) return []
-  // Common containers for accounts/clients
-  const arr =
-    payload?.data?.accounts ||
-    payload?.accounts ||
-    payload?.data?.clients ||
-    payload?.clients ||
-    payload?.data?.items ||
-    payload?.items ||
-    (Array.isArray(payload) ? payload : null)
-  if (Array.isArray(arr)) return arr
-
-  // Single account-like object
-  const single = payload?.data?.account || payload?.account || payload?.data || (payload && typeof payload === 'object' && ('login' in payload || 'marginLevel' in payload) ? payload : null)
-  if (single && typeof single === 'object') return [single]
-
-  // Fallback heuristic: first array of objects with 'login'
-  if (payload && typeof payload === 'object') {
-    for (const v of Object.values(payload)) {
-      if (Array.isArray(v) && v.length && typeof v[0] === 'object') {
-        const looksLikeAccount = v.some((it) => it && ('login' in it))
-        if (looksLikeAccount) return v
-      }
-    }
-  }
-  return []
-}
-
 const getMarginLevelPercent = (obj) => {
   // Common keys from accounts: margin_level, marginLevel, margin_percent, marginPercent, margin
   let val = obj?.margin_level ?? obj?.marginLevel ?? obj?.margin_percent ?? obj?.marginPercent ?? obj?.margin
@@ -46,50 +16,12 @@ const getMarginLevelPercent = (obj) => {
   return n
 }
 
-const normalizeWsMessage = (msg) => {
-  try {
-    if (!msg || typeof msg !== 'object') return { op: 'unknown', items: [], raw: msg }
-
-    const type = (msg.type || msg.event || '').toString().toUpperCase()
-
-    // Account event mapping
-    const opMap = {
-      ACCOUNT_UPDATED: 'update',
-      ACCOUNT_UPDATE: 'update',
-      ACCOUNT_CHANGED: 'update',
-      ACCOUNT_MODIFIED: 'update',
-      ACCOUNTS_SNAPSHOT: 'full',
-    }
-
-    if (opMap[type]) {
-      // common shapes: {data:{account}}, {account}, {data}, etc
-      const candidate = msg.data?.account ?? msg.account ?? msg.data ?? msg.payload ?? msg
-      const items = extractAccounts(candidate)
-      return { op: opMap[type], items, raw: msg }
-    }
-
-    if (type === 'ACCOUNTS' || type === 'CLIENTS') {
-      const data = msg.data || msg
-      const items = extractAccounts(data)
-      const opRaw = (data?.op || data?.operation || data?.mode || data?.type || 'update').toString().toLowerCase()
-      const op = ['full', 'snapshot'].includes(opRaw) ? 'full' : 'update'
-      return { op, items, raw: msg }
-    }
-
-    return { op: 'unknown', items: [], raw: msg }
-  } catch (e) {
-    console.error('[MarginLevel] normalizeWsMessage error:', e)
-    return { op: 'unknown', items: [], raw: msg }
-  }
-}
-
 const MarginLevelPage = () => {
+  // Use cached data from DataContext
+  const { accounts: cachedAccounts, fetchAccounts, loading, connectionState } = useData()
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [accounts, setAccounts] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [connectionState, setConnectionState] = useState('disconnected')
-  const fallbackPollingInterval = useRef(null)
   const hasInitialLoad = useRef(false)
   
   // Pagination states
@@ -99,120 +31,81 @@ const MarginLevelPage = () => {
   // Sorting states
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
+  
+  // Search states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchRef = useRef(null)
+  
+  // Column visibility states
+  const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const columnSelectorRef = useRef(null)
+  const [visibleColumns, setVisibleColumns] = useState({
+    login: true,
+    name: true,
+    group: true,
+    balance: true,
+    equity: true,
+    margin: true,
+    marginFree: true,
+    marginLevel: true,
+    profit: false,
+    credit: false,
+    leverage: false,
+    currency: false
+  })
 
+  const allColumns = [
+    { key: 'login', label: 'Login' },
+    { key: 'name', label: 'Name' },
+    { key: 'group', label: 'Group' },
+    { key: 'balance', label: 'Balance' },
+    { key: 'equity', label: 'Equity' },
+    { key: 'margin', label: 'Margin' },
+    { key: 'marginFree', label: 'Free Margin' },
+    { key: 'marginLevel', label: 'Margin Level' },
+    { key: 'profit', label: 'Floating Profit' },
+    { key: 'credit', label: 'Credit' },
+    { key: 'leverage', label: 'Leverage' },
+    { key: 'currency', label: 'Currency' }
+  ]
+
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
+  
+  // Close suggestions when clicking outside
   useEffect(() => {
-    if (!hasInitialLoad.current) {
-      hasInitialLoad.current = true
-      fetchAccounts().finally(() => setLoading(false))
-      websocketService.connect()
-    }
-
-    const unsubState = websocketService.onConnectionStateChange((state) => {
-      setConnectionState(state)
-      if (state === 'connected') stopFallbackPolling()
-      if (state === 'disconnected' || state === 'failed') startFallbackPolling()
-    })
-
-  // channels for accounts/clients
-  const unsubAccountsLower = websocketService.subscribe('accounts', (msg) => handleWsMessage(msg))
-  const unsubAccountsUpper = websocketService.subscribe('ACCOUNTS', (msg) => handleWsMessage(msg))
-  const unsubClientsLower = websocketService.subscribe('clients', (msg) => handleWsMessage(msg))
-  const unsubClientsUpper = websocketService.subscribe('CLIENTS', (msg) => handleWsMessage(msg))
-
-  // specific account events
-  const unsubAccUpdated = websocketService.subscribe('ACCOUNT_UPDATED', (msg) => handleWsMessage(msg))
-  const unsubAccUpdate = websocketService.subscribe('ACCOUNT_UPDATE', (msg) => handleWsMessage(msg))
-  const unsubAccChanged = websocketService.subscribe('ACCOUNT_CHANGED', (msg) => handleWsMessage(msg))
-  const unsubAccModified = websocketService.subscribe('ACCOUNT_MODIFIED', (msg) => handleWsMessage(msg))
-
-    // debug
-    const unsubAll = websocketService.subscribe('all', (data) => {
-      try {
-        const t = (data?.type || data?.event || '').toString().toUpperCase()
-        const looksLikeAccounts = t.includes('ACCOUNT') || t === 'ACCOUNTS' || t === 'CLIENTS'
-        if (looksLikeAccounts) {
-          console.log('[MarginLevel][WS][ALL]', data)
-        }
-      } catch {}
-    })
-
-    return () => {
-      unsubState()
-      unsubAccountsLower()
-      unsubAccountsUpper()
-      unsubClientsLower()
-      unsubClientsUpper()
-      unsubAccUpdated()
-      unsubAccUpdate()
-      unsubAccChanged()
-      unsubAccModified()
-      unsubAll()
-      stopFallbackPolling()
-    }
-  }, [])
-
-  const fetchAccounts = async () => {
-    try {
-      setError('')
-      const response = await brokerAPI.getClients()
-      const items = extractAccounts(response?.data || response)
-      setAccounts(items)
-    } catch (e) {
-      console.error('[MarginLevel] Failed to fetch accounts:', e)
-      setError(e?.response?.data?.message || 'Failed to load accounts')
-    }
-  }
-
-  const startFallbackPolling = () => {
-    if (fallbackPollingInterval.current) return
-    fallbackPollingInterval.current = setInterval(() => {
-      fetchAccounts().catch(() => {})
-    }, 5000)
-  }
-
-  const stopFallbackPolling = () => {
-    if (fallbackPollingInterval.current) {
-      clearInterval(fallbackPollingInterval.current)
-      fallbackPollingInterval.current = null
-    }
-  }
-
-  const handleWsMessage = (msg) => {
-    const { op, items } = normalizeWsMessage(msg)
-    if (op === 'unknown' || !items || items.length === 0) return
-
-    setAccounts((prev) => {
-      const map = new Map(prev.map((a) => [a.login, a]))
-
-      if (op === 'full') {
-        return items
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false)
       }
-
-      if (op === 'add' || op === 'update') {
-        items.forEach((it) => {
-          const id = it?.login
-          if (!id) return
-          const prevItem = map.get(id)
-          map.set(id, { ...(prevItem || {}), ...it })
-        })
-        return Array.from(map.values())
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
+        setShowColumnSelector(false)
       }
-
-      if (op === 'delete') {
-        const idsToRemove = new Set(items.map((it) => it?.login))
-        return prev.filter((a) => !idsToRemove.has(a?.login))
-      }
-
-      return Array.from(map.values())
-    })
-  }
+    }
+    
+    if (showSuggestions || showColumnSelector) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSuggestions, showColumnSelector])
 
   const filtered = useMemo(() => {
-    return accounts.filter((a) => {
+    const result = cachedAccounts.filter((a) => {
       const ml = getMarginLevelPercent(a)
-      return ml !== undefined && ml < 50
+      // Filter out zero margin levels and only show margin level < 50
+      return ml !== undefined && ml !== 0 && ml < 50
     })
-  }, [accounts])
+    // Store count in localStorage for sidebar badge
+    localStorage.setItem('marginLevelCount', result.length)
+    // Trigger storage event for other components
+    window.dispatchEvent(new Event('marginLevelCountChanged'))
+    return result
+  }, [cachedAccounts])
 
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
@@ -233,6 +126,34 @@ const MarginLevelPage = () => {
   }
   
   const pageSizeOptions = generatePageSizeOptions()
+  
+  // Search function
+  const searchAccounts = (accountsToSearch) => {
+    if (!searchQuery.trim()) {
+      return accountsToSearch
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    return accountsToSearch.filter(account => {
+      const login = String(account.login || '').toLowerCase()
+      const name = String(account.name || '').toLowerCase()
+      const group = String(account.group || '').toLowerCase()
+      
+      return login.includes(query) || name.includes(query) || group.includes(query)
+    })
+  }
+  
+  const handleSuggestionClick = (suggestion) => {
+    const value = suggestion.split(': ')[1]
+    setSearchQuery(value)
+    setShowSuggestions(false)
+  }
+  
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setShowSuggestions(false)
+    }
+  }
   
   // Sorting function with type detection
   const sortAccounts = (accountsToSort) => {
@@ -268,7 +189,36 @@ const MarginLevelPage = () => {
     return sorted
   }
   
-  const sortedAccounts = sortAccounts(filtered)
+  const searchedAccounts = searchAccounts(filtered)
+  const sortedAccounts = sortAccounts(searchedAccounts)
+  
+  // Get search suggestions
+  const getSuggestions = () => {
+    if (!searchQuery.trim() || searchQuery.length < 1) {
+      return []
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    const suggestions = new Set()
+    
+    sortedAccounts.forEach(account => {
+      const login = String(account.login || '')
+      const name = String(account.name || '')
+      const group = String(account.group || '')
+      
+      if (login.toLowerCase().includes(query)) {
+        suggestions.add(`Login: ${login}`)
+      }
+      if (name.toLowerCase().includes(query) && name) {
+        suggestions.add(`Name: ${name}`)
+      }
+      if (group.toLowerCase().includes(query) && group) {
+        suggestions.add(`Group: ${group}`)
+      }
+    })
+    
+    return Array.from(suggestions).slice(0, 10)
+  }
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -310,14 +260,14 @@ const MarginLevelPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading.accounts) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} marginLevelCount={filtered.length} />
 
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
-        <div className="max-w-full mx-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden relative">
+        <div className="max-w-full mx-auto relative z-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -331,7 +281,7 @@ const MarginLevelPage = () => {
               </button>
               <div>
                 <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Margin Level</h1>
-                <p className="text-xs text-gray-500 mt-0.5">Shows accounts with margin level &lt; 50% (from ACCOUNT_UPDATE events)</p>
+                <p className="text-xs text-gray-500 mt-0.5">Shows accounts with margin level &lt; 50% (excludes zero margin levels)</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -340,7 +290,7 @@ const MarginLevelPage = () => {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 relative z-0">
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Under 50%</p>
               <p className="text-lg font-semibold text-gray-900">{filtered.length}</p>
@@ -362,7 +312,7 @@ const MarginLevelPage = () => {
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <select
@@ -378,8 +328,141 @@ const MarginLevelPage = () => {
               </select>
               <span className="text-sm text-gray-600">entries</span>
             </div>
-            <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} - {Math.min(endIndex, filtered.length)} of {filtered.length}
+            
+            <div className="flex items-center gap-3">
+              {/* Page Navigation */}
+              {itemsPerPage !== 'All' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === 1
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <span className="text-sm text-gray-700 font-medium px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              
+              {/* Columns Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Columns
+                </button>
+                {showColumnSelector && (
+                  <div
+                    ref={columnSelectorRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
+                    style={{ maxHeight: '400px', overflowY: 'auto' }}
+                  >
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                    </div>
+                    {allColumns.map(col => (
+                      <label
+                        key={col.key}
+                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[col.key]}
+                          onChange={() => toggleColumn(col.key)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Search Bar */}
+              <div className="relative" ref={searchRef}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSuggestions(true)
+                      setCurrentPage(1)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search login, name, group..."
+                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  />
+                  <svg 
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('')
+                        setShowSuggestions(false)
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && getSuggestions().length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                    {getSuggestions().map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} - {Math.min(endIndex, sortedAccounts.length)} of {sortedAccounts.length}
+              </div>
             </div>
           </div>
 
@@ -513,86 +596,6 @@ const MarginLevelPage = () => {
               )}
             </div>
           </div>
-
-          {/* Pagination Controls - Bottom */}
-          {itemsPerPage !== 'All' && totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Previous
-              </button>
-              
-              <div className="flex gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 py-2 text-gray-500">...</span>}
-                  </>
-                )}
-                
-                {/* Page numbers around current page */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => {
-                    return page === currentPage || 
-                           page === currentPage - 1 || 
-                           page === currentPage + 1 ||
-                           (currentPage <= 2 && page <= 3) ||
-                           (currentPage >= totalPages - 1 && page >= totalPages - 2)
-                  })
-                  .map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white font-medium'
-                          : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
 
           {/* Connection status helper */}
           <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">

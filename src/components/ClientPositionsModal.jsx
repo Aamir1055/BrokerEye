@@ -31,6 +31,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }, [])
 
+  // Update positions when allPositionsCache changes (WebSocket updates)
+  useEffect(() => {
+    if (allPositionsCache && allPositionsCache.length >= 0) {
+      const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
+      setPositions(clientPositions)
+    }
+  }, [allPositionsCache, client.login])
+
   const fetchPositions = async () => {
     try {
       setLoading(true)
@@ -91,13 +99,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const formatDate = (timestamp) => {
-    return new Date(timestamp * 1000).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    const date = new Date(timestamp * 1000)
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
   }
 
   const getActionLabel = (action) => {
@@ -105,6 +114,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const getDealActionLabel = (action) => {
+    // Handle both numeric and string action values
+    const numericAction = typeof action === 'string' ? parseInt(action) : action
+    
     const actions = {
       0: 'Buy',
       1: 'Sell',
@@ -118,15 +130,28 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       9: 'Monthly Commission',
       10: 'Agent Daily',
       11: 'Agent Monthly',
-      12: 'Intergroup Agent'
+      12: 'Intergroup Agent',
+      'buy': 'Buy',
+      'sell': 'Sell',
+      'balance': 'Balance',
+      'credit': 'Credit',
+      'deposit': 'Deposit',
+      'withdrawal': 'Withdrawal'
     }
-    return actions[action] || 'Unknown'
+    
+    // Try lowercase string match if numeric doesn't work
+    const stringAction = typeof action === 'string' ? action.toLowerCase() : null
+    
+    return actions[numericAction] || actions[stringAction] || actions[action] || `Unknown (${action})`
   }
 
   const getDealActionColor = (action) => {
-    if (action === 0) return 'text-green-600 bg-green-50'
-    if (action === 1) return 'text-blue-600 bg-blue-50'
-    if (action === 2 || action === 3) return 'text-purple-600 bg-purple-50'
+    const numericAction = typeof action === 'string' ? parseInt(action) : action
+    const stringAction = typeof action === 'string' ? action.toLowerCase() : ''
+    
+    if (numericAction === 0 || stringAction === 'buy') return 'text-green-600 bg-green-50'
+    if (numericAction === 1 || stringAction === 'sell') return 'text-blue-600 bg-blue-50'
+    if (numericAction === 2 || numericAction === 3 || stringAction === 'balance' || stringAction === 'credit' || stringAction === 'deposit') return 'text-purple-600 bg-purple-50'
     return 'text-gray-600 bg-gray-50'
   }
 
@@ -276,6 +301,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                       <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Symbol</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
@@ -286,12 +312,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">T/P</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Profit</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Storage</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {positions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
+                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                            {formatDate(position.timeCreate)}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             #{position.position}
                           </td>
@@ -323,9 +351,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {formatCurrency(position.storage)}
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                            {formatDate(position.timeCreate)}
                           </td>
                         </tr>
                       ))}
@@ -380,6 +405,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                       <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Deal</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Order</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
@@ -391,12 +417,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Storage</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Profit</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Comment</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {deals.map((deal) => (
                         <tr key={deal.deal} className="hover:bg-blue-50 transition-colors">
+                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                            {formatDate(deal.time)}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             #{deal.deal}
                           </td>
@@ -431,9 +459,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
                             {deal.comment || '-'}
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                            {formatDate(deal.time)}
                           </td>
                         </tr>
                       ))}

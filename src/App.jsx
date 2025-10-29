@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { DataProvider } from './contexts/DataContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import SettingsPage from './pages/SettingsPage'
@@ -8,6 +9,7 @@ import LiveDealingPage from './pages/LiveDealingPage'
 import PositionsPage from './pages/PositionsPage'
 import PendingOrdersPage from './pages/PendingOrdersPage'
 import MarginLevelPage from './pages/MarginLevelPage'
+import ClientPercentagePage from './pages/ClientPercentagePage'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Main App Content Component
@@ -37,6 +39,7 @@ const AppContent = () => {
       <Route path="/pending-orders" element={<PendingOrdersPage />} />
       <Route path="/margin-level" element={<MarginLevelPage />} />
       <Route path="/live-dealing" element={<LiveDealingPage />} />
+      <Route path="/client-percentage" element={<ClientPercentagePage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   )
@@ -46,7 +49,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
       </AuthProvider>
     </Router>
   )

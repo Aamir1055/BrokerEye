@@ -1,149 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
+import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
+import websocketService from '../services/websocket'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { brokerAPI } from '../services/api'
-import websocketService from '../services/websocket'
-
-// Helper: extract array of positions from various response shapes
-const extractPositions = (payload) => {
-  if (!payload) return []
-  // API/WS response could be many shapes:
-  // - { data: { positions: [...] } }
-  // - { positions: [...] }
-  // - single object { position: 123, ... }
-  // - array [...]
-  const arr =
-    payload.data?.positions ||
-    payload.positions ||
-    (Array.isArray(payload) ? payload : null)
-
-  if (Array.isArray(arr)) return arr
-
-  // If a single position-like object is provided, wrap it as an array
-  const maybeObj = payload.data?.position || payload.position || null
-  if (maybeObj && typeof maybeObj === 'object') return [maybeObj]
-  if (payload && typeof payload === 'object' && 'position' in payload) return [payload]
-
-  return []
-}
-
-// Normalize an incoming WS message into an operation and dataset
-const normalizeWsMessage = (msg) => {
-  try {
-    if (!msg || typeof msg !== 'object') return { op: 'unknown', items: [], raw: msg }
-
-    const type = msg.type || msg.event
-
-    // Specific event names
-    const event = (msg.event || msg.type || '').toUpperCase()
-
-    // Common operations mapping
-    const opMap = {
-      // add/create
-      POSITION_ADDED: 'add',
-      POSITION_CREATED: 'add',
-      POSITION_CREATE: 'add',
-      NEW_POSITION: 'add',
-      POSITION_ADD: 'add',
-      // update
-      POSITION_UPDATED: 'update',
-      POSITION_CHANGED: 'update',
-      POSITION_MODIFIED: 'update',
-      POSITION_UPDATE: 'update',
-      // delete
-      POSITION_DELETED: 'delete',
-      POSITION_REMOVED: 'delete',
-      POSITION_DELETE: 'delete',
-      // pnl
-      POSITION_PNL_UPDATED: 'pnl',
-      POSITION_PNL_UPDATE: 'pnl',
-      POSITION_NPL_UPDATED: 'pnl', // handle possible typo / variant
-      POSITION_NPL_UPDATE: 'pnl',
-      POSITION_UPDATE_PNL: 'pnl', // additional variant
-    }
-
-    if (opMap[event]) {
-      // The backend sends: { event: "POSITION_PNL_UPDATE", data: { position: 821, profit: -27.5, ... } }
-      // We need msg.data directly (the whole position object), NOT msg.data.position (which is just the ID number)
-      let item = null
-      
-      // Check if msg.data is an object with position fields
-      if (msg.data && typeof msg.data === 'object' && 'position' in msg.data) {
-        // msg.data IS the position object
-        item = msg.data
-      } else if (msg.data?.position && typeof msg.data.position === 'object') {
-        // msg.data has a nested position object
-        item = msg.data.position
-      } else if (msg.data?.item && typeof msg.data.item === 'object') {
-        item = msg.data.item
-      } else if (msg.position && typeof msg.position === 'object') {
-        item = msg.position
-      } else if (msg.item && typeof msg.item === 'object') {
-        item = msg.item
-      } else if (msg.payload && typeof msg.payload === 'object') {
-        item = msg.payload
-      }
-      
-      // Log the extracted item for debugging
-      console.log(`[Positions] 📥 Event: ${event}, Operation: ${opMap[event]}`)
-      console.log('[Positions] 📦 Raw message:', msg)
-      console.log('[Positions] 📋 Extracted item:', item)
-      console.log('[Positions] 🔑 Position ID:', item?.position)
-      
-      // For pnl updates, attach timestamp fallback
-      if (opMap[event] === 'pnl' && item && typeof item === 'object') {
-        const ts = msg.timestamp || msg.time || msg.ts
-        if (ts && !item.timeUpdate) {
-          item.timeUpdate = ts
-          console.log('[Positions] ⏰ Added timestamp to item:', ts)
-        }
-      }
-      
-      const result = { op: opMap[event], items: item && typeof item === 'object' ? [item] : [], raw: msg }
-      console.log('[Positions] 📤 Returning normalized result:', result)
-      return result
-    }
-
-    // Generic 'positions' channel
-    if (type && type.toLowerCase() === 'positions') {
-  const data = msg.data || msg
-  const items = extractPositions(data)
-      const op = (data?.op || data?.operation || data?.mode || data?.type || 'update').toString().toLowerCase()
-      // normalize op keywords
-      const normalizedOp = ['full', 'snapshot'].includes(op) ? 'full'
-        : ['add', 'create', 'new'].includes(op) ? 'add'
-        : ['remove', 'delete', 'del'].includes(op) ? 'delete'
-        : ['pnl', 'npl', 'pnl_update', 'profit', 'profit_update'].includes(op) ? 'pnl'
-        : 'update'
-      // Attach timestamp on pnl items if missing
-      if (normalizedOp === 'pnl') {
-        const ts = msg.timestamp || msg.time || msg.ts
-        if (ts) {
-          items.forEach((it) => { if (it && !it.timeUpdate) it.timeUpdate = ts })
-        }
-      }
-      return { op: normalizedOp, items, raw: msg }
-    }
-
-    return { op: 'unknown', items: [], raw: msg }
-  } catch (e) {
-    console.error('[Positions] normalizeWsMessage error:', e)
-    return { op: 'unknown', items: [], raw: msg }
-  }
-}
-
-const getPosKey = (obj) => {
-  const id = obj?.position
-  return id !== undefined && id !== null ? String(id) : undefined
-}
 
 const PositionsPage = () => {
+  // Use cached data from DataContext
+  const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
+  const { isAuthenticated } = useAuth()
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [positions, setPositions] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [connectionState, setConnectionState] = useState('disconnected')
   // Transient UI flash map: { [positionId]: { ts, type: 'add'|'update'|'pnl', priceDelta?, profitDelta? } }
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
@@ -155,11 +24,60 @@ const PositionsPage = () => {
   // Sorting states
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  
+  // Search states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchRef = useRef(null)
+  
+  // Column visibility states
+  const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const columnSelectorRef = useRef(null)
+  const [visibleColumns, setVisibleColumns] = useState({
+    position: true,
+    time: true,
+    login: true,
+    action: true,
+    symbol: true,
+    volume: true,
+    priceOpen: true,
+    priceCurrent: true,
+    sl: false,
+    tp: false,
+    profit: true,
+    storage: false,
+    commission: false
+  })
+
+  const allColumns = [
+    { key: 'position', label: 'Position' },
+    { key: 'time', label: 'Time' },
+    { key: 'login', label: 'Login' },
+    { key: 'action', label: 'Action' },
+    { key: 'symbol', label: 'Symbol' },
+    { key: 'volume', label: 'Volume' },
+    { key: 'priceOpen', label: 'Price Open' },
+    { key: 'priceCurrent', label: 'Price Current' },
+    { key: 'sl', label: 'S/L' },
+    { key: 'tp', label: 'T/P' },
+    { key: 'profit', label: 'Profit' },
+    { key: 'storage', label: 'Storage' },
+    { key: 'commission', label: 'Commission' }
+  ]
+
+  const toggleColumn = (columnKey) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
 
   // Helper to queue a transient highlight for a given position id
   const queueFlash = (id, data = {}) => {
     if (!id) return
     const key = String(id)
+
+    
     // Clear previous timeout if any
     const prevTo = flashTimeouts.current.get(key)
     if (prevTo) clearTimeout(prevTo)
@@ -182,306 +100,82 @@ const PositionsPage = () => {
     }, 1500)
     flashTimeouts.current.set(key, to)
   }
-  const fallbackPollingInterval = useRef(null)
   const hasInitialLoad = useRef(false)
-  const wsDataReceived = useRef(false)
+  const prevPositionsRef = useRef([])
 
-  useEffect(() => {
+    useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('[Positions] ⚠️ Not authenticated, skipping fetch')
+      return
+    }
     if (!hasInitialLoad.current) {
       hasInitialLoad.current = true
-      // Don't fetch from API, wait for WebSocket data
-      console.log('[Positions] Waiting for WebSocket data...')
-      websocketService.connect()
-      
-      // Set loading to false after a short delay if no WebSocket data
-      setTimeout(() => {
-        if (!wsDataReceived.current) {
-          console.log('[Positions] No WebSocket data received yet, but showing UI')
-          setLoading(false)
-        }
-      }, 2000)
+      console.log('[Positions] 🚀 Initial load - fetching positions')
+      fetchPositions()
     }
 
-    // Subscribe to connection state
-    const unsubscribeState = websocketService.onConnectionStateChange((state) => {
-      setConnectionState(state)
-      if (state === 'connected') {
-        console.log('[Positions] WebSocket connected! Requesting position snapshot...')
-        stopFallbackPolling()
-        // Request full position snapshot from WebSocket
-        websocketService.send({
-          type: 'GET_POSITIONS',
-          action: 'snapshot'
-        })
-      } else if (state === 'disconnected' || state === 'failed') {
-        startFallbackPolling()
-      }
-    })
-
-    // Subscribe to generic positions channel (lower + upper case variants)
-    const unsubPositions = websocketService.subscribe('positions', (msg) => {
-      handleWsMessage(msg)
-    })
-    const unsubPositionsUpper = websocketService.subscribe('POSITIONS', (msg) => {
-      handleWsMessage(msg)
-    })
-
-    // Subscribe to specific events for robustness
-    const unsubAdded = websocketService.subscribe('POSITION_ADDED', (msg) => handleWsMessage(msg))
-    const unsubCreated = websocketService.subscribe('POSITION_CREATED', (msg) => handleWsMessage(msg))
-    const unsubCreate = websocketService.subscribe('POSITION_CREATE', (msg) => handleWsMessage(msg))
-    const unsubUpdated = websocketService.subscribe('POSITION_UPDATED', (msg) => handleWsMessage(msg))
-    const unsubDeleted = websocketService.subscribe('POSITION_DELETED', (msg) => handleWsMessage(msg))
-    const unsubRemoved = websocketService.subscribe('POSITION_REMOVED', (msg) => handleWsMessage(msg))
-  const unsubPnl = websocketService.subscribe('POSITION_PNL_UPDATED', (msg) => handleWsMessage(msg))
-  const unsubPnl2 = websocketService.subscribe('POSITION_PNL_UPDATE', (msg) => handleWsMessage(msg))
-  const unsubPnl3 = websocketService.subscribe('POSITION_UPDATE_PNL', (msg) => handleWsMessage(msg))
-  const unsubNpl = websocketService.subscribe('POSITION_NPL_UPDATED', (msg) => handleWsMessage(msg))
-  const unsubNpl2 = websocketService.subscribe('POSITION_NPL_UPDATE', (msg) => handleWsMessage(msg))
-  // Additional generic single-word variants
-  const unsubAdd = websocketService.subscribe('POSITION_ADD', (msg) => handleWsMessage(msg))
-  const unsubUpd = websocketService.subscribe('POSITION_UPDATE', (msg) => handleWsMessage(msg))
-  const unsubDel = websocketService.subscribe('POSITION_DELETE', (msg) => handleWsMessage(msg))
-
-    // Debug: log any incoming messages that look like positions for troubleshooting
-    const unsubAll = websocketService.subscribe('all', (data) => {
-      try {
-        const t = (data?.type || data?.event || '').toString().toUpperCase()
-        const hasPositionsArray = Array.isArray(data?.data?.positions) || Array.isArray(data?.positions)
-        const isPositionEvent = t.includes('POSITION') || t === 'POSITIONS'
-        if (hasPositionsArray || isPositionEvent) {
-          console.log('[Positions][WS][ALL] Incoming message possibly related to positions:', data)
-        }
-      } catch {}
-    })
-
     return () => {
-      unsubscribeState()
-      unsubPositions()
-      unsubPositionsUpper()
-      unsubAll()
-      unsubAdded()
-      unsubCreated()
-      unsubCreate()
-      unsubUpdated()
-      unsubDeleted()
-      unsubRemoved()
-  unsubPnl()
-  unsubPnl2()
-  unsubPnl3()
-  unsubNpl()
-  unsubNpl2()
-  unsubAdd()
-  unsubUpd()
-  unsubDel()
-      stopFallbackPolling()
       // Clear any pending flash timeouts
       try {
         flashTimeouts.current.forEach((to) => clearTimeout(to))
         flashTimeouts.current.clear()
       } catch {}
     }
-  }, [])
+  },  [isAuthenticated])
 
-  const fetchPositions = async () => {
-    try {
-      setError('')
-      console.log('[Positions] Fetching from API as fallback...')
-      const response = await brokerAPI.getPositions()
-      const items = extractPositions(response?.data || response)
-      console.log('[Positions] API fallback returned', items.length, 'positions')
-      setPositions(items)
-      wsDataReceived.current = true
-      setLoading(false)
-    } catch (e) {
-      console.error('[Positions] Failed to fetch positions from API:', e)
-      setError(e?.response?.data?.message || 'Failed to load positions')
+  // Track position changes for flash indicators (WebSocket updates)
+  useEffect(() => { if (!isAuthenticated) return;
+    if (!hasInitialLoad.current || cachedPositions.length === 0) {
+      prevPositionsRef.current = cachedPositions
+      return
     }
-  }
 
-  const startFallbackPolling = () => {
-    console.log('[Positions] Starting fallback polling (WebSocket disconnected)')
-    if (fallbackPollingInterval.current) return
-    // Fetch immediately when starting polling
-    fetchPositions().catch(() => {})
-    fallbackPollingInterval.current = setInterval(() => {
-      fetchPositions().catch(() => {})
-    }, 5000)
-  }
+    const prevPositions = prevPositionsRef.current
+    const prevMap = new Map(prevPositions.map(p => [getPosKey(p), p]))
 
-  const stopFallbackPolling = () => {
-    console.log('[Positions] Stopping fallback polling (WebSocket connected)')
-    if (fallbackPollingInterval.current) {
-      clearInterval(fallbackPollingInterval.current)
-      fallbackPollingInterval.current = null
-    }
-  }
+    cachedPositions.forEach(pos => {
+      const key = getPosKey(pos)
+      if (!key) return
 
-  const handleWsMessage = (msg) => {
-    const { op, items, raw } = normalizeWsMessage(msg)
-    
-    // Mark that we've received WebSocket data
-    if (!wsDataReceived.current && items && items.length > 0) {
-      wsDataReceived.current = true
-      setLoading(false)
-      console.log('[Positions] ✅ First WebSocket data received!')
-    }
-    
-    console.log('[Positions] Processing WS message:', {
-      event: msg.event || msg.type,
-      operation: op,
-      itemsCount: items?.length || 0,
-      items: items
+      const prev = prevMap.get(key)
+      if (!prev) {
+        // New position added
+        queueFlash(key, { type: 'add' })
+      } else {
+        // Check for updates
+        const priceDelta = Number(pos.priceCurrent || 0) - Number(prev.priceCurrent || 0)
+        const profitDelta = Number(pos.profit || 0) - Number(prev.profit || 0)
+
+        if (Math.abs(priceDelta) > 0.00001 || Math.abs(profitDelta) > 0.01) {
+          queueFlash(key, { type: 'update', priceDelta, profitDelta })
+        }
+      }
     })
+
+    prevPositionsRef.current = cachedPositions
+  }, [cachedPositions])
+  
+  // Close suggestions when clicking outside
+  useEffect(() => { if (!isAuthenticated) return;
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false)
+      }
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
+        setShowColumnSelector(false)
+      }
+    }
     
-    if (op === 'unknown') {
-      console.warn('[Positions] Unknown WS message:', raw)
-      return
+    if (showSuggestions || showColumnSelector) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }
+  }, [showSuggestions, showColumnSelector])
 
-    if (op === 'full') {
-      console.log('[Positions] 🔄 Full position refresh, count:', items.length)
-      setPositions(items)
-      return
-    }
-
-    if (op === 'add') {
-      if (!items || items.length === 0) return
-      console.log('[Positions] ➕ Adding new positions:', items.length)
-      setPositions((prev) => {
-        const byId = new Set(prev.map((p) => getPosKey(p)))
-        const merged = [...prev]
-        items.forEach((it) => {
-          const key = getPosKey(it)
-          if (key && !byId.has(key)) {
-            console.log('[Positions] ➕ New position added:', key, it)
-            merged.unshift(it)
-          }
-        })
-        return merged
-      })
-      // Flash newly added rows
-      items.forEach((it) => queueFlash(getPosKey(it), { type: 'add' }))
-      return
-    }
-
-    if (op === 'update') {
-      if (!items || items.length === 0) return
-      console.log('[Positions] 🔄 Updating positions:', items.length)
-      let deltaList = []
-      setPositions((prev) => {
-        const map = new Map(prev.map((p) => [getPosKey(p), p]))
-        items.forEach((it) => {
-          const key = getPosKey(it)
-          if (!key) return
-          const prevItem = map.get(key)
-          // Compute deltas for visible fields when present in payload
-          const priceDelta =
-            it.priceCurrent !== undefined && prevItem?.priceCurrent !== undefined
-              ? Number(it.priceCurrent) - Number(prevItem.priceCurrent)
-              : undefined
-          const profitDelta =
-            it.profit !== undefined && prevItem?.profit !== undefined
-              ? Number(it.profit) - Number(prevItem.profit)
-              : undefined
-
-          console.log('[Positions] 🔄 Updated position:', key, { 
-            priceDelta, 
-            profitDelta,
-            old: prevItem,
-            new: it 
-          })
-          
-          map.set(key, { ...(prevItem || {}), ...it })
-          if (priceDelta !== undefined || profitDelta !== undefined) {
-            deltaList.push({ key, priceDelta, profitDelta })
-          }
-        })
-        return Array.from(map.values())
-      })
-      // Queue flashes after state merge
-      deltaList.forEach(({ key, priceDelta, profitDelta }) =>
-        queueFlash(key, { type: 'update', priceDelta, profitDelta })
-      )
-      return
-    }
-
-    if (op === 'delete') {
-      if (!items || items.length === 0) return
-      console.log('[Positions] ❌ Deleting positions:', items.length)
-      setPositions((prev) => {
-        const idsToRemove = new Set(items.map((it) => getPosKey(it)))
-        return prev.filter((p) => {
-          const key = getPosKey(p)
-          const shouldRemove = idsToRemove.has(key)
-          if (shouldRemove) {
-            console.log('[Positions] ❌ Position deleted:', key)
-          }
-          return !shouldRemove
-        })
-      })
-      return
-    }
-
-    if (op === 'pnl') {
-      if (!items || items.length === 0) return
-      console.log('[Positions] 💰 PnL update for positions:', items.length)
-      let deltaList = []
-      setPositions((prev) => {
-        const map = new Map(prev.map((p) => [getPosKey(p), p]))
-        items.forEach((it) => {
-          const key = getPosKey(it)
-          if (!key) return
-          const prevItem = map.get(key)
-          
-          if (!prevItem) {
-            // Position doesn't exist yet, add it
-            console.log('[Positions] 💰 New position from PnL update:', key, it)
-            map.set(key, it)
-            return
-          }
-          
-          const next = {
-            ...(prevItem || {}),
-            ...it,
-          }
-          // Keep only selective fields if incoming is partial
-          next.profit = it.profit ?? prevItem?.profit
-          next.priceCurrent = it.priceCurrent ?? prevItem?.priceCurrent
-          next.timeUpdate = it.timeUpdate ?? prevItem?.timeUpdate
-          map.set(key, next)
-
-          // Compute deltas for visual feedback
-          const priceDelta =
-            it.priceCurrent !== undefined && prevItem?.priceCurrent !== undefined
-              ? Number(next.priceCurrent) - Number(prevItem.priceCurrent)
-              : undefined
-          const profitDelta =
-            it.profit !== undefined && prevItem?.profit !== undefined
-              ? Number(next.profit) - Number(prevItem.profit)
-              : undefined
-          
-          console.log('[Positions] 💰 PnL updated for position:', key, {
-            priceDelta,
-            profitDelta,
-            oldProfit: prevItem?.profit,
-            newProfit: next.profit,
-            oldPrice: prevItem?.priceCurrent,
-            newPrice: next.priceCurrent
-          })
-          
-          if (priceDelta !== undefined || profitDelta !== undefined) {
-            deltaList.push({ key, priceDelta, profitDelta })
-          }
-        })
-        return Array.from(map.values())
-      })
-      // Queue flashes after state merge
-      deltaList.forEach(({ key, priceDelta, profitDelta }) =>
-        queueFlash(key, { type: 'pnl', priceDelta, profitDelta })
-      )
-      return
-    }
+  // Helper to get position key/id
+  const getPosKey = (obj) => {
+    const id = obj?.position
+    return id !== undefined && id !== null ? String(id) : undefined
   }
 
   const formatNumber = (n, digits = 2) => {
@@ -494,7 +188,13 @@ const PositionsPage = () => {
     if (!ts) return '-'
     try {
       const d = new Date(ts * 1000)
-      return d.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
     } catch {
       return '-'
     }
@@ -503,7 +203,7 @@ const PositionsPage = () => {
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
     const options = ['All']
-    const totalCount = positions.length
+    const totalCount = cachedPositions.length
     
     // Generate options incrementing by 50, up to total count
     for (let i = 50; i < totalCount; i += 50) {
@@ -519,6 +219,34 @@ const PositionsPage = () => {
   }
   
   const pageSizeOptions = generatePageSizeOptions()
+  
+  // Search function
+  const searchPositions = (positionsToSearch) => {
+    if (!searchQuery.trim()) {
+      return positionsToSearch
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    return positionsToSearch.filter(position => {
+      const login = String(position.login || '').toLowerCase()
+      const symbol = String(position.symbol || '').toLowerCase()
+      const positionId = String(position.position || '').toLowerCase()
+      
+      return login.includes(query) || symbol.includes(query) || positionId.includes(query)
+    })
+  }
+  
+  const handleSuggestionClick = (suggestion) => {
+    const value = suggestion.split(': ')[1]
+    setSearchQuery(value)
+    setShowSuggestions(false)
+  }
+  
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setShowSuggestions(false)
+    }
+  }
   
   // Sorting function with type detection
   const sortPositions = (positionsToSort) => {
@@ -554,7 +282,36 @@ const PositionsPage = () => {
     return sorted
   }
   
-  const sortedPositions = sortPositions(positions)
+  const searchedPositions = searchPositions(cachedPositions)
+  const sortedPositions = sortPositions(searchedPositions)
+  
+  // Get search suggestions
+  const getSuggestions = () => {
+    if (!searchQuery.trim() || searchQuery.length < 1) {
+      return []
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    const suggestions = new Set()
+    
+    sortedPositions.forEach(position => {
+      const login = String(position.login || '')
+      const symbol = String(position.symbol || '')
+      const positionId = String(position.position || '')
+      
+      if (login.toLowerCase().includes(query)) {
+        suggestions.add(`Login: ${login}`)
+      }
+      if (symbol.toLowerCase().includes(query) && symbol) {
+        suggestions.add(`Symbol: ${symbol}`)
+      }
+      if (positionId.toLowerCase().includes(query)) {
+        suggestions.add(`Position: ${positionId}`)
+      }
+    })
+    
+    return Array.from(suggestions).slice(0, 10)
+  }
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -575,7 +332,7 @@ const PositionsPage = () => {
   const displayedPositions = sortedPositions.slice(startIndex, endIndex)
   
   // Reset to page 1 when items per page changes
-  useEffect(() => {
+  useEffect(() => { if (!isAuthenticated) return;
     setCurrentPage(1)
   }, [itemsPerPage])
   
@@ -590,7 +347,7 @@ const PositionsPage = () => {
     setCurrentPage(1)
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading.positions) return <LoadingSpinner />
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
@@ -638,26 +395,27 @@ const PositionsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Positions</p>
-              <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
+              <p className="text-lg font-semibold text-gray-900">{cachedPositions.length}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Profit</p>
-              <p className={`text-lg font-semibold ${positions.reduce((s,p)=>s+(p.profit||0),0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNumber(positions.reduce((s,p)=>s+(p.profit||0),0))}
+              <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
+              <p className={`text-lg font-semibold flex items-center gap-1 ${cachedPositions.reduce((s,p)=>s+(p.profit||0),0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {cachedPositions.reduce((s,p)=>s+(p.profit||0),0) >= 0 ? '▲' : '▼'}
+                {formatNumber(Math.abs(cachedPositions.reduce((s,p)=>s+(p.profit||0),0)))}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(positions.map(p=>p.login)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{new Set(cachedPositions.map(p=>p.login)).size}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Symbols</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(positions.map(p=>p.symbol)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{new Set(cachedPositions.map(p=>p.symbol)).size}</p>
             </div>
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <select
@@ -673,8 +431,141 @@ const PositionsPage = () => {
               </select>
               <span className="text-sm text-gray-600">entries</span>
             </div>
-            <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} - {Math.min(endIndex, positions.length)} of {positions.length}
+            
+            <div className="flex items-center gap-3">
+              {/* Page Navigation */}
+              {itemsPerPage !== 'All' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === 1
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <span className="text-sm text-gray-700 font-medium px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              
+              {/* Columns Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Columns
+                </button>
+                {showColumnSelector && (
+                  <div
+                    ref={columnSelectorRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
+                    style={{ maxHeight: '400px', overflowY: 'auto' }}
+                  >
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                    </div>
+                    {allColumns.map(col => (
+                      <label
+                        key={col.key}
+                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[col.key]}
+                          onChange={() => toggleColumn(col.key)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Search Bar */}
+              <div className="relative" ref={searchRef}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setShowSuggestions(true)
+                      setCurrentPage(1)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search login, symbol, position..."
+                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  />
+                  <svg 
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('')
+                        setShowSuggestions(false)
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && getSuggestions().length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                    {getSuggestions().map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} - {Math.min(endIndex, sortedPositions.length)} of {sortedPositions.length}
+              </div>
             </div>
           </div>
 
@@ -693,6 +584,21 @@ const PositionsPage = () => {
                 <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                     <tr>
+                      <th 
+                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        onClick={() => handleSort('timeUpdate')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Updated
+                          {sortColumn === 'timeUpdate' ? (
+                            <span className="text-blue-600">
+                              {sortDirection === 'asc' ? '↑' : '↓'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                          )}
+                        </div>
+                      </th>
                       <th 
                         className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                         onClick={() => handleSort('login')}
@@ -813,38 +719,15 @@ const PositionsPage = () => {
                           )}
                         </div>
                       </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('timeUpdate')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Updated
-                          {sortColumn === 'timeUpdate' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.map((p) => {
-                      const key = getPosKey(p)
-                      const flash = key ? flashes[key] : undefined
-                      const profitDelta = flash?.profitDelta
-                      const priceDelta = flash?.priceDelta
-                      const flashType = flash?.type
-                      
-                      // Determine row background color based on flash type
-                      const rowClass = flashType === 'add' ? 'bg-green-100 animate-pulse'
-                        : flashType === 'pnl' || flashType === 'update' ? 'bg-blue-100 animate-pulse'
-                        : 'hover:bg-blue-50'
-                      
+                      // Remove flash highlights and animations; keep simple hover style
+                      const rowClass = 'hover:bg-blue-50'
                       return (
                         <tr key={p.position} className={`${rowClass} transition-all duration-300`}>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.login}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.position}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.symbol}</td>
@@ -853,31 +736,20 @@ const PositionsPage = () => {
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceOpen, 5)}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-2">
-                              <span className={`${flash ? 'font-bold text-blue-600' : ''}`}>
+                              <span>
                                 {formatNumber(p.priceCurrent, 5)}
                               </span>
-                              {priceDelta !== undefined && priceDelta !== 0 ? (
-                                <span className={`text-xs font-bold animate-pulse ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(5)}
-                                </span>
-                              ) : null}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              } ${flash ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}>
+                              }`}>
                                 {formatNumber(p.profit, 2)}
                               </span>
-                              {profitDelta !== undefined && profitDelta !== 0 ? (
-                                <span className={`text-xs font-bold animate-bounce ${profitDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {profitDelta > 0 ? '▲' : '▼'} {Math.abs(profitDelta).toFixed(2)}
-                                </span>
-                              ) : null}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
                         </tr>
                       )
                     })}
@@ -886,86 +758,6 @@ const PositionsPage = () => {
               )}
             </div>
           </div>
-
-          {/* Pagination Controls - Bottom */}
-          {itemsPerPage !== 'All' && totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Previous
-              </button>
-              
-              <div className="flex gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 py-2 text-gray-500">...</span>}
-                  </>
-                )}
-                
-                {/* Page numbers around current page */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => {
-                    return page === currentPage || 
-                           page === currentPage - 1 || 
-                           page === currentPage + 1 ||
-                           (currentPage <= 2 && page <= 3) ||
-                           (currentPage >= totalPages - 1 && page >= totalPages - 2)
-                  })
-                  .map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white font-medium'
-                          : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
 
           {/* Connection status helper */}
           <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
