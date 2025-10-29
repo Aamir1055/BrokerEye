@@ -357,7 +357,7 @@ const MarginLevelPage = () => {
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} marginLevelCount={filtered.length} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden relative">
         <div className="max-w-full mx-auto relative z-0">
