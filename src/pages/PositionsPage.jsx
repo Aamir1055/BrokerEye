@@ -5,6 +5,7 @@ import websocketService from '../services/websocket'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
+import LoginDetailsModal from '../components/LoginDetailsModal'
 
 const PositionsPage = () => {
   // Use cached data from DataContext
@@ -13,6 +14,7 @@ const PositionsPage = () => {
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
+  const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   // Transient UI flash map: { [positionId]: { ts, type: 'add'|'update'|'pnl', priceDelta?, profitDelta? } }
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
@@ -916,7 +918,16 @@ const PositionsPage = () => {
                       return (
                         <tr key={p.position} className={`${rowClass} transition-all duration-300`}>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.login}</td>
+                          <td 
+                            className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedLogin(p.login)
+                            }}
+                            title="Click to view login details"
+                          >
+                            {p.login}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.position}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.symbol}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.action}</td>
@@ -1064,6 +1075,15 @@ const PositionsPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Login Details Modal */}
+      {selectedLogin && (
+        <LoginDetailsModal
+          login={selectedLogin}
+          onClose={() => setSelectedLogin(null)}
+          allPositionsCache={cachedPositions}
+        />
       )}
     </div>
   )
