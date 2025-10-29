@@ -164,26 +164,6 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
           </button>
         </div>
 
-        {/* Stats Cards - Fixed at top */}
-        <div className="p-4 bg-gray-50 border-b border-gray-200">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Total Positions</p>
-              <p className="text-xl font-bold text-gray-900">{positions.length}</p>
-            </div>
-            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Total Volume</p>
-              <p className="text-xl font-bold text-gray-900">{totalVolume.toFixed(2)}</p>
-            </div>
-            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Total P/L</p>
-              <p className={`text-xl font-bold ${getProfitColor(totalProfit)}`}>
-                {formatCurrency(totalProfit)}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="flex border-b border-gray-200 px-4 bg-gray-50">
           <button
@@ -365,6 +345,26 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
               )}
             </div>
           )}
+        </div>
+
+        {/* Stats Cards - Sticky at Bottom */}
+        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200 shadow-sm">
+              <p className="text-xs text-blue-700 font-medium mb-1">Total Positions</p>
+              <p className="text-2xl font-bold text-blue-900">{positions.length}</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200 shadow-sm">
+              <p className="text-xs text-purple-700 font-medium mb-1">Total Volume</p>
+              <p className="text-2xl font-bold text-purple-900">{totalVolume.toFixed(2)}</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200 shadow-sm">
+              <p className="text-xs text-green-700 font-medium mb-1">Total P/L</p>
+              <p className={`text-2xl font-bold ${getProfitColor(totalProfit)}`}>
+                {formatCurrency(totalProfit)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
