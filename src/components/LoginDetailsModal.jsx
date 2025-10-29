@@ -479,29 +479,29 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
         </div>
 
         {/* Stats Cards - Sticky at Bottom */}
-        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200 shadow-sm">
-              <p className="text-xs text-blue-700 font-medium mb-1">Balance</p>
-              <p className="text-2xl font-bold text-blue-900">
+        <div className="sticky bottom-0 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-gray-200 shadow-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+              <p className="text-xs text-gray-500 mb-1">Balance</p>
+              <p className="text-xl font-bold text-blue-600">
                 {clientData ? formatCurrency(clientData.balance) : '-'}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200 shadow-sm">
-              <p className="text-xs text-green-700 font-medium mb-1">Equity</p>
-              <p className="text-2xl font-bold text-green-900">
+            <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
+              <p className="text-xs text-gray-500 mb-1">Equity</p>
+              <p className="text-xl font-bold text-green-600">
                 {clientData ? formatCurrency(clientData.equity) : '-'}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200 shadow-sm">
-              <p className="text-xs text-purple-700 font-medium mb-1">Credit</p>
-              <p className="text-2xl font-bold text-purple-900">
+            <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+              <p className="text-xs text-gray-500 mb-1">Credit</p>
+              <p className="text-xl font-bold text-purple-600">
                 {clientData ? formatCurrency(clientData.credit) : '-'}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200 shadow-sm">
-              <p className="text-xs text-orange-700 font-medium mb-1">Positions</p>
-              <p className="text-2xl font-bold text-orange-900">{positions.length}</p>
+            <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
+              <p className="text-xs text-gray-500 mb-1">Positions</p>
+              <p className="text-xl font-bold text-orange-600">{positions.length}</p>
             </div>
           </div>
         </div>
