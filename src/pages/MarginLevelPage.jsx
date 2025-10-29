@@ -3,6 +3,7 @@ import { useData } from '../contexts/DataContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
+import LoginDetailsModal from '../components/LoginDetailsModal'
 
 // Helpers
 const getMarginLevelPercent = (obj) => {
@@ -18,10 +19,11 @@ const getMarginLevelPercent = (obj) => {
 
 const MarginLevelPage = () => {
   // Use cached data from DataContext
-  const { accounts: cachedAccounts, fetchAccounts, loading, connectionState } = useData()
+  const { accounts: cachedAccounts, positions: cachedPositions, fetchAccounts, loading, connectionState } = useData()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
+  const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const hasInitialLoad = useRef(false)
   
   // Pagination states
@@ -766,7 +768,16 @@ const MarginLevelPage = () => {
                       const ml = getMarginLevelPercent(a)
                       return (
                         <tr key={a.login ?? idx} className={`hover:bg-blue-50 transition-colors`}>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{a.login}</td>
+                          <td 
+                            className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedLogin(a.login)
+                            }}
+                            title="Click to view login details"
+                          >
+                            {a.login}
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{a.name || '-'}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(a.equity, 2)}</td>
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(a.margin, 2)}</td>
@@ -902,6 +913,15 @@ const MarginLevelPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Login Details Modal */}
+      {selectedLogin && (
+        <LoginDetailsModal
+          login={selectedLogin}
+          onClose={() => setSelectedLogin(null)}
+          allPositionsCache={cachedPositions}
+        />
       )}
     </div>
   )
