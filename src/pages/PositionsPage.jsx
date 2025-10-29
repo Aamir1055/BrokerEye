@@ -308,26 +308,22 @@ const PositionsPage = () => {
   
   const createGroupFromSelected = () => {
     if (!newGroupName.trim()) {
-      alert('Please enter a group name')
       return
     }
     if (selectedPositions.length === 0) {
-      alert('Please select at least one position')
       return
     }
     const newGroup = {
       name: newGroupName.trim(),
       positionIds: [...selectedPositions]
     }
-    const updatedGroups = [...positionGroups, newGroup]
-    setPositionGroups(updatedGroups)
     
-    // Debug: Log to console
-    console.log('Position group created:', newGroup)
-    console.log('Total groups:', updatedGroups.length)
-    
-    // Show success message
-    alert(`Group "${newGroup.name}" created successfully with ${newGroup.positionIds.length} position(s)!`)
+    setPositionGroups(prev => {
+      const updatedGroups = [...prev, newGroup]
+      console.log('Position group created:', newGroup)
+      console.log('Total groups:', updatedGroups.length)
+      return updatedGroups
+    })
     
     setNewGroupName('')
     setSelectedPositions([])

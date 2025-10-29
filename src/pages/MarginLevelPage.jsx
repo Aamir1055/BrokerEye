@@ -37,6 +37,23 @@ const MarginLevelPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
   
+  // Groups states
+  const [accountGroups, setAccountGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem('accountGroups')
+      return saved ? JSON.parse(saved) : []
+    } catch (err) {
+      console.error('Failed to load account groups:', err)
+      return []
+    }
+  })
+  const [selectedAccounts, setSelectedAccounts] = useState([])
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [groupSearchQuery, setGroupSearchQuery] = useState('')
+  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
+  
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
@@ -93,6 +110,16 @@ const MarginLevelPage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSuggestions, showColumnSelector])
+  
+  // Save account groups to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('accountGroups', JSON.stringify(accountGroups))
+      console.log('Account groups saved to localStorage:', accountGroups)
+    } catch (err) {
+      console.error('Failed to save account groups:', err)
+    }
+  }, [accountGroups])
 
   const filtered = useMemo(() => {
     const result = cachedAccounts.filter((a) => {
@@ -220,6 +247,62 @@ const MarginLevelPage = () => {
     return Array.from(suggestions).slice(0, 10)
   }
   
+  // Group-related helper functions
+  const getGroupSuggestions = (accounts) => {
+    if (!groupSearchQuery.trim()) {
+      // Show first 50 accounts by default when search is empty
+      return accounts.slice(0, 50)
+    }
+    
+    const query = groupSearchQuery.toLowerCase()
+    return accounts.filter(account => {
+      const login = String(account.login || '').toLowerCase()
+      const name = String(account.name || '').toLowerCase()
+      const group = String(account.group || '').toLowerCase()
+      return login.includes(query) || name.includes(query) || group.includes(query)
+    })
+  }
+  
+  const toggleAccountSelection = (login) => {
+    setSelectedAccounts(prev => {
+      if (prev.includes(login)) {
+        return prev.filter(l => l !== login)
+      } else {
+        return [...prev, login]
+      }
+    })
+  }
+  
+  const createGroupFromSelected = () => {
+    if (!newGroupName.trim()) {
+      return
+    }
+    
+    if (selectedAccounts.length === 0) {
+      return
+    }
+    
+    const newGroup = {
+      name: newGroupName.trim(),
+      accountLogins: [...selectedAccounts]
+    }
+    
+    setAccountGroups(prev => {
+      const updatedGroups = [...prev, newGroup]
+      console.log('Account group created:', newGroup)
+      console.log('Total groups:', updatedGroups.length)
+      return updatedGroups
+    })
+    
+    // Reset states
+    setNewGroupName('')
+    setSelectedAccounts([])
+    setGroupSearchQuery('')
+    setShowCreateGroupModal(false)
+    setShowGroupSuggestions(false)
+  }
+
+  
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
@@ -286,6 +369,15 @@ const MarginLevelPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <WebSocketIndicator />
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="text-green-600 hover:text-green-700 p-2 rounded-lg hover:bg-green-50 transition-colors"
+                title="Create account group"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -605,6 +697,116 @@ const MarginLevelPage = () => {
           </div>
         </div>
       </main>
+      
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Account Group</h3>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search and Select Accounts
+                </label>
+                <input
+                  type="text"
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  placeholder="Search by login, name, group..."
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
+                />
+                
+                {/* Account List - Always Visible */}
+                <div className="bg-white rounded-md border border-gray-200">
+                  <div className="px-3 py-2 bg-green-50 border-b border-green-200 sticky top-0">
+                    <p className="text-xs font-semibold text-green-700">
+                      {selectedAccounts.length} account(s) selected • Showing {getGroupSuggestions(filtered).length} accounts
+                    </p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {getGroupSuggestions(filtered).length > 0 ? (
+                      getGroupSuggestions(filtered).map((account, idx) => (
+                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-green-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedAccounts.includes(account.login)}
+                            onChange={() => toggleAccountSelection(account.login)}
+                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          />
+                          <span className="ml-3 text-sm text-gray-700">
+                            <span className="font-medium">{account.login}</span> - {account.name || 'N/A'} ({account.group || 'N/A'})
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                        No accounts found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {selectedAccounts.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Selected Accounts ({selectedAccounts.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
+                    {selectedAccounts.map((login, idx) => {
+                      const account = filtered.find(a => a.login === login)
+                      return (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                          {account ? `${login} - ${account.name || 'N/A'}` : login}
+                          <button
+                            onClick={() => toggleAccountSelection(login)}
+                            className="text-green-900 hover:text-green-700"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateGroupModal(false)
+                  setNewGroupName('')
+                  setSelectedAccounts([])
+                  setGroupSearchQuery('')
+                  setShowGroupSuggestions(false)
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGroupFromSelected}
+                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

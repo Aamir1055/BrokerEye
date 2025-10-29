@@ -297,22 +297,24 @@ const PendingOrdersPage = () => {
   
   const createGroupFromSelected = () => {
     if (!newGroupName.trim()) {
-      alert('Please enter a group name')
       return
     }
     
     if (selectedOrders.length === 0) {
-      alert('Please select at least one order')
       return
     }
     
     const newGroup = {
       name: newGroupName.trim(),
-      orderIds: selectedOrders
+      orderIds: [...selectedOrders]
     }
     
-    console.log('Creating new order group:', newGroup)
-    setOrderGroups(prev => [...prev, newGroup])
+    setOrderGroups(prev => {
+      const updatedGroups = [...prev, newGroup]
+      console.log('Order group created:', newGroup)
+      console.log('Total groups:', updatedGroups.length)
+      return updatedGroups
+    })
     
     // Reset states
     setNewGroupName('')
@@ -320,8 +322,6 @@ const PendingOrdersPage = () => {
     setGroupSearchQuery('')
     setShowCreateGroupModal(false)
     setShowGroupSuggestions(false)
-    
-    alert(`Group "${newGroup.name}" created with ${selectedOrders.length} order(s)`)
   }
 
   
