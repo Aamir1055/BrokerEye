@@ -30,6 +30,27 @@ const PositionsPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
   
+  // Position Groups state
+  const [positionGroups, setPositionGroups] = useState(() => {
+    // Load groups from localStorage on initial render
+    try {
+      const saved = localStorage.getItem('positionGroups')
+      const groups = saved ? JSON.parse(saved) : []
+      console.log('Loading position groups from localStorage:', groups.length, 'groups found')
+      return groups
+    } catch (error) {
+      console.error('Failed to load position groups:', error)
+      return []
+    }
+  })
+  const [selectedPositions, setSelectedPositions] = useState([]) // Array of position IDs for group creation
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [activeGroupFilter, setActiveGroupFilter] = useState(null) // null or group name
+  const [groupSearchQuery, setGroupSearchQuery] = useState('') // Separate search for group modal
+  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
+  
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
@@ -172,6 +193,16 @@ const PositionsPage = () => {
     }
   }, [showSuggestions, showColumnSelector])
 
+  // Save position groups to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('positionGroups', JSON.stringify(positionGroups))
+      console.log('Saved position groups to localStorage:', positionGroups.length, 'groups')
+    } catch (error) {
+      console.error('Failed to save position groups:', error)
+    }
+  }, [positionGroups])
+
   // Helper to get position key/id
   const getPosKey = (obj) => {
     const id = obj?.position
@@ -246,6 +277,63 @@ const PositionsPage = () => {
     if (e.key === 'Enter') {
       setShowSuggestions(false)
     }
+  }
+  
+  // Group modal search helpers
+  const getGroupSuggestions = (sorted) => {
+    // If no search query, show all positions (limited to first 50 for performance)
+    if (!groupSearchQuery || typeof groupSearchQuery !== 'string' || !groupSearchQuery.trim()) {
+      return sorted.slice(0, 50)
+    }
+    
+    const q = groupSearchQuery.toLowerCase().trim()
+    const matchedPositions = []
+    sorted.forEach(p => {
+      const position = String(p.position || '')
+      const login = String(p.login || '')
+      const symbol = String(p.symbol || '')
+      if (position.toLowerCase().includes(q) || login.toLowerCase().includes(q) || 
+          symbol.toLowerCase().includes(q)) {
+        matchedPositions.push(p)
+      }
+    })
+    return matchedPositions.slice(0, 50)
+  }
+  
+  const togglePositionSelection = (positionId) => {
+    setSelectedPositions(prev => 
+      prev.includes(positionId) ? prev.filter(id => id !== positionId) : [...prev, positionId]
+    )
+  }
+  
+  const createGroupFromSelected = () => {
+    if (!newGroupName.trim()) {
+      alert('Please enter a group name')
+      return
+    }
+    if (selectedPositions.length === 0) {
+      alert('Please select at least one position')
+      return
+    }
+    const newGroup = {
+      name: newGroupName.trim(),
+      positionIds: [...selectedPositions]
+    }
+    const updatedGroups = [...positionGroups, newGroup]
+    setPositionGroups(updatedGroups)
+    
+    // Debug: Log to console
+    console.log('Position group created:', newGroup)
+    console.log('Total groups:', updatedGroups.length)
+    
+    // Show success message
+    alert(`Group "${newGroup.name}" created successfully with ${newGroup.positionIds.length} position(s)!`)
+    
+    setNewGroupName('')
+    setSelectedPositions([])
+    setShowCreateGroupModal(false)
+    setGroupSearchQuery('')
+    setShowGroupSuggestions(false)
   }
   
   // Sorting function with type detection
@@ -372,6 +460,15 @@ const PositionsPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Groups
+              </button>
               <WebSocketIndicator />
               <button
                 onClick={() => {
@@ -767,6 +864,116 @@ const PositionsPage = () => {
           </div>
         </div>
       </main>
+      
+      {/* Create Group Modal */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Create Position Group</h3>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter group name"
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search and Select Positions
+                </label>
+                <input
+                  type="text"
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  placeholder="Search by position, login, symbol..."
+                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
+                />
+                
+                {/* Position List - Always Visible */}
+                <div className="bg-white rounded-md border border-gray-200">
+                  <div className="px-3 py-2 bg-blue-50 border-b border-blue-200 sticky top-0">
+                    <p className="text-xs font-semibold text-blue-700">
+                      {selectedPositions.length} position(s) selected • Showing {getGroupSuggestions(cachedPositions).length} positions
+                    </p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {getGroupSuggestions(cachedPositions).length > 0 ? (
+                      getGroupSuggestions(cachedPositions).map((position, idx) => (
+                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedPositions.includes(position.position)}
+                            onChange={() => togglePositionSelection(position.position)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="ml-3 text-sm text-gray-700">
+                            <span className="font-medium">{position.position}</span> - {position.login} ({position.symbol})
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                        No positions found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {selectedPositions.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Selected Positions ({selectedPositions.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
+                    {selectedPositions.map((posId, idx) => {
+                      const position = cachedPositions.find(p => p.position === posId)
+                      return (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                          {position ? `${position.position} - ${position.symbol}` : posId}
+                          <button
+                            onClick={() => togglePositionSelection(posId)}
+                            className="text-blue-900 hover:text-blue-700"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateGroupModal(false)
+                  setNewGroupName('')
+                  setSelectedPositions([])
+                  setGroupSearchQuery('')
+                  setShowGroupSuggestions(false)
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGroupFromSelected}
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
