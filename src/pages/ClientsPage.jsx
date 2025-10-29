@@ -1313,16 +1313,38 @@ const ClientsPage = () => {
                     return (
                       <tr
                         key={client.login}
-                        onClick={() => setSelectedClient(client)}
-                        className="hover:bg-blue-50 transition-colors cursor-pointer"
+                        className="hover:bg-blue-50 transition-colors"
                       >
-                        {renderCols.map(col => (
-                          <td key={col.key} className="px-3 py-2 text-sm text-gray-900" style={{ width: `${col.width}%` }}>
-                            <div className="truncate" title={col.title}>
-                              {col.value}
-                            </div>
-                          </td>
-                        ))}
+                        {renderCols.map(col => {
+                          // Special handling for login column - make it clickable
+                          if (col.key === 'login') {
+                            return (
+                              <td 
+                                key={col.key} 
+                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer hover:underline" 
+                                style={{ width: `${col.width}%` }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedClient(client)
+                                }}
+                                title="Click to view client details"
+                              >
+                                <div className="truncate">
+                                  {col.value}
+                                </div>
+                              </td>
+                            )
+                          }
+                          
+                          // Regular columns
+                          return (
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-900" style={{ width: `${col.width}%` }}>
+                              <div className="truncate" title={col.title}>
+                                {col.value}
+                              </div>
+                            </td>
+                          )
+                        })}
                       </tr>
                     )
                   })}
