@@ -358,32 +358,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </table>
                 </div>
               )}
-
-              {/* Positions Summary */}
-              {positions.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
-                    <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                    <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
-                    <p className="text-xs text-gray-600 mb-1">Total Volume</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className={`rounded-lg p-3 border ${
-                    positions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
-                      : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
-                  }`}>
-                    <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                    <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                      {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -464,38 +438,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       ))}
                     </tbody>
                   </table>
-                </div>
-              )}
-
-              {/* Deals Summary */}
-              {deals.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
-                    <p className="text-xs text-gray-600 mb-1">Total Deals</p>
-                    <p className="text-lg font-semibold text-gray-900">{deals.length}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
-                    <p className="text-xs text-gray-600 mb-1">Total Volume</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {deals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
-                    <p className="text-xs text-gray-600 mb-1">Total Commission</p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {formatCurrency(deals.reduce((sum, d) => sum + d.commission, 0))}
-                    </p>
-                  </div>
-                  <div className={`rounded-lg p-3 border ${
-                    deals.reduce((sum, d) => sum + d.profit, 0) >= 0
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
-                      : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
-                  }`}>
-                    <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                    <p className={`text-lg font-semibold ${getProfitColor(deals.reduce((sum, d) => sum + d.profit, 0))}`}>
-                      {formatCurrency(deals.reduce((sum, d) => sum + d.profit, 0))}
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
