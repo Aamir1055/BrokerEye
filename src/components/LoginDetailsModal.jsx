@@ -5,9 +5,18 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [deals, setDeals] = useState([])
+  const [clientData, setClientData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Money transaction states
+  const [operationType, setOperationType] = useState('deposit')
+  const [amount, setAmount] = useState('')
+  const [comment, setComment] = useState('')
+  const [operationLoading, setOperationLoading] = useState(false)
+  const [operationSuccess, setOperationSuccess] = useState('')
+  const [operationError, setOperationError] = useState('')
   
   const hasLoadedData = useRef(false)
 
@@ -16,6 +25,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
       hasLoadedData.current = true
       fetchPositions()
       fetchDeals()
+      fetchClientData()
     }
   }, [])
 
@@ -59,6 +69,53 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
       setDeals([])
     } finally {
       setDealsLoading(false)
+    }
+  }
+
+  const fetchClientData = async () => {
+    try {
+      const response = await brokerAPI.getClients()
+      const allClients = response.data?.clients || []
+      const client = allClients.find(c => c.login === login)
+      if (client) {
+        setClientData(client)
+      }
+    } catch (error) {
+      console.error('Failed to fetch client data:', error)
+    }
+  }
+
+  const handleMoneyOperation = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setOperationError('Please enter a valid amount')
+      return
+    }
+
+    try {
+      setOperationLoading(true)
+      setOperationError('')
+      setOperationSuccess('')
+
+      const response = await brokerAPI.balanceOperation(
+        login,
+        operationType,
+        parseFloat(amount),
+        comment
+      )
+
+      setOperationSuccess(response.message || 'Operation completed successfully')
+      setAmount('')
+      setComment('')
+      
+      // Refresh data
+      setTimeout(async () => {
+        await fetchClientData()
+        await fetchDeals()
+      }, 1000)
+    } catch (error) {
+      setOperationError(error.response?.data?.message || 'Operation failed. Please try again.')
+    } finally {
+      setOperationLoading(false)
     }
   }
 
@@ -185,6 +242,16 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
             }`}
           >
             Deals ({deals.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('funds')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === 'funds'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Money Transactions
           </button>
         </div>
 
@@ -345,24 +412,96 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
               )}
             </div>
           )}
+
+          {activeTab === 'funds' && (
+            <div>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Balance Operation</h3>
+                
+                {operationSuccess && (
+                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-3">
+                    <p className="text-green-700 text-sm">{operationSuccess}</p>
+                  </div>
+                )}
+                
+                {operationError && (
+                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-3">
+                    <p className="text-red-700 text-sm">{operationError}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
+                    <select
+                      value={operationType}
+                      onChange={(e) => setOperationType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="deposit">Deposit</option>
+                      <option value="withdrawal">Withdrawal</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="Enter amount"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Enter comment"
+                      rows="2"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleMoneyOperation}
+                  disabled={operationLoading}
+                  className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {operationLoading ? 'Processing...' : 'Submit Operation'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stats Cards - Sticky at Bottom */}
         <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200 shadow-sm">
-              <p className="text-xs text-blue-700 font-medium mb-1">Total Positions</p>
-              <p className="text-2xl font-bold text-blue-900">{positions.length}</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200 shadow-sm">
-              <p className="text-xs text-purple-700 font-medium mb-1">Total Volume</p>
-              <p className="text-2xl font-bold text-purple-900">{totalVolume.toFixed(2)}</p>
+              <p className="text-xs text-blue-700 font-medium mb-1">Balance</p>
+              <p className="text-2xl font-bold text-blue-900">
+                {clientData ? formatCurrency(clientData.balance) : '-'}
+              </p>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200 shadow-sm">
-              <p className="text-xs text-green-700 font-medium mb-1">Total P/L</p>
-              <p className={`text-2xl font-bold ${getProfitColor(totalProfit)}`}>
-                {formatCurrency(totalProfit)}
+              <p className="text-xs text-green-700 font-medium mb-1">Equity</p>
+              <p className="text-2xl font-bold text-green-900">
+                {clientData ? formatCurrency(clientData.equity) : '-'}
               </p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200 shadow-sm">
+              <p className="text-xs text-purple-700 font-medium mb-1">Credit</p>
+              <p className="text-2xl font-bold text-purple-900">
+                {clientData ? formatCurrency(clientData.credit) : '-'}
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200 shadow-sm">
+              <p className="text-xs text-orange-700 font-medium mb-1">Positions</p>
+              <p className="text-2xl font-bold text-orange-900">{positions.length}</p>
             </div>
           </div>
         </div>
