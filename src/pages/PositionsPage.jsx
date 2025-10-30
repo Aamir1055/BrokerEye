@@ -12,8 +12,6 @@ const PositionsPage = () => {
   const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
   
-  console.log('[PositionsPage] 🔄 Re-render - Cached positions:', cachedPositions.length, 'Connection:', connectionState)
-  
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
@@ -150,7 +148,6 @@ const PositionsPage = () => {
 
   // Track position changes for flash indicators (WebSocket updates)
   useEffect(() => { if (!isAuthenticated) return;
-    console.log('[PositionsPage] 📊 cachedPositions changed! Count:', cachedPositions.length)
     
     if (!hasInitialLoad.current || cachedPositions.length === 0) {
       prevPositionsRef.current = cachedPositions
@@ -173,7 +170,6 @@ const PositionsPage = () => {
         // New position added
         newCount++
         queueFlash(key, { type: 'add' })
-        console.log('[PositionsPage] ➕ New position detected:', key)
       } else {
         // Check for updates
         const priceDelta = Number(pos.priceCurrent || 0) - Number(prev.priceCurrent || 0)
@@ -182,14 +178,9 @@ const PositionsPage = () => {
         if (Math.abs(priceDelta) > 0.00001 || Math.abs(profitDelta) > 0.01) {
           updateCount++
           queueFlash(key, { type: 'update', priceDelta, profitDelta })
-          console.log('[PositionsPage] 🔄 Position updated:', key, 'Profit:', prev.profit, '→', pos.profit)
         }
       }
     })
-
-    if (newCount > 0 || updateCount > 0 || deletedCount > 0) {
-      console.log('[PositionsPage] 📈 Changes summary:', { new: newCount, updated: updateCount, deleted: deletedCount })
-    }
 
     prevPositionsRef.current = cachedPositions
   }, [cachedPositions])
@@ -215,7 +206,6 @@ const PositionsPage = () => {
   useEffect(() => {
     try {
       localStorage.setItem('positionGroups', JSON.stringify(positionGroups))
-      console.log('Saved position groups to localStorage:', positionGroups.length, 'groups')
     } catch (error) {
       console.error('Failed to save position groups:', error)
     }
@@ -227,13 +217,6 @@ const PositionsPage = () => {
     const totalFloatingProfit = cachedPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
     const uniqueLogins = new Set(cachedPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(cachedPositions.map(p => p.symbol)).size
-    
-    console.log('[Positions] 📊 Summary stats recalculated:', {
-      totalPositions,
-      totalFloatingProfit: totalFloatingProfit.toFixed(2),
-      uniqueLogins,
-      uniqueSymbols
-    })
     
     return {
       totalPositions,

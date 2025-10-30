@@ -21,8 +21,6 @@ export const DataProvider = ({ children }) => {
   const [deals, setDeals] = useState([])
   const [accounts, setAccounts] = useState([]) // For margin level
   
-  console.log('[DataContext] 🔄 Re-render - Positions count:', positions.length)
-  
   const [loading, setLoading] = useState({
     clients: false,
     positions: false,
@@ -83,17 +81,14 @@ export const DataProvider = ({ children }) => {
     }
     
     if (!force && positions.length > 0 && !isStale('positions')) {
-      console.log('[DataContext] ♻️ Using cached positions:', positions.length)
       return positions
     }
 
-    console.log('[DataContext] 🌐 Fetching positions from API...')
     setLoading(prev => ({ ...prev, positions: true }))
     
     try {
       const response = await brokerAPI.getPositions()
       const data = response.data?.positions || []
-      console.log('[DataContext] ✅ API returned', data.length, 'positions')
       setPositions(data)
       setLastFetch(prev => ({ ...prev, positions: Date.now() }))
       return data
@@ -233,30 +228,43 @@ export const DataProvider = ({ children }) => {
       }
     })
 
-    // Subscribe to POSITION_ADDED
-    const unsubPosAdded = websocketService.subscribe('POSITION_ADDED', (message) => {
+    // Subscribe to POSITION_OPENED (MT5 realtime position add)
+    const unsubPosOpened = websocketService.subscribe('POSITION_OPENED', (message) => {
       try {
         const position = message.data || message
         if (position) {
-          console.log('[DataContext] ➕ POSITION_ADDED:', position.position || position.id)
-          setPositions(prev => [position, ...prev])
+          const posId = position.position || position.id
+          console.log('[DataContext] ➕ POSITION_OPENED:', posId, 'Login:', position.login, 'Symbol:', position.symbol)
+          setPositions(prev => {
+            // Check if position already exists
+            const exists = prev.some(p => (p.position || p.id) === posId)
+            if (exists) {
+              console.log('[DataContext] ⚠️ Position already exists, skipping add:', posId)
+              return prev
+            }
+            return [position, ...prev]
+          })
         }
       } catch (error) {
-        console.error('[DataContext] Error processing POSITION_ADDED:', error)
+        console.error('[DataContext] Error processing POSITION_OPENED:', error)
       }
     })
 
-    // Subscribe to POSITION_UPDATED
+    // Subscribe to POSITION_UPDATED (MT5 realtime position change)
     const unsubPosUpdated = websocketService.subscribe('POSITION_UPDATED', (message) => {
       try {
         const updatedPos = message.data || message
         const posId = updatedPos?.position || updatedPos?.id
         
         if (posId) {
-          console.log('[DataContext] ✏️ POSITION_UPDATED:', posId)
+          console.log('[DataContext] ✏️ POSITION_UPDATED:', posId, 'Profit:', updatedPos.profit, 'Volume:', updatedPos.volume)
           setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
-            if (index === -1) return prev
+            if (index === -1) {
+              // Position doesn't exist, add it
+              console.log('[DataContext] ⚠️ Position not found, adding it:', posId)
+              return [updatedPos, ...prev]
+            }
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedPos }
             return updated
@@ -267,27 +275,34 @@ export const DataProvider = ({ children }) => {
       }
     })
 
+    // Keep legacy POSITION_ADDED for backward compatibility
+    const unsubPosAdded = websocketService.subscribe('POSITION_ADDED', (message) => {
+      try {
+        const position = message.data || message
+        if (position) {
+          const posId = position.position || position.id
+          console.log('[DataContext] ➕ POSITION_ADDED (legacy):', posId)
+          setPositions(prev => {
+            const exists = prev.some(p => (p.position || p.id) === posId)
+            if (exists) return prev
+            return [position, ...prev]
+          })
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing POSITION_ADDED:', error)
+      }
+    })
+
     // Subscribe to POSITION_PNL_UPDATE (real-time profit/loss updates)
     const unsubPosPnlUpdate = websocketService.subscribe('POSITION_PNL_UPDATE', (message) => {
       try {
         const updatedPos = message.data || message
         const posId = updatedPos?.position || updatedPos?.id
-        const login = message.login || updatedPos?.login
-        
-        console.log('[DataContext] 📊 POSITION_PNL_UPDATE received:', {
-          posId,
-          login,
-          priceCurrent: updatedPos.priceCurrent,
-          profit: updatedPos.profit
-        })
         
         if (posId) {
           setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
-            if (index === -1) {
-              console.log('[DataContext] ⚠️ Position not found in cache:', posId)
-              return prev
-            }
+            if (index === -1) return prev
             
             const oldProfit = prev[index].profit
             const newProfit = updatedPos.profit
@@ -309,13 +324,6 @@ export const DataProvider = ({ children }) => {
               timeUpdate: updatedPos.timeUpdate
             }
             
-            console.log('[DataContext] ✅ Position updated:', {
-              posId,
-              oldProfit,
-              newProfit,
-              delta: (newProfit - oldProfit).toFixed(2)
-            })
-            
             return updated
           })
         }
@@ -324,18 +332,36 @@ export const DataProvider = ({ children }) => {
       }
     })
 
-    // Subscribe to POSITION_DELETED
+    // Subscribe to POSITION_CLOSED (MT5 realtime position delete)
+    const unsubPosClosed = websocketService.subscribe('POSITION_CLOSED', (message) => {
+      try {
+        const posId = message.position || message.data?.position || message.id
+        if (posId) {
+          console.log('[DataContext] ❌ POSITION_CLOSED:', posId)
+          setPositions(prev => {
+            const newPositions = prev.filter(p => (p.position || p.id) !== posId)
+            if (newPositions.length === prev.length) {
+              console.log('[DataContext] ⚠️ Position not found for closure:', posId)
+              return prev // Return same reference
+            }
+            console.log('[DataContext] ✅ Position closed. Count:', prev.length, '→', newPositions.length)
+            return newPositions
+          })
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing POSITION_CLOSED:', error)
+      }
+    })
+
+    // Keep legacy POSITION_DELETED for backward compatibility
     const unsubPosDeleted = websocketService.subscribe('POSITION_DELETED', (message) => {
       try {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
-          console.log('[DataContext] ❌ POSITION_DELETED:', posId)
+          console.log('[DataContext] ❌ POSITION_DELETED (legacy):', posId)
           setPositions(prev => {
             const newPositions = prev.filter(p => (p.position || p.id) !== posId)
-            if (newPositions.length === prev.length) {
-              console.log('[DataContext] ⚠️ Position not found for deletion:', posId)
-              return prev // Return same reference
-            }
+            if (newPositions.length === prev.length) return prev
             console.log('[DataContext] ✅ Position removed. Count:', prev.length, '→', newPositions.length)
             return newPositions
           })
@@ -414,11 +440,13 @@ export const DataProvider = ({ children }) => {
     return () => {
       unsubState()
       unsubClients()
-      unsubAccountUpdate()
+      unsubAccUpdated()
       unsubPositions()
+      unsubPosOpened()
       unsubPosAdded()
       unsubPosUpdated()
       unsubPosPnlUpdate()
+      unsubPosClosed()
       unsubPosDeleted()
       unsubOrders()
       unsubOrderAdded()
