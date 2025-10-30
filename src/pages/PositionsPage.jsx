@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import websocketService from '../services/websocket'
@@ -204,6 +204,28 @@ const PositionsPage = () => {
       console.error('Failed to save position groups:', error)
     }
   }, [positionGroups])
+
+  // Memoized summary statistics - automatically updates when cachedPositions changes
+  const summaryStats = useMemo(() => {
+    const totalPositions = cachedPositions.length
+    const totalFloatingProfit = cachedPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const uniqueLogins = new Set(cachedPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(cachedPositions.map(p => p.symbol)).size
+    
+    console.log('[Positions] 📊 Summary stats recalculated:', {
+      totalPositions,
+      totalFloatingProfit: totalFloatingProfit.toFixed(2),
+      uniqueLogins,
+      uniqueSymbols
+    })
+    
+    return {
+      totalPositions,
+      totalFloatingProfit,
+      uniqueLogins,
+      uniqueSymbols
+    }
+  }, [cachedPositions])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -585,22 +607,22 @@ const PositionsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Positions</p>
-              <p className="text-lg font-semibold text-gray-900">{cachedPositions.length}</p>
+              <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
-              <p className={`text-lg font-semibold flex items-center gap-1 ${cachedPositions.reduce((s,p)=>s+(p.profit||0),0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {cachedPositions.reduce((s,p)=>s+(p.profit||0),0) >= 0 ? '▲' : '▼'}
-                {formatNumber(Math.abs(cachedPositions.reduce((s,p)=>s+(p.profit||0),0)))}
+              <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
+                {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(cachedPositions.map(p=>p.login)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueLogins}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Symbols</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(cachedPositions.map(p=>p.symbol)).size}</p>
+              <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueSymbols}</p>
             </div>
           </div>
 

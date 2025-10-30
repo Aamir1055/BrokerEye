@@ -219,6 +219,7 @@ export const DataProvider = ({ children }) => {
       try {
         const newPositions = data.data?.positions || data.positions
         if (newPositions && Array.isArray(newPositions)) {
+          console.log('[DataContext] 📦 Full positions snapshot received:', newPositions.length, 'positions')
           setPositions(newPositions)
           setLastFetch(prev => ({ ...prev, positions: Date.now() }))
         }
@@ -232,6 +233,7 @@ export const DataProvider = ({ children }) => {
       try {
         const position = message.data || message
         if (position) {
+          console.log('[DataContext] ➕ POSITION_ADDED:', position.position || position.id)
           setPositions(prev => [position, ...prev])
         }
       } catch (error) {
@@ -246,6 +248,7 @@ export const DataProvider = ({ children }) => {
         const posId = updatedPos?.position || updatedPos?.id
         
         if (posId) {
+          console.log('[DataContext] ✏️ POSITION_UPDATED:', posId)
           setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
             if (index === -1) return prev
@@ -266,11 +269,22 @@ export const DataProvider = ({ children }) => {
         const posId = updatedPos?.position || updatedPos?.id
         const login = message.login || updatedPos?.login
         
+        console.log('[DataContext] 📊 POSITION_PNL_UPDATE received:', {
+          posId,
+          login,
+          priceCurrent: updatedPos.priceCurrent,
+          profit: updatedPos.profit
+        })
+        
         if (posId) {
           setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
-            if (index === -1) return prev
+            if (index === -1) {
+              console.log('[DataContext] ⚠️ Position not found in cache:', posId)
+              return prev
+            }
             const updated = [...prev]
+            const oldProfit = updated[index].profit
             // Update position with new P&L data
             updated[index] = { 
               ...updated[index], 
@@ -282,6 +296,12 @@ export const DataProvider = ({ children }) => {
               storage_percentage: updatedPos.storage_percentage,
               timeUpdate: updatedPos.timeUpdate
             }
+            console.log('[DataContext] ✅ Position updated:', {
+              posId,
+              oldProfit,
+              newProfit: updatedPos.profit,
+              delta: (updatedPos.profit - oldProfit).toFixed(2)
+            })
             return updated
           })
         }
@@ -295,6 +315,7 @@ export const DataProvider = ({ children }) => {
       try {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
+          console.log('[DataContext] ❌ POSITION_DELETED:', posId)
           setPositions(prev => prev.filter(p => (p.position || p.id) !== posId))
         }
       } catch (error) {
