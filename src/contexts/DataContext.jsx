@@ -440,7 +440,7 @@ export const DataProvider = ({ children }) => {
     return () => {
       unsubState()
       unsubClients()
-      unsubAccUpdated()
+      unsubAccountUpdate()
       unsubPositions()
       unsubPosOpened()
       unsubPosAdded()
