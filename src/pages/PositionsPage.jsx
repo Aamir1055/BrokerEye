@@ -12,6 +12,8 @@ const PositionsPage = () => {
   const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
   
+  console.log('[PositionsPage] 🔄 Re-render - Cached positions:', cachedPositions.length, 'Connection:', connectionState)
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
@@ -148,6 +150,8 @@ const PositionsPage = () => {
 
   // Track position changes for flash indicators (WebSocket updates)
   useEffect(() => { if (!isAuthenticated) return;
+    console.log('[PositionsPage] 📊 cachedPositions changed! Count:', cachedPositions.length)
+    
     if (!hasInitialLoad.current || cachedPositions.length === 0) {
       prevPositionsRef.current = cachedPositions
       return
@@ -156,6 +160,10 @@ const PositionsPage = () => {
     const prevPositions = prevPositionsRef.current
     const prevMap = new Map(prevPositions.map(p => [getPosKey(p), p]))
 
+    let newCount = 0
+    let updateCount = 0
+    let deletedCount = prevPositions.length - cachedPositions.length
+
     cachedPositions.forEach(pos => {
       const key = getPosKey(pos)
       if (!key) return
@@ -163,17 +171,25 @@ const PositionsPage = () => {
       const prev = prevMap.get(key)
       if (!prev) {
         // New position added
+        newCount++
         queueFlash(key, { type: 'add' })
+        console.log('[PositionsPage] ➕ New position detected:', key)
       } else {
         // Check for updates
         const priceDelta = Number(pos.priceCurrent || 0) - Number(prev.priceCurrent || 0)
         const profitDelta = Number(pos.profit || 0) - Number(prev.profit || 0)
 
         if (Math.abs(priceDelta) > 0.00001 || Math.abs(profitDelta) > 0.01) {
+          updateCount++
           queueFlash(key, { type: 'update', priceDelta, profitDelta })
+          console.log('[PositionsPage] 🔄 Position updated:', key, 'Profit:', prev.profit, '→', pos.profit)
         }
       }
     })
+
+    if (newCount > 0 || updateCount > 0 || deletedCount > 0) {
+      console.log('[PositionsPage] 📈 Changes summary:', { new: newCount, updated: updateCount, deleted: deletedCount })
+    }
 
     prevPositionsRef.current = cachedPositions
   }, [cachedPositions])

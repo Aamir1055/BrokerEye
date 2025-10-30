@@ -21,6 +21,8 @@ export const DataProvider = ({ children }) => {
   const [deals, setDeals] = useState([])
   const [accounts, setAccounts] = useState([]) // For margin level
   
+  console.log('[DataContext] 🔄 Re-render - Positions count:', positions.length)
+  
   const [loading, setLoading] = useState({
     clients: false,
     positions: false,
@@ -81,14 +83,17 @@ export const DataProvider = ({ children }) => {
     }
     
     if (!force && positions.length > 0 && !isStale('positions')) {
+      console.log('[DataContext] ♻️ Using cached positions:', positions.length)
       return positions
     }
 
+    console.log('[DataContext] 🌐 Fetching positions from API...')
     setLoading(prev => ({ ...prev, positions: true }))
     
     try {
       const response = await brokerAPI.getPositions()
       const data = response.data?.positions || []
+      console.log('[DataContext] ✅ API returned', data.length, 'positions')
       setPositions(data)
       setLastFetch(prev => ({ ...prev, positions: Date.now() }))
       return data
@@ -283,25 +288,34 @@ export const DataProvider = ({ children }) => {
               console.log('[DataContext] ⚠️ Position not found in cache:', posId)
               return prev
             }
+            
+            const oldProfit = prev[index].profit
+            const newProfit = updatedPos.profit
+            
+            // Skip update if profit hasn't actually changed
+            if (oldProfit === newProfit && prev[index].priceCurrent === updatedPos.priceCurrent) {
+              return prev // Return same reference to prevent unnecessary re-render
+            }
+            
             const updated = [...prev]
-            const oldProfit = updated[index].profit
             // Update position with new P&L data
             updated[index] = { 
               ...updated[index], 
-              ...updatedPos,
               priceCurrent: updatedPos.priceCurrent,
-              profit: updatedPos.profit,
+              profit: newProfit,
               profit_percentage: updatedPos.profit_percentage,
               storage: updatedPos.storage,
               storage_percentage: updatedPos.storage_percentage,
               timeUpdate: updatedPos.timeUpdate
             }
+            
             console.log('[DataContext] ✅ Position updated:', {
               posId,
               oldProfit,
-              newProfit: updatedPos.profit,
-              delta: (updatedPos.profit - oldProfit).toFixed(2)
+              newProfit,
+              delta: (newProfit - oldProfit).toFixed(2)
             })
+            
             return updated
           })
         }
@@ -316,7 +330,15 @@ export const DataProvider = ({ children }) => {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
           console.log('[DataContext] ❌ POSITION_DELETED:', posId)
-          setPositions(prev => prev.filter(p => (p.position || p.id) !== posId))
+          setPositions(prev => {
+            const newPositions = prev.filter(p => (p.position || p.id) !== posId)
+            if (newPositions.length === prev.length) {
+              console.log('[DataContext] ⚠️ Position not found for deletion:', posId)
+              return prev // Return same reference
+            }
+            console.log('[DataContext] ✅ Position removed. Count:', prev.length, '→', newPositions.length)
+            return newPositions
+          })
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_DELETED:', error)
