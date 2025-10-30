@@ -259,6 +259,37 @@ export const DataProvider = ({ children }) => {
       }
     })
 
+    // Subscribe to POSITION_PNL_UPDATE (real-time profit/loss updates)
+    const unsubPosPnlUpdate = websocketService.subscribe('POSITION_PNL_UPDATE', (message) => {
+      try {
+        const updatedPos = message.data || message
+        const posId = updatedPos?.position || updatedPos?.id
+        const login = message.login || updatedPos?.login
+        
+        if (posId) {
+          setPositions(prev => {
+            const index = prev.findIndex(p => (p.position || p.id) === posId)
+            if (index === -1) return prev
+            const updated = [...prev]
+            // Update position with new P&L data
+            updated[index] = { 
+              ...updated[index], 
+              ...updatedPos,
+              priceCurrent: updatedPos.priceCurrent,
+              profit: updatedPos.profit,
+              profit_percentage: updatedPos.profit_percentage,
+              storage: updatedPos.storage,
+              storage_percentage: updatedPos.storage_percentage,
+              timeUpdate: updatedPos.timeUpdate
+            }
+            return updated
+          })
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing POSITION_PNL_UPDATE:', error)
+      }
+    })
+
     // Subscribe to POSITION_DELETED
     const unsubPosDeleted = websocketService.subscribe('POSITION_DELETED', (message) => {
       try {
@@ -344,6 +375,7 @@ export const DataProvider = ({ children }) => {
       unsubPositions()
       unsubPosAdded()
       unsubPosUpdated()
+      unsubPosPnlUpdate()
       unsubPosDeleted()
       unsubOrders()
       unsubOrderAdded()

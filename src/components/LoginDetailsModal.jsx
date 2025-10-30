@@ -415,95 +415,213 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
 
           {activeTab === 'funds' && (
             <div>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg mb-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Balance Operation</h3>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                 
+                {/* Success Message */}
                 {operationSuccess && (
-                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-3">
-                    <p className="text-green-700 text-sm">{operationSuccess}</p>
-                  </div>
-                )}
-                
-                {operationError && (
-                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-3">
-                    <p className="text-red-700 text-sm">{operationError}</p>
+                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-green-700 text-xs">{operationSuccess}</span>
+                    </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Error Message */}
+                {operationError && (
+                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-red-700 text-xs">{operationError}</span>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={(e) => { e.preventDefault(); handleMoneyOperation(); }} className="space-y-3">
+                  {/* Operation Type */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Operation Type
+                    </label>
                     <select
                       value={operationType}
-                      onChange={(e) => setOperationType(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setOperationType(e.target.value)
+                        setOperationSuccess('')
+                        setOperationError('')
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
                     >
-                      <option value="deposit">Deposit</option>
-                      <option value="withdrawal">Withdrawal</option>
+                      <option value="deposit" className="text-gray-900">Deposit Funds</option>
+                      <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
+                      <option value="credit_in" className="text-gray-900">Credit In</option>
+                      <option value="credit_out" className="text-gray-900">Credit Out</option>
                     </select>
                   </div>
 
+                  {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Amount ($)
+                    </label>
                     <input
                       type="number"
+                      step="0.01"
+                      min="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                      required
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                  {/* Comment */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Comment (Optional)
+                    </label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Enter comment"
+                      placeholder="Add a comment for this transaction"
                       rows="2"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
                     />
                   </div>
-                </div>
 
-                <button
-                  onClick={handleMoneyOperation}
-                  disabled={operationLoading}
-                  className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {operationLoading ? 'Processing...' : 'Submit Operation'}
-                </button>
+                  {/* Submit Button */}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAmount('')
+                        setComment('')
+                        setOperationSuccess('')
+                        setOperationError('')
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={operationLoading}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 transition-all inline-flex items-center gap-1.5"
+                    >
+                      {operationLoading ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Execute Operation
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
         </div>
 
-        {/* Stats Cards - Sticky at Bottom */}
-        <div className="sticky bottom-0 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-gray-200 shadow-lg">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Balance</p>
-              <p className="text-xl font-bold text-blue-600">
-                {clientData ? formatCurrency(clientData.balance) : '-'}
-              </p>
+        {/* Summary Cards - Sticky at Bottom */}
+        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+          {activeTab === 'positions' && positions.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
+                <p className="text-xs text-gray-600 mb-1">Total Positions</p>
+                <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
+              </div>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
+                <p className="text-xs text-gray-600 mb-1">Total Volume</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                </p>
+              </div>
+              <div className={`rounded-lg p-3 border ${
+                positions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
+                  : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
+              }`}>
+                <p className="text-xs text-gray-600 mb-1">Total P/L</p>
+                <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
+                </p>
+              </div>
             </div>
-            <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Equity</p>
-              <p className="text-xl font-bold text-green-600">
-                {clientData ? formatCurrency(clientData.equity) : '-'}
-              </p>
+          )}
+
+          {activeTab === 'deals' && deals.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
+                <p className="text-xs text-gray-600 mb-1">Total Deals</p>
+                <p className="text-lg font-semibold text-gray-900">{deals.length}</p>
+              </div>
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
+                <p className="text-xs text-gray-600 mb-1">Total Volume</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {deals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
+                </p>
+              </div>
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
+                <p className="text-xs text-gray-600 mb-1">Total Commission</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(deals.reduce((sum, d) => sum + d.commission, 0))}
+                </p>
+              </div>
+              <div className={`rounded-lg p-3 border ${
+                deals.reduce((sum, d) => sum + d.profit, 0) >= 0
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
+                  : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
+              }`}>
+                <p className="text-xs text-gray-600 mb-1">Total P/L</p>
+                <p className={`text-lg font-semibold ${getProfitColor(deals.reduce((sum, d) => sum + d.profit, 0))}`}>
+                  {formatCurrency(deals.reduce((sum, d) => sum + d.profit, 0))}
+                </p>
+              </div>
             </div>
-            <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Credit</p>
-              <p className="text-xl font-bold text-purple-600">
-                {clientData ? formatCurrency(clientData.credit) : '-'}
-              </p>
+          )}
+
+          {activeTab === 'funds' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Balance</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {clientData ? formatCurrency(clientData.balance) : '-'}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Equity</p>
+                <p className="text-xl font-bold text-green-600">
+                  {clientData ? formatCurrency(clientData.equity) : '-'}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Credit</p>
+                <p className="text-xl font-bold text-purple-600">
+                  {clientData ? formatCurrency(clientData.credit) : '-'}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
+                <p className="text-xs text-gray-500 mb-1">Positions</p>
+                <p className="text-xl font-bold text-orange-600">{positions.length}</p>
+              </div>
             </div>
-            <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Positions</p>
-              <p className="text-xl font-bold text-orange-600">{positions.length}</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
