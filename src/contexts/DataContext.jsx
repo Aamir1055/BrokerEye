@@ -172,6 +172,20 @@ export const DataProvider = ({ children }) => {
       }
     })
 
+    // Debug: Log all unique event types (only once per type)
+    const seenEvents = new Set()
+    const unsubDebug = websocketService.subscribe('all', (message) => {
+      const eventType = message.event || message.type
+      if (eventType && !seenEvents.has(eventType) && eventType !== 'ACCOUNT_UPDATED') {
+        seenEvents.add(eventType)
+        console.log('[DataContext] 🔔 New WebSocket event type detected:', eventType, message)
+      }
+      // Also check for USER_ADDED specifically
+      if (eventType === 'USER_ADDED') {
+        console.log('[DataContext] ‼️ USER_ADDED EVENT CAPTURED:', message)
+      }
+    })
+
     // Subscribe to clients updates
     const unsubClients = websocketService.subscribe('clients', (data) => {
       try {
@@ -192,10 +206,19 @@ export const DataProvider = ({ children }) => {
         const updatedAccount = message.data
         const accountLogin = message.login || updatedAccount?.login
         
+        // Only log occasionally to avoid console spam
+        if (Math.random() < 0.05) {
+          console.log('[DataContext] 📊 ACCOUNT_UPDATED sample:', accountLogin, updatedAccount)
+        }
+        
         if (updatedAccount && accountLogin) {
           setClients(prev => {
             const index = prev.findIndex(c => c.login === accountLogin)
-            if (index === -1) return [...prev, updatedAccount]
+            if (index === -1) {
+              console.log('[DataContext] 🆕 NEW CLIENT DETECTED via ACCOUNT_UPDATED:', accountLogin, 'Total clients before:', prev.length)
+              return [...prev, updatedAccount]
+            }
+            // Don't log every update - too noisy
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedAccount }
             return updated
@@ -203,7 +226,10 @@ export const DataProvider = ({ children }) => {
           
           setAccounts(prev => {
             const index = prev.findIndex(c => c.login === accountLogin)
-            if (index === -1) return [...prev, updatedAccount]
+            if (index === -1) {
+              console.log('[DataContext] 🆕 NEW ACCOUNT added to accounts array:', accountLogin)
+              return [...prev, updatedAccount]
+            }
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedAccount }
             return updated
@@ -211,6 +237,94 @@ export const DataProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('[DataContext] Error processing ACCOUNT_UPDATED:', error)
+      }
+    })
+
+    // Subscribe to USER_ADDED (new client/user created in MT5)
+    const unsubUserAdded = websocketService.subscribe('USER_ADDED', (message) => {
+      try {
+        const newUser = message.data
+        const userLogin = message.login || newUser?.login
+        
+        console.log('[DataContext] 👤 USER_ADDED:', userLogin, newUser)
+        
+        if (newUser && userLogin) {
+          setClients(prev => {
+            const exists = prev.some(c => c.login === userLogin)
+            if (exists) {
+              console.log('[DataContext] ⚠️ User already exists, skipping add:', userLogin)
+              return prev
+            }
+            console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
+            return [newUser, ...prev]
+          })
+          
+          setAccounts(prev => {
+            const exists = prev.some(c => c.login === userLogin)
+            if (exists) return prev
+            return [newUser, ...prev]
+          })
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing USER_ADDED:', error)
+      }
+    })
+
+    // Subscribe to USER_UPDATED (user/client info updated in MT5)
+    const unsubUserUpdated = websocketService.subscribe('USER_UPDATED', (message) => {
+      try {
+        const updatedUser = message.data
+        const userLogin = message.login || updatedUser?.login
+        
+        console.log('[DataContext] 👤 USER_UPDATED:', userLogin, updatedUser)
+        
+        if (updatedUser && userLogin) {
+          setClients(prev => {
+            const index = prev.findIndex(c => c.login === userLogin)
+            if (index === -1) {
+              console.log('[DataContext] ➕ User not found, adding as new:', userLogin)
+              return [updatedUser, ...prev]
+            }
+            console.log('[DataContext] ✏️ Updating existing user:', userLogin)
+            const updated = [...prev]
+            updated[index] = { ...updated[index], ...updatedUser }
+            return updated
+          })
+          
+          setAccounts(prev => {
+            const index = prev.findIndex(c => c.login === userLogin)
+            if (index === -1) return [updatedUser, ...prev]
+            const updated = [...prev]
+            updated[index] = { ...updated[index], ...updatedUser }
+            return updated
+          })
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing USER_UPDATED:', error)
+      }
+    })
+
+    // Subscribe to USER_DELETED (user/client removed from MT5)
+    const unsubUserDeleted = websocketService.subscribe('USER_DELETED', (message) => {
+      try {
+        const deletedUser = message.data
+        const userLogin = message.login || deletedUser?.login
+        
+        console.log('[DataContext] 👤 USER_DELETED:', userLogin)
+        
+        if (userLogin) {
+          setClients(prev => {
+            const filtered = prev.filter(c => c.login !== userLogin)
+            if (filtered.length < prev.length) {
+              console.log('[DataContext] ➖ Removed user from clients:', userLogin)
+            }
+            return filtered
+          })
+          
+          setAccounts(prev => prev.filter(c => c.login !== userLogin))
+        }
+      } catch (error) {
+        console.error('[DataContext] Error processing USER_DELETED:', error)
       }
     })
 
@@ -438,9 +552,13 @@ export const DataProvider = ({ children }) => {
     })
 
     return () => {
+      unsubDebug()
       unsubState()
       unsubClients()
       unsubAccountUpdate()
+      unsubUserAdded()
+      unsubUserUpdated()
+      unsubUserDeleted()
       unsubPositions()
       unsubPosOpened()
       unsubPosAdded()

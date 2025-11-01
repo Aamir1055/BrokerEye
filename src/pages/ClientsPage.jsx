@@ -1,18 +1,24 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useData } from '../contexts/DataContext'
+import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import WebSocketIndicator from '../components/WebSocketIndicator'
+import GroupSelector from '../components/GroupSelector'
+import GroupModal from '../components/GroupModal'
 
 const ClientsPage = () => {
   const { clients: cachedClients, positions: cachedPositions, fetchClients, fetchPositions, loading, connectionState } = useData()
+  const { filterByActiveGroup } = useGroups()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
   const displayMenuRef = useRef(null)
@@ -43,47 +49,35 @@ const ClientsPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
   
-  // Client Groups state
-  const [clientGroups, setClientGroups] = useState(() => {
-    // Load groups from localStorage on initial render
-    try {
-      const saved = localStorage.getItem('clientGroups')
-      const groups = saved ? JSON.parse(saved) : []
-      console.log('Loading client groups from localStorage:', groups.length, 'groups found')
-      return groups
-    } catch (error) {
-      console.error('Failed to load client groups:', error)
-      return []
-    }
-  })
-  const [selectedClients, setSelectedClients] = useState([]) // Array of client login IDs for group creation
-  const [showGroupsModal, setShowGroupsModal] = useState(false)
-  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
-  const [newGroupName, setNewGroupName] = useState('')
-  const [activeGroupFilter, setActiveGroupFilter] = useState(null) // null or group name
-  const [groupSearchQuery, setGroupSearchQuery] = useState('') // Separate search for group modal
-  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
-  
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
   const [resizing, setResizing] = useState(null)
   const tableRef = useRef(null)
 
-  // Default visible columns (matching the screenshot)
-  const [visibleColumns, setVisibleColumns] = useState({
-    login: true,
-    name: true,
-    group: true,
-    country: true,
-    clientID: true,
-    balance: true,
-    equity: true,
-    profit: true,
-    // Hidden by default
-    pnl: false,
-    lastName: false,
-    middleName: false,
-    email: false,
+  // Default visible columns - load from localStorage or use defaults
+  const getInitialVisibleColumns = () => {
+    const saved = localStorage.getItem('clientsPageVisibleColumns')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse saved columns:', e)
+      }
+    }
+    return {
+      login: true,
+      name: true,
+      group: true,
+      country: true,
+      clientID: true,
+      balance: true,
+      equity: true,
+      profit: true,
+      // Hidden by default
+      pnl: false,
+      lastName: false,
+      middleName: false,
+      email: false,
     phone: false,
     credit: false,
     margin: false,
@@ -95,8 +89,8 @@ const ClientsPage = () => {
     registration: false,
     lastAccess: false,
     rights: false,
-    appliedPercentage: false,
-    appliedPercentageIsCustom: false,
+    applied_percentage: false,
+    applied_percentage_is_custom: false,
     assets: false,
     blockedCommission: false,
     blockedProfit: false,
@@ -128,7 +122,10 @@ const ClientsPage = () => {
     accountLastUpdate: false,
     userLastUpdate: false,
     lastUpdate: false
-  })
+    }
+  }
+
+  const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
 
   const allColumns = [
     { key: 'login', label: 'Login' },
@@ -159,8 +156,8 @@ const ClientsPage = () => {
     { key: 'floating', label: 'Floating' },
     { key: 'currency', label: 'Currency' },
     { key: 'currencyDigits', label: 'Currency Digits' },
-    { key: 'appliedPercentage', label: 'Applied %' },
-    { key: 'appliedPercentageIsCustom', label: 'Custom %' },
+    { key: 'applied_percentage', label: 'Applied %' },
+    { key: 'applied_percentage_is_custom', label: 'Custom %' },
     { key: 'assets', label: 'Assets' },
     { key: 'liabilities', label: 'Liabilities' },
     { key: 'blockedCommission', label: 'Blocked Commission' },
@@ -203,6 +200,11 @@ const ClientsPage = () => {
 
   const isMetricColumn = (key) => Object.prototype.hasOwnProperty.call(percentageFieldMap, key)
 
+  // Save visible columns to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('clientsPageVisibleColumns', JSON.stringify(visibleColumns))
+  }, [visibleColumns])
+
   useEffect(() => {
     if (!hasInitialLoad.current) {
       hasInitialLoad.current = true
@@ -211,16 +213,6 @@ const ClientsPage = () => {
       fetchPositions().catch(err => console.error('Failed to load positions:', err))
     }
   }, [fetchClients, fetchPositions])
-
-  // Save client groups to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('clientGroups', JSON.stringify(clientGroups))
-      console.log('Saved client groups to localStorage:', clientGroups.length, 'groups')
-    } catch (error) {
-      console.error('Failed to save client groups:', error)
-    }
-  }, [clientGroups])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -413,75 +405,12 @@ const ClientsPage = () => {
     setShowSuggestions(false)
     setCurrentPage(1)
   }
-  
-  // Group modal search helpers
-  const getGroupSuggestions = (sorted) => {
-    // If no search query, show all clients (limited to first 50 for performance)
-    if (!groupSearchQuery || typeof groupSearchQuery !== 'string' || !groupSearchQuery.trim()) {
-      return sorted.slice(0, 50)
-    }
-    
-    const q = groupSearchQuery.toLowerCase().trim()
-    const matchedClients = []
-    sorted.forEach(c => {
-      const login = String(c.login || '')
-      const name = String(c.name || '')
-      const email = String(c.email || '')
-      const phone = String(c.phone || '')
-      if (login.toLowerCase().includes(q) || name.toLowerCase().includes(q) || 
-          email.toLowerCase().includes(q) || phone.toLowerCase().includes(q)) {
-        matchedClients.push(c)
-      }
-    })
-    return matchedClients.slice(0, 50)
-  }
-  
-  const toggleClientSelection = (login) => {
-    setSelectedClients(prev => 
-      prev.includes(login) ? prev.filter(l => l !== login) : [...prev, login]
-    )
-  }
-  
-  const createGroupFromSelected = () => {
-    if (!newGroupName.trim()) {
-      alert('Please enter a group name')
-      return
-    }
-    if (selectedClients.length === 0) {
-      alert('Please select at least one client')
-      return
-    }
-    const newGroup = {
-      name: newGroupName.trim(),
-      clientLogins: [...selectedClients]
-    }
-    const updatedGroups = [...clientGroups, newGroup]
-    setClientGroups(updatedGroups)
-    
-    // Debug: Log to console
-    console.log('Group created:', newGroup)
-    console.log('Total groups:', updatedGroups.length)
-    
-    // Show success message
-    alert(`Group "${newGroup.name}" created successfully with ${newGroup.clientLogins.length} client(s)!`)
-    
-    setNewGroupName('')
-    setSelectedClients([])
-    setShowCreateGroupModal(false)
-    setGroupSearchQuery('')
-    setShowGroupSuggestions(false)
-  }
 
   const filteredBase = getFilteredClients()
   const searchedBase = searchClients(filteredBase)
   
   // Apply group filter if active
-  const groupFilteredBase = activeGroupFilter 
-    ? searchedBase.filter(c => {
-        const group = clientGroups.find(g => g.name === activeGroupFilter)
-        return group && group.clientLogins.includes(c.login)
-      })
-    : searchedBase
+  const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
   
   const filteredClients = sortClients(groupFilteredBase)
   
@@ -579,8 +508,8 @@ const ClientsPage = () => {
     }
     
     // Percentage fields
-    if (key === 'marginLevel' || key === 'appliedPercentage' || key === 'soLevel') {
-      return value > 0 ? `${parseFloat(value).toFixed(2)}%` : '-'
+    if (key === 'marginLevel' || key === 'applied_percentage' || key === 'soLevel') {
+      return value != null && value !== '' ? `${parseFloat(value).toFixed(2)}%` : '-'
     }
     
     // Integer fields
@@ -590,7 +519,7 @@ const ClientsPage = () => {
     }
     
     // Boolean fields
-    if (key === 'appliedPercentageIsCustom') {
+    if (key === 'applied_percentage_is_custom') {
       return value ? 'Yes' : 'No'
     }
     
@@ -618,10 +547,10 @@ const ClientsPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-y-auto">
         <div className="max-w-full mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
@@ -729,101 +658,17 @@ const ClientsPage = () => {
               </div>
               
               {/* Groups Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowGroupsModal(!showGroupsModal)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Groups
-                  {clientGroups.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded-full">
-                      {clientGroups.length}
-                    </span>
-                  )}
-                  {activeGroupFilter && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">
-                      Active
-                    </span>
-                  )}
-                </button>
-                {showGroupsModal && (
-                  <div
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-64"
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Client Groups</p>
-                      <button
-                        onClick={() => {
-                          setShowCreateGroupModal(true)
-                          setShowGroupsModal(false)
-                        }}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        + New
-                      </button>
-                    </div>
-                    {clientGroups.length === 0 ? (
-                      <div className="px-3 py-4 text-center text-sm text-gray-500">
-                        No groups created yet
-                      </div>
-                    ) : (
-                      <div className="py-1 max-h-80 overflow-y-auto">
-                        <button
-                          onClick={() => {
-                            setActiveGroupFilter(null)
-                            setShowGroupsModal(false)
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            activeGroupFilter === null 
-                              ? 'bg-blue-50 text-blue-700 font-medium' 
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          All Clients
-                        </button>
-                        {clientGroups.map((group, idx) => (
-                          <div key={idx} className="flex items-center hover:bg-gray-50">
-                            <button
-                              onClick={() => {
-                                setActiveGroupFilter(group.name)
-                                setShowGroupsModal(false)
-                              }}
-                              className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${
-                                activeGroupFilter === group.name 
-                                  ? 'bg-blue-50 text-blue-700 font-medium' 
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {group.name}
-                              <span className="ml-2 text-xs text-gray-500">
-                                ({group.clientLogins.length})
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Delete group "${group.name}"?`)) {
-                                  setClientGroups(clientGroups.filter((_, i) => i !== idx))
-                                  if (activeGroupFilter === group.name) {
-                                    setActiveGroupFilter(null)
-                                  }
-                                }
-                              }}
-                              className="px-2 py-2 text-red-600 hover:text-red-700"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <GroupSelector 
+                moduleName="clients" 
+                onCreateClick={() => {
+                  setEditingGroup(null)
+                  setShowGroupModal(true)
+                }}
+                onEditClick={(group) => {
+                  setEditingGroup(group)
+                  setShowGroupModal(true)
+                }}
+              />
               
               <button
                 onClick={fetchClients}
@@ -1166,37 +1011,14 @@ const ClientsPage = () => {
                 </div>
                 {showSuggestions && getSuggestions(filteredClients).length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                    {showCreateGroupModal && (
-                      <div className="px-3 py-2 bg-blue-50 border-b border-blue-200">
-                        <p className="text-xs font-semibold text-blue-700">
-                          Select clients for group ({selectedClients.length} selected)
-                        </p>
-                      </div>
-                    )}
                     {getSuggestions(filteredClients).map((client, idx) => (
-                      <div key={idx} className="flex items-center hover:bg-blue-50 transition-colors">
-                        {showCreateGroupModal && (
-                          <label className="flex items-center px-3 py-2 flex-1 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedClients.includes(client.login)}
-                              onChange={() => toggleClientSelection(client.login)}
-                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">
-                              {client.login} - {client.name || 'N/A'}
-                            </span>
-                          </label>
-                        )}
-                        {!showCreateGroupModal && (
-                          <button 
-                            onClick={() => handleSuggestionClick(client)} 
-                            className="w-full text-left px-3 py-2 text-sm text-gray-700"
-                          >
-                            {client.login} - {client.name || 'N/A'}
-                          </button>
-                        )}
-                      </div>
+                      <button 
+                        key={idx}
+                        onClick={() => handleSuggestionClick(client)} 
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
+                      >
+                        {client.login} - {client.name || 'N/A'}
+                      </button>
                     ))}
                   </div>
                 )}
@@ -1205,8 +1027,8 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden">
-            <div>
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            <div className="overflow-y-auto flex-1">
               <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
                 <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                   <tr>
@@ -1449,115 +1271,19 @@ const ClientsPage = () => {
         />
       )}
       
-      {/* Create Group Modal */}
-      {showCreateGroupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Create Client Group</h3>
-            </div>
-            <div className="px-6 py-4 overflow-y-auto flex-1">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Name
-                </label>
-                <input
-                  type="text"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="Enter group name"
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search and Select Clients
-                </label>
-                <input
-                  type="text"
-                  value={groupSearchQuery}
-                  onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  placeholder="Search by login, name, email..."
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
-                />
-                
-                {/* Client List - Always Visible */}
-                <div className="bg-white rounded-md border border-gray-200">
-                  <div className="px-3 py-2 bg-blue-50 border-b border-blue-200 sticky top-0">
-                    <p className="text-xs font-semibold text-blue-700">
-                      {selectedClients.length} client(s) selected • Showing {getGroupSuggestions(clients).length} clients
-                    </p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {getGroupSuggestions(clients).length > 0 ? (
-                      getGroupSuggestions(clients).map((client, idx) => (
-                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-                          <input
-                            type="checkbox"
-                            checked={selectedClients.includes(client.login)}
-                            onChange={() => toggleClientSelection(client.login)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          />
-                          <span className="ml-3 text-sm text-gray-700">
-                            <span className="font-medium">{client.login}</span> - {client.name || 'N/A'}
-                          </span>
-                        </label>
-                      ))
-                    ) : (
-                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
-                        No clients found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {selectedClients.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Selected Clients ({selectedClients.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
-                    {selectedClients.map((login, idx) => {
-                      const client = clients.find(c => c.login === login)
-                      return (
-                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
-                          {client ? `${client.login} - ${client.name || 'N/A'}` : login}
-                          <button
-                            onClick={() => toggleClientSelection(login)}
-                            className="text-blue-900 hover:text-blue-700"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowCreateGroupModal(false)
-                  setNewGroupName('')
-                  setSelectedClients([])
-                  setGroupSearchQuery('')
-                  setShowGroupSuggestions(false)
-                }}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createGroupFromSelected}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              >
-                Create Group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Group Modal */}
+      <GroupModal
+        isOpen={showGroupModal}
+        onClose={() => {
+          setShowGroupModal(false)
+          setEditingGroup(null)
+        }}
+        availableItems={clients}
+        loginField="login"
+        displayField="name"
+        secondaryField="group"
+        editGroup={editingGroup}
+      />
     </div>
   )
 }

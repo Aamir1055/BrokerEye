@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
+import { GroupProvider } from './contexts/GroupContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import SettingsPage from './pages/SettingsPage'
@@ -50,7 +51,9 @@ function App() {
     <Router>
       <AuthProvider>
         <DataProvider>
-          <AppContent />
+          <GroupProvider>
+            <AppContent />
+          </GroupProvider>
         </DataProvider>
       </AuthProvider>
     </Router>

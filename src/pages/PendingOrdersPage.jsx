@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { useData } from '../contexts/DataContext'
+import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
 import LoginDetailsModal from '../components/LoginDetailsModal'
+import GroupSelector from '../components/GroupSelector'
+import GroupModal from '../components/GroupModal'
 
 const PendingOrdersPage = () => {
   // Use cached data from DataContext
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
+  const { filterByActiveGroup } = useGroups()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -25,24 +31,6 @@ const PendingOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
-  
-  // Groups states
-  const [orderGroups, setOrderGroups] = useState(() => {
-    try {
-      const saved = localStorage.getItem('orderGroups')
-      return saved ? JSON.parse(saved) : []
-    } catch (err) {
-      console.error('Failed to load order groups:', err)
-      return []
-    }
-  })
-  const [selectedOrders, setSelectedOrders] = useState([])
-  const [showGroupsModal, setShowGroupsModal] = useState(false)
-  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
-  const [activeGroupFilter, setActiveGroupFilter] = useState(null) // null or group name
-  const [newGroupName, setNewGroupName] = useState('')
-  const [groupSearchQuery, setGroupSearchQuery] = useState('')
-  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -120,16 +108,6 @@ const PendingOrdersPage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSuggestions, showColumnSelector])
-  
-  // Save order groups to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('orderGroups', JSON.stringify(orderGroups))
-      console.log('Order groups saved to localStorage:', orderGroups)
-    } catch (err) {
-      console.error('Failed to save order groups:', err)
-    }
-  }, [orderGroups])
 
   // Helper to get order id
   const getOrderId = (order) => {
@@ -244,12 +222,7 @@ const PendingOrdersPage = () => {
   const searchedOrders = searchOrders(cachedOrders)
   
   // Apply group filter if active
-  const groupFilteredOrders = activeGroupFilter 
-    ? searchedOrders.filter(o => {
-        const group = orderGroups.find(g => g.name === activeGroupFilter)
-        return group && group.orderIds.includes(o.order || o.ticket)
-      })
-    : searchedOrders
+  const groupFilteredOrders = filterByActiveGroup(searchedOrders, 'login', 'pendingorders')
   
   const sortedOrders = sortOrders(groupFilteredOrders)
   
@@ -280,62 +253,6 @@ const PendingOrdersPage = () => {
     
     return Array.from(suggestions).slice(0, 10)
   }
-  
-  // Group-related helper functions
-  const getGroupSuggestions = (orders) => {
-    if (!groupSearchQuery.trim()) {
-      // Show first 50 orders by default when search is empty
-      return orders.slice(0, 50)
-    }
-    
-    const query = groupSearchQuery.toLowerCase()
-    return orders.filter(order => {
-      const orderId = String(order.order || order.ticket || '').toLowerCase()
-      const login = String(order.login || '').toLowerCase()
-      const symbol = String(order.symbol || '').toLowerCase()
-      return orderId.includes(query) || login.includes(query) || symbol.includes(query)
-    })
-  }
-  
-  const toggleOrderSelection = (orderId) => {
-    setSelectedOrders(prev => {
-      if (prev.includes(orderId)) {
-        return prev.filter(id => id !== orderId)
-      } else {
-        return [...prev, orderId]
-      }
-    })
-  }
-  
-  const createGroupFromSelected = () => {
-    if (!newGroupName.trim()) {
-      return
-    }
-    
-    if (selectedOrders.length === 0) {
-      return
-    }
-    
-    const newGroup = {
-      name: newGroupName.trim(),
-      orderIds: [...selectedOrders]
-    }
-    
-    setOrderGroups(prev => {
-      const updatedGroups = [...prev, newGroup]
-      console.log('Order group created:', newGroup)
-      console.log('Total groups:', updatedGroups.length)
-      return updatedGroups
-    })
-    
-    // Reset states
-    setNewGroupName('')
-    setSelectedOrders([])
-    setGroupSearchQuery('')
-    setShowCreateGroupModal(false)
-    setShowGroupSuggestions(false)
-  }
-
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -374,10 +291,10 @@ const PendingOrdersPage = () => {
   if (loading.orders) return <LoadingSpinner />
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden relative">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-y-auto relative">
         <div className="max-w-full mx-auto relative z-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
@@ -397,99 +314,17 @@ const PendingOrdersPage = () => {
             </div>
             <div className="flex items-center gap-2">
               {/* Groups Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowGroupsModal(!showGroupsModal)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Groups
-                  {orderGroups.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-purple-600 text-white text-xs rounded-full">
-                      {orderGroups.length}
-                    </span>
-                  )}
-                  {activeGroupFilter && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">
-                      Active
-                    </span>
-                  )}
-                </button>
-                {showGroupsModal && (
-                  <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-64">
-                    <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Order Groups</p>
-                      <button
-                        onClick={() => {
-                          setShowCreateGroupModal(true)
-                          setShowGroupsModal(false)
-                        }}
-                        className="text-xs text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        + New
-                      </button>
-                    </div>
-                    {orderGroups.length === 0 ? (
-                      <div className="px-3 py-4 text-center text-sm text-gray-500">
-                        No groups created yet
-                      </div>
-                    ) : (
-                      <div className="py-1 max-h-80 overflow-y-auto">
-                        <button
-                          onClick={() => {
-                            setActiveGroupFilter(null)
-                            setShowGroupsModal(false)
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            activeGroupFilter === null 
-                              ? 'bg-purple-50 text-purple-700 font-medium' 
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          All Orders
-                        </button>
-                        {orderGroups.map((group, idx) => (
-                          <div key={idx} className="flex items-center hover:bg-gray-50">
-                            <button
-                              onClick={() => {
-                                setActiveGroupFilter(group.name)
-                                setShowGroupsModal(false)
-                              }}
-                              className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${
-                                activeGroupFilter === group.name 
-                                  ? 'bg-purple-50 text-purple-700 font-medium' 
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {group.name}
-                              <span className="ml-2 text-xs text-gray-500">
-                                ({group.orderIds.length})
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Delete group "${group.name}"?`)) {
-                                  setOrderGroups(orderGroups.filter((_, i) => i !== idx))
-                                  if (activeGroupFilter === group.name) {
-                                    setActiveGroupFilter(null)
-                                  }
-                                }
-                              }}
-                              className="px-2 py-2 text-red-600 hover:text-red-700"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <GroupSelector 
+                moduleName="pendingorders" 
+                onCreateClick={() => {
+                  setEditingGroup(null)
+                  setShowGroupModal(true)
+                }}
+                onEditClick={(group) => {
+                  setEditingGroup(group)
+                  setShowGroupModal(true)
+                }}
+              />
               
               <WebSocketIndicator />
               <button
@@ -676,15 +511,14 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Orders Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            <div className="overflow-y-auto flex-1">
               {displayedOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
                   </svg>
                   <p className="text-gray-500 text-sm">No pending orders</p>
-                  <p className="text-gray-400 text-xs mt-1">Live updates will appear here</p>
                 </div>
               ) : (
                 <table className="w-full divide-y divide-gray-200">
@@ -964,118 +798,19 @@ const PendingOrdersPage = () => {
         </div>
       </main>
       
-      {/* Create Group Modal */}
-      {showCreateGroupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Create Order Group</h3>
-            </div>
-            <div className="px-6 py-4 overflow-y-auto flex-1">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Name
-                </label>
-                <input
-                  type="text"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="Enter group name"
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search and Select Orders
-                </label>
-                <input
-                  type="text"
-                  value={groupSearchQuery}
-                  onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  placeholder="Search by order, login, symbol..."
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
-                />
-                
-                {/* Order List - Always Visible */}
-                <div className="bg-white rounded-md border border-gray-200">
-                  <div className="px-3 py-2 bg-purple-50 border-b border-purple-200 sticky top-0">
-                    <p className="text-xs font-semibold text-purple-700">
-                      {selectedOrders.length} order(s) selected • Showing {getGroupSuggestions(cachedOrders).length} orders
-                    </p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {getGroupSuggestions(cachedOrders).length > 0 ? (
-                      getGroupSuggestions(cachedOrders).map((order, idx) => {
-                        const orderId = order.order || order.ticket
-                        return (
-                          <label key={idx} className="flex items-center px-3 py-2 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-                            <input
-                              type="checkbox"
-                              checked={selectedOrders.includes(orderId)}
-                              onChange={() => toggleOrderSelection(orderId)}
-                              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                            />
-                            <span className="ml-3 text-sm text-gray-700">
-                              <span className="font-medium">{orderId}</span> - {order.login} ({order.symbol})
-                            </span>
-                          </label>
-                        )
-                      })
-                    ) : (
-                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
-                        No orders found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {selectedOrders.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Selected Orders ({selectedOrders.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
-                    {selectedOrders.map((ordId, idx) => {
-                      const order = cachedOrders.find(o => (o.order || o.ticket) === ordId)
-                      return (
-                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                          {order ? `${ordId} - ${order.symbol}` : ordId}
-                          <button
-                            onClick={() => toggleOrderSelection(ordId)}
-                            className="text-purple-900 hover:text-purple-700"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowCreateGroupModal(false)
-                  setNewGroupName('')
-                  setSelectedOrders([])
-                  setGroupSearchQuery('')
-                  setShowGroupSuggestions(false)
-                }}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createGroupFromSelected}
-                className="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700"
-              >
-                Create Group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Group Modal */}
+      <GroupModal
+        isOpen={showGroupModal}
+        onClose={() => {
+          setShowGroupModal(false)
+          setEditingGroup(null)
+        }}
+        availableItems={cachedOrders}
+        loginField="login"
+        displayField="symbol"
+        secondaryField="order"
+        editGroup={editingGroup}
+      />
 
       {/* Login Details Modal */}
       {selectedLogin && (

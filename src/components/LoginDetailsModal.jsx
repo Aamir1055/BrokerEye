@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
+import { formatTime } from '../utils/dateFormatter'
 
 const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
@@ -9,6 +10,20 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
   const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Date filter states for positions
+  const [posFromDate, setPosFromDate] = useState('')
+  const [posToDate, setPosToDate] = useState('')
+  const [filteredPositions, setFilteredPositions] = useState([])
+  const [allPositions, setAllPositions] = useState([])
+  const [hasAppliedPosFilter, setHasAppliedPosFilter] = useState(false)
+  
+  // Date filter states for deals
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [filteredDeals, setFilteredDeals] = useState([])
+  const [allDeals, setAllDeals] = useState([])
+  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   
   // Money transaction states
   const [operationType, setOperationType] = useState('deposit')
@@ -43,9 +58,13 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
       
       if (allPositionsCache && allPositionsCache.length >= 0) {
         const loginPositions = allPositionsCache.filter(pos => pos.login === login)
+        setAllPositions(loginPositions)
         setPositions(loginPositions)
+        setFilteredPositions([]) // Empty until filter applied
       } else {
+        setAllPositions([])
         setPositions([])
+        setFilteredPositions([])
       }
     } catch (error) {
       setError('Failed to load positions')
@@ -64,9 +83,13 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
       
       const response = await brokerAPI.getClientDeals(login, 0, toTime)
       const clientDeals = response.data?.deals || []
+      setAllDeals(clientDeals)
       setDeals(clientDeals)
+      setFilteredDeals([]) // Empty until filter applied
     } catch (error) {
+      setAllDeals([])
       setDeals([])
+      setFilteredDeals([])
     } finally {
       setDealsLoading(false)
     }
@@ -83,6 +106,115 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
     } catch (error) {
       console.error('Failed to fetch client data:', error)
     }
+  }
+
+  // Date filter functions for Deals
+  const parseDateInput = (dateString) => {
+    if (!dateString) return null
+    
+    // Support both dd/mm/yyyy and yyyy-mm-dd formats
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/')
+      return new Date(year, month - 1, day)
+    } else if (dateString.includes('-')) {
+      return new Date(dateString)
+    }
+    return null
+  }
+
+  const handleApplyDateFilter = () => {
+    if (!fromDate && !toDate) {
+      alert('Please select at least one date (From or To)')
+      return
+    }
+
+    const from = parseDateInput(fromDate)
+    const to = parseDateInput(toDate)
+
+    if (from && to && from > to) {
+      alert('From date cannot be after To date')
+      return
+    }
+
+    const filtered = allDeals.filter(deal => {
+      const dealDate = new Date(deal.time * 1000)
+      dealDate.setHours(0, 0, 0, 0)
+
+      if (from && to) {
+        const fromTime = new Date(from)
+        fromTime.setHours(0, 0, 0, 0)
+        const toTime = new Date(to)
+        toTime.setHours(23, 59, 59, 999)
+        return dealDate >= fromTime && dealDate <= toTime
+      } else if (from) {
+        const fromTime = new Date(from)
+        fromTime.setHours(0, 0, 0, 0)
+        return dealDate >= fromTime
+      } else if (to) {
+        const toTime = new Date(to)
+        toTime.setHours(23, 59, 59, 999)
+        return dealDate <= toTime
+      }
+      return true
+    })
+
+    setFilteredDeals(filtered)
+    setHasAppliedFilter(true)
+  }
+
+  const handleClearDateFilter = () => {
+    setFromDate('')
+    setToDate('')
+    setFilteredDeals([])
+    setHasAppliedFilter(false)
+  }
+
+  // Date filter functions for Positions
+  const handleApplyPosDateFilter = () => {
+    if (!posFromDate && !posToDate) {
+      alert('Please select at least one date (From or To)')
+      return
+    }
+
+    const from = parseDateInput(posFromDate)
+    const to = parseDateInput(posToDate)
+
+    if (from && to && from > to) {
+      alert('From date cannot be after To date')
+      return
+    }
+
+    const filtered = allPositions.filter(position => {
+      const posDate = new Date(position.timeCreate * 1000)
+      posDate.setHours(0, 0, 0, 0)
+
+      if (from && to) {
+        const fromTime = new Date(from)
+        fromTime.setHours(0, 0, 0, 0)
+        const toTime = new Date(to)
+        toTime.setHours(23, 59, 59, 999)
+        return posDate >= fromTime && posDate <= toTime
+      } else if (from) {
+        const fromTime = new Date(from)
+        fromTime.setHours(0, 0, 0, 0)
+        return posDate >= fromTime
+      } else if (to) {
+        const toTime = new Date(to)
+        toTime.setHours(23, 59, 59, 999)
+        return posDate <= toTime
+      }
+      return true
+    })
+
+    setFilteredPositions(filtered)
+    setHasAppliedPosFilter(true)
+  }
+
+  const handleClearPosDateFilter = () => {
+    setPosFromDate('')
+    setPosToDate('')
+    setFilteredPositions([])
+    setHasAppliedPosFilter(false)
   }
 
   const handleMoneyOperation = async () => {
@@ -210,6 +342,20 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
             <h2 className="text-lg font-semibold text-gray-900">
               Login Details - {login}
             </h2>
+            {clientData && (
+              <div className="flex items-center gap-4 mt-1">
+                {clientData.name && (
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Name:</span> {clientData.name}
+                  </p>
+                )}
+                {clientData.lastAccess && (
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Last Access:</span> {formatTime(clientData.lastAccess)}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -259,6 +405,63 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
         <div className="flex-1 overflow-y-auto p-4">
           {activeTab === 'positions' && (
             <div>
+              {/* Date Filter UI for Positions */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 border border-blue-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-gray-900">Date Filter</h3>
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      value={posFromDate}
+                      onChange={(e) => setPosFromDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      value={posToDate}
+                      onChange={(e) => setPosToDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleApplyPosDateFilter}
+                      className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Apply
+                    </button>
+                    <button
+                      onClick={handleClearPosDateFilter}
+                      className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Select date range and click Apply to filter positions
+                </p>
+              </div>
+
               {loading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -267,12 +470,20 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                 <div className="bg-red-50 border-l-4 border-red-500 rounded-r p-3">
                   <p className="text-red-700 text-sm">{error}</p>
                 </div>
-              ) : positions.length === 0 ? (
+              ) : !hasAppliedPosFilter ? (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Select Date Range</p>
+                  <p className="text-gray-400 text-xs">Choose a date range above and click Apply to view positions</p>
+                </div>
+              ) : filteredPositions.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <p className="text-gray-500 text-sm">No open positions</p>
+                  <p className="text-gray-500 text-sm">No positions found for the selected date range</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -293,7 +504,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {positions.map((position) => (
+                      {filteredPositions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(position.timeCreate)}
@@ -341,16 +552,81 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
 
           {activeTab === 'deals' && (
             <div>
+              {/* Date Filter UI for Deals */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-4 border border-purple-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-gray-900">Date Filter</h3>
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      From Date
+                    </label>
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      To Date
+                    </label>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleApplyDateFilter}
+                      className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-medium rounded-md hover:from-purple-700 hover:to-purple-800 transition-all inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Apply
+                    </button>
+                    <button
+                      onClick={handleClearDateFilter}
+                      className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Select date range and click Apply to filter deals
+                </p>
+              </div>
+
               {dealsLoading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : deals.length === 0 ? (
+              ) : !hasAppliedFilter ? (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-purple-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-sm font-medium mb-1">Select Date Range</p>
+                  <p className="text-gray-400 text-xs">Choose a date range above and click Apply to view deals</p>
+                </div>
+              ) : filteredDeals.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  <p className="text-gray-500 text-sm">No deals found</p>
+                  <p className="text-gray-500 text-sm">No deals found for the selected date range</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -370,7 +646,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {deals.map((deal) => (
+                      {filteredDeals.map((deal) => (
                         <tr key={deal.deal} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(deal.time)}
@@ -540,57 +816,57 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
 
         {/* Summary Cards - Sticky at Bottom */}
         <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          {activeTab === 'positions' && positions.length > 0 && (
+          {activeTab === 'positions' && hasAppliedPosFilter && filteredPositions.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{filteredPositions.length}</p>
               </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                  {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                positions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                  {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
                 </p>
               </div>
             </div>
           )}
 
-          {activeTab === 'deals' && deals.length > 0 && (
+          {activeTab === 'deals' && hasAppliedFilter && filteredDeals.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Deals</p>
-                <p className="text-lg font-semibold text-gray-900">{deals.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{filteredDeals.length}</p>
               </div>
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {deals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
+                  {filteredDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
                 <p className="text-xs text-gray-600 mb-1">Total Commission</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(deals.reduce((sum, d) => sum + d.commission, 0))}
+                  {formatCurrency(filteredDeals.reduce((sum, d) => sum + d.commission, 0))}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                deals.reduce((sum, d) => sum + d.profit, 0) >= 0
+                filteredDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(deals.reduce((sum, d) => sum + d.profit, 0))}`}>
-                  {formatCurrency(deals.reduce((sum, d) => sum + d.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(filteredDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
+                  {formatCurrency(filteredDeals.reduce((sum, d) => sum + d.profit, 0))}
                 </p>
               </div>
             </div>

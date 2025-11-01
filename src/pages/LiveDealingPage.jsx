@@ -1,18 +1,24 @@
 import { useState, useEffect, useRef } from 'react'
 import websocketService from '../services/websocket'
 import { brokerAPI } from '../services/api'
+import { useData } from '../contexts/DataContext'
+import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
 import LoginDetailsModal from '../components/LoginDetailsModal'
-import { useData } from '../contexts/DataContext'
+import GroupSelector from '../components/GroupSelector'
+import GroupModal from '../components/GroupModal'
 
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const LiveDealingPage = () => {
   const { positions: cachedPositions } = useData() // Get positions from DataContext
+  const { filterByActiveGroup } = useGroups()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   
   const [deals, setDeals] = useState([])
   
@@ -35,6 +41,9 @@ const LiveDealingPage = () => {
   const [timeFilter, setTimeFilter] = useState('24h') // '24h' (default), '7d', 'custom'
   const [customFromDate, setCustomFromDate] = useState('')
   const [customToDate, setCustomToDate] = useState('')
+  const [appliedFromDate, setAppliedFromDate] = useState('')
+  const [appliedToDate, setAppliedToDate] = useState('')
+  const [customDateError, setCustomDateError] = useState('')
   const filterMenuRef = useRef(null)
   // Display mode: 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
@@ -45,24 +54,6 @@ const LiveDealingPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
-  
-  // Groups states
-  const [dealGroups, setDealGroups] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dealGroups')
-      return saved ? JSON.parse(saved) : []
-    } catch (err) {
-      console.error('Failed to load deal groups:', err)
-      return []
-    }
-  })
-  const [selectedDeals, setSelectedDeals] = useState([])
-  const [showGroupsModal, setShowGroupsModal] = useState(false)
-  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
-  const [activeGroupFilter, setActiveGroupFilter] = useState(null) // null or group name
-  const [newGroupName, setNewGroupName] = useState('')
-  const [groupSearchQuery, setGroupSearchQuery] = useState('')
-  const [showGroupSuggestions, setShowGroupSuggestions] = useState(false)
 
   // Persist recent WebSocket deals across refresh
   const WS_CACHE_KEY = 'liveDealsWsCache'
@@ -84,27 +75,41 @@ const LiveDealingPage = () => {
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
-  const [visibleColumns, setVisibleColumns] = useState({
-    deal: true,
-    time: true,
-    login: true,
-    action: true,
-    symbol: true,
-    volume: true,
-    price: true,
-    profit: true,
-    commission: true,
-    storage: true,
-    appliedPercentage: true,
-    volumePercentage: true,
-    profitPercentage: true,
-    commissionPercentage: true,
-    storagePercentage: true,
-    entry: true,
-    order: false,
-    position: false,
-    reason: false
-  })
+  
+  // Load visible columns from localStorage or use defaults
+  const getInitialVisibleColumns = () => {
+    const saved = localStorage.getItem('liveDealingPageVisibleColumns')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse saved columns:', e)
+      }
+    }
+    return {
+      deal: true,
+      time: true,
+      login: true,
+      action: true,
+      symbol: true,
+      volume: true,
+      price: true,
+      profit: true,
+      commission: true,
+      storage: true,
+      appliedPercentage: true,
+      volumePercentage: true,
+      profitPercentage: true,
+      commissionPercentage: true,
+      storagePercentage: true,
+      entry: true,
+      order: false,
+      position: false,
+      reason: false
+    }
+  }
+  
+  const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
 
   const allColumns = [
     { key: 'deal', label: 'Deal' },
@@ -135,6 +140,11 @@ const LiveDealingPage = () => {
     }))
   }
 
+  // Save visible columns to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('liveDealingPageVisibleColumns', JSON.stringify(visibleColumns))
+  }, [visibleColumns])
+
   // Refetch deals when time filter changes
   useEffect(() => {
     // Skip on initial mount
@@ -147,7 +157,7 @@ const LiveDealingPage = () => {
       console.log('[LiveDealing] ⏰ Time filter changed to:', timeFilter)
       fetchAllDealsOnce()
     }
-  }, [timeFilter, customFromDate, customToDate])
+  }, [timeFilter, appliedFromDate, appliedToDate])
   
   // Close filter menu when clicking outside
   useEffect(() => {
@@ -182,16 +192,6 @@ const LiveDealingPage = () => {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showSuggestions])
-  
-  // Save deal groups to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('dealGroups', JSON.stringify(dealGroups))
-      console.log('Deal groups saved to localStorage:', dealGroups)
-    } catch (err) {
-      console.error('Failed to save deal groups:', err)
-    }
-  }, [dealGroups])
 
   useEffect(() => {
     if (!hasInitialLoad.current) {
@@ -251,25 +251,16 @@ const LiveDealingPage = () => {
       
       // Calculate time range based on filter
       if (timeFilter === '24h') {
-        // Work in UTC, but calculate midnight in IST
-        const nowUTC = Date.now()
-        const nowIST = new Date(nowUTC + IST_OFFSET)
+        // Get current time in IST
+        const nowIST = new Date(Date.now() + IST_OFFSET)
+        // Add 2 hours to 'to' timestamp to include very recent deals
+        const toIST = new Date(nowIST.getTime() + (2 * 60 * 60 * 1000))
+        // Subtract 24 hours from current time to get "from" time in IST
+        const fromIST = new Date(nowIST.getTime() - (24 * 60 * 60 * 1000))
         
-        // Set to today's midnight (12:00 AM) in IST
-        const todayMidnightIST = new Date(nowIST)
-        todayMidnightIST.setUTCHours(0, 0, 0, 0)
-        
-        // Convert midnight IST back to UTC epoch
-        const midnightUTC = todayMidnightIST.getTime() - IST_OFFSET
-        
-        // Set 'to' to far future to capture all deals today
-        const endOfTodayIST = new Date(nowIST)
-        endOfTodayIST.setUTCHours(23, 59, 59, 999)
-        const endOfDayUTC = endOfTodayIST.getTime() - IST_OFFSET
-        
-        // Convert to epoch seconds
-        from = Math.floor(midnightUTC / 1000)
-        to = Math.floor(endOfDayUTC / 1000)
+        // Convert both to UTC epoch (seconds)
+        from = Math.floor((fromIST.getTime() - IST_OFFSET) / 1000)
+        to = Math.floor((toIST.getTime() - IST_OFFSET) / 1000)
       } else if (timeFilter === '7d') {
         // Get current IST time
         const nowIST = new Date(Date.now() + IST_OFFSET)
@@ -281,10 +272,10 @@ const LiveDealingPage = () => {
         // Convert both to UTC epoch (seconds)
         from = Math.floor((fromIST.getTime() - IST_OFFSET) / 1000)
         to = Math.floor((toIST.getTime() - IST_OFFSET) / 1000)
-      } else if (timeFilter === 'custom' && customFromDate && customToDate) {
+      } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
         // Parse custom dates as IST
-        const fromDateIST = new Date(customFromDate)
-        const toDateIST = new Date(customToDate)
+        const fromDateIST = new Date(appliedFromDate)
+        const toDateIST = new Date(appliedToDate)
         
         // Convert IST to UTC epoch (seconds)
         from = Math.floor((fromDateIST.getTime() - IST_OFFSET) / 1000)
@@ -323,13 +314,7 @@ const LiveDealingPage = () => {
       
       const apiDealIds = new Set(transformedDeals.map(d => d.id))
       
-      // Keep cached deals that are:
-      // 1. NOT in the API response (API might not have them yet)
-      // 2. Within 48 hours (for long-term cache cleanup only)
-      // Note: We don't filter by time range here to ensure recent WS deals always show
-      const now = Math.floor(Date.now() / 1000)
-      const fortyEightHoursAgo = now - (48 * 60 * 60) // Keep last 48 hours of cached deals
-      
+      // Filter cached deals based on the current time range
       const relevantCachedDeals = wsCached.filter(d => {
         if (!d || !d.id) return false
         
@@ -340,10 +325,10 @@ const LiveDealingPage = () => {
         
         const dealTime = d.time || d.rawData?.time || 0
         
-        // Only filter out deals older than 48 hours for cleanup
-        const isRecent = dealTime >= fortyEightHoursAgo
+        // Filter by the same time range as the API call
+        const isInTimeRange = dealTime >= from && dealTime <= to
         
-        return isRecent
+        return isInTimeRange
       })
       
       console.log('[LiveDealing] 📊 API returned', transformedDeals.length, 'deals')
@@ -552,6 +537,31 @@ const LiveDealingPage = () => {
     setCurrentPage(1)
   }
 
+  const handleApplyCustomDates = () => {
+    // Clear any previous error
+    setCustomDateError('')
+    
+    // Validate that both dates are filled
+    if (!customFromDate || !customToDate) {
+      setCustomDateError('Please select both From Date and To Date')
+      return
+    }
+    
+    // Validate that From date is not after To date
+    const fromDate = new Date(customFromDate)
+    const toDate = new Date(customToDate)
+    
+    if (fromDate > toDate) {
+      setCustomDateError('From Date cannot be after To Date')
+      return
+    }
+    
+    // Apply the dates
+    setAppliedFromDate(customFromDate)
+    setAppliedToDate(customToDate)
+    setCustomDateError('')
+  }
+
   const sortDeals = (dealsToSort) => {
     if (!sortColumn) return dealsToSort
 
@@ -630,12 +640,7 @@ const LiveDealingPage = () => {
   const searchedDeals = searchDeals(moduleFiltered)
   
   // Apply group filter if active
-  const groupFilteredDeals = activeGroupFilter 
-    ? searchedDeals.filter(d => {
-        const group = dealGroups.find(g => g.name === activeGroupFilter)
-        return group && group.dealIds.includes(d.id)
-      })
-    : searchedDeals
+  const groupFilteredDeals = filterByActiveGroup(searchedDeals, 'login', 'livedealing')
   
   const sortedDeals = sortDeals(groupFilteredDeals)
   
@@ -668,61 +673,6 @@ const LiveDealingPage = () => {
     return Array.from(suggestions).slice(0, 10)
   }
   
-  // Group-related helper functions
-  const getGroupSuggestions = (dealsData) => {
-    if (!groupSearchQuery.trim()) {
-      // Show first 50 deals by default when search is empty
-      return dealsData.slice(0, 50)
-    }
-    
-    const query = groupSearchQuery.toLowerCase()
-    return dealsData.filter(deal => {
-      const dealId = String(deal.id || '').toLowerCase()
-      const login = String(deal.login || '').toLowerCase()
-      const symbol = String(deal.rawData?.symbol || '').toLowerCase()
-      return dealId.includes(query) || login.includes(query) || symbol.includes(query)
-    })
-  }
-  
-  const toggleDealSelection = (dealId) => {
-    setSelectedDeals(prev => {
-      if (prev.includes(dealId)) {
-        return prev.filter(id => id !== dealId)
-      } else {
-        return [...prev, dealId]
-      }
-    })
-  }
-  
-  const createGroupFromSelected = () => {
-    if (!newGroupName.trim()) {
-      return
-    }
-    
-    if (selectedDeals.length === 0) {
-      return
-    }
-    
-    const newGroup = {
-      name: newGroupName.trim(),
-      dealIds: [...selectedDeals]
-    }
-    
-    setDealGroups(prev => {
-      const updatedGroups = [...prev, newGroup]
-      console.log('Deal group created:', newGroup)
-      console.log('Total groups:', updatedGroups.length)
-      return updatedGroups
-    })
-    
-    // Reset states
-    setNewGroupName('')
-    setSelectedDeals([])
-    setGroupSearchQuery('')
-    setShowCreateGroupModal(false)
-    setShowGroupSuggestions(false)
-  }
-
   const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedDeals.length / itemsPerPage)
   const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
   const endIndex = itemsPerPage === 'All' ? sortedDeals.length : startIndex + itemsPerPage
@@ -777,11 +727,11 @@ const LiveDealingPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
-        <div className="max-w-full mx-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 flex flex-col overflow-hidden">
+        <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -800,99 +750,17 @@ const LiveDealingPage = () => {
             </div>
             <div className="flex items-center gap-2">
               {/* Groups Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowGroupsModal(!showGroupsModal)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Groups
-                  {dealGroups.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-orange-600 text-white text-xs rounded-full">
-                      {dealGroups.length}
-                    </span>
-                  )}
-                  {activeGroupFilter && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">
-                      Active
-                    </span>
-                  )}
-                </button>
-                {showGroupsModal && (
-                  <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-64">
-                    <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Deal Groups</p>
-                      <button
-                        onClick={() => {
-                          setShowCreateGroupModal(true)
-                          setShowGroupsModal(false)
-                        }}
-                        className="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                      >
-                        + New
-                      </button>
-                    </div>
-                    {dealGroups.length === 0 ? (
-                      <div className="px-3 py-4 text-center text-sm text-gray-500">
-                        No groups created yet
-                      </div>
-                    ) : (
-                      <div className="py-1 max-h-80 overflow-y-auto">
-                        <button
-                          onClick={() => {
-                            setActiveGroupFilter(null)
-                            setShowGroupsModal(false)
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            activeGroupFilter === null 
-                              ? 'bg-orange-50 text-orange-700 font-medium' 
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          All Deals
-                        </button>
-                        {dealGroups.map((group, idx) => (
-                          <div key={idx} className="flex items-center hover:bg-gray-50">
-                            <button
-                              onClick={() => {
-                                setActiveGroupFilter(group.name)
-                                setShowGroupsModal(false)
-                              }}
-                              className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${
-                                activeGroupFilter === group.name 
-                                  ? 'bg-orange-50 text-orange-700 font-medium' 
-                                  : 'text-gray-700'
-                              }`}
-                            >
-                              {group.name}
-                              <span className="ml-2 text-xs text-gray-500">
-                                ({group.dealIds.length})
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Delete group "${group.name}"?`)) {
-                                  setDealGroups(dealGroups.filter((_, i) => i !== idx))
-                                  if (activeGroupFilter === group.name) {
-                                    setActiveGroupFilter(null)
-                                  }
-                                }
-                              }}
-                              className="px-2 py-2 text-red-600 hover:text-red-700"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <GroupSelector 
+                moduleName="livedealing" 
+                onCreateClick={() => {
+                  setEditingGroup(null)
+                  setShowGroupModal(true)
+                }}
+                onEditClick={(group) => {
+                  setEditingGroup(group)
+                  setShowGroupModal(true)
+                }}
+              />
               
               {/* Filter Button */}
               <div className="relative">
@@ -962,7 +830,7 @@ const LiveDealingPage = () => {
                             type="date"
                             value={customFromDate}
                             onChange={(e) => setCustomFromDate(e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                         <div>
@@ -971,9 +839,18 @@ const LiveDealingPage = () => {
                             type="date"
                             value={customToDate}
                             onChange={(e) => setCustomToDate(e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
+                        {customDateError && (
+                          <p className="text-xs text-red-600 mt-1">{customDateError}</p>
+                        )}
+                        <button
+                          onClick={handleApplyCustomDates}
+                          className="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          Apply
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1020,7 +897,9 @@ const LiveDealingPage = () => {
               
               <WebSocketIndicator />
             </div>
-          </div>            {/* Stats */}
+          </div>
+
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">
@@ -1265,11 +1144,11 @@ const LiveDealingPage = () => {
           {/* Table */}
           {loading ? (
             <LoadingSpinner />
-          ) : deals.length === 0 ? (
+          ) : displayedDeals.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
               <div className="text-6xl mb-4">⚡</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No deals found</h3>
-              <p className="text-sm text-gray-500 mb-4">Trading activity will appear here</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No deals yet</h3>
+              <p className="text-sm text-gray-500 mb-4">Waiting for live trades...</p>
               <div className="text-xs text-gray-400">
                 <p className="mb-1">
                   <span className="inline-flex items-center gap-1">
@@ -1288,8 +1167,9 @@ const LiveDealingPage = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-xs">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
+              <div className="overflow-y-auto flex-1">
+                <table className="min-w-full divide-y divide-gray-200 text-xs">
                 <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                   <tr>
                     {visibleColumns.time && (
@@ -1526,6 +1406,7 @@ const LiveDealingPage = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
@@ -1534,114 +1415,18 @@ const LiveDealingPage = () => {
       </main>
       
       {/* Create Group Modal */}
-      {showCreateGroupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Create Deal Group</h3>
-            </div>
-            <div className="px-6 py-4 overflow-y-auto flex-1">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Name
-                </label>
-                <input
-                  type="text"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="Enter group name"
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search and Select Deals
-                </label>
-                <input
-                  type="text"
-                  value={groupSearchQuery}
-                  onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  placeholder="Search by deal, login, symbol..."
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
-                />
-                
-                {/* Deal List - Always Visible */}
-                <div className="bg-white rounded-md border border-gray-200">
-                  <div className="px-3 py-2 bg-orange-50 border-b border-orange-200 sticky top-0">
-                    <p className="text-xs font-semibold text-orange-700">
-                      {selectedDeals.length} deal(s) selected • Showing {getGroupSuggestions(sortedDeals).length} deals
-                    </p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {getGroupSuggestions(sortedDeals).length > 0 ? (
-                      getGroupSuggestions(sortedDeals).map((deal, idx) => (
-                        <label key={idx} className="flex items-center px-3 py-2 hover:bg-orange-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-                          <input
-                            type="checkbox"
-                            checked={selectedDeals.includes(deal.id)}
-                            onChange={() => toggleDealSelection(deal.id)}
-                            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                          />
-                          <span className="ml-3 text-sm text-gray-700">
-                            <span className="font-medium">{deal.id}</span> - {deal.login} ({deal.rawData?.symbol || 'N/A'})
-                          </span>
-                        </label>
-                      ))
-                    ) : (
-                      <div className="px-3 py-4 text-sm text-gray-500 text-center">
-                        No deals found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {selectedDeals.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Selected Deals ({selectedDeals.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded">
-                    {selectedDeals.map((dealId, idx) => {
-                      const deal = sortedDeals.find(d => d.id === dealId)
-                      return (
-                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
-                          {deal ? `${dealId} - ${deal.rawData?.symbol || 'N/A'}` : dealId}
-                          <button
-                            onClick={() => toggleDealSelection(dealId)}
-                            className="text-orange-900 hover:text-orange-700"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowCreateGroupModal(false)
-                  setNewGroupName('')
-                  setSelectedDeals([])
-                  setGroupSearchQuery('')
-                  setShowGroupSuggestions(false)
-                }}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createGroupFromSelected}
-                className="px-4 py-2 text-white bg-orange-600 rounded-lg hover:bg-orange-700"
-              >
-                Create Group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GroupModal
+        isOpen={showGroupModal}
+        onClose={() => {
+          setShowGroupModal(false)
+          setEditingGroup(null)
+        }}
+        availableItems={deals}
+        loginField="login"
+        displayField="symbol"
+        secondaryField="id"
+        editGroup={editingGroup}
+      />
 
       {/* Login Details Modal */}
       {selectedLogin && (
