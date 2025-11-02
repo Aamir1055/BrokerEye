@@ -11,6 +11,7 @@ import PositionsPage from './pages/PositionsPage'
 import PendingOrdersPage from './pages/PendingOrdersPage'
 import MarginLevelPage from './pages/MarginLevelPage'
 import ClientPercentagePage from './pages/ClientPercentagePage'
+import BrokerRulePage from './pages/BrokerRulePage'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Main App Content Component
@@ -41,6 +42,7 @@ const AppContent = () => {
       <Route path="/margin-level" element={<MarginLevelPage />} />
       <Route path="/live-dealing" element={<LiveDealingPage />} />
       <Route path="/client-percentage" element={<ClientPercentagePage />} />
+      <Route path="/broker-rules" element={<BrokerRulePage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   )

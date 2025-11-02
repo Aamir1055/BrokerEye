@@ -11,14 +11,13 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
   
-  // Date filter states for positions
-  const [posFromDate, setPosFromDate] = useState('')
-  const [posToDate, setPosToDate] = useState('')
-  const [filteredPositions, setFilteredPositions] = useState([])
-  const [allPositions, setAllPositions] = useState([])
-  const [hasAppliedPosFilter, setHasAppliedPosFilter] = useState(false)
+  // Broker Rules states
+  const [availableRules, setAvailableRules] = useState([])
+  const [clientRules, setClientRules] = useState([])
+  const [rulesLoading, setRulesLoading] = useState(false)
+  const [selectedTimeParam, setSelectedTimeParam] = useState({}) // { ruleCode: timeValue }
   
-  // Date filter states for deals
+  // Date filter states for deals only
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [filteredDeals, setFilteredDeals] = useState([])
@@ -39,8 +38,10 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
     if (!hasLoadedData.current) {
       hasLoadedData.current = true
       fetchPositions()
-      fetchDeals()
+      // Don't fetch deals on mount - only fetch when user applies date filter
       fetchClientData()
+      fetchAvailableRules()
+      fetchClientRules()
     }
   }, [])
 
@@ -58,13 +59,9 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
       
       if (allPositionsCache && allPositionsCache.length >= 0) {
         const loginPositions = allPositionsCache.filter(pos => pos.login === login)
-        setAllPositions(loginPositions)
         setPositions(loginPositions)
-        setFilteredPositions([]) // Empty until filter applied
       } else {
-        setAllPositions([])
         setPositions([])
-        setFilteredPositions([])
       }
     } catch (error) {
       setError('Failed to load positions')
@@ -73,22 +70,22 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
     }
   }
 
-  const fetchDeals = async () => {
+  const fetchDeals = async (fromTimestamp, toTimestamp) => {
     try {
       setDealsLoading(true)
+      setError('')
       
-      const nowUtcEpoch = Math.floor(Date.now() / 1000)
-      const oneYearInSeconds = 365 * 24 * 60 * 60
-      const toTime = nowUtcEpoch + oneYearInSeconds
-      
-      const response = await brokerAPI.getClientDeals(login, 0, toTime)
+      // Fetch deals from API with specific date range
+      const response = await brokerAPI.getClientDeals(login, fromTimestamp, toTimestamp)
       const clientDeals = response.data?.deals || []
-      setAllDeals(clientDeals)
       setDeals(clientDeals)
-      setFilteredDeals([]) // Empty until filter applied
+      setAllDeals(clientDeals)
+      setFilteredDeals(clientDeals)
+      setHasAppliedFilter(true)
     } catch (error) {
-      setAllDeals([])
+      setError('Failed to load deals')
       setDeals([])
+      setAllDeals([])
       setFilteredDeals([])
     } finally {
       setDealsLoading(false)
@@ -108,6 +105,74 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
     }
   }
 
+  const fetchAvailableRules = async () => {
+    try {
+      console.log('[LoginDetailsModal] 🔍 Fetching available rules...')
+      setRulesLoading(true)
+      const response = await brokerAPI.getAvailableRules()
+      console.log('[LoginDetailsModal] ✅ Rules response:', response)
+      if (response.status === 'success') {
+        setAvailableRules(response.data.rules || [])
+        console.log('[LoginDetailsModal] 📋 Available rules set:', response.data.rules?.length || 0)
+      }
+    } catch (error) {
+      console.error('[LoginDetailsModal] ❌ Failed to fetch available rules:', error)
+    } finally {
+      setRulesLoading(false)
+    }
+  }
+
+  const fetchClientRules = async () => {
+    try {
+      const response = await brokerAPI.getClientRules(login)
+      if (response.status === 'success') {
+        setClientRules(response.data.rules || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch client rules:', error)
+      setClientRules([])
+    }
+  }
+
+  const handleApplyRule = async (rule) => {
+    try {
+      setRulesLoading(true)
+      const timeParameter = rule.requires_time_parameter ? selectedTimeParam[rule.rule_code] : null
+      
+      if (rule.requires_time_parameter && !timeParameter) {
+        alert('Please select a time parameter')
+        return
+      }
+
+      const response = await brokerAPI.applyClientRule(login, rule.rule_code, timeParameter)
+      if (response.status === 'success') {
+        await fetchClientRules()
+        // Clear time parameter selection
+        setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: '' }))
+      }
+    } catch (error) {
+      console.error('Failed to apply rule:', error)
+      alert(error.response?.data?.message || 'Failed to apply rule')
+    } finally {
+      setRulesLoading(false)
+    }
+  }
+
+  const handleRemoveRule = async (ruleCode) => {
+    try {
+      setRulesLoading(true)
+      const response = await brokerAPI.removeClientRule(login, ruleCode)
+      if (response.status === 'success') {
+        await fetchClientRules()
+      }
+    } catch (error) {
+      console.error('Failed to remove rule:', error)
+      alert(error.response?.data?.message || 'Failed to remove rule')
+    } finally {
+      setRulesLoading(false)
+    }
+  }
+
   // Date filter functions for Deals
   const parseDateInput = (dateString) => {
     if (!dateString) return null
@@ -122,101 +187,48 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
     return null
   }
 
-  const handleApplyDateFilter = () => {
+  const handleApplyDateFilter = async () => {
     if (!fromDate && !toDate) {
-      alert('Please select at least one date (From or To)')
+      setOperationError('Please select at least one date (From or To)')
       return
     }
 
-    const from = parseDateInput(fromDate)
-    const to = parseDateInput(toDate)
+    const fromDateObj = fromDate ? parseDateInput(fromDate) : null
+    const toDateObj = toDate ? parseDateInput(toDate) : null
 
-    if (from && to && from > to) {
-      alert('From date cannot be after To date')
+    if ((fromDate && !fromDateObj) || (toDate && !toDateObj)) {
+      setOperationError('Invalid date format. Please select a valid date')
       return
     }
 
-    const filtered = allDeals.filter(deal => {
-      const dealDate = new Date(deal.time * 1000)
-      dealDate.setHours(0, 0, 0, 0)
+    // Set time to start/end of day
+    if (fromDateObj) {
+      fromDateObj.setHours(0, 0, 0, 0)
+    }
+    if (toDateObj) {
+      toDateObj.setHours(23, 59, 59, 999)
+    }
 
-      if (from && to) {
-        const fromTime = new Date(from)
-        fromTime.setHours(0, 0, 0, 0)
-        const toTime = new Date(to)
-        toTime.setHours(23, 59, 59, 999)
-        return dealDate >= fromTime && dealDate <= toTime
-      } else if (from) {
-        const fromTime = new Date(from)
-        fromTime.setHours(0, 0, 0, 0)
-        return dealDate >= fromTime
-      } else if (to) {
-        const toTime = new Date(to)
-        toTime.setHours(23, 59, 59, 999)
-        return dealDate <= toTime
-      }
-      return true
-    })
+    // Convert to Unix timestamp (seconds)
+    const fromTimestamp = fromDateObj ? Math.floor(fromDateObj.getTime() / 1000) : 0
+    const toTimestamp = toDateObj ? Math.floor(toDateObj.getTime() / 1000) : Math.floor(Date.now() / 1000)
 
-    setFilteredDeals(filtered)
-    setHasAppliedFilter(true)
+    // Fetch deals from API with selected date range
+    await fetchDeals(fromTimestamp, toTimestamp)
+    setOperationError('')
   }
 
   const handleClearDateFilter = () => {
     setFromDate('')
     setToDate('')
     setFilteredDeals([])
+    setDeals([])
+    setAllDeals([])
     setHasAppliedFilter(false)
+    setOperationError('')
   }
 
   // Date filter functions for Positions
-  const handleApplyPosDateFilter = () => {
-    if (!posFromDate && !posToDate) {
-      alert('Please select at least one date (From or To)')
-      return
-    }
-
-    const from = parseDateInput(posFromDate)
-    const to = parseDateInput(posToDate)
-
-    if (from && to && from > to) {
-      alert('From date cannot be after To date')
-      return
-    }
-
-    const filtered = allPositions.filter(position => {
-      const posDate = new Date(position.timeCreate * 1000)
-      posDate.setHours(0, 0, 0, 0)
-
-      if (from && to) {
-        const fromTime = new Date(from)
-        fromTime.setHours(0, 0, 0, 0)
-        const toTime = new Date(to)
-        toTime.setHours(23, 59, 59, 999)
-        return posDate >= fromTime && posDate <= toTime
-      } else if (from) {
-        const fromTime = new Date(from)
-        fromTime.setHours(0, 0, 0, 0)
-        return posDate >= fromTime
-      } else if (to) {
-        const toTime = new Date(to)
-        toTime.setHours(23, 59, 59, 999)
-        return posDate <= toTime
-      }
-      return true
-    })
-
-    setFilteredPositions(filtered)
-    setHasAppliedPosFilter(true)
-  }
-
-  const handleClearPosDateFilter = () => {
-    setPosFromDate('')
-    setPosToDate('')
-    setFilteredPositions([])
-    setHasAppliedPosFilter(false)
-  }
-
   const handleMoneyOperation = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       setOperationError('Please enter a valid amount')
@@ -335,9 +347,9 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
               Login Details - {login}
@@ -368,10 +380,10 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 px-4 bg-gray-50">
+        <div className="flex-shrink-0 flex border-b border-gray-200 px-4 bg-gray-50 overflow-x-auto">
           <button
             onClick={() => setActiveTab('positions')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'positions'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -381,7 +393,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
           </button>
           <button
             onClick={() => setActiveTab('deals')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'deals'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -391,7 +403,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
           </button>
           <button
             onClick={() => setActiveTab('funds')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'funds'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -399,91 +411,32 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
           >
             Money Transactions
           </button>
+          <button
+            onClick={() => setActiveTab('rules')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'rules'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Broker Rules ({clientRules.length})
+          </button>
         </div>
 
         {/* Tab Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {activeTab === 'positions' && (
             <div>
-              {/* Date Filter UI for Positions */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 border border-blue-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <h3 className="text-sm font-semibold text-gray-900">Date Filter</h3>
-                </div>
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="flex-1 min-w-[150px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      From Date
-                    </label>
-                    <input
-                      type="date"
-                      value={posFromDate}
-                      onChange={(e) => setPosFromDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[150px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      To Date
-                    </label>
-                    <input
-                      type="date"
-                      value={posToDate}
-                      onChange={(e) => setPosToDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleApplyPosDateFilter}
-                      className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1.5"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Apply
-                    </button>
-                    <button
-                      onClick={handleClearPosDateFilter}
-                      className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Clear
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Select date range and click Apply to filter positions
-                </p>
-              </div>
-
               {loading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : error ? (
-                <div className="bg-red-50 border-l-4 border-red-500 rounded-r p-3">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              ) : !hasAppliedPosFilter ? (
-                <div className="text-center py-12">
-                  <svg className="w-12 h-12 mx-auto text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Select Date Range</p>
-                  <p className="text-gray-400 text-xs">Choose a date range above and click Apply to view positions</p>
-                </div>
-              ) : filteredPositions.length === 0 ? (
+              ) : positions.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <p className="text-gray-500 text-sm">No positions found for the selected date range</p>
+                  <p className="text-gray-500 text-sm">No open positions</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -504,7 +457,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredPositions.map((position) => (
+                      {positions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(position.timeCreate)}
@@ -553,9 +506,9 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
           {activeTab === 'deals' && (
             <div>
               {/* Date Filter UI for Deals */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-4 border border-purple-100">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4 border border-blue-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <h3 className="text-sm font-semibold text-gray-900">Date Filter</h3>
@@ -569,7 +522,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                       type="date"
                       value={fromDate}
                       onChange={(e) => setFromDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
                     />
                   </div>
                   <div className="flex-1 min-w-[150px]">
@@ -580,13 +533,13 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                       type="date"
                       value={toDate}
                       onChange={(e) => setToDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
                     />
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handleApplyDateFilter}
-                      className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-medium rounded-md hover:from-purple-700 hover:to-purple-800 transition-all inline-flex items-center gap-1.5"
+                      className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1.5"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -615,7 +568,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                 </div>
               ) : !hasAppliedFilter ? (
                 <div className="text-center py-12">
-                  <svg className="w-12 h-12 mx-auto text-purple-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 mx-auto text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-gray-500 text-sm font-medium mb-1">Select Date Range</p>
@@ -815,27 +768,27 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
         </div>
 
         {/* Summary Cards - Sticky at Bottom */}
-        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          {activeTab === 'positions' && hasAppliedPosFilter && filteredPositions.length > 0 && (
+        <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+          {activeTab === 'positions' && positions.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                <p className="text-lg font-semibold text-gray-900">{filteredPositions.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
               </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                  {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                positions.reduce((sum, p) => sum + p.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                  {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
                 </p>
               </div>
             </div>
@@ -847,7 +800,7 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                 <p className="text-xs text-gray-600 mb-1">Total Deals</p>
                 <p className="text-lg font-semibold text-gray-900">{filteredDeals.length}</p>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {filteredDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
@@ -886,15 +839,140 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
                   {clientData ? formatCurrency(clientData.equity) : '-'}
                 </p>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
                 <p className="text-xs text-gray-500 mb-1">Credit</p>
-                <p className="text-xl font-bold text-purple-600">
+                <p className="text-xl font-bold text-blue-600">
                   {clientData ? formatCurrency(clientData.credit) : '-'}
                 </p>
               </div>
               <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
                 <p className="text-xs text-gray-500 mb-1">Positions</p>
                 <p className="text-xl font-bold text-orange-600">{positions.length}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Broker Rules Tab */}
+          {activeTab === 'rules' && (
+            <div>
+              {/* Current Rules Applied */}
+              {clientRules.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Current Rules Applied ({clientRules.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {clientRules.map((rule) => (
+                      <div key={rule.rule_code} className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-sm text-gray-900">{rule.rule_name}</span>
+                            <span className="text-xs font-mono bg-white px-2 py-0.5 rounded border border-green-300 text-green-700">
+                              {rule.rule_code}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-1">{rule.description}</p>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <span>Applied: {new Date(rule.applied_at).toLocaleString()}</span>
+                            {rule.time_parameter && (
+                              <span className="text-purple-600 font-medium">Time: {rule.time_parameter}</span>
+                            )}
+                            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{rule.mt5_applied_value}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveRule(rule.rule_code)}
+                          disabled={rulesLoading}
+                          className="ml-3 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Available Rules */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Available Rules ({availableRules.filter(r => r.is_active).length})
+                </h3>
+                {rulesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {availableRules.filter(r => r.is_active).map((rule) => {
+                      const isApplied = clientRules.some(cr => cr.rule_code === rule.rule_code)
+                      return (
+                        <div key={rule.id} className={`border rounded-lg p-4 ${isApplied ? 'bg-gray-50 border-gray-300' : 'bg-white border-blue-200'}`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm text-gray-900">{rule.rule_name}</span>
+                                <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                                  {rule.rule_code}
+                                </span>
+                                {isApplied && (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">
+                                    ✓ Applied
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 mb-2">{rule.description}</p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <span>MT5 Field: <strong>{rule.mt5_field}</strong></span>
+                                <span className="font-mono bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-blue-800">
+                                  {rule.mt5_value_template}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Time Parameter Selection */}
+                          {rule.requires_time_parameter && !isApplied && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <label className="text-xs font-medium text-gray-700">Time:</label>
+                              <select
+                                value={selectedTimeParam[rule.rule_code] || ''}
+                                onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700"
+                                disabled={isApplied}
+                              >
+                                <option value="">Select time</option>
+                                {rule.available_time_parameters?.map((time) => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Apply Button */}
+                          {!isApplied && (
+                            <div className="mt-3">
+                              <button
+                                onClick={() => handleApplyRule(rule)}
+                                disabled={rulesLoading}
+                                className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Apply Rule
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

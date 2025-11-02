@@ -10,12 +10,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
   
-  // Position filter state
-  const [posFromDate, setPosFromDate] = useState('')
-  const [posToDate, setPosToDate] = useState('')
-  const [filteredPositions, setFilteredPositions] = useState([])
-  const [allPositions, setAllPositions] = useState([])
-  const [hasAppliedPosFilter, setHasAppliedPosFilter] = useState(false)
+  // Broker Rules states
+  const [availableRules, setAvailableRules] = useState([])
+  const [clientRules, setClientRules] = useState([])
+  const [rulesLoading, setRulesLoading] = useState(false)
+  const [selectedTimeParam, setSelectedTimeParam] = useState({})
   
   // Client data state (for updated balance/credit/equity)
   const [clientData, setClientData] = useState(client)
@@ -42,7 +41,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     if (!hasLoadedData.current) {
       hasLoadedData.current = true
       fetchPositions()
-      fetchDeals()
+      // Don't fetch deals on mount - only fetch when user applies date filter
+      fetchAvailableRules()
+      fetchClientRules()
     }
   }, [])
 
@@ -51,11 +52,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     if (allPositionsCache && allPositionsCache.length >= 0) {
       const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
       setPositions(clientPositions)
-      setAllPositions(clientPositions)
-      // Don't show any positions by default
-      if (!hasAppliedPosFilter) {
-        setFilteredPositions([])
-      }
     }
   }, [allPositionsCache, client.login])
 
@@ -68,14 +64,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         // Filter from cached positions
         const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
         setPositions(clientPositions)
-        setAllPositions(clientPositions)
-        // Don't show any positions by default
-        setFilteredPositions([])
-        setHasAppliedPosFilter(false)
       } else {
         setPositions([])
-        setAllPositions([])
-        setFilteredPositions([])
       }
     } catch (error) {
       setError('Failed to load positions')
@@ -84,26 +74,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }
 
-  const fetchDeals = async () => {
+  const fetchDeals = async (fromTimestamp, toTimestamp) => {
     try {
       setDealsLoading(true)
+      setError('')
       
-      // Fetch deals from API
-      // Use a far future timestamp to ensure we get all deals
-      // MT5 server may have deals with future timestamps
-      const nowUtcEpoch = Math.floor(Date.now() / 1000)
-      const oneYearInSeconds = 365 * 24 * 60 * 60 // 1 year in seconds
-      const toTime = nowUtcEpoch + oneYearInSeconds
-      
-      const response = await brokerAPI.getClientDeals(client.login, 0, toTime)
+      // Fetch deals from API with specific date range
+      const response = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp)
       const clientDeals = response.data?.deals || []
       setDeals(clientDeals)
       setAllDeals(clientDeals)
-      // Don't show any deals by default
-      setFilteredDeals([])
-      setHasAppliedFilter(false)
+      setFilteredDeals(clientDeals)
+      setHasAppliedFilter(true)
     } catch (error) {
-      // Set empty deals array on error instead of breaking
+      setError('Failed to load deals')
       setDeals([])
       setAllDeals([])
       setFilteredDeals([])
@@ -123,6 +107,117 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       }
     } catch (error) {
       // Silent error handling
+    }
+  }
+
+  const fetchAvailableRules = async () => {
+    try {
+      console.log('[ClientPositionsModal] 🔍 Fetching available rules...')
+      setRulesLoading(true)
+      const response = await brokerAPI.getAvailableRules()
+      console.log('[ClientPositionsModal] ✅ Rules response:', response)
+      if (response.status === 'success') {
+        setAvailableRules(response.data.rules || [])
+        console.log('[ClientPositionsModal] 📋 Available rules set:', response.data.rules?.length || 0)
+      }
+    } catch (error) {
+      console.error('[ClientPositionsModal] ❌ Failed to fetch available rules:', error)
+    } finally {
+      setRulesLoading(false)
+    }
+  }
+
+  const fetchClientRules = async () => {
+    try {
+      console.log('[ClientPositionsModal] 🔍 Fetching client rules for login:', client.login)
+      const response = await brokerAPI.getClientRules(client.login)
+      console.log('[ClientPositionsModal] ✅ Client rules response:', response)
+      if (response.status === 'success') {
+        const rules = response.data.rules || []
+        console.log('[ClientPositionsModal] 📋 Setting client rules to:', rules.map(r => ({ code: r.rule_code, name: r.rule_name })))
+        setClientRules(rules)
+        console.log('[ClientPositionsModal] 📋 Client rules state updated. Count:', rules.length)
+      }
+    } catch (error) {
+      console.error('[ClientPositionsModal] ❌ Failed to fetch client rules:', error)
+      setClientRules([])
+    }
+  }
+
+  const handleApplyRule = async (rule) => {
+    try {
+      console.log('[ClientPositionsModal] ➕ Applying rule:', rule.rule_code, 'for login:', client.login)
+      setRulesLoading(true)
+      const timeParameter = rule.requires_time_parameter ? selectedTimeParam[rule.rule_code] : null
+      
+      if (rule.requires_time_parameter && !timeParameter) {
+        console.warn('[ClientPositionsModal] ⚠️ Time parameter required but not selected')
+        alert('Please select a time parameter')
+        setRulesLoading(false)
+        return
+      }
+
+      console.log('[ClientPositionsModal] 📤 Sending apply request with time:', timeParameter)
+      const response = await brokerAPI.applyClientRule(client.login, rule.rule_code, timeParameter)
+      console.log('[ClientPositionsModal] ✅ Apply rule response:', response)
+      
+      if (response.status === 'success') {
+        console.log('[ClientPositionsModal] 📋 Rule applied on backend successfully')
+        // Immediately update local state to add the rule
+        setClientRules(prevRules => {
+          const newRule = {
+            rule_code: rule.rule_code,
+            rule_name: rule.rule_name,
+            time_parameter: timeParameter
+          }
+          const updatedRules = [...prevRules, newRule]
+          console.log('[ClientPositionsModal] 📋 Updated local rules to:', updatedRules.map(r => r.rule_code))
+          return updatedRules
+        })
+        setSelectedTimeParam(prev => {
+          const updated = { ...prev }
+          delete updated[rule.rule_code]
+          return updated
+        })
+        console.log('[ClientPositionsModal] ✅ Rule application completed')
+      } else {
+        console.error('[ClientPositionsModal] ❌ Apply rule failed:', response.message)
+        alert(response.message || 'Failed to apply rule')
+      }
+    } catch (error) {
+      console.error('[ClientPositionsModal] ❌ Error applying rule:', error)
+      alert('Failed to apply rule: ' + (error.response?.data?.message || error.message))
+    } finally {
+      setRulesLoading(false)
+    }
+  }
+
+  const handleRemoveRule = async (ruleCode) => {
+    try {
+      console.log('[ClientPositionsModal] 🗑️ Removing rule:', ruleCode, 'for login:', client.login)
+      console.log('[ClientPositionsModal] 📋 Current client rules before removal:', clientRules.map(r => r.rule_code))
+      setRulesLoading(true)
+      const response = await brokerAPI.removeClientRule(client.login, ruleCode)
+      console.log('[ClientPositionsModal] ✅ Remove rule response:', response)
+      
+      if (response.status === 'success') {
+        console.log('[ClientPositionsModal] 📋 Rule removed on backend successfully')
+        // Immediately update local state to reflect the removal
+        setClientRules(prevRules => {
+          const updatedRules = prevRules.filter(r => r.rule_code !== ruleCode)
+          console.log('[ClientPositionsModal] 📋 Updated local rules to:', updatedRules.map(r => r.rule_code))
+          return updatedRules
+        })
+        console.log('[ClientPositionsModal] ✅ Rule removal completed')
+      } else {
+        console.error('[ClientPositionsModal] ❌ Remove rule failed:', response.message)
+        alert(response.message || 'Failed to remove rule')
+      }
+    } catch (error) {
+      console.error('[ClientPositionsModal] ❌ Error removing rule:', error)
+      alert('Failed to remove rule: ' + (error.response?.data?.message || error.message))
+    } finally {
+      setRulesLoading(false)
     }
   }
 
@@ -187,7 +282,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return `${parts[2]}/${parts[1]}/${parts[0]}`
   }
 
-  const handleApplyDateFilter = () => {
+  const handleApplyDateFilter = async () => {
     if (!fromDate && !toDate) {
       setOperationError('Please select at least one date (From or To)')
       return
@@ -209,17 +304,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       toDateObj.setHours(23, 59, 59, 999)
     }
 
-    const filtered = allDeals.filter(deal => {
-      const dealDate = new Date(deal.time * 1000)
-      
-      if (fromDateObj && dealDate < fromDateObj) return false
-      if (toDateObj && dealDate > toDateObj) return false
-      
-      return true
-    })
+    // Convert to Unix timestamp (seconds)
+    const fromTimestamp = fromDateObj ? Math.floor(fromDateObj.getTime() / 1000) : 0
+    const toTimestamp = toDateObj ? Math.floor(toDateObj.getTime() / 1000) : Math.floor(Date.now() / 1000)
 
-    setFilteredDeals(filtered)
-    setHasAppliedFilter(true)
+    // Fetch deals from API with selected date range
+    await fetchDeals(fromTimestamp, toTimestamp)
     setOperationError('')
   }
 
@@ -227,52 +317,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     setFromDate('')
     setToDate('')
     setFilteredDeals([])
+    setDeals([])
+    setAllDeals([])
     setHasAppliedFilter(false)
     setOperationError('')
-  }
-
-  const handleApplyPosDateFilter = () => {
-    if (!posFromDate && !posToDate) {
-      setError('Please select at least one date (From or To)')
-      return
-    }
-
-    const fromDateObj = posFromDate ? parseDateInput(posFromDate) : null
-    const toDateObj = posToDate ? parseDateInput(posToDate) : null
-
-    if ((posFromDate && !fromDateObj) || (posToDate && !toDateObj)) {
-      setError('Invalid date format. Please select a valid date')
-      return
-    }
-
-    // Set time to start/end of day
-    if (fromDateObj) {
-      fromDateObj.setHours(0, 0, 0, 0)
-    }
-    if (toDateObj) {
-      toDateObj.setHours(23, 59, 59, 999)
-    }
-
-    const filtered = allPositions.filter(position => {
-      const positionDate = new Date(position.timeCreate * 1000)
-      
-      if (fromDateObj && positionDate < fromDateObj) return false
-      if (toDateObj && positionDate > toDateObj) return false
-      
-      return true
-    })
-
-    setFilteredPositions(filtered)
-    setHasAppliedPosFilter(true)
-    setError('')
-  }
-
-  const handleClearPosDateFilter = () => {
-    setPosFromDate('')
-    setPosToDate('')
-    setFilteredPositions([])
-    setHasAppliedPosFilter(false)
-    setError('')
   }
 
   const getActionLabel = (action) => {
@@ -390,9 +438,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Modal Header - Fixed */}
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
               {client.name} - {client.login}
@@ -416,11 +464,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 px-4 bg-gray-50">
+        {/* Tabs - Fixed */}
+        <div className="flex-shrink-0 flex border-b border-gray-200 px-4 bg-gray-50 overflow-x-auto">
           <button
             onClick={() => setActiveTab('positions')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'positions'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -430,7 +478,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           </button>
           <button
             onClick={() => setActiveTab('deals')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'deals'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -440,7 +488,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           </button>
           <button
             onClick={() => setActiveTab('funds')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'funds'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -448,89 +496,32 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           >
             Money Transactions
           </button>
+          <button
+            onClick={() => setActiveTab('rules')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === 'rules'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Broker Rules ({clientRules.length})
+          </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* Tab Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {activeTab === 'positions' && (
             <div>
-              {/* Date Filter */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 mb-4 border border-blue-100">
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="flex-1 min-w-[160px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      From Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formatDateToInput(posFromDate)}
-                      onChange={(e) => setPosFromDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[160px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      To Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formatDateToInput(posToDate)}
-                      onChange={(e) => setPosToDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleApplyPosDateFilter}
-                      className="px-4 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1.5"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                      </svg>
-                      Apply
-                    </button>
-                    <button
-                      onClick={handleClearPosDateFilter}
-                      className="px-4 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-                {error && (
-                  <div className="mt-2 text-xs text-red-600">
-                    {error}
-                  </div>
-                )}
-                {!hasAppliedPosFilter && !error && (
-                  <div className="mt-2 text-xs text-blue-600">
-                    <svg className="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Please select date range and click Apply to view positions
-                  </div>
-                )}
-              </div>
-
               {loading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : !hasAppliedPosFilter ? (
-                <div className="text-center py-12">
-                  <svg className="w-16 h-16 mx-auto text-blue-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-gray-500 text-sm font-medium mb-1">Select Date Range</p>
-                  <p className="text-gray-400 text-xs">Choose a date range and click Apply to view positions</p>
-                </div>
-              ) : filteredPositions.length === 0 ? (
+              ) : positions.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <p className="text-gray-500 text-sm">No positions found for the selected date range</p>
-                  <p className="text-gray-400 text-xs mt-1">Try adjusting your date range</p>
+                  <p className="text-gray-500 text-sm">No open positions</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -551,7 +542,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredPositions.map((position) => (
+                      {positions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(position.timeCreate)}
@@ -872,28 +863,28 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
         </div>
 
-        {/* Summary Cards - Sticky at Bottom */}
-        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          {activeTab === 'positions' && filteredPositions.length > 0 && (
+        {/* Summary Cards - Fixed at Bottom */}
+        <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+          {activeTab === 'positions' && positions.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                <p className="text-lg font-semibold text-gray-900">{filteredPositions.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
               </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                  {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                positions.reduce((sum, p) => sum + p.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                  {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
                 </p>
               </div>
             </div>
@@ -946,8 +937,83 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               </div>
               <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
                 <p className="text-xs text-gray-500 mb-1">Positions</p>
-                <p className="text-xl font-bold text-orange-600">{allPositions.length}</p>
+                <p className="text-xl font-bold text-orange-600">{positions.length}</p>
               </div>
+            </div>
+          )}
+
+          {/* Broker Rules Tab */}
+          {activeTab === 'rules' && (
+            <div>
+              {rulesLoading ? (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Toggle</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {availableRules.filter(r => r.is_active).map((rule) => {
+                          const isApplied = clientRules.some(cr => cr.rule_code === rule.rule_code)
+                          const appliedRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          return (
+                            <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
+                              <td className="px-4 py-3">
+                                {rule.requires_time_parameter ? (
+                                  isApplied ? (
+                                    <span className="text-sm text-purple-600 font-medium">{appliedRule?.time_parameter || '-'}</span>
+                                  ) : (
+                                    <select
+                                      value={selectedTimeParam[rule.rule_code] || ''}
+                                      onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      disabled={isApplied}
+                                    >
+                                      <option value="">Select time</option>
+                                      {rule.available_time_parameters?.map((time) => (
+                                        <option key={time} value={time}>{time}</option>
+                                      ))}
+                                    </select>
+                                  )
+                                ) : (
+                                  <span className="text-sm text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center">
+                                  <button
+                                    onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
+                                    disabled={rulesLoading}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      isApplied ? 'bg-blue-600' : 'bg-gray-300'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        isApplied ? 'translate-x-6' : 'translate-x-1'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

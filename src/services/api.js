@@ -307,6 +307,34 @@ export const brokerAPI = {
       comment
     })
     return response.data
+  },
+
+  // Get available rules
+  getAvailableRules: async () => {
+    const response = await api.get('/api/broker/rules')
+    return response.data
+  },
+
+  // Get client rules
+  getClientRules: async (login) => {
+    const response = await api.get(`/api/broker/clients/${login}/rules`)
+    return response.data
+  },
+
+  // Apply rule to client
+  applyClientRule: async (login, ruleCode, timeParameter = null) => {
+    const payload = { rule_code: ruleCode }
+    if (timeParameter) {
+      payload.time_parameter = timeParameter
+    }
+    const response = await api.post(`/api/broker/clients/${login}/rules`, payload)
+    return response.data
+  },
+
+  // Remove rule from client
+  removeClientRule: async (login, ruleCode) => {
+    const response = await api.delete(`/api/broker/clients/${login}/rules/${ruleCode}`)
+    return response.data
   }
 }
 
