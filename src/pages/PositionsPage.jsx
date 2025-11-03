@@ -1040,18 +1040,18 @@ const PositionsPage = () => {
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
               <p className="text-xs text-gray-500 mb-1">
-                {displayMode === 'percentage' ? 'Sum Profit %' : 'Total Floating Profit'}
+                {displayMode === 'percentage' || displayMode === 'both' ? 'Total Floating Profit Percentage' : 'Total Floating Profit'}
               </p>
               <p className={`text-lg font-semibold flex items-center gap-1 ${
-                displayMode === 'percentage' 
+                displayMode === 'percentage' || displayMode === 'both'
                   ? (summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600')
                   : (summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600')
               }`}>
-                {displayMode === 'percentage' 
+                {displayMode === 'percentage' || displayMode === 'both'
                   ? (summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼')
                   : (summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼')
                 }
-                {displayMode === 'percentage'
+                {displayMode === 'percentage' || displayMode === 'both'
                   ? `${Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%`
                   : formatNumber(Math.abs(summaryStats.totalFloatingProfit))
                 }
