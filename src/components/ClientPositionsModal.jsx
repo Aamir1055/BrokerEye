@@ -1130,7 +1130,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">S/L</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">T/P</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Profit</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Storage</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -1167,9 +1166,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           </td>
                           <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(position.profit)}`}>
                             {formatCurrency(position.profit)}
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {formatCurrency(position.storage)}
                           </td>
                         </tr>
                       ))}

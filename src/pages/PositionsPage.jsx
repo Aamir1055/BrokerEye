@@ -22,6 +22,12 @@ const PositionsPage = () => {
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   
+  // Display mode for values vs percentages
+  // 'value' | 'percentage' | 'both'
+  const [displayMode, setDisplayMode] = useState('value')
+  const [showDisplayMenu, setShowDisplayMenu] = useState(false)
+  const displayMenuRef = useRef(null)
+  
   // Transient UI flash map: { [positionId]: { ts, type: 'add'|'update'|'pnl', priceDelta?, profitDelta? } }
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
@@ -86,11 +92,55 @@ const PositionsPage = () => {
     { key: 'commission', label: 'Commission' }
   ]
 
+  // Map base metric keys to their percentage field names from API
+  const percentageFieldMap = {
+    volume: 'volume_percentage',
+    profit: 'profit_percentage',
+    storage: 'storage_percentage'
+  }
+
+  const isMetricColumn = (key) => Object.prototype.hasOwnProperty.call(percentageFieldMap, key)
+
   const toggleColumn = (columnKey) => {
     setVisibleColumns(prev => ({
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+  
+  const formatPercent = (value) => {
+    if (value === null || value === undefined || value === '') return '-'
+    const num = Number(value)
+    if (isNaN(num)) return '-'
+    return num.toFixed(2)
+  }
+
+  // Get effective visible columns based on display mode
+  const getEffectiveVisibleColumns = () => {
+    const effective = { ...visibleColumns }
+    
+    if (displayMode === 'value') {
+      // Hide all percentage columns
+      effective.volumePercentage = false
+      effective.profitPercentage = false
+      effective.storagePercentage = false
+    } else if (displayMode === 'percentage') {
+      // Hide value columns that have percentage equivalents, show percentage columns
+      effective.volume = false
+      effective.profit = false
+      effective.storage = false
+      // Show percentage columns
+      effective.volumePercentage = true
+      effective.profitPercentage = true
+      effective.storagePercentage = true
+    } else if (displayMode === 'both') {
+      // Show both value and percentage columns for metrics
+      if (visibleColumns.volume) effective.volumePercentage = true
+      if (visibleColumns.profit) effective.profitPercentage = true
+      if (visibleColumns.storage) effective.storagePercentage = true
+    }
+    
+    return effective
   }
 
   // Column filter states
@@ -351,13 +401,16 @@ const PositionsPage = () => {
       if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
         setShowColumnSelector(false)
       }
+      if (displayMenuRef.current && !displayMenuRef.current.contains(event.target)) {
+        setShowDisplayMenu(false)
+      }
     }
     
-    if (showSuggestions || showColumnSelector) {
+    if (showSuggestions || showColumnSelector || showDisplayMenu) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions, showColumnSelector])
+  }, [showSuggestions, showColumnSelector, showDisplayMenu])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -1056,6 +1109,65 @@ const PositionsPage = () => {
                 </div>
               )}
               
+              {/* Percentage View Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowDisplayMenu(!showDisplayMenu)}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Percentage View
+                </button>
+                {showDisplayMenu && (
+                  <div
+                    ref={displayMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
+                  >
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 uppercase">Display Mode</p>
+                    </div>
+                    <div className="px-3 py-2 space-y-2">
+                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="value"
+                          checked={displayMode === 'value'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Without Percentage</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="percentage"
+                          checked={displayMode === 'percentage'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Show My Percentage</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="both"
+                          checked={displayMode === 'both'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Both</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Columns Button */}
               <div className="relative">
                 <button
@@ -1169,7 +1281,11 @@ const PositionsPage = () => {
                 <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                     <tr>
-                      {visibleColumns.time && (
+                      {(() => {
+                        const effectiveCols = getEffectiveVisibleColumns()
+                        return (
+                          <>
+                      {effectiveCols.time && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('timeUpdate')}
@@ -1186,8 +1302,8 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.login && renderHeaderCell('login', 'Login')}
-                      {visibleColumns.position && (
+                      {effectiveCols.login && renderHeaderCell('login', 'Login')}
+                      {effectiveCols.position && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('position')}
@@ -1204,9 +1320,9 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
-                      {visibleColumns.action && renderHeaderCell('action', 'Action')}
-                      {visibleColumns.volume && (
+                      {effectiveCols.symbol && renderHeaderCell('symbol', 'Symbol')}
+                      {effectiveCols.action && renderHeaderCell('action', 'Action')}
+                      {effectiveCols.volume && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('volume')}
@@ -1223,7 +1339,7 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.volumePercentage && (
+                      {effectiveCols.volumePercentage && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('volume_percentage')}
@@ -1240,7 +1356,7 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.priceOpen && (
+                      {effectiveCols.priceOpen && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('priceOpen')}
@@ -1257,7 +1373,7 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.priceCurrent && (
+                      {effectiveCols.priceCurrent && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('priceCurrent')}
@@ -1274,17 +1390,17 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.sl && (
+                      {effectiveCols.sl && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           S/L
                         </th>
                       )}
-                      {visibleColumns.tp && (
+                      {effectiveCols.tp && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           T/P
                         </th>
                       )}
-                      {visibleColumns.profit && (
+                      {effectiveCols.profit && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('profit')}
@@ -1301,7 +1417,7 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.profitPercentage && (
+                      {effectiveCols.profitPercentage && (
                         <th 
                           className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                           onClick={() => handleSort('profit_percentage')}
@@ -1318,47 +1434,51 @@ const PositionsPage = () => {
                           </div>
                         </th>
                       )}
-                      {visibleColumns.storage && (
+                      {effectiveCols.storage && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Storage
                         </th>
                       )}
-                      {visibleColumns.storagePercentage && (
+                      {effectiveCols.storagePercentage && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Storage %
                         </th>
                       )}
-                      {visibleColumns.appliedPercentage && (
+                      {effectiveCols.appliedPercentage && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Applied %
                         </th>
                       )}
-                      {visibleColumns.reason && (
+                      {effectiveCols.reason && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Reason
                         </th>
                       )}
-                      {visibleColumns.comment && (
+                      {effectiveCols.comment && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Comment
                         </th>
                       )}
-                      {visibleColumns.commission && (
+                      {effectiveCols.commission && (
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                           Commission
                         </th>
                       )}
+                          </>
+                        )
+                      })()}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.map((p) => {
+                      const effectiveCols = getEffectiveVisibleColumns()
                       const rowClass = 'hover:bg-blue-50'
                       return (
                         <tr key={p.position} className={`${rowClass} transition-all duration-300`}>
-                          {visibleColumns.time && (
+                          {effectiveCols.time && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
                           )}
-                          {visibleColumns.login && (
+                          {effectiveCols.login && (
                             <td 
                               className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
                               onClick={(e) => {
@@ -1370,38 +1490,38 @@ const PositionsPage = () => {
                               {p.login}
                             </td>
                           )}
-                          {visibleColumns.position && (
+                          {effectiveCols.position && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.position}</td>
                           )}
-                          {visibleColumns.symbol && (
+                          {effectiveCols.symbol && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.symbol}</td>
                           )}
-                          {visibleColumns.action && (
+                          {effectiveCols.action && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.action}</td>
                           )}
-                          {visibleColumns.volume && (
+                          {effectiveCols.volume && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.volume, 2)}</td>
                           )}
-                          {visibleColumns.volumePercentage && (
+                          {effectiveCols.volumePercentage && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                              {(p.volume_percentage != null && p.volume_percentage !== '') ? `${formatNumber(p.volume_percentage * 100, 2)}%` : '-'}
+                              {(p.volume_percentage != null && p.volume_percentage !== '') ? `${formatNumber(p.volume_percentage, 2)}%` : '-'}
                             </td>
                           )}
-                          {visibleColumns.priceOpen && (
+                          {effectiveCols.priceOpen && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceOpen, 5)}</td>
                           )}
-                          {visibleColumns.priceCurrent && (
+                          {effectiveCols.priceCurrent && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                               {formatNumber(p.priceCurrent, 5)}
                             </td>
                           )}
-                          {visibleColumns.sl && (
+                          {effectiveCols.sl && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceSL, 5)}</td>
                           )}
-                          {visibleColumns.tp && (
+                          {effectiveCols.tp && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceTP, 5)}</td>
                           )}
-                          {visibleColumns.profit && (
+                          {effectiveCols.profit && (
                             <td className="px-3 py-2 text-sm whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -1410,7 +1530,7 @@ const PositionsPage = () => {
                               </span>
                             </td>
                           )}
-                          {visibleColumns.profitPercentage && (
+                          {effectiveCols.profitPercentage && (
                             <td className="px-3 py-2 text-sm whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                                 (p.profit_percentage || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -1419,20 +1539,20 @@ const PositionsPage = () => {
                               </span>
                             </td>
                           )}
-                          {visibleColumns.storage && (
+                          {effectiveCols.storage && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.storage, 2)}</td>
                           )}
-                          {visibleColumns.storagePercentage && (
+                          {effectiveCols.storagePercentage && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                               {(p.storage_percentage != null && p.storage_percentage !== '') ? `${formatNumber(p.storage_percentage, 2)}%` : '-'}
                             </td>
                           )}
-                          {visibleColumns.appliedPercentage && (
+                          {effectiveCols.appliedPercentage && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                               {(p.applied_percentage != null && p.applied_percentage !== '') ? `${formatNumber(p.applied_percentage, 2)}%` : '-'}
                             </td>
                           )}
-                          {visibleColumns.reason && (
+                          {effectiveCols.reason && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs rounded ${
                                 p.reason === 'DEALER' ? 'bg-blue-100 text-blue-800' :
@@ -1443,12 +1563,12 @@ const PositionsPage = () => {
                               </span>
                             </td>
                           )}
-                          {visibleColumns.comment && (
+                          {effectiveCols.comment && (
                             <td className="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title={p.comment}>
                               {p.comment || '-'}
                             </td>
                           )}
-                          {visibleColumns.commission && (
+                          {effectiveCols.commission && (
                             <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.commission, 2)}</td>
                           )}
                         </tr>
