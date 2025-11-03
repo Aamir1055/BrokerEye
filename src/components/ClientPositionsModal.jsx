@@ -1020,7 +1020,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       
                       {/* Search Suggestions Dropdown */}
                       {showSearchSuggestions && getPositionSearchSuggestions().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-40 overflow-y-auto">
                           {getPositionSearchSuggestions().map((suggestion, index) => (
                             <button
                               key={index}
@@ -1085,7 +1085,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showFilterDropdown === 'time' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-40 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Time</span>
                                     {getActiveFilterCount('time') > 0 && (
@@ -1133,7 +1133,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showFilterDropdown === 'symbol' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-48 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Symbol</span>
                                     {getActiveFilterCount('symbol') > 0 && (
@@ -1180,7 +1180,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showFilterDropdown === 'type' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-48 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Type</span>
                                     {getActiveFilterCount('type') > 0 && (
@@ -1487,7 +1487,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showDealsFilterDropdown === 'time' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-40 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Time</span>
                                     {getActiveDealsFilterCount('time') > 0 && (
@@ -1537,7 +1537,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showDealsFilterDropdown === 'symbol' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-40 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Symbol</span>
                                     {getActiveDealsFilterCount('symbol') > 0 && (
@@ -1584,7 +1584,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </span>
                               )}
                               {showDealsFilterDropdown === 'action' && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-40 overflow-y-auto">
                                   <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-gray-700">Filter by Action</span>
                                     {getActiveDealsFilterCount('action') > 0 && (

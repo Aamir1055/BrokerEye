@@ -1532,7 +1532,7 @@ const ClientsPage = () => {
                                     </div>
 
                                     {/* Filter List */}
-                                    <div className="max-h-48 overflow-y-auto">
+                                    <div className="max-h-32 overflow-y-auto">
                                       <div className="p-0.5 space-y-0">
                                         {getUniqueColumnValues(col.baseKey).length === 0 ? (
                                           <div className="px-1.5 py-2 text-center text-[10px] text-gray-500">
