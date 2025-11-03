@@ -60,6 +60,16 @@ const ClientPercentagePage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const [filterSearchQuery, setFilterSearchQuery] = useState({})
+  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  
+  // Custom filter modal states
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  const [customFilterColumn, setCustomFilterColumn] = useState(null)
+  const [customFilterType, setCustomFilterType] = useState('equal')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
+  const [customFilterValue2, setCustomFilterValue2] = useState('')
+  const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
@@ -102,8 +112,92 @@ const ClientPercentagePage = () => {
     setShowFilterDropdown(null)
   }
 
+  const selectAllFilters = (columnKey) => {
+    const allValues = getUniqueColumnValues(columnKey)
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: allValues
+    }))
+  }
+
+  const deselectAllFilters = (columnKey) => {
+    setColumnFilters(prev => {
+      const { [columnKey]: _, ...rest } = prev
+      return rest
+    })
+  }
+
   const getActiveFilterCount = (columnKey) => {
-    return columnFilters[columnKey]?.length || 0
+    // Check for regular checkbox filters
+    const checkboxCount = columnFilters[columnKey]?.length || 0
+    
+    // Check for number filter
+    const numberFilterKey = `${columnKey}_number`
+    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter
+  }
+
+  const isAllSelected = (columnKey) => {
+    const allValues = getUniqueColumnValues(columnKey)
+    const selectedValues = columnFilters[columnKey] || []
+    return allValues.length > 0 && selectedValues.length === allValues.length
+  }
+
+  // Apply custom number filter
+  const applyCustomNumberFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+
+    const filterConfig = {
+      type: customFilterType,
+      value1: parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      operator: customFilterOperator
+    }
+
+    setColumnFilters(prev => ({
+      ...prev,
+      [`${customFilterColumn}_number`]: filterConfig
+    }))
+
+    // Close modal and dropdown
+    setShowCustomFilterModal(false)
+    setShowFilterDropdown(null)
+    setShowNumberFilterDropdown(null)
+    
+    // Reset form
+    setCustomFilterValue1('')
+    setCustomFilterValue2('')
+    setCustomFilterType('equal')
+  }
+
+  // Check if value matches number filter
+  const matchesNumberFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) return false
+
+    const { type, value1, value2 } = filterConfig
+
+    switch (type) {
+      case 'equal':
+        return numValue === value1
+      case 'notEqual':
+        return numValue !== value1
+      case 'lessThan':
+        return numValue < value1
+      case 'lessThanOrEqual':
+        return numValue <= value1
+      case 'greaterThan':
+        return numValue > value1
+      case 'greaterThanOrEqual':
+        return numValue >= value1
+      case 'between':
+        return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
   }
   
   // Edit modal states
