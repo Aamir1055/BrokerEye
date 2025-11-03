@@ -1659,15 +1659,6 @@ const PositionsPage = () => {
         editGroup={editingGroup}
       />
 
-      {/* Login Details Modal */}
-      {selectedLogin && (
-        <LoginDetailsModal
-          login={selectedLogin}
-          onClose={() => setSelectedLogin(null)}
-          allPositionsCache={cachedPositions}
-        />
-      )}
-
       {/* Custom Filter Modal */}
       {showCustomFilterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
