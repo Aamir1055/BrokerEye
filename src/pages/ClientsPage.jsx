@@ -1198,7 +1198,7 @@ const ClientsPage = () => {
                   </p>
                 </div>
                 
-                {/* Percentage Indicator Card - Start of Fourth Row */}}
+                {/* Percentage Indicator Card - Start of Fourth Row */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-2 flex items-center justify-center">
                   <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
                     By Percentage 
@@ -1448,9 +1448,10 @@ const ClientsPage = () => {
                         }
                       })
 
-                      return renderCols.map(col => {
+                      return renderCols.map((col, colIndex) => {
                         const filterCount = getActiveFilterCount(col.baseKey)
                         const isFilterable = !col.key.endsWith('_percentage_display') // Only filter base columns
+                        const isLastColumn = colIndex >= renderCols.length - 3 // Last 3 columns
                         
                         return (
                         <th
@@ -1514,7 +1515,9 @@ const ClientsPage = () => {
                                   <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
                                     style={{
                                       top: `${filterRefs.current[col.baseKey]?.getBoundingClientRect().bottom - 15}px`,
-                                      left: `${filterRefs.current[col.baseKey]?.getBoundingClientRect().left}px`
+                                      left: isLastColumn 
+                                        ? `${filterRefs.current[col.baseKey]?.getBoundingClientRect().right - 192}px`
+                                        : `${filterRefs.current[col.baseKey]?.getBoundingClientRect().left}px`
                                     }}>
                                     {/* Header */}
                                     <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
@@ -1592,10 +1595,10 @@ const ClientsPage = () => {
                                           </svg>
                                         </button>
                                         
-                                        {/* Number Filter Dropdown - Opens to the right */}
+                                        {/* Number Filter Dropdown - Opens to the right or left based on position */}
                                         {showNumberFilterDropdown === col.baseKey && (
                                           <div 
-                                            className="absolute left-full top-0 ml-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-50"
+                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-1' : 'left-full ml-1'} w-40 bg-white border border-gray-300 rounded shadow-lg z-50`}
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <div className="text-[10px] text-gray-600">
