@@ -31,7 +31,7 @@ const ClientsPage = () => {
   
   // Filter states
   const [filterByPositions, setFilterByPositions] = useState(false)
-  const [filterByDeals, setFilterByDeals] = useState(false)
+  const [filterByCredit, setFilterByCredit] = useState(false)
   // Display mode for values vs percentages
   // 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
@@ -48,6 +48,11 @@ const ClientsPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+  
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const filterRefs = useRef({})
   
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
@@ -288,24 +293,75 @@ const ClientsPage = () => {
       [columnKey]: !prev[columnKey]
     }))
   }
+
+  // Column filter helper functions
+  const getUniqueColumnValues = (columnKey) => {
+    const values = new Set()
+    clients.forEach(client => {
+      const value = client[columnKey]
+      if (value !== null && value !== undefined && value !== '') {
+        values.add(value)
+      }
+    })
+    return Array.from(values).sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') {
+        return a - b
+      }
+      return String(a).localeCompare(String(b))
+    })
+  }
+
+  const toggleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => {
+      const currentFilters = prev[columnKey] || []
+      const newFilters = currentFilters.includes(value)
+        ? currentFilters.filter(v => v !== value)
+        : [...currentFilters, value]
+      
+      if (newFilters.length === 0) {
+        const { [columnKey]: _, ...rest } = prev
+        return rest
+      }
+      
+      return { ...prev, [columnKey]: newFilters }
+    })
+  }
+
+  const clearColumnFilter = (columnKey) => {
+    setColumnFilters(prev => {
+      const { [columnKey]: _, ...rest } = prev
+      return rest
+    })
+    setShowFilterDropdown(null)
+  }
+
+  const getActiveFilterCount = (columnKey) => {
+    return columnFilters[columnKey]?.length || 0
+  }
   
   // Get filtered clients based on filter settings
   const getFilteredClients = () => {
     let filtered = [...clients]
     
     if (filterByPositions) {
-      // Filter clients who have at least one position
-      const clientsWithPositions = new Set(positions.map(p => p.login))
-      filtered = filtered.filter(c => clientsWithPositions.has(c.login))
+      // Filter clients who have floating values
+      filtered = filtered.filter(c => c.floating && Math.abs(c.floating) > 0)
     }
     
-    if (filterByDeals) {
-      // For deals, we check if client has floating/profit values indicating trading activity
-      filtered = filtered.filter(c => 
-        (c.floating && Math.abs(c.floating) > 0) || 
-        (c.profit && Math.abs(c.profit) > 0)
-      )
+    if (filterByCredit) {
+      // Filter clients who have credit (positive or negative, but not zero)
+      filtered = filtered.filter(c => c.credit && c.credit !== 0)
     }
+
+    // Apply column filters
+    Object.entries(columnFilters).forEach(([columnKey, values]) => {
+      if (values && values.length > 0) {
+        filtered = filtered.filter(client => {
+          const clientValue = client[columnKey]
+          return values.includes(clientValue)
+        })
+      }
+    })
     
     return filtered
   }
@@ -455,7 +511,21 @@ const ClientsPage = () => {
   // Reset to page 1 when filters or items per page changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterByPositions, filterByDeals, itemsPerPage, searchQuery, displayMode])
+  }, [filterByPositions, filterByCredit, itemsPerPage, searchQuery, displayMode])
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
+        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+          setShowFilterDropdown(null)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFilterDropdown])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -581,9 +651,9 @@ const ClientsPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   Filter
-                  {(filterByPositions || filterByDeals) && (
+                  {(filterByPositions || filterByCredit) && (
                     <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full">
-                      {(filterByPositions ? 1 : 0) + (filterByDeals ? 1 : 0)}
+                      {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0)}
                     </span>
                   )}
                 </button>
@@ -603,16 +673,16 @@ const ClientsPage = () => {
                           onChange={(e) => setFilterByPositions(e.target.checked)}
                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Has Positions</span>
+                        <span className="ml-2 text-sm text-gray-700">Has Floating</span>
                       </label>
                       <label className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors">
                         <input
                           type="checkbox"
-                          checked={filterByDeals}
-                          onChange={(e) => setFilterByDeals(e.target.checked)}
+                          checked={filterByCredit}
+                          onChange={(e) => setFilterByCredit(e.target.checked)}
                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Has Deals</span>
+                        <span className="ml-2 text-sm text-gray-700">Has Credit</span>
                       </label>
                     </div>
                   </div>
@@ -1055,34 +1125,99 @@ const ClientsPage = () => {
                         }
                       })
 
-                      return renderCols.map(col => (
+                      return renderCols.map(col => {
+                        const filterCount = getActiveFilterCount(col.baseKey)
+                        const isFilterable = !col.key.endsWith('_percentage_display') // Only filter base columns
+                        
+                        return (
                         <th
                           key={col.key}
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group cursor-pointer hover:bg-blue-100 transition-colors"
+                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group hover:bg-blue-100 transition-colors"
                           style={{ width: `${col.width}%` }}
-                          onClick={() => handleSort(col.key)}
                         >
-                          <div className="flex items-center gap-1 truncate" title={col.label}>
-                            <span>{col.label}</span>
-                            {sortColumn === col.key && (
-                              <svg
-                                className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            )}
-                            {sortColumn !== col.key && (
-                              <svg
-                                className="w-3 h-3 opacity-0 group-hover:opacity-30"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
+                          <div className="flex items-center gap-1 justify-between">
+                            <div 
+                              className="flex items-center gap-1 truncate cursor-pointer flex-1"
+                              title={col.label}
+                              onClick={() => handleSort(col.key)}
+                            >
+                              <span>{col.label}</span>
+                              {sortColumn === col.key && (
+                                <svg
+                                  className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              )}
+                              {sortColumn !== col.key && (
+                                <svg
+                                  className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                </svg>
+                              )}
+                            </div>
+                            
+                            {isFilterable && (
+                              <div className="relative" ref={el => {
+                                if (!filterRefs.current) filterRefs.current = {}
+                                filterRefs.current[col.baseKey] = el
+                              }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowFilterDropdown(showFilterDropdown === col.baseKey ? null : col.baseKey)
+                                  }}
+                                  className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                  title="Filter column"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                  </svg>
+                                  {filterCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                      {filterCount}
+                                    </span>
+                                  )}
+                                </button>
+
+                                {showFilterDropdown === col.baseKey && (
+                                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+                                    <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                                      <span className="text-xs font-semibold text-gray-700">Filter by {col.label}</span>
+                                      {filterCount > 0 && (
+                                        <button
+                                          onClick={() => clearColumnFilter(col.baseKey)}
+                                          className="text-xs text-blue-600 hover:text-blue-800"
+                                        >
+                                          Clear
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="p-2 space-y-1">
+                                      {getUniqueColumnValues(col.baseKey).map(value => (
+                                        <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={(columnFilters[col.baseKey] || []).includes(value)}
+                                            onChange={() => toggleColumnFilter(col.baseKey, value)}
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                          />
+                                          <span className="text-sm text-gray-700 truncate">
+                                            {formatValue(col.baseKey, value)}
+                                          </span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                           <div
@@ -1092,7 +1227,7 @@ const ClientsPage = () => {
                             style={{ opacity: resizing?.columnKey === col.key ? 0.8 : undefined }}
                           />
                         </th>
-                      ))
+                      )})
                     })()}
                   </tr>
                 </thead>

@@ -69,6 +69,56 @@ const PendingOrdersPage = () => {
       [columnKey]: !prev[columnKey]
     }))
   }
+
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const filterRefs = useRef({})
+
+  // Column filter helper functions
+  const getUniqueColumnValues = (columnKey) => {
+    const values = new Set()
+    cachedOrders.forEach(order => {
+      const value = order[columnKey]
+      if (value !== null && value !== undefined && value !== '') {
+        values.add(value)
+      }
+    })
+    return Array.from(values).sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') {
+        return a - b
+      }
+      return String(a).localeCompare(String(b))
+    })
+  }
+
+  const toggleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => {
+      const currentFilters = prev[columnKey] || []
+      const newFilters = currentFilters.includes(value)
+        ? currentFilters.filter(v => v !== value)
+        : [...currentFilters, value]
+      
+      if (newFilters.length === 0) {
+        const { [columnKey]: _, ...rest } = prev
+        return rest
+      }
+      
+      return { ...prev, [columnKey]: newFilters }
+    })
+  }
+
+  const clearColumnFilter = (columnKey) => {
+    setColumnFilters(prev => {
+      const { [columnKey]: _, ...rest } = prev
+      return rest
+    })
+    setShowFilterDropdown(null)
+  }
+
+  const getActiveFilterCount = (columnKey) => {
+    return columnFilters[columnKey]?.length || 0
+  }
   
   const hasInitialLoad = useRef(false)
   // Transient UI flashes for updated orders
@@ -222,7 +272,17 @@ const PendingOrdersPage = () => {
   const searchedOrders = searchOrders(cachedOrders)
   
   // Apply group filter if active
-  const groupFilteredOrders = filterByActiveGroup(searchedOrders, 'login', 'pendingorders')
+  let groupFilteredOrders = filterByActiveGroup(searchedOrders, 'login', 'pendingorders')
+  
+  // Apply column filters
+  Object.entries(columnFilters).forEach(([columnKey, values]) => {
+    if (values && values.length > 0) {
+      groupFilteredOrders = groupFilteredOrders.filter(order => {
+        const orderValue = order[columnKey]
+        return values.includes(orderValue)
+      })
+    }
+  })
   
   const sortedOrders = sortOrders(groupFilteredOrders)
   
@@ -276,6 +336,20 @@ const PendingOrdersPage = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [itemsPerPage])
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
+        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+          setShowFilterDropdown(null)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFilterDropdown])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -286,6 +360,86 @@ const PendingOrdersPage = () => {
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value)
     setCurrentPage(1)
+  }
+
+  // Helper function to render table header with filter
+  const renderHeaderCell = (columnKey, label, sortKey = null) => {
+    const filterCount = getActiveFilterCount(columnKey)
+    const actualSortKey = sortKey || columnKey
+    
+    return (
+      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+        <div className="flex items-center gap-1 justify-between">
+          <div 
+            className="flex items-center gap-1 cursor-pointer flex-1"
+            onClick={() => handleSort(actualSortKey)}
+          >
+            <span>{label}</span>
+            {sortColumn === actualSortKey ? (
+              <span className="text-blue-600">
+                {sortDirection === 'asc' ? '↑' : '↓'}
+              </span>
+            ) : (
+              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+            )}
+          </div>
+          
+          <div className="relative" ref={el => {
+            if (!filterRefs.current) filterRefs.current = {}
+            filterRefs.current[columnKey] = el
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
+              }}
+              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              title="Filter column"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              {filterCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {filterCount}
+                </span>
+              )}
+            </button>
+
+            {showFilterDropdown === columnKey && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+                <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                  <span className="text-xs font-semibold text-gray-700">Filter by {label}</span>
+                  {filterCount > 0 && (
+                    <button
+                      onClick={() => clearColumnFilter(columnKey)}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="p-2 space-y-1">
+                  {getUniqueColumnValues(columnKey).map(value => (
+                    <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(columnFilters[columnKey] || []).includes(value)}
+                        onChange={() => toggleColumnFilter(columnKey, value)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 truncate">
+                        {value}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </th>
+    )
   }
 
   if (loading.orders) return <LoadingSpinner />
@@ -524,81 +678,11 @@ const PendingOrdersPage = () => {
                 <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                     <tr>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('timeSetup')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Setup
-                          {sortColumn === 'timeSetup' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('login')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Login
-                          {sortColumn === 'login' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('order')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Order
-                          {sortColumn === 'order' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('symbol')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Symbol
-                          {sortColumn === 'symbol' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('type')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Type
-                          {sortColumn === 'type' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
+                      {renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
+                      {renderHeaderCell('login', 'Login')}
+                      {renderHeaderCell('order', 'Order')}
+                      {renderHeaderCell('symbol', 'Symbol')}
+                      {renderHeaderCell('type', 'Type')}
                       <th 
                         className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
                         onClick={() => handleSort('state')}

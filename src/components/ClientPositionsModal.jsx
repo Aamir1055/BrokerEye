@@ -34,6 +34,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [allDeals, setAllDeals] = useState([])
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   
+  // Search and filter states for positions
+  const [searchQuery, setSearchQuery] = useState('')
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
+  const filterRefs = useRef({})
+  const searchRef = useRef(null)
+  
+  // Search and filter states for deals
+  const [dealsSearchQuery, setDealsSearchQuery] = useState('')
+  const [dealsColumnFilters, setDealsColumnFilters] = useState({})
+  const [showDealsFilterDropdown, setShowDealsFilterDropdown] = useState(null)
+  const [showDealsSearchSuggestions, setShowDealsSearchSuggestions] = useState(false)
+  const dealsFilterRefs = useRef({})
+  const dealsSearchRef = useRef(null)
+  
+  // Pagination states for deals
+  const [dealsCurrentPage, setDealsCurrentPage] = useState(1)
+  const [dealsItemsPerPage, setDealsItemsPerPage] = useState(50)
+  
+  // Pagination states for positions
+  const [positionsCurrentPage, setPositionsCurrentPage] = useState(1)
+  const [positionsItemsPerPage, setPositionsItemsPerPage] = useState(50)
+  
   // Prevent duplicate calls in React StrictMode
   const hasLoadedData = useRef(false)
 
@@ -46,6 +70,33 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       fetchClientRules()
     }
   }, [])
+
+  // Close filter dropdown and search suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
+        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+          setShowFilterDropdown(null)
+        }
+      }
+      if (showDealsFilterDropdown && dealsFilterRefs.current[showDealsFilterDropdown]) {
+        if (!dealsFilterRefs.current[showDealsFilterDropdown].contains(event.target)) {
+          setShowDealsFilterDropdown(null)
+        }
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchSuggestions(false)
+      }
+      if (dealsSearchRef.current && !dealsSearchRef.current.contains(event.target)) {
+        setShowDealsSearchSuggestions(false)
+      }
+    }
+    
+    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions])
 
   // Update positions when allPositionsCache changes (WebSocket updates)
   useEffect(() => {
@@ -146,12 +197,18 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   const handleApplyRule = async (rule) => {
     try {
-      console.log('[ClientPositionsModal] ➕ Applying rule:', rule.rule_code, 'for login:', client.login)
+      console.log('[ClientPositionsModal] ➕ Applying/Activating rule:', rule.rule_code, 'for login:', client.login)
       setRulesLoading(true)
-      const timeParameter = rule.requires_time_parameter ? selectedTimeParam[rule.rule_code] : null
       
-      if (rule.requires_time_parameter && !timeParameter) {
-        console.warn('[ClientPositionsModal] ⚠️ Time parameter required but not selected')
+      // Find the matching available rule to check if time parameter is required
+      const availableRule = availableRules.find(ar => ar.rule_code === rule.rule_code)
+      const requiresTimeParam = availableRule?.requires_time_parameter
+      
+      // Get time parameter from dropdown selection or use existing one
+      let timeParameter = selectedTimeParam[rule.rule_code] || rule.time_parameter || null
+      
+      // Validate time parameter if required
+      if (requiresTimeParam && !timeParameter) {
         alert('Please select a time parameter')
         setRulesLoading(false)
         return
@@ -162,23 +219,15 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       console.log('[ClientPositionsModal] ✅ Apply rule response:', response)
       
       if (response.status === 'success') {
-        console.log('[ClientPositionsModal] 📋 Rule applied on backend successfully')
-        // Immediately update local state to add the rule
-        setClientRules(prevRules => {
-          const newRule = {
-            rule_code: rule.rule_code,
-            rule_name: rule.rule_name,
-            time_parameter: timeParameter
-          }
-          const updatedRules = [...prevRules, newRule]
-          console.log('[ClientPositionsModal] 📋 Updated local rules to:', updatedRules.map(r => r.rule_code))
-          return updatedRules
-        })
+        console.log('[ClientPositionsModal] 📋 Rule applied/activated successfully')
+        // Clear selected time parameter after successful application
         setSelectedTimeParam(prev => {
           const updated = { ...prev }
           delete updated[rule.rule_code]
           return updated
         })
+        // Refresh client rules from API to get updated is_active status
+        await fetchClientRules()
         console.log('[ClientPositionsModal] ✅ Rule application completed')
       } else {
         console.error('[ClientPositionsModal] ❌ Apply rule failed:', response.message)
@@ -194,21 +243,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   const handleRemoveRule = async (ruleCode) => {
     try {
-      console.log('[ClientPositionsModal] 🗑️ Removing rule:', ruleCode, 'for login:', client.login)
-      console.log('[ClientPositionsModal] 📋 Current client rules before removal:', clientRules.map(r => r.rule_code))
+      console.log('[ClientPositionsModal] 🗑️ Deactivating rule:', ruleCode, 'for login:', client.login)
       setRulesLoading(true)
       const response = await brokerAPI.removeClientRule(client.login, ruleCode)
       console.log('[ClientPositionsModal] ✅ Remove rule response:', response)
       
       if (response.status === 'success') {
-        console.log('[ClientPositionsModal] 📋 Rule removed on backend successfully')
-        // Immediately update local state to reflect the removal
-        setClientRules(prevRules => {
-          const updatedRules = prevRules.filter(r => r.rule_code !== ruleCode)
-          console.log('[ClientPositionsModal] 📋 Updated local rules to:', updatedRules.map(r => r.rule_code))
-          return updatedRules
-        })
-        console.log('[ClientPositionsModal] ✅ Rule removal completed')
+        console.log('[ClientPositionsModal] 📋 Rule deactivated successfully')
+        // Refresh client rules from API to get updated is_active status
+        await fetchClientRules()
+        console.log('[ClientPositionsModal] ✅ Rule deactivation completed')
       } else {
         console.error('[ClientPositionsModal] ❌ Remove rule failed:', response.message)
         alert(response.message || 'Failed to remove rule')
@@ -379,6 +423,273 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return 'text-gray-600'
   }
 
+  // Filter helper functions
+  const getUniqueColumnValues = (columnKey) => {
+    const values = new Set()
+    positions.forEach(pos => {
+      let value
+      if (columnKey === 'type') {
+        value = getActionLabel(pos.action)
+      } else if (columnKey === 'symbol') {
+        value = pos.symbol
+      } else if (columnKey === 'time') {
+        value = formatDate(pos.timeCreate)
+      }
+      if (value) values.add(value)
+    })
+    return Array.from(values).sort()
+  }
+
+  const toggleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => {
+      const current = prev[columnKey] || []
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value]
+      
+      return {
+        ...prev,
+        [columnKey]: updated.length > 0 ? updated : undefined
+      }
+    })
+  }
+
+  const clearColumnFilter = (columnKey) => {
+    setColumnFilters(prev => {
+      const updated = { ...prev }
+      delete updated[columnKey]
+      return updated
+    })
+  }
+
+  const getActiveFilterCount = (columnKey) => {
+    return columnFilters[columnKey]?.length || 0
+  }
+
+  const getUniqueDealsColumnValues = (columnKey) => {
+    const values = new Set()
+    filteredDeals.forEach(deal => {
+      let value
+      if (columnKey === 'action') {
+        value = getDealActionLabel(deal.action)
+      } else if (columnKey === 'symbol') {
+        value = deal.symbol
+      } else if (columnKey === 'time') {
+        value = formatDate(deal.time)
+      }
+      if (value) values.add(value)
+    })
+    return Array.from(values).sort()
+  }
+
+  const toggleDealsColumnFilter = (columnKey, value) => {
+    setDealsColumnFilters(prev => {
+      const current = prev[columnKey] || []
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value]
+      
+      return {
+        ...prev,
+        [columnKey]: updated.length > 0 ? updated : undefined
+      }
+    })
+  }
+
+  const clearDealsColumnFilter = (columnKey) => {
+    setDealsColumnFilters(prev => {
+      const updated = { ...prev }
+      delete updated[columnKey]
+      return updated
+    })
+  }
+
+  const getActiveDealsFilterCount = (columnKey) => {
+    return dealsColumnFilters[columnKey]?.length || 0
+  }
+
+  // Get search suggestions for positions
+  const getPositionSearchSuggestions = () => {
+    if (!searchQuery.trim() || searchQuery.length < 1 || !positions || positions.length === 0) {
+      return []
+    }
+    
+    const query = searchQuery.toLowerCase().trim()
+    const uniqueValues = new Map() // Use Map to track type and avoid duplicates
+    
+    positions.forEach(pos => {
+      const symbol = String(pos.symbol || '')
+      const type = getActionLabel(pos.action)
+      const positionNum = String(pos.position || '')
+      const volume = String(pos.volume || '')
+      const time = formatDate(pos.timeCreate)
+      
+      // Check each field and add to suggestions if matches
+      if (symbol && symbol.toLowerCase().includes(query) && !uniqueValues.has(symbol)) {
+        uniqueValues.set(symbol, { type: 'Symbol', value: symbol, priority: 1 })
+      }
+      if (type && type.toLowerCase().includes(query) && !uniqueValues.has(type)) {
+        uniqueValues.set(type, { type: 'Type', value: type, priority: 2 })
+      }
+      if (positionNum && positionNum.includes(query) && !uniqueValues.has(`#${positionNum}`)) {
+        uniqueValues.set(`#${positionNum}`, { type: 'Position', value: `#${positionNum}`, priority: 3 })
+      }
+      if (volume && volume.includes(query) && !uniqueValues.has(volume)) {
+        uniqueValues.set(volume, { type: 'Volume', value: volume, priority: 4 })
+      }
+      if (time && time.toLowerCase().includes(query) && !uniqueValues.has(time)) {
+        uniqueValues.set(time, { type: 'Time', value: time, priority: 5 })
+      }
+    })
+    
+    return Array.from(uniqueValues.values())
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 8)
+  }
+
+  // Get search suggestions for deals
+  const getDealsSearchSuggestions = () => {
+    if (!dealsSearchQuery.trim() || dealsSearchQuery.length < 1) {
+      return []
+    }
+    
+    const query = dealsSearchQuery.toLowerCase().trim()
+    const uniqueValues = new Map() // Use Map to track type and avoid duplicates
+    
+    // Use deals array instead of filteredDeals to avoid circular dependency
+    if (!deals || deals.length === 0) {
+      return []
+    }
+    
+    deals.forEach(deal => {
+      const symbol = String(deal.symbol || '')
+      const action = getDealActionLabel(deal.action)
+      const dealNum = String(deal.deal || '')
+      const order = deal.order > 0 ? String(deal.order) : ''
+      const position = deal.position > 0 ? String(deal.position) : ''
+      const time = formatDate(deal.time)
+      
+      // Check each field and add to suggestions if matches
+      if (symbol && symbol.toLowerCase().includes(query) && !uniqueValues.has(symbol)) {
+        uniqueValues.set(symbol, { type: 'Symbol', value: symbol, priority: 1 })
+      }
+      if (action && action.toLowerCase().includes(query) && !uniqueValues.has(action)) {
+        uniqueValues.set(action, { type: 'Action', value: action, priority: 2 })
+      }
+      if (dealNum && dealNum.includes(query) && !uniqueValues.has(`#${dealNum}`)) {
+        uniqueValues.set(`#${dealNum}`, { type: 'Deal', value: `#${dealNum}`, priority: 3 })
+      }
+      if (order && order.includes(query) && !uniqueValues.has(`#${order}`)) {
+        uniqueValues.set(`#${order}`, { type: 'Order', value: `#${order}`, priority: 4 })
+      }
+      if (position && position.includes(query) && !uniqueValues.has(`#${position}`)) {
+        uniqueValues.set(`#${position}`, { type: 'Position', value: `#${position}`, priority: 5 })
+      }
+      if (time && time.toLowerCase().includes(query) && !uniqueValues.has(time)) {
+        uniqueValues.set(time, { type: 'Time', value: time, priority: 6 })
+      }
+    })
+    
+    return Array.from(uniqueValues.values())
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 8)
+  }
+
+  // Apply search and filters to positions
+  const filteredPositions = (() => {
+    let filtered = [...positions]
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(pos => {
+        return (
+          pos.symbol?.toLowerCase().includes(query) ||
+          String(pos.position).includes(query) ||
+          getActionLabel(pos.action).toLowerCase().includes(query) ||
+          String(pos.volume).includes(query)
+        )
+      })
+    }
+
+    Object.entries(columnFilters).forEach(([columnKey, selectedValues]) => {
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter(pos => {
+          let value
+          if (columnKey === 'type') {
+            value = getActionLabel(pos.action)
+          } else if (columnKey === 'symbol') {
+            value = pos.symbol
+          } else if (columnKey === 'time') {
+            value = formatDate(pos.timeCreate)
+          }
+          return selectedValues.includes(value)
+        })
+      }
+    })
+
+    return filtered
+  })()
+
+  // Pagination logic for positions
+  const positionsTotalPages = positionsItemsPerPage === 'All' ? 1 : Math.ceil(filteredPositions.length / positionsItemsPerPage)
+  const positionsStartIndex = positionsItemsPerPage === 'All' ? 0 : (positionsCurrentPage - 1) * positionsItemsPerPage
+  const positionsEndIndex = positionsItemsPerPage === 'All' ? filteredPositions.length : positionsStartIndex + positionsItemsPerPage
+  const displayedPositions = filteredPositions.slice(positionsStartIndex, positionsEndIndex)
+
+  // Reset to page 1 when positions filters change
+  useEffect(() => {
+    setPositionsCurrentPage(1)
+  }, [searchQuery])
+
+  // Apply search and filters to deals
+  const filteredDealsResult = (() => {
+    if (!hasAppliedFilter) return []
+    
+    let filtered = [...filteredDeals]
+
+    if (dealsSearchQuery.trim()) {
+      const query = dealsSearchQuery.toLowerCase()
+      filtered = filtered.filter(deal => {
+        return (
+          deal.symbol?.toLowerCase().includes(query) ||
+          String(deal.deal).includes(query) ||
+          String(deal.position).includes(query) ||
+          getDealActionLabel(deal.action).toLowerCase().includes(query) ||
+          String(deal.volume).includes(query)
+        )
+      })
+    }
+
+    Object.entries(dealsColumnFilters).forEach(([columnKey, selectedValues]) => {
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter(deal => {
+          let value
+          if (columnKey === 'action') {
+            value = getDealActionLabel(deal.action)
+          } else if (columnKey === 'symbol') {
+            value = deal.symbol
+          } else if (columnKey === 'time') {
+            value = formatDate(deal.time)
+          }
+          return selectedValues.includes(value)
+        })
+      }
+    })
+
+    return filtered
+  })()
+
+  // Apply pagination to deals
+  const dealsTotalPages = dealsItemsPerPage === 'All' ? 1 : Math.ceil(filteredDealsResult.length / dealsItemsPerPage)
+  const dealsStartIndex = dealsItemsPerPage === 'All' ? 0 : (dealsCurrentPage - 1) * dealsItemsPerPage
+  const dealsEndIndex = dealsItemsPerPage === 'All' ? filteredDealsResult.length : dealsStartIndex + dealsItemsPerPage
+  const displayedDeals = filteredDealsResult.slice(dealsStartIndex, dealsEndIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setDealsCurrentPage(1)
+  }, [dealsSearchQuery, hasAppliedFilter])
+
   const handleFundsOperation = async (e) => {
     e.preventDefault()
     
@@ -465,47 +776,104 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Tabs - Fixed */}
-        <div className="flex-shrink-0 flex border-b border-gray-200 px-4 bg-gray-50 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('positions')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'positions'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Positions ({positions.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('deals')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'deals'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Deals ({deals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('funds')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'funds'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Money Transactions
-          </button>
-          <button
-            onClick={() => setActiveTab('rules')}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'rules'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Broker Rules ({clientRules.length})
-          </button>
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-gray-200 px-4 bg-gray-50">
+          <div className="flex overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('positions')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+                activeTab === 'positions'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Positions ({positions.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('deals')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+                activeTab === 'deals'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Deals ({deals.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('funds')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+                activeTab === 'funds'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Money Transactions
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+                activeTab === 'rules'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Broker Rules ({clientRules.filter(r => r.is_active === true).length})
+            </button>
+          </div>
+
+          {/* Pagination Controls for Positions Tab */}
+          {activeTab === 'positions' && filteredPositions.length > 0 && (
+            <div className="flex items-center gap-1.5 py-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-600">Show:</span>
+                <select
+                  value={positionsItemsPerPage}
+                  onChange={(e) => setPositionsItemsPerPage(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="All">All</option>
+                </select>
+              </div>
+
+              {positionsItemsPerPage !== 'All' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPositionsCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={positionsCurrentPage === 1}
+                    className={`p-0.5 rounded transition-colors ${
+                      positionsCurrentPage === 1
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <span className="text-xs text-gray-700 font-medium px-1">
+                    {positionsCurrentPage}/{positionsTotalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setPositionsCurrentPage(prev => Math.min(positionsTotalPages, prev + 1))}
+                    disabled={positionsCurrentPage === positionsTotalPages}
+                    className={`p-0.5 rounded transition-colors ${
+                      positionsCurrentPage === positionsTotalPages
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                    }`}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tab Content - Scrollable */}
@@ -524,14 +892,238 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <p className="text-gray-500 text-sm">No open positions</p>
                 </div>
               ) : (
+                <>
+                  {/* Search Bar */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="relative flex-1" ref={searchRef}>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value)
+                          setShowSearchSuggestions(true)
+                        }}
+                        onFocus={() => setShowSearchSuggestions(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setShowSearchSuggestions(false)
+                          }
+                        }}
+                        placeholder="Search by symbol, position, type, volume..."
+                        className="w-full pl-9 pr-10 py-2 text-sm text-gray-700 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                      />
+                      <svg 
+                        className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      {searchQuery && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setShowSearchSuggestions(false)
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                      
+                      {/* Search Suggestions Dropdown */}
+                      {showSearchSuggestions && getPositionSearchSuggestions().length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                          {getPositionSearchSuggestions().map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setSearchQuery(suggestion.value)
+                                setShowSearchSuggestions(false)
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
+                            >
+                              <span className="text-gray-700">{suggestion.value}</span>
+                              <span className="ml-auto text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{suggestion.type}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {displayedPositions.length} of {filteredPositions.length} positions
+                    </div>
+                  </div>
+                  
+                  {filteredPositions.length === 0 ? (
+                    <div className="text-center py-12">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <p className="text-gray-500 text-sm font-medium mb-1">No positions found</p>
+                      <p className="text-gray-400 text-xs">Try adjusting your search or filters</p>
+                      {(searchQuery || Object.keys(columnFilters).length > 0) && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setColumnFilters({})
+                          }}
+                          className="mt-3 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Clear all filters
+                        </button>
+                      )}
+                    </div>
+                  ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                          <div className="flex items-center gap-1.5">
+                            Time
+                            <div className="relative" ref={el => filterRefs.current['time'] = el}>
+                              <button
+                                onClick={() => setShowFilterDropdown(showFilterDropdown === 'time' ? null : 'time')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('time') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveFilterCount('time') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveFilterCount('time')}
+                                </span>
+                              )}
+                              {showFilterDropdown === 'time' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Time</span>
+                                    {getActiveFilterCount('time') > 0 && (
+                                      <button
+                                        onClick={() => clearColumnFilter('time')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueColumnValues('time').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={columnFilters.time?.includes(value) || false}
+                                        onChange={() => toggleColumnFilter('time', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Symbol</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                          <div className="flex items-center gap-1.5">
+                            Symbol
+                            <div className="relative" ref={el => filterRefs.current['symbol'] = el}>
+                              <button
+                                onClick={() => setShowFilterDropdown(showFilterDropdown === 'symbol' ? null : 'symbol')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('symbol') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveFilterCount('symbol') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveFilterCount('symbol')}
+                                </span>
+                              )}
+                              {showFilterDropdown === 'symbol' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Symbol</span>
+                                    {getActiveFilterCount('symbol') > 0 && (
+                                      <button
+                                        onClick={() => clearColumnFilter('symbol')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueColumnValues('symbol').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={columnFilters.symbol?.includes(value) || false}
+                                        onChange={() => toggleColumnFilter('symbol', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                          <div className="flex items-center gap-1.5">
+                            Type
+                            <div className="relative" ref={el => filterRefs.current['type'] = el}>
+                              <button
+                                onClick={() => setShowFilterDropdown(showFilterDropdown === 'type' ? null : 'type')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('type') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveFilterCount('type') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveFilterCount('type')}
+                                </span>
+                              )}
+                              {showFilterDropdown === 'type' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Type</span>
+                                    {getActiveFilterCount('type') > 0 && (
+                                      <button
+                                        onClick={() => clearColumnFilter('type')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueColumnValues('type').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={columnFilters.type?.includes(value) || false}
+                                        onChange={() => toggleColumnFilter('type', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Volume</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Open Price</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Current Price</th>
@@ -542,7 +1134,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {positions.map((position) => (
+                      {displayedPositions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(position.timeCreate)}
@@ -584,68 +1176,115 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </tbody>
                   </table>
                 </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
           {activeTab === 'deals' && (
             <div>
-              {/* Date Filter */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 mb-4 border border-blue-100">
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="flex-1 min-w-[160px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      From Date
-                    </label>
+              {/* Date Filter with Pagination */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 mb-3 border border-blue-100">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-gray-700 whitespace-nowrap">Date Range:</span>
                     <input
                       type="date"
                       value={formatDateToInput(fromDate)}
                       onChange={(e) => setFromDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
                     />
-                  </div>
-                  <div className="flex-1 min-w-[160px]">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      To Date
-                    </label>
+                    <span className="text-gray-500">to</span>
                     <input
                       type="date"
                       value={formatDateToInput(toDate)}
                       onChange={(e) => setToDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
                     />
-                  </div>
-                  <div className="flex gap-2">
                     <button
                       onClick={handleApplyDateFilter}
-                      className="px-4 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1.5"
+                      className="px-3 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                       </svg>
                       Apply
                     </button>
                     <button
                       onClick={handleClearDateFilter}
-                      className="px-4 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       Clear
                     </button>
+                    {operationError && (
+                      <span className="text-xs text-red-600 ml-2">{operationError}</span>
+                    )}
+                    {!hasAppliedFilter && !operationError && (
+                      <span className="text-xs text-blue-600 ml-2 inline-flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Select date range and click Apply
+                      </span>
+                    )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {filteredDealsResult.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-600">Show:</span>
+                        <select
+                          value={dealsItemsPerPage}
+                          onChange={(e) => setDealsItemsPerPage(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                          className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                        >
+                          <option value="50">50</option>
+                          <option value="100">100</option>
+                          <option value="200">200</option>
+                          <option value="All">All</option>
+                        </select>
+                      </div>
+
+                      {dealsItemsPerPage !== 'All' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setDealsCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={dealsCurrentPage === 1}
+                            className={`p-0.5 rounded transition-colors ${
+                              dealsCurrentPage === 1
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                            }`}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          
+                          <span className="text-xs text-gray-700 font-medium px-1">
+                            {dealsCurrentPage}/{dealsTotalPages}
+                          </span>
+                          
+                          <button
+                            onClick={() => setDealsCurrentPage(prev => Math.min(dealsTotalPages, prev + 1))}
+                            disabled={dealsCurrentPage === dealsTotalPages}
+                            className={`p-0.5 rounded transition-colors ${
+                              dealsCurrentPage === dealsTotalPages
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                            }`}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {operationError && (
-                  <div className="mt-2 text-xs text-red-600">
-                    {operationError}
-                  </div>
-                )}
-                {!hasAppliedFilter && !operationError && (
-                  <div className="mt-2 text-xs text-blue-600">
-                    <svg className="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Please select date range and click Apply to view deals
-                  </div>
-                )}
               </div>
 
               {dealsLoading ? (
@@ -669,16 +1308,230 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <p className="text-gray-400 text-xs mt-1">Try adjusting your date range</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
+                <>
+                  {/* Search Bar */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="relative flex-1" ref={dealsSearchRef}>
+                      <div className="relative">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                          type="text"
+                          value={dealsSearchQuery}
+                          onChange={(e) => setDealsSearchQuery(e.target.value)}
+                          onFocus={() => setShowDealsSearchSuggestions(true)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              setShowDealsSearchSuggestions(false);
+                            }
+                          }}
+                          placeholder="Search deals by time, symbol, or action..."
+                          className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-700 placeholder:text-gray-400"
+                        />
+                        {dealsSearchQuery && (
+                          <button
+                            onClick={() => setDealsSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Search Suggestions Dropdown */}
+                      {showDealsSearchSuggestions && dealsSearchQuery && getDealsSearchSuggestions().length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {getDealsSearchSuggestions().map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setDealsSearchQuery(suggestion.value);
+                                setShowDealsSearchSuggestions(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                            >
+                              <span className="text-gray-700">{suggestion.value}</span>
+                              <span className="ml-auto text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{suggestion.type}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                      {displayedDeals.length} of {filteredDealsResult.length} deals
+                    </div>
+                  </div>
+
+                  {displayedDeals.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <p className="text-gray-500 text-sm font-medium mb-1">No deals match your search</p>
+                      <p className="text-gray-400 text-xs mb-3">Try different search terms or clear filters</p>
+                      <button
+                        onClick={() => {
+                          setDealsSearchQuery('');
+                          setDealsColumnFilters({});
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                                <div className="flex items-center gap-1.5">
+                                  Time
+                                  <div className="relative" ref={el => dealsFilterRefs.current['time'] = el}>
+                              <button
+                                onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'time' ? null : 'time')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('time') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveDealsFilterCount('time') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveDealsFilterCount('time')}
+                                </span>
+                              )}
+                              {showDealsFilterDropdown === 'time' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Time</span>
+                                    {getActiveDealsFilterCount('time') > 0 && (
+                                      <button
+                                        onClick={() => clearDealsColumnFilter('time')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueDealsColumnValues('time').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={dealsColumnFilters.time?.includes(value) || false}
+                                        onChange={() => toggleDealsColumnFilter('time', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Deal</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Order</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Symbol</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Action</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                          <div className="flex items-center gap-1.5">
+                            Symbol
+                            <div className="relative" ref={el => dealsFilterRefs.current['symbol'] = el}>
+                              <button
+                                onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'symbol' ? null : 'symbol')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('symbol') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveDealsFilterCount('symbol') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveDealsFilterCount('symbol')}
+                                </span>
+                              )}
+                              {showDealsFilterDropdown === 'symbol' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Symbol</span>
+                                    {getActiveDealsFilterCount('symbol') > 0 && (
+                                      <button
+                                        onClick={() => clearDealsColumnFilter('symbol')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueDealsColumnValues('symbol').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={dealsColumnFilters.symbol?.includes(value) || false}
+                                        onChange={() => toggleDealsColumnFilter('symbol', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                          <div className="flex items-center gap-1.5">
+                            Action
+                            <div className="relative" ref={el => dealsFilterRefs.current['action'] = el}>
+                              <button
+                                onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'action' ? null : 'action')}
+                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('action') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                title="Filter"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                              </button>
+                              {getActiveDealsFilterCount('action') > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                  {getActiveDealsFilterCount('action')}
+                                </span>
+                              )}
+                              {showDealsFilterDropdown === 'action' && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48 max-h-60 overflow-y-auto">
+                                  <div className="px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-700">Filter by Action</span>
+                                    {getActiveDealsFilterCount('action') > 0 && (
+                                      <button
+                                        onClick={() => clearDealsColumnFilter('action')}
+                                        className="text-xs text-blue-600 hover:text-blue-800"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  {getUniqueDealsColumnValues('action').map(value => (
+                                    <label key={value} className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={dealsColumnFilters.action?.includes(value) || false}
+                                        onChange={() => toggleDealsColumnFilter('action', value)}
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-xs text-gray-700">{value}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Volume</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Commission</th>
@@ -688,7 +1541,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {filteredDeals.map((deal) => (
+                      {displayedDeals.map((deal) => (
                         <tr key={deal.deal} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(deal.time)}
@@ -732,7 +1585,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       ))}
                     </tbody>
                   </table>
-                </div>
+                      </div>
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -865,57 +1721,57 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
         {/* Summary Cards - Fixed at Bottom */}
         <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 shadow-lg">
-          {activeTab === 'positions' && positions.length > 0 && (
+          {activeTab === 'positions' && filteredPositions.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                <p className="text-lg font-semibold text-gray-900">{positions.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{filteredPositions.length}</p>
               </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {positions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                  {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                positions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(positions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                  {formatCurrency(positions.reduce((sum, p) => sum + p.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
                 </p>
               </div>
             </div>
           )}
 
-          {activeTab === 'deals' && filteredDeals.length > 0 && (
+          {activeTab === 'deals' && displayedDeals.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
                 <p className="text-xs text-gray-600 mb-1">Total Deals</p>
-                <p className="text-lg font-semibold text-gray-900">{filteredDeals.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{displayedDeals.length}</p>
               </div>
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
                 <p className="text-xs text-gray-600 mb-1">Total Volume</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {filteredDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
+                  {displayedDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
                 </p>
               </div>
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
                 <p className="text-xs text-gray-600 mb-1">Total Commission</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(filteredDeals.reduce((sum, d) => sum + d.commission, 0))}
+                  {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.commission, 0))}
                 </p>
               </div>
               <div className={`rounded-lg p-3 border ${
-                filteredDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
+                displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
                   ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
                   : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
               }`}>
                 <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(filteredDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
-                  {formatCurrency(filteredDeals.reduce((sum, d) => sum + d.profit, 0))}
+                <p className={`text-lg font-semibold ${getProfitColor(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
+                  {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}
                 </p>
               </div>
             </div>
@@ -963,28 +1819,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {availableRules.filter(r => r.is_active).map((rule) => {
-                          const isApplied = clientRules.some(cr => cr.rule_code === rule.rule_code)
-                          const appliedRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          // Find if this rule is applied to this client
+                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          // Toggle is ON (blue) if client has this rule AND is_active is true
+                          const isApplied = clientRule && clientRule.is_active === true
+                          
+                          const requiresTimeParam = rule.requires_time_parameter
+                          const timeOptions = rule.available_time_parameters || []
+                          const currentTimeParam = clientRule?.time_parameter || ''
+                          
                           return (
                             <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
                               <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
                               <td className="px-4 py-3">
-                                {rule.requires_time_parameter ? (
-                                  isApplied ? (
-                                    <span className="text-sm text-purple-600 font-medium">{appliedRule?.time_parameter || '-'}</span>
-                                  ) : (
-                                    <select
-                                      value={selectedTimeParam[rule.rule_code] || ''}
-                                      onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      disabled={isApplied}
-                                    >
-                                      <option value="">Select time</option>
-                                      {rule.available_time_parameters?.map((time) => (
-                                        <option key={time} value={time}>{time}</option>
-                                      ))}
-                                    </select>
-                                  )
+                                {requiresTimeParam ? (
+                                  <select
+                                    value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
+                                    onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="">Select time</option>
+                                    {timeOptions.map((time) => (
+                                      <option key={time} value={time}>{time}</option>
+                                    ))}
+                                  </select>
                                 ) : (
                                   <span className="text-sm text-gray-400">-</span>
                                 )}

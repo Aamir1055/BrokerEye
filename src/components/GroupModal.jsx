@@ -282,7 +282,7 @@ const GroupModal = ({
                       Showing {filteredItems.length} items
                     </p>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+                  <div>
                 {filteredItems.length > 0 ? (
                       filteredItems.map((item) => {
                         const login = String(item[loginField])

@@ -39,7 +39,6 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
     { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
     { name: 'Client Percentage', path: '/client-percentage', icon: 'percentage' },
-    { name: 'Broker Rules', path: '/broker-rules', icon: 'rules' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   
@@ -147,11 +146,6 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
                 {item.icon === 'percentage' && (
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                )}
-                {item.icon === 'rules' && (
-                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 )}
                 {item.icon === 'settings' && (

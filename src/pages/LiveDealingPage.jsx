@@ -140,6 +140,56 @@ const LiveDealingPage = () => {
     }))
   }
 
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const filterRefs = useRef({})
+
+  // Column filter helper functions
+  const getUniqueColumnValues = (columnKey) => {
+    const values = new Set()
+    deals.forEach(deal => {
+      const value = deal[columnKey]
+      if (value !== null && value !== undefined && value !== '') {
+        values.add(value)
+      }
+    })
+    return Array.from(values).sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') {
+        return a - b
+      }
+      return String(a).localeCompare(String(b))
+    })
+  }
+
+  const toggleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => {
+      const currentFilters = prev[columnKey] || []
+      const newFilters = currentFilters.includes(value)
+        ? currentFilters.filter(v => v !== value)
+        : [...currentFilters, value]
+      
+      if (newFilters.length === 0) {
+        const { [columnKey]: _, ...rest } = prev
+        return rest
+      }
+      
+      return { ...prev, [columnKey]: newFilters }
+    })
+  }
+
+  const clearColumnFilter = (columnKey) => {
+    setColumnFilters(prev => {
+      const { [columnKey]: _, ...rest } = prev
+      return rest
+    })
+    setShowFilterDropdown(null)
+  }
+
+  const getActiveFilterCount = (columnKey) => {
+    return columnFilters[columnKey]?.length || 0
+  }
+
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('liveDealingPageVisibleColumns', JSON.stringify(visibleColumns))
@@ -244,52 +294,45 @@ const LiveDealingPage = () => {
       setError('')
       setLoading(true)
       
-      // IST is UTC+5:30
-      const IST_OFFSET = 5.5 * 60 * 60 * 1000 // 5 hours 30 minutes in milliseconds
-      
       let from, to
       
       // Calculate time range based on filter
       if (timeFilter === '24h') {
-        // Get current time in IST
-        const nowIST = new Date(Date.now() + IST_OFFSET)
-        // Add 2 hours to 'to' timestamp to include very recent deals
-        const toIST = new Date(nowIST.getTime() + (2 * 60 * 60 * 1000))
-        // Subtract 24 hours from current time to get "from" time in IST
-        const fromIST = new Date(nowIST.getTime() - (24 * 60 * 60 * 1000))
-        
-        // Convert both to UTC epoch (seconds)
-        from = Math.floor((fromIST.getTime() - IST_OFFSET) / 1000)
-        to = Math.floor((toIST.getTime() - IST_OFFSET) / 1000)
+        // Get current UTC time in seconds
+        const nowUTC = Math.floor(Date.now() / 1000)
+        // Add 12 hours to 'to' to capture recent deals (12 * 60 * 60 seconds)
+        to = nowUTC + (12 * 60 * 60)
+        // Subtract 24 hours from current time for 'from'
+        from = nowUTC - (24 * 60 * 60)
       } else if (timeFilter === '7d') {
-        // Get current IST time
-        const nowIST = new Date(Date.now() + IST_OFFSET)
-        // Add 2 hours to 'to' timestamp to include very recent deals
-        const toIST = new Date(nowIST.getTime() + (2 * 60 * 60 * 1000))
-        // Subtract 7 days from current time to get "from" time in IST
-        const fromIST = new Date(nowIST.getTime() - (7 * 24 * 60 * 60 * 1000))
-        
-        // Convert both to UTC epoch (seconds)
-        from = Math.floor((fromIST.getTime() - IST_OFFSET) / 1000)
-        to = Math.floor((toIST.getTime() - IST_OFFSET) / 1000)
+        // Get current UTC time in seconds
+        const nowUTC = Math.floor(Date.now() / 1000)
+        // Add 12 hours to 'to' to capture recent deals
+        to = nowUTC + (12 * 60 * 60)
+        // Subtract 7 days from current time for 'from'
+        from = nowUTC - (7 * 24 * 60 * 60)
       } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
-        // Parse custom dates as IST
-        const fromDateIST = new Date(appliedFromDate)
-        const toDateIST = new Date(appliedToDate)
+        // Parse custom dates and convert to UTC epoch seconds
+        const fromDate = new Date(appliedFromDate)
+        const toDate = new Date(appliedToDate)
         
-        // Convert IST to UTC epoch (seconds)
-        from = Math.floor((fromDateIST.getTime() - IST_OFFSET) / 1000)
-        to = Math.floor((toDateIST.getTime() - IST_OFFSET) / 1000)
+        from = Math.floor(fromDate.getTime() / 1000)
+        // Add 12 hours to custom 'to' date as well
+        to = Math.floor(toDate.getTime() / 1000) + (12 * 60 * 60)
       } else {
         // Default to 24h if custom dates not set
-        const nowIST = new Date(Date.now() + IST_OFFSET)
-        // Add 2 hours to 'to' timestamp to include very recent deals
-        const toIST = new Date(nowIST.getTime() + (2 * 60 * 60 * 1000))
-        const fromIST = new Date(nowIST.getTime() - (24 * 60 * 60 * 1000))
-        
-        from = Math.floor((fromIST.getTime() - IST_OFFSET) / 1000)
-        to = Math.floor((toIST.getTime() - IST_OFFSET) / 1000)
+        const nowUTC = Math.floor(Date.now() / 1000)
+        to = nowUTC + (12 * 60 * 60)
+        from = nowUTC - (24 * 60 * 60)
       }
+      
+      console.log('[LiveDealing] 📅 Time range:', {
+        filter: timeFilter,
+        from: from,
+        to: to,
+        fromDate: new Date(from * 1000).toISOString(),
+        toDate: new Date(to * 1000).toISOString()
+      })
       
       const response = await brokerAPI.getAllDeals(from, to, 10000)
       
@@ -640,7 +683,17 @@ const LiveDealingPage = () => {
   const searchedDeals = searchDeals(moduleFiltered)
   
   // Apply group filter if active
-  const groupFilteredDeals = filterByActiveGroup(searchedDeals, 'login', 'livedealing')
+  let groupFilteredDeals = filterByActiveGroup(searchedDeals, 'login', 'livedealing')
+  
+  // Apply column filters
+  Object.entries(columnFilters).forEach(([columnKey, values]) => {
+    if (values && values.length > 0) {
+      groupFilteredDeals = groupFilteredDeals.filter(deal => {
+        const dealValue = deal[columnKey] || deal.rawData?.[columnKey]
+        return values.includes(dealValue)
+      })
+    }
+  })
   
   const sortedDeals = sortDeals(groupFilteredDeals)
   
@@ -691,6 +744,94 @@ const LiveDealingPage = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [displayMode])
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
+        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+          setShowFilterDropdown(null)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFilterDropdown])
+
+  // Helper function to render table header with filter
+  const renderHeaderCell = (columnKey, label, sortKey = null) => {
+    const filterCount = getActiveFilterCount(columnKey)
+    const actualSortKey = sortKey || columnKey
+    
+    return (
+      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+        <div className="flex items-center gap-1 justify-between">
+          <div 
+            className="flex items-center gap-1 cursor-pointer flex-1"
+            onClick={() => handleSort(actualSortKey)}
+          >
+            <span>{label}</span>
+            {getSortIcon(actualSortKey)}
+          </div>
+          
+          <div className="relative" ref={el => {
+            if (!filterRefs.current) filterRefs.current = {}
+            filterRefs.current[columnKey] = el
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
+              }}
+              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              title="Filter column"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              {filterCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {filterCount}
+                </span>
+              )}
+            </button>
+
+            {showFilterDropdown === columnKey && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+                <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                  <span className="text-xs font-semibold text-gray-700">Filter by {label}</span>
+                  {filterCount > 0 && (
+                    <button
+                      onClick={() => clearColumnFilter(columnKey)}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="p-2 space-y-1">
+                  {getUniqueColumnValues(columnKey).map(value => (
+                    <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(columnFilters[columnKey] || []).includes(value)}
+                        onChange={() => toggleColumnFilter(columnKey, value)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 truncate">
+                        {value}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </th>
+    )
+  }
 
   const getPageNumbers = () => {
     const pages = []
@@ -1182,21 +1323,9 @@ const LiveDealingPage = () => {
                         Deal
                       </th>
                     )}
-                    {visibleColumns.login && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Login
-                      </th>
-                    )}
-                    {visibleColumns.action && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Action
-                      </th>
-                    )}
-                    {visibleColumns.symbol && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Symbol
-                      </th>
-                    )}
+                    {visibleColumns.login && renderHeaderCell('login', 'Login')}
+                    {visibleColumns.action && renderHeaderCell('action', 'Action')}
+                    {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
                     {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
                       <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
                         {displayMode === 'percentage' ? 'Volume %' : 'Volume'}
