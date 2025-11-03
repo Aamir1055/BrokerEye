@@ -56,6 +56,14 @@ const ClientsPage = () => {
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
+  // Custom filter modal states
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  const [customFilterColumn, setCustomFilterColumn] = useState(null)
+  const [customFilterType, setCustomFilterType] = useState('equal')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
+  const [customFilterValue2, setCustomFilterValue2] = useState('')
+  const [customFilterOperator, setCustomFilterOperator] = useState('AND')
+  
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
   const [resizing, setResizing] = useState(null)
@@ -375,6 +383,62 @@ const ClientsPage = () => {
     const selectedValues = columnFilters[columnKey] || []
     return allValues.length > 0 && selectedValues.length === allValues.length
   }
+
+  // Apply custom number filter
+  const applyCustomNumberFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+
+    const filterConfig = {
+      type: customFilterType,
+      value1: parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      operator: customFilterOperator
+    }
+
+    setColumnFilters(prev => ({
+      ...prev,
+      [`${customFilterColumn}_number`]: filterConfig
+    }))
+
+    // Close modal and dropdown
+    setShowCustomFilterModal(false)
+    setShowFilterDropdown(null)
+    setShowNumberFilterDropdown(null)
+    
+    // Reset form
+    setCustomFilterValue1('')
+    setCustomFilterValue2('')
+    setCustomFilterType('equal')
+  }
+
+  // Check if value matches number filter
+  const matchesNumberFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) return false
+
+    const { type, value1, value2 } = filterConfig
+
+    switch (type) {
+      case 'equal':
+        return numValue === value1
+      case 'notEqual':
+        return numValue !== value1
+      case 'lessThan':
+        return numValue < value1
+      case 'lessThanOrEqual':
+        return numValue <= value1
+      case 'greaterThan':
+        return numValue > value1
+      case 'greaterThanOrEqual':
+        return numValue >= value1
+      case 'between':
+        return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
+  }
   
   // Get filtered clients based on filter settings
   const getFilteredClients = () => {
@@ -392,7 +456,15 @@ const ClientsPage = () => {
 
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
-      if (values && values.length > 0) {
+      if (columnKey.endsWith('_number')) {
+        // Number filter
+        const actualColumnKey = columnKey.replace('_number', '')
+        filtered = filtered.filter(client => {
+          const clientValue = client[actualColumnKey]
+          return matchesNumberFilter(clientValue, values)
+        })
+      } else if (values && values.length > 0) {
+        // Regular checkbox filter
         filtered = filtered.filter(client => {
           const clientValue = client[columnKey]
           return values.includes(clientValue)
@@ -1313,14 +1385,94 @@ const ClientsPage = () => {
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <div className="text-sm text-gray-600 py-1">
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Equal...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Not Equal...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than Or Equal...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than Or Equal...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Between...</div>
-                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Custom Filter...</div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('equal')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Equal...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('notEqual')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Not Equal...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('lessThan')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Less Than...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('lessThanOrEqual')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Less Than Or Equal...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('greaterThan')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Greater Than...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('greaterThanOrEqual')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Greater Than Or Equal...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('between')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Between...
+                                              </div>
+                                              <div 
+                                                className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setCustomFilterColumn(col.baseKey)
+                                                  setCustomFilterType('equal')
+                                                  setShowCustomFilterModal(true)
+                                                }}
+                                              >
+                                                Custom Filter...
+                                              </div>
                                             </div>
                                           </div>
                                         )}
@@ -1629,6 +1781,123 @@ const ClientsPage = () => {
         secondaryField="group"
         editGroup={editingGroup}
       />
+
+      {/* Custom Filter Modal */}
+      {showCustomFilterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
+                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
+              </div>
+
+              {/* Filter Type Dropdown */}
+              <div>
+                <select
+                  value={customFilterType}
+                  onChange={(e) => setCustomFilterType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="equal">Equal</option>
+                  <option value="notEqual">Not Equal</option>
+                  <option value="lessThan">Less Than</option>
+                  <option value="lessThanOrEqual">Less Than Or Equal</option>
+                  <option value="greaterThan">Greater Than</option>
+                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
+                  <option value="between">Between</option>
+                </select>
+              </div>
+
+              {/* Value Input */}
+              <div>
+                <input
+                  type="number"
+                  value={customFilterValue1}
+                  onChange={(e) => setCustomFilterValue1(e.target.value)}
+                  placeholder="Enter the value"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Second Value for Between */}
+              {customFilterType === 'between' && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'AND'}
+                        onChange={() => setCustomFilterOperator('AND')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">AND</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'OR'}
+                        onChange={() => setCustomFilterOperator('OR')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">OR</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <input
+                      type="number"
+                      value={customFilterValue2}
+                      onChange={(e) => setCustomFilterValue2(e.target.value)}
+                      placeholder="Enter the value"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyCustomNumberFilter}
+                disabled={!customFilterValue1}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
