@@ -1834,7 +1834,7 @@ const ClientsPage = () => {
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
                   placeholder="Enter the value"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                 />
               </div>
 
@@ -1868,7 +1868,7 @@ const ClientsPage = () => {
                       value={customFilterValue2}
                       onChange={(e) => setCustomFilterValue2(e.target.value)}
                       placeholder="Enter the value"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                     />
                   </div>
                 </>
