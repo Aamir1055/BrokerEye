@@ -89,6 +89,16 @@ const MarginLevelPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const [filterSearchQuery, setFilterSearchQuery] = useState({})
+  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  
+  // Custom number filter states
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  const [customFilterColumn, setCustomFilterColumn] = useState(null)
+  const [customFilterType, setCustomFilterType] = useState('equal')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
+  const [customFilterValue2, setCustomFilterValue2] = useState('')
+  const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
@@ -99,12 +109,22 @@ const MarginLevelPage = () => {
         values.add(value)
       }
     })
-    return Array.from(values).sort((a, b) => {
+    const sortedValues = Array.from(values).sort((a, b) => {
       if (typeof a === 'number' && typeof b === 'number') {
         return a - b
       }
       return String(a).localeCompare(String(b))
     })
+    
+    // Filter by search query if exists
+    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+    if (searchQuery) {
+      return sortedValues.filter(value => 
+        String(value).toLowerCase().includes(searchQuery)
+      )
+    }
+    
+    return sortedValues
   }
 
   const toggleColumnFilter = (columnKey, value) => {
@@ -123,8 +143,28 @@ const MarginLevelPage = () => {
     })
   }
 
+  const selectAllFilters = (columnKey) => {
+    const allValues = getUniqueColumnValues(columnKey)
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: allValues
+    }))
+  }
+
+  const deselectAllFilters = (columnKey) => {
+    setColumnFilters(prev => {
+      const { [columnKey]: _, ...rest } = prev
+      return rest
+    })
+  }
+
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
+      const numberFilterKey = `${columnKey}_number`
+      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      return rest
+    })
+    setFilterSearchQuery(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
@@ -132,7 +172,75 @@ const MarginLevelPage = () => {
   }
 
   const getActiveFilterCount = (columnKey) => {
-    return columnFilters[columnKey]?.length || 0
+    const checkboxCount = columnFilters[columnKey]?.length || 0
+    
+    // Check for number filter
+    const numberFilterKey = `${columnKey}_number`
+    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter
+  }
+
+  const isAllSelected = (columnKey) => {
+    const allValues = getUniqueColumnValues(columnKey)
+    const selectedValues = columnFilters[columnKey] || []
+    return allValues.length > 0 && selectedValues.length === allValues.length
+  }
+
+  // Apply custom number filter
+  const applyCustomNumberFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+
+    const filterConfig = {
+      type: customFilterType,
+      value1: parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      operator: customFilterOperator
+    }
+
+    setColumnFilters(prev => ({
+      ...prev,
+      [`${customFilterColumn}_number`]: filterConfig
+    }))
+
+    // Close modal and dropdown
+    setShowCustomFilterModal(false)
+    setShowFilterDropdown(null)
+    setShowNumberFilterDropdown(null)
+    
+    // Reset form
+    setCustomFilterValue1('')
+    setCustomFilterValue2('')
+    setCustomFilterType('equal')
+  }
+
+  // Check if value matches number filter
+  const matchesNumberFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) return false
+
+    const { type, value1, value2 } = filterConfig
+
+    switch (type) {
+      case 'equal':
+        return numValue === value1
+      case 'notEqual':
+        return numValue !== value1
+      case 'lessThan':
+        return numValue < value1
+      case 'lessThanOrEqual':
+        return numValue <= value1
+      case 'greaterThan':
+        return numValue > value1
+      case 'greaterThanOrEqual':
+        return numValue >= value1
+      case 'between':
+        return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
   }
   
   // Close suggestions when clicking outside
@@ -255,7 +363,15 @@ const MarginLevelPage = () => {
   
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
-    if (values && values.length > 0) {
+    if (columnKey.endsWith('_number')) {
+      // Number filter
+      const actualColumnKey = columnKey.replace('_number', '')
+      groupFilteredAccounts = groupFilteredAccounts.filter(account => {
+        const accountValue = account[actualColumnKey]
+        return matchesNumberFilter(accountValue, values)
+      })
+    } else if (values && values.length > 0) {
+      // Regular checkbox filter
       groupFilteredAccounts = groupFilteredAccounts.filter(account => {
         const accountValue = account[columnKey]
         return values.includes(accountValue)
@@ -392,32 +508,278 @@ const MarginLevelPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
-                <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-                  <span className="text-xs font-semibold text-gray-700">Filter by {label}</span>
-                  {filterCount > 0 && (
+              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
+                style={{
+                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  left: `${filterRefs.current[columnKey]?.getBoundingClientRect().left}px`
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
                     <button
-                      onClick={() => clearColumnFilter(columnKey)}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(null)
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      Clear
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="p-2 space-y-1">
-                  {getUniqueColumnValues(columnKey).map(value => (
-                    <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(columnFilters[columnKey] || []).includes(value)}
-                        onChange={() => toggleColumnFilter(columnKey, value)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 truncate">
-                        {value}
-                      </span>
-                    </label>
-                  ))}
+
+                {/* Sort Options */}
+                <div className="border-b border-gray-200">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(actualSortKey)
+                      setSortDirection('asc')
+                      setShowFilterDropdown(null)
+                    }}
+                    className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1"
+                  >
+                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Sort Smallest to Largest
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(actualSortKey)
+                      setSortDirection('desc')
+                      setShowFilterDropdown(null)
+                    }}
+                    className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100"
+                  >
+                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Sort Largest to Smallest
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100 text-gray-600"
+                  >
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Clear Filter
+                  </button>
+                </div>
+
+                {/* Number Filters */}
+                <div className="border-b border-gray-200">
+                  <div className="px-1.5 py-0.5 relative group">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                      }}
+                      className="w-full flex items-center justify-between px-1.5 py-0.5 text-[10px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                    >
+                      <span>Number Filters</span>
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Number Filter Dropdown - Opens to the right */}
+                    {showNumberFilterDropdown === columnKey && (
+                      <div 
+                        className="absolute left-full top-0 ml-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="text-[10px] text-gray-600">
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('equal')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('notEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Not Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('between')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Between...
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Box */}
+                <div className="p-1 border-b border-gray-200">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={filterSearchQuery[columnKey] || ''}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        setFilterSearchQuery(prev => ({
+                          ...prev,
+                          [columnKey]: e.target.value
+                        }))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <svg className="absolute right-1.5 top-1.5 w-2.5 h-2.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Select All / Deselect All */}
+                <div className="px-2 py-1 border-b border-gray-200 bg-gray-50">
+                  <label className="flex items-center gap-1.5 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected(columnKey)}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        if (e.target.checked) {
+                          selectAllFilters(columnKey)
+                        } else {
+                          deselectAllFilters(columnKey)
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">Select All</span>
+                  </label>
+                </div>
+
+                {/* Filter List */}
+                <div className="max-h-32 overflow-y-auto">
+                  <div className="p-1 space-y-0.5">
+                    {getUniqueColumnValues(columnKey).length === 0 ? (
+                      <div className="px-2 py-2 text-center text-[10px] text-gray-500">
+                        No items found
+                      </div>
+                    ) : (
+                      getUniqueColumnValues(columnKey).map(value => (
+                        <label 
+                          key={value} 
+                          className="flex items-center gap-1.5 hover:bg-gray-50 p-0.5 rounded cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(columnFilters[columnKey] || []).includes(value)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              toggleColumnFilter(columnKey, value)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                          />
+                          <span className="text-[9px] text-gray-700 truncate">
+                            {value}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b flex items-center justify-end gap-1.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="px-2 py-1 text-[10px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(null)
+                    }}
+                    className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    OK
+                  </button>
                 </div>
               </div>
             )}
@@ -790,6 +1152,81 @@ const MarginLevelPage = () => {
           allPositionsCache={cachedPositions}
           onCacheUpdate={() => {}}
         />
+      )}
+
+      {/* Custom Number Filter Modal */}
+      {showCustomFilterModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50" onClick={() => setShowCustomFilterModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Custom Number Filter</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter Type
+              </label>
+              <select
+                value={customFilterType}
+                onChange={(e) => setCustomFilterType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="equal">Equal to</option>
+                <option value="notEqual">Not equal to</option>
+                <option value="lessThan">Less than</option>
+                <option value="lessThanOrEqual">Less than or equal to</option>
+                <option value="greaterThan">Greater than</option>
+                <option value="greaterThanOrEqual">Greater than or equal to</option>
+                <option value="between">Between</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Value {customFilterType === 'between' ? '1 (From)' : ''}
+              </label>
+              <input
+                type="number"
+                value={customFilterValue1}
+                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter value"
+              />
+            </div>
+
+            {customFilterType === 'between' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Value 2 (To)
+                </label>
+                <input
+                  type="number"
+                  value={customFilterValue2}
+                  onChange={(e) => setCustomFilterValue2(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter value"
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyCustomNumberFilter}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+              >
+                Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
