@@ -58,6 +58,39 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [positionsCurrentPage, setPositionsCurrentPage] = useState(1)
   const [positionsItemsPerPage, setPositionsItemsPerPage] = useState(50)
   
+  // Column visibility for positions
+  const [showPositionsColumnSelector, setShowPositionsColumnSelector] = useState(false)
+  const positionsColumnSelectorRef = useRef(null)
+  const [positionsVisibleColumns, setPositionsVisibleColumns] = useState({
+    position: true,
+    time: true,
+    symbol: true,
+    action: true,
+    volume: true,
+    priceOpen: true,
+    priceCurrent: true,
+    sl: false,
+    tp: false,
+    profit: true,
+    commission: false,
+    comment: false
+  })
+  
+  const positionsColumns = [
+    { key: 'position', label: 'Position' },
+    { key: 'time', label: 'Time' },
+    { key: 'symbol', label: 'Symbol' },
+    { key: 'action', label: 'Action' },
+    { key: 'volume', label: 'Volume' },
+    { key: 'priceOpen', label: 'Price Open' },
+    { key: 'priceCurrent', label: 'Price Current' },
+    { key: 'sl', label: 'S/L' },
+    { key: 'tp', label: 'T/P' },
+    { key: 'profit', label: 'Profit' },
+    { key: 'commission', label: 'Commission' },
+    { key: 'comment', label: 'Comment' }
+  ]
+  
   // Prevent duplicate calls in React StrictMode
   const hasLoadedData = useRef(false)
 
@@ -71,6 +104,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }, [])
 
+  // Toggle column visibility
+  const togglePositionsColumn = (columnKey) => {
+    setPositionsVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }))
+  }
+  
   // Close filter dropdown and search suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -90,13 +131,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       if (dealsSearchRef.current && !dealsSearchRef.current.contains(event.target)) {
         setShowDealsSearchSuggestions(false)
       }
+      if (positionsColumnSelectorRef.current && !positionsColumnSelectorRef.current.contains(event.target)) {
+        setShowPositionsColumnSelector(false)
+      }
     }
     
-    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions) {
+    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions || showPositionsColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions])
+  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions, showPositionsColumnSelector])
 
   // Update positions when allPositionsCache changes (WebSocket updates)
   useEffect(() => {
@@ -822,7 +866,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
           {/* Pagination Controls for Positions Tab */}
           {activeTab === 'positions' && filteredPositions.length > 0 && (
-            <div className="flex items-center gap-1.5 py-2">
+            <div className="flex items-center justify-between gap-1.5 py-2">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-600">Show:</span>
                 <select
@@ -837,7 +881,46 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </select>
               </div>
 
-              {positionsItemsPerPage !== 'All' && (
+              <div className="flex items-center gap-1.5">
+                {/* Columns Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowPositionsColumnSelector(!showPositionsColumnSelector)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Columns
+                  </button>
+                  {showPositionsColumnSelector && (
+                    <div
+                      ref={positionsColumnSelectorRef}
+                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
+                      style={{ maxHeight: '300px', overflowY: 'auto' }}
+                    >
+                      <div className="px-2 py-1 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                      </div>
+                      {positionsColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-2 py-1 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={positionsVisibleColumns[col.key]}
+                            onChange={() => togglePositionsColumn(col.key)}
+                            className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-xs text-gray-700">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {positionsItemsPerPage !== 'All' && (
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPositionsCurrentPage(prev => Math.max(1, prev - 1))}
@@ -872,6 +955,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </button>
                 </div>
               )}
+              </div>
             </div>
           )}
         </div>
