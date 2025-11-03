@@ -80,12 +80,22 @@ const ClientPercentagePage = () => {
         values.add(value)
       }
     })
-    return Array.from(values).sort((a, b) => {
+    const sortedValues = Array.from(values).sort((a, b) => {
       if (typeof a === 'number' && typeof b === 'number') {
         return a - b
       }
       return String(a).localeCompare(String(b))
     })
+    
+    // Filter by search query if exists
+    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+    if (searchQuery) {
+      return sortedValues.filter(value => 
+        String(value).toLowerCase().includes(searchQuery)
+      )
+    }
+    
+    return sortedValues
   }
 
   const toggleColumnFilter = (columnKey, value) => {
@@ -106,6 +116,11 @@ const ClientPercentagePage = () => {
 
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
+      const numberFilterKey = `${columnKey}_number`
+      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      return rest
+    })
+    setFilterSearchQuery(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
