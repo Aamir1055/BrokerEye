@@ -54,6 +54,7 @@ const ClientsPage = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
+  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
   // Column widths state (percentage based)
   const [columnWidths, setColumnWidths] = useState({})
@@ -1292,18 +1293,38 @@ const ClientsPage = () => {
                                     {/* Number Filters (for numeric columns) */}
                                     {['balance', 'equity', 'profit', 'floating', 'credit', 'margin', 'marginFree', 'marginLevel'].includes(col.baseKey) && (
                                       <div className="border-b border-gray-200">
-                                        <div className="px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-50">
-                                          Number Filters
-                                        </div>
-                                        <div className="text-sm text-gray-600 px-3 py-2 space-y-1">
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Equal...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Not Equal...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Less Than...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Less Than Or Equal...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Greater Than...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Greater Than Or Equal...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Between...</div>
-                                          <div className="hover:bg-gray-50 px-2 py-1 rounded cursor-pointer">Custom Filter...</div>
+                                        <div className="px-3 py-2 relative">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
+                                            }}
+                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                          >
+                                            <span>Number Filters</span>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                          </button>
+                                          
+                                          {/* Number Filter Dropdown */}
+                                          {showNumberFilterDropdown === col.baseKey && (
+                                            <div 
+                                              className="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <div className="text-sm text-gray-600 py-1">
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Equal...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Not Equal...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than Or Equal...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than Or Equal...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Between...</div>
+                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Custom Filter...</div>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     )}
