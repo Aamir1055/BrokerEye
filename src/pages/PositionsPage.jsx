@@ -551,12 +551,14 @@ const PositionsPage = () => {
   const summaryStats = useMemo(() => {
     const totalPositions = groupFilteredPositions.length
     const totalFloatingProfit = groupFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfitPercentage = groupFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(groupFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(groupFilteredPositions.map(p => p.symbol)).size
     
     return {
       totalPositions,
       totalFloatingProfit,
+      totalFloatingProfitPercentage,
       uniqueLogins,
       uniqueSymbols
     }
@@ -1037,10 +1039,22 @@ const PositionsPage = () => {
               <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
-              <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
-                {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
+              <p className="text-xs text-gray-500 mb-1">
+                {displayMode === 'percentage' ? 'Sum Profit %' : 'Total Floating Profit'}
+              </p>
+              <p className={`text-lg font-semibold flex items-center gap-1 ${
+                displayMode === 'percentage' 
+                  ? (summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600')
+                  : (summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600')
+              }`}>
+                {displayMode === 'percentage' 
+                  ? (summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼')
+                  : (summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼')
+                }
+                {displayMode === 'percentage'
+                  ? `${Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%`
+                  : formatNumber(Math.abs(summaryStats.totalFloatingProfit))
+                }
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
