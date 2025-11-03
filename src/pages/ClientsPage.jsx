@@ -1512,17 +1512,17 @@ const ClientsPage = () => {
                                 </button>
 
                                 {showFilterDropdown === col.baseKey && (
-                                  <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
+                                  <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-40" 
                                     style={{
                                       top: `${filterRefs.current[col.baseKey]?.getBoundingClientRect().bottom - 15}px`,
                                       left: isLastColumn 
-                                        ? `${filterRefs.current[col.baseKey]?.getBoundingClientRect().right - 192}px`
+                                        ? `${filterRefs.current[col.baseKey]?.getBoundingClientRect().right - 160}px`
                                         : `${filterRefs.current[col.baseKey]?.getBoundingClientRect().left}px`
                                     }}>
                                     {/* Header */}
-                                    <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
+                                    <div className="px-1 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
+                                        <span className="text-[8px] font-semibold text-gray-700">Filter Menu</span>
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation()
@@ -1530,7 +1530,7 @@ const ClientsPage = () => {
                                           }}
                                           className="text-gray-400 hover:text-gray-600"
                                         >
-                                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                           </svg>
                                         </button>
@@ -1545,9 +1545,9 @@ const ClientsPage = () => {
                                           handleSort(col.key)
                                           setSortDirection('asc')
                                         }}
-                                        className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1"
+                                        className="w-full px-1 py-0.5 text-left text-[8px] hover:bg-gray-50 flex items-center gap-0.5"
                                       >
-                                        <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-2 h-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                                         </svg>
                                         Sort Smallest to Largest
@@ -1558,9 +1558,9 @@ const ClientsPage = () => {
                                           handleSort(col.key)
                                           setSortDirection('desc')
                                         }}
-                                        className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100"
+                                        className="w-full px-1 py-0.5 text-left text-[8px] hover:bg-gray-50 flex items-center gap-0.5 border-t border-gray-100"
                                       >
-                                        <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-2 h-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                                         </svg>
                                         Sort Largest to Smallest
@@ -1570,9 +1570,9 @@ const ClientsPage = () => {
                                           e.stopPropagation()
                                           clearColumnFilter(col.baseKey)
                                         }}
-                                        className="w-full px-1.5 py-0.5 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100 text-gray-600"
+                                        className="w-full px-1 py-0.5 text-left text-[8px] hover:bg-gray-50 flex items-center gap-0.5 border-t border-gray-100 text-gray-600"
                                       >
-                                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                         </svg>
                                         Clear Filter
@@ -1581,16 +1581,16 @@ const ClientsPage = () => {
 
                                     {/* Number Filters (for all columns) */}
                                     <div className="border-b border-gray-200">
-                                      <div className="px-1.5 py-0.5 relative group">
+                                      <div className="px-1 py-0.5 relative group">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation()
                                             setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
                                           }}
-                                          className="w-full flex items-center justify-between px-1.5 py-0.5 text-[10px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                          className="w-full flex items-center justify-between px-1 py-0.5 text-[8px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                                         >
                                           <span>Number Filters</span>
-                                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                           </svg>
                                         </button>
@@ -1598,12 +1598,12 @@ const ClientsPage = () => {
                                         {/* Number Filter Dropdown - Opens to the right or left based on position */}
                                         {showNumberFilterDropdown === col.baseKey && (
                                           <div 
-                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-1' : 'left-full ml-1'} w-40 bg-white border border-gray-300 rounded shadow-lg z-50`}
+                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-1' : 'left-full ml-1'} w-32 bg-white border border-gray-300 rounded shadow-lg z-50`}
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            <div className="text-[10px] text-gray-600">
+                                            <div className="text-[8px] text-gray-600">
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1614,7 +1614,7 @@ const ClientsPage = () => {
                                                 Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1625,7 +1625,7 @@ const ClientsPage = () => {
                                                 Not Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1636,7 +1636,7 @@ const ClientsPage = () => {
                                                 Less Than...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1647,7 +1647,7 @@ const ClientsPage = () => {
                                                 Less Than Or Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1658,7 +1658,7 @@ const ClientsPage = () => {
                                                 Greater Than...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1669,7 +1669,7 @@ const ClientsPage = () => {
                                                 Greater Than Or Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1680,7 +1680,7 @@ const ClientsPage = () => {
                                                 Between...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1.5 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1697,7 +1697,7 @@ const ClientsPage = () => {
                                     </div>
 
                                     {/* Search Box */}
-                                    <div className="p-1 border-b border-gray-200">
+                                    <div className="p-0.5 border-b border-gray-200">
                                       <div className="relative">
                                         <input
                                           type="text"
@@ -1711,17 +1711,17 @@ const ClientsPage = () => {
                                             }))
                                           }}
                                           onClick={(e) => e.stopPropagation()}
-                                          className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                          className="w-full px-1 py-0.5 text-[8px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
                                         />
-                                        <svg className="absolute right-1 top-1 w-2.5 h-2.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="absolute right-0.5 top-0.5 w-2 h-2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
                                       </div>
                                     </div>
 
                                     {/* Select All / Deselect All */}
-                                    <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50">
-                                      <label className="flex items-center gap-1 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                    <div className="px-1 py-0.5 border-b border-gray-200 bg-gray-50">
+                                      <label className="flex items-center gap-0.5 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                                         <input
                                           type="checkbox"
                                           checked={isAllSelected(col.baseKey)}
@@ -1734,24 +1734,24 @@ const ClientsPage = () => {
                                             }
                                           }}
                                           onClick={(e) => e.stopPropagation()}
-                                          className="w-2.5 h-2.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                          className="w-2 h-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        <span className="text-[10px] font-medium text-gray-700">Select All</span>
+                                        <span className="text-[8px] font-medium text-gray-700">SELECT ALL</span>
                                       </label>
                                     </div>
 
                                     {/* Filter List */}
-                                    <div className="max-h-32 overflow-y-auto">
+                                    <div className="max-h-40 overflow-y-auto">
                                       <div className="p-0.5 space-y-0">
                                         {getUniqueColumnValues(col.baseKey).length === 0 ? (
-                                          <div className="px-1.5 py-2 text-center text-[10px] text-gray-500">
+                                          <div className="px-1 py-1 text-center text-[8px] text-gray-500">
                                             No items found
                                           </div>
                                         ) : (
                                           getUniqueColumnValues(col.baseKey).map(value => (
                                             <label 
                                               key={value} 
-                                              className="flex items-center gap-1 hover:bg-blue-50 px-1 py-0.5 rounded cursor-pointer transition-colors"
+                                              className="flex items-center gap-0.5 hover:bg-blue-50 px-0.5 py-0.5 rounded cursor-pointer transition-colors"
                                               onClick={(e) => e.stopPropagation()}
                                             >
                                               <input
@@ -1762,9 +1762,9 @@ const ClientsPage = () => {
                                                   toggleColumnFilter(col.baseKey, value)
                                                 }}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="w-2.5 h-2.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                className="w-2 h-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                               />
-                                              <span className="text-[10px] text-gray-700 truncate flex-1">
+                                              <span className="text-[8px] text-gray-700 truncate flex-1">
                                                 {formatValue(col.baseKey, value)}
                                               </span>
                                             </label>
