@@ -1033,30 +1033,34 @@ const PositionsPage = () => {
           </div>
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
+          <div className={`grid gap-2 sm:gap-3 mb-4 ${displayMode === 'both' ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Positions</p>
               <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">
-                {displayMode === 'percentage' || displayMode === 'both' ? 'Total Floating Profit Percentage' : 'Total Floating Profit'}
-              </p>
-              <p className={`text-lg font-semibold flex items-center gap-1 ${
-                displayMode === 'percentage' || displayMode === 'both'
-                  ? (summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600')
-                  : (summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600')
-              }`}>
-                {displayMode === 'percentage' || displayMode === 'both'
-                  ? (summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼')
-                  : (summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼')
-                }
-                {displayMode === 'percentage' || displayMode === 'both'
-                  ? `${Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%`
-                  : formatNumber(Math.abs(summaryStats.totalFloatingProfit))
-                }
-              </p>
-            </div>
+            
+            {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
+            {(displayMode === 'value' || displayMode === 'both') && (
+              <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
+                <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
+                <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
+                  {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
+                </p>
+              </div>
+            )}
+            
+            {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode */}
+            {(displayMode === 'percentage' || displayMode === 'both') && (
+              <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
+                <p className="text-xs text-gray-500 mb-1">Total Floating Profit Percentage</p>
+                <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼'}
+                  {Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%
+                </p>
+              </div>
+            )}
+            
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
               <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueLogins}</p>
