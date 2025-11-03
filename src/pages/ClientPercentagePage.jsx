@@ -481,32 +481,287 @@ const ClientPercentagePage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
-                <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-                  <span className="text-xs font-semibold text-gray-700">Filter by {label}</span>
-                  {filterCount > 0 && (
+              <div className="fixed bg-white border border-gray-300 rounded-lg shadow-2xl z-[9999] w-64" 
+                style={{
+                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  left: `${filterRefs.current[columnKey]?.getBoundingClientRect().left}px`
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-700">Filter Menu</span>
                     <button
-                      onClick={() => clearColumnFilter(columnKey)}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(null)
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      Clear
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="p-2 space-y-1">
-                  {getUniqueColumnValues(columnKey).map(value => (
-                    <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(columnFilters[columnKey] || []).includes(value)}
-                        onChange={() => toggleColumnFilter(columnKey, value)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 truncate">
-                        {value}
-                      </span>
-                    </label>
-                  ))}
+
+                {/* Sort Options */}
+                <div className="border-b border-gray-200">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey)
+                      setSortDirection('asc')
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Sort Smallest to Largest
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey)
+                      setSortDirection('desc')
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
+                  >
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Sort Largest to Smallest
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100 text-gray-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Clear Filter
+                  </button>
+                </div>
+
+                {/* Number Filters */}
+                <div className="border-b border-gray-200">
+                  <div className="px-3 py-2 relative group">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                    >
+                      <span>Number Filters</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    
+                    {/* Number Filter Dropdown - Opens to the right */}
+                    {showNumberFilterDropdown === columnKey && (
+                      <div 
+                        className="absolute left-full top-0 ml-1 w-56 bg-white border border-gray-300 rounded shadow-lg z-50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="text-sm text-gray-600 py-1">
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('equal')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('notEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Not Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('between')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Between...
+                          </div>
+                          <div 
+                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('equal')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Custom Filter...
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Box */}
+                <div className="p-2 border-b border-gray-200">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={filterSearchQuery[columnKey] || ''}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        setFilterSearchQuery(prev => ({
+                          ...prev,
+                          [columnKey]: e.target.value
+                        }))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <svg className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Select All / Deselect All */}
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected(columnKey)}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        if (e.target.checked) {
+                          selectAllFilters(columnKey)
+                        } else {
+                          deselectAllFilters(columnKey)
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Select All</span>
+                  </label>
+                </div>
+
+                {/* Filter List */}
+                <div className="max-h-64 overflow-y-auto">
+                  <div className="p-2 space-y-1">
+                    {getUniqueColumnValues(columnKey).length === 0 ? (
+                      <div className="px-3 py-4 text-center text-sm text-gray-500">
+                        No items found
+                      </div>
+                    ) : (
+                      getUniqueColumnValues(columnKey).map(value => (
+                        <label 
+                          key={value} 
+                          className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(columnFilters[columnKey] || []).includes(value)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              toggleColumnFilter(columnKey, value)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700 truncate">
+                            {value}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center justify-end gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(null)
+                    }}
+                    className="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    OK
+                  </button>
                 </div>
               </div>
             )}
@@ -940,6 +1195,123 @@ const ClientPercentagePage = () => {
         secondaryField="type"
         editGroup={editingGroup}
       />
+
+      {/* Custom Filter Modal */}
+      {showCustomFilterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
+                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
+              </div>
+
+              {/* Filter Type Dropdown */}
+              <div>
+                <select
+                  value={customFilterType}
+                  onChange={(e) => setCustomFilterType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                >
+                  <option value="equal">Equal</option>
+                  <option value="notEqual">Not Equal</option>
+                  <option value="lessThan">Less Than</option>
+                  <option value="lessThanOrEqual">Less Than Or Equal</option>
+                  <option value="greaterThan">Greater Than</option>
+                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
+                  <option value="between">Between</option>
+                </select>
+              </div>
+
+              {/* Value Input */}
+              <div>
+                <input
+                  type="number"
+                  value={customFilterValue1}
+                  onChange={(e) => setCustomFilterValue1(e.target.value)}
+                  placeholder="Enter the value"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                />
+              </div>
+
+              {/* Second Value for Between */}
+              {customFilterType === 'between' && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'AND'}
+                        onChange={() => setCustomFilterOperator('AND')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">AND</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'OR'}
+                        onChange={() => setCustomFilterOperator('OR')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">OR</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <input
+                      type="number"
+                      value={customFilterValue2}
+                      onChange={(e) => setCustomFilterValue2(e.target.value)}
+                      placeholder="Enter the value"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyCustomNumberFilter}
+                disabled={!customFilterValue1}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
