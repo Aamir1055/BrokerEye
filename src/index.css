@@ -71,6 +71,28 @@
   body {
     @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100;
   }
+
+  /* Ensure placeholder text is always visible */
+  input::placeholder,
+  textarea::placeholder {
+    color: #9CA3AF !important; /* gray-400 */
+    opacity: 1 !important;
+  }
+
+  input::-webkit-input-placeholder {
+    color: #9CA3AF !important; /* gray-400 */
+    opacity: 1 !important;
+  }
+
+  input::-moz-placeholder {
+    color: #9CA3AF !important; /* gray-400 */
+    opacity: 1 !important;
+  }
+
+  input:-ms-input-placeholder {
+    color: #9CA3AF !important; /* gray-400 */
+    opacity: 1 !important;
+  }
 }
 
 /* Custom Animations */

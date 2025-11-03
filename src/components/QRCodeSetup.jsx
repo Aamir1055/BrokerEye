@@ -89,9 +89,12 @@ const QRCodeSetup = ({
             <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
               <p className="text-xs text-blue-700 mb-1.5 font-medium">Manual Entry:</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono bg-white px-2 py-1.5 rounded border border-blue-200 select-all break-all">
-                  {setupData.secret}
-                </code>
+                <input
+                  type="text"
+                  value={setupData.secret}
+                  readOnly
+                  className="flex-1 text-xs font-mono bg-white px-2 py-1.5 rounded border border-blue-200 select-all break-all text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
                 <button
                   onClick={() => copyToClipboard(setupData.secret)}
                   className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded flex-shrink-0"
@@ -124,7 +127,7 @@ const QRCodeSetup = ({
                 onChange={handleCodeChange}
                 placeholder="000000"
                 maxLength="6"
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-center text-lg font-mono bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-center text-lg font-mono bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 autoComplete="off"
               />
             </div>
