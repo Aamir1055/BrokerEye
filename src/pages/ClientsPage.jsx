@@ -364,7 +364,8 @@ const ClientsPage = () => {
 
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
-      const { [columnKey]: _, ...rest } = prev
+      const numberFilterKey = `${columnKey}_number`
+      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
@@ -375,7 +376,14 @@ const ClientsPage = () => {
   }
 
   const getActiveFilterCount = (columnKey) => {
-    return columnFilters[columnKey]?.length || 0
+    // Check for regular checkbox filters
+    const checkboxCount = columnFilters[columnKey]?.length || 0
+    
+    // Check for number filter
+    const numberFilterKey = `${columnKey}_number`
+    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter
   }
 
   const isAllSelected = (columnKey) => {
