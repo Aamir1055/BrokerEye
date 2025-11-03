@@ -4,7 +4,7 @@ import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
-import LoginDetailsModal from '../components/LoginDetailsModal'
+import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 
@@ -781,12 +781,14 @@ const MarginLevelPage = () => {
         editGroup={editingGroup}
       />
 
-      {/* Login Details Modal */}
+      {/* Client Positions Modal */}
       {selectedLogin && (
-        <LoginDetailsModal
-          login={selectedLogin}
+        <ClientPositionsModal
+          client={{ login: selectedLogin }}
           onClose={() => setSelectedLogin(null)}
+          onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          onCacheUpdate={() => {}}
         />
       )}
     </div>

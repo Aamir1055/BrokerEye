@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
+import { useData } from '../contexts/DataContext'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import WebSocketIndicator from '../components/WebSocketIndicator'
+import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 
 const ClientPercentagePage = () => {
   const { filterByActiveGroup } = useGroups()
+  const { positions: cachedPositions } = useData()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedLogin, setSelectedLogin] = useState(null)
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [stats, setStats] = useState({
@@ -1050,7 +1054,11 @@ const ClientPercentagePage = () => {
                   {displayedClients.map((client, index) => (
                     <tr key={client.client_login} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {visibleColumns.login && (
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td 
+                          className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                          onClick={() => setSelectedLogin(client.client_login)}
+                          title="Click to view login details"
+                        >
                           {client.client_login}
                         </td>
                       )}
@@ -1311,6 +1319,17 @@ const ClientPercentagePage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Client Positions Modal */}
+      {selectedLogin && (
+        <ClientPositionsModal
+          client={{ login: selectedLogin }}
+          onClose={() => setSelectedLogin(null)}
+          onClientUpdate={() => {}}
+          allPositionsCache={cachedPositions}
+          onCacheUpdate={() => {}}
+        />
       )}
     </div>
   )
