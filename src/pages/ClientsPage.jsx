@@ -1290,44 +1290,42 @@ const ClientsPage = () => {
                                       </button>
                                     </div>
 
-                                    {/* Number Filters (for numeric columns) */}
-                                    {['balance', 'equity', 'profit', 'floating', 'credit', 'margin', 'marginFree', 'marginLevel'].includes(col.baseKey) && (
-                                      <div className="border-b border-gray-200">
-                                        <div className="px-3 py-2 relative group">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
-                                            }}
-                                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                    {/* Number Filters (for all columns) */}
+                                    <div className="border-b border-gray-200">
+                                      <div className="px-3 py-2 relative group">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
+                                          }}
+                                          className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                        >
+                                          <span>Number Filters</span>
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                          </svg>
+                                        </button>
+                                        
+                                        {/* Number Filter Dropdown - Opens to the right */}
+                                        {showNumberFilterDropdown === col.baseKey && (
+                                          <div 
+                                            className="absolute left-full top-0 ml-1 w-56 bg-white border border-gray-300 rounded shadow-lg z-50"
+                                            onClick={(e) => e.stopPropagation()}
                                           >
-                                            <span>Number Filters</span>
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                            </svg>
-                                          </button>
-                                          
-                                          {/* Number Filter Dropdown - Opens to the right */}
-                                          {showNumberFilterDropdown === col.baseKey && (
-                                            <div 
-                                              className="absolute left-full top-0 ml-1 w-56 bg-white border border-gray-300 rounded shadow-lg z-50"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              <div className="text-sm text-gray-600 py-1">
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Equal...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Not Equal...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than Or Equal...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than Or Equal...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Between...</div>
-                                                <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Custom Filter...</div>
-                                              </div>
+                                            <div className="text-sm text-gray-600 py-1">
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Equal...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Not Equal...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Less Than Or Equal...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Greater Than Or Equal...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Between...</div>
+                                              <div className="hover:bg-gray-50 px-3 py-2 cursor-pointer">Custom Filter...</div>
                                             </div>
-                                          )}
-                                        </div>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                    </div>
 
                                     {/* Search Box */}
                                     <div className="p-2 border-b border-gray-200">
