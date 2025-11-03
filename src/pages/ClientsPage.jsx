@@ -1815,7 +1815,7 @@ const ClientsPage = () => {
                 <select
                   value={customFilterType}
                   onChange={(e) => setCustomFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                 >
                   <option value="equal">Equal</option>
                   <option value="notEqual">Not Equal</option>
