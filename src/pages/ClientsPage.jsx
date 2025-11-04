@@ -645,6 +645,29 @@ const ClientsPage = () => {
     return num.toFixed(2)
   }
 
+  // Format numbers in Indian currency style (lakhs/crores)
+  const formatIndianNumber = (num) => {
+    const numStr = num.toString()
+    const [integerPart, decimalPart] = numStr.split('.')
+    
+    // Handle negative numbers
+    const isNegative = integerPart.startsWith('-')
+    const absoluteInteger = isNegative ? integerPart.substring(1) : integerPart
+    
+    if (absoluteInteger.length <= 3) {
+      return decimalPart ? `${integerPart}.${decimalPart}` : integerPart
+    }
+    
+    // Indian format: last 3 digits, then groups of 2
+    const lastThree = absoluteInteger.substring(absoluteInteger.length - 3)
+    const otherNumbers = absoluteInteger.substring(0, absoluteInteger.length - 3)
+    const formattedOther = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
+    const formatted = `${formattedOther},${lastThree}`
+    
+    const result = (isNegative ? '-' : '') + formatted
+    return decimalPart ? `${result}.${decimalPart}` : result
+  }
+
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
       // Handle PNL calculation
@@ -665,15 +688,12 @@ const ClientsPage = () => {
       // For PNL, calculate credit - equity
       if (key === 'pnl' && client) {
         const pnl = (client.credit || 0) - (client.equity || 0)
-        return pnl.toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        })
+        const formatted = formatIndianNumber(pnl.toFixed(2))
+        return formatted
       }
-      return parseFloat(value).toLocaleString('en-US', { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-      })
+      const num = parseFloat(value)
+      const formatted = formatIndianNumber(num.toFixed(2))
+      return formatted
     }
     
     // Percentage fields
@@ -684,7 +704,8 @@ const ClientsPage = () => {
     // Integer fields
     if (['leverage', 'marginLeverage', 'agent', 'clientID', 'soActivation', 'soTime', 
          'currencyDigits', 'rightsMask', 'language'].includes(key)) {
-      return parseInt(value).toLocaleString('en-US')
+      const formatted = formatIndianNumber(parseInt(value))
+      return formatted
     }
     
     // Boolean fields
@@ -1377,7 +1398,7 @@ const ClientsPage = () => {
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)' }}>
             <div className="overflow-y-auto flex-1">
               <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
