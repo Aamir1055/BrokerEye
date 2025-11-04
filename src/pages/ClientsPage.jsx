@@ -882,65 +882,65 @@ const ClientsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Total Clients</p>
-                    <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
-                      <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Clients</p>
+                    <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
+                      <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-base font-bold text-slate-800">{filteredClients.length}</p>
+                  <p className="text-sm font-bold text-slate-800">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Total Balance</p>
-                    <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                      <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Balance</p>
+                    <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
+                      <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-base font-bold text-indigo-700">
+                  <p className="text-sm font-bold text-indigo-700">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[10px] font-semibold text-emerald-600 uppercase">Total Credit</p>
-                    <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Credit</p>
+                    <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
+                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-900">
+                  <p className="text-sm font-bold text-slate-800">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
+                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-semibold text-sky-600 uppercase">Total Equity</p>
-                    <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Equity</p>
+                    <div className="w-6 h-6 bg-sky-50 rounded-lg flex items-center justify-center border border-sky-100">
+                      <svg className="w-3 h-3 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-900">
+                  <p className="text-sm font-bold text-slate-800">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toFixed(2))}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
                     <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
-                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                         ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                         )}
                       </svg>
                     </div>
@@ -954,9 +954,9 @@ const ClientsPage = () => {
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
                     <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
-                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'bg-teal-100' : 'bg-orange-100'} rounded-full flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'bg-teal-50 border border-teal-100' : 'bg-orange-50 border border-orange-100'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                       </svg>
                     </div>
                   </div>
@@ -1407,18 +1407,18 @@ const ClientsPage = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={(e) => { if (e.key === 'Enter') setShowSuggestions(false) }}
                     placeholder="Search login, name, email..."
-                    className="pl-9 pr-8 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    className="pl-10 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
                   />
-                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   {searchQuery && (
                     <button
                       onClick={() => { setSearchQuery(''); setShowSuggestions(false) }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}

@@ -29,41 +29,41 @@ const GroupSelector = ({ onCreateClick, onEditClick, moduleName }) => {
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+        className="text-slate-700 hover:text-slate-900 px-3 py-1.5 rounded-md hover:bg-slate-50 border border-slate-300 hover:border-slate-400 transition-all inline-flex items-center gap-1.5 text-xs font-medium hover:shadow-sm"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
         Groups
         {groups.length > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+          <span className="ml-1 px-1.5 py-0.5 bg-slate-700 text-white text-xs rounded-full font-bold">
             {groups.length}
           </span>
         )}
         {activeGroupFilter && (
-          <span className="ml-1 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">
+          <span className="ml-1 px-1.5 py-0.5 bg-slate-600 text-white text-xs rounded-full font-bold">
             Active
           </span>
         )}
       </button>
       
       {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-64">
-          <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-700 uppercase">Login Groups</p>
+        <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 w-64">
+          <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">Login Groups</p>
             <button
               onClick={() => {
                 setShowDropdown(false)
                 onCreateClick()
               }}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              className="text-xs text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-100 px-2 py-1 rounded transition-colors"
             >
               + New
             </button>
           </div>
           
           {groups.length === 0 ? (
-            <div className="px-3 py-4 text-center text-sm text-gray-500">
+            <div className="px-3 py-4 text-center text-xs text-slate-500">
               No groups created yet
             </div>
           ) : (
@@ -73,56 +73,56 @@ const GroupSelector = ({ onCreateClick, onEditClick, moduleName }) => {
                   setActiveGroupFilter(moduleName, null)
                   setShowDropdown(false)
                 }}
-                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                   activeGroupFilter === null 
-                    ? 'bg-blue-50 text-blue-700 font-medium' 
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-slate-100 text-slate-900 font-bold' 
+                    : 'text-slate-700 hover:bg-slate-50 font-medium'
                 }`}
               >
                 All Items
               </button>
               
               {groups.map((group, idx) => (
-                <div key={idx} className="flex items-center hover:bg-gray-50">
+                <div key={idx} className="flex items-center hover:bg-slate-50">
                   <button
                     onClick={() => {
                       setActiveGroupFilter(moduleName, group.name)
                       setShowDropdown(false)
                     }}
-                    className={`flex-1 text-left px-3 py-2 text-sm transition-colors ${
+                    className={`flex-1 text-left px-3 py-2 text-xs transition-colors ${
                       activeGroupFilter === group.name 
-                        ? 'bg-blue-50 text-blue-700 font-medium' 
-                        : 'text-gray-700'
+                        ? 'bg-slate-100 text-slate-900 font-bold' 
+                        : 'text-slate-700 font-medium'
                     }`}
                   >
                     {group.name}
                     {group.range && (
-                      <span className="ml-2 text-xs text-gray-500">
+                      <span className="ml-2 text-xs text-slate-500">
                         ({group.range.from}-{group.range.to})
                       </span>
                     )}
                     {!group.range && group.loginIds && (
-                      <span className="ml-2 text-xs text-gray-500">
+                      <span className="ml-2 text-xs text-slate-500">
                         ({group.loginIds.length} logins)
                       </span>
                     )}
                   </button>
                   <button
                     onClick={(e) => handleEdit(group, e)}
-                    className="px-2 py-2 text-blue-600 hover:text-blue-700"
+                    className="px-2 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
                     title="Edit group"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
                   <button
                     onClick={(e) => handleDelete(group.name, e)}
-                    className="px-2 py-2 text-red-600 hover:text-red-700"
+                    className="px-2 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                     title="Delete group"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
