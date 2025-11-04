@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
@@ -879,118 +879,118 @@ const ClientsPage = () => {
           )}
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Clients</p>
                   <p className="text-base font-semibold text-gray-900">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Balance</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Credit</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Equity</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-purple-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Deposit</p>
                   <p className="text-base font-semibold text-green-600">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-red-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-red-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Withdrawal</p>
                   <p className="text-base font-semibold text-red-600">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-orange-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-cyan-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-teal-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '? ' : '? '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
               </>
             )}
             {displayMode === 'percentage' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Clients</p>
                   <p className="text-sm font-semibold text-gray-900">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Credit %</p>
                   <p className="text-sm font-semibold text-green-600">
                     {filteredClients.reduce((sum, c) => sum + (c.credit_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Balance %</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.balance_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Equity %</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.equity_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-purple-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -998,7 +998,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1006,19 +1006,19 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Deposit</p>
                   <p className="text-sm font-semibold text-green-600">
                     {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-red-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-red-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-semibold text-red-600">
                     {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-orange-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1026,7 +1026,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-cyan-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1034,7 +1034,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-teal-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1042,7 +1042,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1055,29 +1055,29 @@ const ClientsPage = () => {
             {displayMode === 'both' && (
               <>
                 {/* Value Cards - First Row */}
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Clients</p>
                   <p className="text-sm font-semibold text-gray-900">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Balance</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Credit</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Equity</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-purple-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? ' ' : ' '}
@@ -1085,7 +1085,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? ' ' : ' '}
@@ -1105,25 +1105,25 @@ const ClientsPage = () => {
                 </div>
                 
                 {/* Percentage Cards - Second Row */}
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Credit %</p>
                   <p className="text-sm font-semibold text-green-600">
                     {filteredClients.reduce((sum, c) => sum + (c.credit_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Balance %</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.balance_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Equity %</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {filteredClients.reduce((sum, c) => sum + (c.equity_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-purple-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1131,7 +1131,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1141,19 +1141,19 @@ const ClientsPage = () => {
                 </div>
                 
                 {/* New Cards - Third Row (Value) */}
-                <div className="bg-white rounded shadow-sm border border-green-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Deposit</p>
                   <p className="text-sm font-semibold text-green-600">
                     {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-red-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-red-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-semibold text-red-600">
                     {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-orange-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? ' ' : ' '}
@@ -1161,7 +1161,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-cyan-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? ' ' : ' '}
@@ -1169,7 +1169,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-teal-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? ' ' : ' '}
@@ -1177,7 +1177,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? ' ' : ' '}
@@ -1196,7 +1196,7 @@ const ClientsPage = () => {
                     </svg>
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-orange-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1204,7 +1204,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-cyan-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1212,7 +1212,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-teal-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1220,7 +1220,7 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-1.5">
+                <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
@@ -1429,7 +1429,7 @@ const ClientsPage = () => {
                         return (
                         <th
                           key={col.key}
-                          className="px-2 py-1 text-left text-[10px] font-semibold text-gray-700 uppercase tracking-wider relative group hover:bg-blue-100 transition-colors"
+                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group hover:bg-blue-100 transition-colors"
                           style={{ width: `${col.width}%` }}
                         >
                           <div className="flex items-center gap-1 justify-between">
@@ -1839,7 +1839,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-2 py-1 text-sm text-gray-900" style={{ width: `${col.width}%` }}>
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-900" style={{ width: `${col.width}%` }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>
