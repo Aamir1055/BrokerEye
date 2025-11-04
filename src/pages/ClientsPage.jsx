@@ -739,19 +739,22 @@ const ClientsPage = () => {
 
   return (
     <div className="h-screen flex overflow-hidden relative">
-      {/* Forex Trading Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40"></div>
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v6h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        backgroundSize: '60px 60px'
-      }}></div>
+      {/* Financial Bull Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop')`,
+        }}
+      ></div>
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-blue-900/80 to-indigo-900/85"></div>
       
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
         <div className="max-w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/20">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -762,8 +765,8 @@ const ClientsPage = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Clients</h1>
-                <p className="text-xs font-medium text-slate-500 mt-1">Manage and view all client accounts</p>
+                <h1 className="text-xl font-bold text-white tracking-tight drop-shadow-lg">Clients</h1>
+                <p className="text-xs font-medium text-slate-200 mt-1 drop-shadow">Manage and view all client accounts</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -891,7 +894,7 @@ const ClientsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Clients</p>
                     <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
@@ -902,7 +905,7 @@ const ClientsPage = () => {
                   </div>
                   <p className="text-sm font-bold text-slate-800">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Balance</p>
                     <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
@@ -915,7 +918,7 @@ const ClientsPage = () => {
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Credit</p>
                     <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
@@ -928,7 +931,7 @@ const ClientsPage = () => {
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-slate-200 p-2">
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Equity</p>
                     <div className="w-6 h-6 bg-sky-50 rounded-lg flex items-center justify-center border border-sky-100">
