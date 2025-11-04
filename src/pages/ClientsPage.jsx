@@ -1450,10 +1450,10 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden flex flex-col backdrop-blur-sm" style={{ maxHeight: 'calc(100vh - 220px)' }}>
-            <div className="overflow-y-auto flex-1 custom-scrollbar">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 flex flex-col backdrop-blur-sm" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'visible' }}>
+            <div className="overflow-y-auto flex-1 custom-scrollbar" style={{ overflow: 'auto' }}>
               <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 z-10 shadow-md">
+                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 shadow-md" style={{ zIndex: 100, overflow: 'visible' }}>
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
@@ -1485,7 +1485,7 @@ const ClientsPage = () => {
                         <th
                           key={col.key}
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all"
-                          style={{ width: `${col.width}%` }}
+                          style={{ width: `${col.width}%`, overflow: 'visible' }}
                         >
                           <div className="flex items-center gap-1 justify-between">
                             <div 
