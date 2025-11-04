@@ -907,7 +907,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toFixed(2))}
                   </p>
@@ -915,7 +915,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toFixed(2))}
                   </p>
@@ -935,7 +935,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toFixed(2))}
                   </p>
@@ -943,7 +943,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toFixed(2))}
                   </p>
@@ -951,7 +951,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toFixed(2))}
                   </p>
@@ -959,7 +959,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '? ' : '? '}
+                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toFixed(2))}
                   </p>
@@ -993,7 +993,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1001,7 +1001,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1021,7 +1021,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1029,7 +1029,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1037,7 +1037,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1045,7 +1045,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1080,7 +1080,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1088,7 +1088,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1126,7 +1126,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">PNL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1134,7 +1134,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1156,7 +1156,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1164,7 +1164,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1172,7 +1172,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1180,7 +1180,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1199,7 +1199,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Daily PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1207,7 +1207,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Week PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1215,7 +1215,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">This Month PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
@@ -1223,7 +1223,7 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
                   <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? ' ' : ' '}
+                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '' : '-'}
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
