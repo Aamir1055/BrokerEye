@@ -1208,12 +1208,6 @@ const ClientsPage = () => {
                     </svg>
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-red-100 p-2">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Daily Withdrawal</p>
-                  <p className="text-base font-semibold text-red-600">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
                 <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-2">
                   <p className="text-[10px] text-gray-500 mb-0.5">Daily PnL %</p>
                   <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
