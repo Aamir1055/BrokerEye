@@ -882,9 +882,9 @@ const ClientsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-2">
+                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-medium text-blue-600 uppercase">Total Clients</p>
+                    <p className="text-[10px] font-semibold text-blue-600 uppercase">Total Clients</p>
                     <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -893,9 +893,9 @@ const ClientsPage = () => {
                   </div>
                   <p className="text-base font-bold text-gray-900">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-2">
+                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-medium text-indigo-600 uppercase">Total Balance</p>
+                    <p className="text-[10px] font-semibold text-indigo-600 uppercase">Total Balance</p>
                     <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -906,9 +906,9 @@ const ClientsPage = () => {
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-emerald-100 p-2">
+                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-medium text-emerald-600 uppercase">Total Credit</p>
+                    <p className="text-[10px] font-semibold text-emerald-600 uppercase">Total Credit</p>
                     <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -919,9 +919,9 @@ const ClientsPage = () => {
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-sky-100 p-2">
+                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-medium text-sky-600 uppercase">Total Equity</p>
+                    <p className="text-[10px] font-semibold text-sky-600 uppercase">Total Equity</p>
                     <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -932,9 +932,9 @@ const ClientsPage = () => {
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'border-green-100' : 'border-red-100'} p-2`}>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
                     <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
                       <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? (
@@ -951,9 +951,9 @@ const ClientsPage = () => {
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'border-teal-100' : 'border-orange-100'} p-2`}>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
                     <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'bg-teal-100' : 'bg-orange-100'} rounded-full flex items-center justify-center`}>
                       <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
@@ -966,44 +966,44 @@ const ClientsPage = () => {
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-2">
-                  <p className="text-[10px] font-medium text-green-600 uppercase mb-1">Daily Deposit</p>
+                <div className="bg-white rounded shadow-sm border border-green-200 p-2">
+                  <p className="text-[10px] font-semibold text-green-600 uppercase mb-1">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-red-100 p-2">
-                  <p className="text-[10px] font-medium text-red-600 uppercase mb-1">Daily Withdrawal</p>
+                <div className="bg-white rounded shadow-sm border border-red-200 p-2">
+                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-1">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-100' : 'border-rose-100'} p-2`}>
-                  <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-1`}>Daily PnL</p>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-1`}>Daily PnL</p>
                   <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-100' : 'border-amber-100'} p-2`}>
-                  <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-1`}>This Week PnL</p>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-1`}>This Week PnL</p>
                   <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-100' : 'border-orange-100'} p-2`}>
-                  <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-1`}>This Month PnL</p>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-1`}>This Month PnL</p>
                   <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-100' : 'border-pink-100'} p-2`}>
-                  <p className={`text-[10px] font-medium ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-1`}>Lifetime PnL</p>
+                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-1`}>Lifetime PnL</p>
                   <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
