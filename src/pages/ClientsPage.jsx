@@ -739,22 +739,33 @@ const ClientsPage = () => {
 
   return (
     <div className="h-screen flex overflow-hidden relative">
-      {/* Financial Bull Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop')`,
-        }}
-      ></div>
-      {/* Dark overlay for better readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-blue-900/80 to-indigo-900/85"></div>
+      {/* Forex Trading Professional Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30"></div>
+      
+      {/* Subtle Trading Chart Pattern Overlay */}
+      <div className="absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 L20 45 L40 55 L60 35 L80 40 L100 30' stroke='%23000000' stroke-width='1' fill='none'/%3E%3Cpath d='M0 70 L20 65 L40 75 L60 55 L80 60 L100 50' stroke='%23000000' stroke-width='1' fill='none'/%3E%3Cpath d='M20 0 L20 100 M40 0 L40 100 M60 0 L60 100 M80 0 L80 100' stroke='%23000000' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E")`,
+        backgroundSize: '100px 100px'
+      }}></div>
+      
+      {/* Animated Floating Elements - Subtle Bull/Finance Icons */}
+      <div className="absolute top-20 right-20 opacity-[0.03] animate-pulse">
+        <svg className="w-32 h-32 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.18 0-6-2.46-6-5.5 0-1.85 1.23-3.45 3-4.27V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v1.73c1.77.82 3 2.42 3 4.27 0 3.04-2.82 5.5-6 5.5z"/>
+        </svg>
+      </div>
+      <div className="absolute bottom-40 left-32 opacity-[0.02] animate-pulse" style={{ animationDelay: '1s' }}>
+        <svg className="w-40 h-40 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+        </svg>
+      </div>
       
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
         <div className="max-w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/20">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200/60">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -765,8 +776,8 @@ const ClientsPage = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight drop-shadow-lg">Clients</h1>
-                <p className="text-xs font-medium text-slate-200 mt-1 drop-shadow">Manage and view all client accounts</p>
+                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Clients</h1>
+                <p className="text-xs font-medium text-slate-600 mt-1">Manage and view all client accounts</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
