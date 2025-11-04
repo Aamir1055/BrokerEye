@@ -65,9 +65,6 @@ const ClientsPage = () => {
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
   
-  // Column widths state (percentage based)
-  const [columnWidths, setColumnWidths] = useState({})
-  const [resizing, setResizing] = useState(null)
   const tableRef = useRef(null)
 
   // Default visible columns - load from localStorage or use defaults
@@ -280,53 +277,6 @@ const ClientsPage = () => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  // Handle column resizing
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!resizing || !tableRef.current) return
-      
-      const tableWidth = tableRef.current.offsetWidth
-      const minWidth = 80 // minimum column width in pixels
-      const minWidthPercent = (minWidth / tableWidth) * 100
-      
-      const deltaX = e.clientX - resizing.startX
-      const newWidth = Math.max(minWidthPercent, resizing.startWidth + (deltaX / tableWidth) * 100)
-      
-      setColumnWidths(prev => ({
-        ...prev,
-        [resizing.columnKey]: newWidth
-      }))
-    }
-
-    const handleMouseUp = () => {
-      setResizing(null)
-    }
-
-    if (resizing) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      document.body.style.cursor = 'col-resize'
-      document.body.style.userSelect = 'none'
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-  }, [resizing])
-
-  const handleResizeStart = (e, columnKey, currentWidth) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setResizing({
-      columnKey,
-      startX: e.clientX,
-      startWidth: currentWidth
-    })
-  }
 
 
   const toggleColumn = (columnKey) => {
@@ -1436,19 +1386,17 @@ const ClientsPage = () => {
                       baseVisible.forEach(col => {
                         const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
                         const defaultWidth = 100 / widthBaseTotal
-                        const width = columnWidths[col.key] || defaultWidth
 
                         // For base column header, adjust label if percentage mode and metric
                         const isMetric = isMetricColumn(col.key)
                         const headerLabel = (displayMode === 'percentage' && isMetric) ? `${col.label} %` : col.label
 
-                        renderCols.push({ key: col.key, label: headerLabel, width, baseKey: col.key })
+                        renderCols.push({ key: col.key, label: headerLabel, width: defaultWidth, baseKey: col.key })
 
                         if (displayMode === 'both' && isMetric) {
                           // Add a virtual percentage column next to it
                           const virtKey = `${col.key}_percentage_display`
-                          const virtWidth = columnWidths[virtKey] || defaultWidth
-                          renderCols.push({ key: virtKey, label: `${col.label} %`, width: virtWidth, baseKey: col.key })
+                          renderCols.push({ key: virtKey, label: `${col.label} %`, width: defaultWidth, baseKey: col.key })
                         }
                       })
 
@@ -1803,12 +1751,6 @@ const ClientsPage = () => {
                               </div>
                             )}
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-px cursor-col-resize bg-black opacity-30 hover:opacity-60"
-                            onMouseDown={(e) => handleResizeStart(e, col.key, col.width)}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ opacity: resizing?.columnKey === col.key ? 0.8 : undefined }}
-                          />
                         </th>
                       )})
                     })()}
@@ -1824,7 +1766,6 @@ const ClientsPage = () => {
 
                     baseVisible.forEach(col => {
                       const isMetric = isMetricColumn(col.key)
-                      const colWidth = columnWidths[col.key] || defaultWidth
 
                       // Compute displayed value for base column
                       let titleVal
@@ -1839,14 +1780,13 @@ const ClientsPage = () => {
                         displayVal = formatValue(col.key, client[col.key], client)
                       }
 
-                      renderCols.push({ key: col.key, width: colWidth, value: displayVal, title: titleVal })
+                      renderCols.push({ key: col.key, width: defaultWidth, value: displayVal, title: titleVal })
 
                       if (displayMode === 'both' && isMetric) {
                         const virtKey = `${col.key}_percentage_display`
-                        const virtWidth = columnWidths[virtKey] || defaultWidth
                         const percKey = percentageFieldMap[col.key]
                         const val = percKey ? client[percKey] : undefined
-                        renderCols.push({ key: virtKey, width: virtWidth, value: formatPercent(val), title: formatPercent(val) })
+                        renderCols.push({ key: virtKey, width: defaultWidth, value: formatPercent(val), title: formatPercent(val) })
                       }
                     })
 
