@@ -1540,9 +1540,12 @@ const ClientsPage = () => {
                                 </button>
 
                                 {showFilterDropdown === col.baseKey && (
-                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[85vh] overflow-hidden flex flex-col" 
+                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[80vh] flex flex-col"
+                                    style={{ overflow: 'hidden' }}
+                                  > 
                                     style={{
-                                      top: '0px',
+                                      bottom: '100%',
+                                      marginBottom: '-40px',
                                       left: isLastColumn 
                                         ? 'auto'
                                         : '100%',
@@ -1613,8 +1616,8 @@ const ClientsPage = () => {
                                     </div>
 
                                     {/* Number Filters (for all columns) */}
-                                    <div className="border-b border-slate-200 py-1">
-                                      <div className="px-2 py-1 relative group">
+                                    <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                                      <div className="px-2 py-1 relative group" style={{ overflow: 'visible' }}>
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation()
@@ -1631,7 +1634,11 @@ const ClientsPage = () => {
                                         {/* Number Filter Dropdown - Opens to the right or left based on position */}
                                         {showNumberFilterDropdown === col.baseKey && (
                                           <div 
-                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-2' : 'left-full ml-2'} w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl z-50`}
+                                            className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl z-[10000]"
+                                            style={{
+                                              left: isLastColumn ? 'auto' : 'calc(100% + 8px)',
+                                              right: isLastColumn ? 'calc(100% + 8px)' : 'auto'
+                                            }}
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <div className="text-xs text-slate-700 py-1">
