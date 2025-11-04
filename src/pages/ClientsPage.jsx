@@ -879,86 +879,132 @@ const ClientsPage = () => {
           )}
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Total Clients</p>
-                  <p className="text-base font-semibold text-gray-900">{filteredClients.length}</p>
+                <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-blue-200/50 p-4 group hover:scale-105">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Clients</p>
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{filteredClients.length}</p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Total Balance</p>
-                  <p className="text-base font-semibold text-gray-900">
+                <div className="bg-gradient-to-br from-indigo-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-indigo-200/50 p-4 group hover:scale-105">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-indigo-600 uppercase tracking-wide">Total Balance</p>
+                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Total Credit</p>
-                  <p className="text-base font-semibold text-gray-900">
+                <div className="bg-gradient-to-br from-emerald-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-emerald-200/50 p-4 group hover:scale-105">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Total Credit</p>
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Total Equity</p>
-                  <p className="text-base font-semibold text-gray-900">
+                <div className="bg-gradient-to-br from-sky-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-sky-200/50 p-4 group hover:scale-105">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-sky-600 uppercase tracking-wide">Total Equity</p>
+                    <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center group-hover:bg-sky-200 transition-colors">
+                      <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-purple-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">PNL</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'from-green-50 to-white border-green-200/50' : 'from-red-50 to-white border-red-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase tracking-wide`}>PNL</p>
+                    <div className={`w-8 h-8 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'bg-green-100 group-hover:bg-green-200' : 'bg-red-100 group-hover:bg-red-200'} rounded-full flex items-center justify-center transition-colors`}>
+                      <svg className={`w-4 h-4 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                        )}
+                      </svg>
+                    </div>
+                  </div>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-blue-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Total Floating Profit</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'from-teal-50 to-white border-teal-200/50' : 'from-orange-50 to-white border-orange-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase tracking-wide`}>Floating Profit</p>
+                    <div className={`w-8 h-8 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'bg-teal-100 group-hover:bg-teal-200' : 'bg-orange-100 group-hover:bg-orange-200'} rounded-full flex items-center justify-center transition-colors`}>
+                      <svg className={`w-4 h-4 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-green-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Daily Deposit</p>
-                  <p className="text-base font-semibold text-green-600">
+                <div className="bg-gradient-to-br from-green-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-green-200/50 p-4 group hover:scale-105">
+                  <p className="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">Daily Deposit</p>
+                  <p className="text-lg font-bold text-green-700">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-red-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Daily Withdrawal</p>
-                  <p className="text-base font-semibold text-red-600">
+                <div className="bg-gradient-to-br from-red-50 to-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-red-200/50 p-4 group hover:scale-105">
+                  <p className="text-xs font-medium text-red-600 uppercase tracking-wide mb-2">Daily Withdrawal</p>
+                  <p className="text-lg font-bold text-red-700">
                     {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-orange-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Daily PnL</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'from-emerald-50 to-white border-emerald-200/50' : 'from-rose-50 to-white border-rose-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase tracking-wide mb-2`}>Daily PnL</p>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-cyan-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">This Week PnL</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'from-cyan-50 to-white border-cyan-200/50' : 'from-amber-50 to-white border-amber-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase tracking-wide mb-2`}>This Week PnL</p>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-teal-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">This Month PnL</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'from-teal-50 to-white border-teal-200/50' : 'from-orange-50 to-white border-orange-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase tracking-wide mb-2`}>This Month PnL</p>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-100 p-3">
-                  <p className="text-[10px] text-gray-500 mb-0">Lifetime PnL</p>
-                  <p className={`text-base font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`bg-gradient-to-br ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'from-violet-50 to-white border-violet-200/50' : 'from-pink-50 to-white border-pink-200/50'} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border p-4 group hover:scale-105`}>
+                  <p className={`text-xs font-medium ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase tracking-wide mb-2`}>Lifetime PnL</p>
+                  <p className={`text-lg font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
                     {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
                     {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toFixed(2))}
@@ -1395,10 +1441,10 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)' }}>
-            <div className="overflow-y-auto flex-1">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden flex flex-col backdrop-blur-sm" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
               <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
+                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 z-10 shadow-md">
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
@@ -1429,7 +1475,7 @@ const ClientsPage = () => {
                         return (
                         <th
                           key={col.key}
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider relative group hover:bg-blue-100 transition-colors"
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all"
                           style={{ width: `${col.width}%` }}
                         >
                           <div className="flex items-center gap-1 justify-between">
@@ -1814,7 +1860,7 @@ const ClientsPage = () => {
                     return (
                       <tr
                         key={client.login}
-                        className="hover:bg-blue-50 transition-colors"
+                        className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/30 transition-all duration-200 border-b border-gray-100 hover:border-blue-200"
                       >
                         {renderCols.map(col => {
                           // Special handling for login column - make it clickable
@@ -1822,7 +1868,7 @@ const ClientsPage = () => {
                             return (
                               <td 
                                 key={col.key} 
-                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer hover:underline" 
+                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline group-hover:font-bold transition-all" 
                                 style={{ width: `${col.width}%` }}
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -1830,7 +1876,11 @@ const ClientsPage = () => {
                                 }}
                                 title="Click to view client details"
                               >
-                                <div className="truncate">
+                                <div className="truncate flex items-center gap-1">
+                                  <svg className="w-3 h-3 inline opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
                                   {col.value}
                                 </div>
                               </td>
@@ -1839,7 +1889,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-3 py-2 text-sm text-gray-900" style={{ width: `${col.width}%` }}>
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: `${col.width}%` }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>
