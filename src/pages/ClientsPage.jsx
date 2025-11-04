@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
 import Sidebar from '../components/Sidebar'
@@ -53,6 +54,7 @@ const ClientsPage = () => {
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [filterPosition, setFilterPosition] = useState(null)
   const filterRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
@@ -736,10 +738,17 @@ const ClientsPage = () => {
   // Data updates will happen in place for better UX
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
+    <div className="h-screen flex overflow-hidden relative">
+      {/* Forex Trading Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40"></div>
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v6h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        backgroundSize: '60px 60px'
+      }}></div>
+      
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
         <div className="max-w-full mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
@@ -1450,8 +1459,8 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 flex flex-col backdrop-blur-sm" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'visible' }}>
-            <div className="overflow-y-auto flex-1 custom-scrollbar" style={{ overflow: 'auto' }}>
+          <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/50 flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'hidden' }}>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
                 <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 shadow-md" style={{ zIndex: 100, overflow: 'visible' }}>
                   <tr>
@@ -1524,7 +1533,19 @@ const ClientsPage = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    setShowFilterDropdown(showFilterDropdown === col.baseKey ? null : col.baseKey)
+                                    if (showFilterDropdown === col.baseKey) {
+                                      setShowFilterDropdown(null)
+                                      setFilterPosition(null)
+                                    } else {
+                                      const rect = e.currentTarget.getBoundingClientRect()
+                                      setFilterPosition({
+                                        top: rect.top,
+                                        left: rect.left,
+                                        right: rect.right,
+                                        isLastColumn
+                                      })
+                                      setShowFilterDropdown(col.baseKey)
+                                    }
                                   }}
                                   className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
                                   title="Filter column"
@@ -1539,21 +1560,14 @@ const ClientsPage = () => {
                                   )}
                                 </button>
 
-                                {showFilterDropdown === col.baseKey && (
-                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 max-h-[80vh] flex flex-col"
+                                {showFilterDropdown === col.baseKey && filterPosition && createPortal(
+                                  <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 max-h-[80vh] flex flex-col"
                                     style={{
                                       overflow: 'hidden',
-                                      bottom: '100%',
-                                      marginBottom: '-40px',
-                                      left: isLastColumn 
-                                        ? 'auto'
-                                        : '100%',
-                                      right: isLastColumn 
-                                        ? '100%'
-                                        : 'auto',
-                                      marginLeft: isLastColumn ? '0' : '8px',
-                                      marginRight: isLastColumn ? '8px' : '0',
-                                      zIndex: 99999
+                                      top: `${Math.min(filterPosition.top - 40, window.innerHeight - 600)}px`,
+                                      left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
+                                      right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
+                                      zIndex: 999999
                                     }}>
                                     {/* Header */}
                                     <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-lg">
@@ -1835,8 +1849,9 @@ const ClientsPage = () => {
                                         OK
                                       </button>
                                     </div>
-                                  </div>
-                                )}
+                                  </div>,
+                                  document.body
+                                ))}
                               </div>
                             )}
                           </div>
