@@ -1541,9 +1541,8 @@ const ClientsPage = () => {
 
                                 {showFilterDropdown === col.baseKey && (
                                   <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[80vh] flex flex-col"
-                                    style={{ overflow: 'hidden' }}
-                                  > 
                                     style={{
+                                      overflow: 'hidden',
                                       bottom: '100%',
                                       marginBottom: '-40px',
                                       left: isLastColumn 
