@@ -1540,12 +1540,17 @@ const ClientsPage = () => {
                                 </button>
 
                                 {showFilterDropdown === col.baseKey && (
-                                  <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[85vh] overflow-hidden flex flex-col" 
+                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[85vh] overflow-hidden flex flex-col" 
                                     style={{
-                                      top: `${Math.max(10, filterRefs.current[col.baseKey]?.getBoundingClientRect().top || 0)}px`,
+                                      top: '0px',
                                       left: isLastColumn 
-                                        ? `${filterRefs.current[col.baseKey]?.getBoundingClientRect().left - 260}px`
-                                        : `${filterRefs.current[col.baseKey]?.getBoundingClientRect().right + 8}px`
+                                        ? 'auto'
+                                        : '100%',
+                                      right: isLastColumn 
+                                        ? '100%'
+                                        : 'auto',
+                                      marginLeft: isLastColumn ? '0' : '8px',
+                                      marginRight: isLastColumn ? '8px' : '0'
                                     }}>
                                     {/* Header */}
                                     <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-lg">
