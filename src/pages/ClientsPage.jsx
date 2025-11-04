@@ -1540,7 +1540,7 @@ const ClientsPage = () => {
                                 </button>
 
                                 {showFilterDropdown === col.baseKey && (
-                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64 max-h-[80vh] flex flex-col"
+                                  <div className="absolute bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 max-h-[80vh] flex flex-col"
                                     style={{
                                       overflow: 'hidden',
                                       bottom: '100%',
@@ -1552,7 +1552,8 @@ const ClientsPage = () => {
                                         ? '100%'
                                         : 'auto',
                                       marginLeft: isLastColumn ? '0' : '8px',
-                                      marginRight: isLastColumn ? '8px' : '0'
+                                      marginRight: isLastColumn ? '8px' : '0',
+                                      zIndex: 99999
                                     }}>
                                     {/* Header */}
                                     <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-lg">
@@ -1633,10 +1634,11 @@ const ClientsPage = () => {
                                         {/* Number Filter Dropdown - Opens to the right or left based on position */}
                                         {showNumberFilterDropdown === col.baseKey && (
                                           <div 
-                                            className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl z-[10000]"
+                                            className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
                                             style={{
                                               left: isLastColumn ? 'auto' : 'calc(100% + 8px)',
-                                              right: isLastColumn ? 'calc(100% + 8px)' : 'auto'
+                                              right: isLastColumn ? 'calc(100% + 8px)' : 'auto',
+                                              zIndex: 100000
                                             }}
                                             onClick={(e) => e.stopPropagation()}
                                           >
