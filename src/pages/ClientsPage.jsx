@@ -1602,12 +1602,12 @@ const ClientsPage = () => {
                                         {/* Number Filter Dropdown - Opens to the right or left based on position */}
                                         {showNumberFilterDropdown === col.baseKey && (
                                           <div 
-                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-1' : 'left-full ml-1'} w-32 bg-white border border-gray-300 rounded shadow-lg z-50`}
+                                            className={`absolute top-0 ${isLastColumn ? 'right-full mr-1' : 'left-full ml-1'} w-40 bg-white border border-gray-300 rounded shadow-lg z-50`}
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            <div className="text-[8px] text-gray-600">
+                                            <div className="text-[10px] text-gray-600">
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1618,7 +1618,7 @@ const ClientsPage = () => {
                                                 Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1629,7 +1629,7 @@ const ClientsPage = () => {
                                                 Not Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1640,7 +1640,7 @@ const ClientsPage = () => {
                                                 Less Than...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1651,7 +1651,7 @@ const ClientsPage = () => {
                                                 Less Than Or Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1662,7 +1662,7 @@ const ClientsPage = () => {
                                                 Greater Than...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1673,7 +1673,7 @@ const ClientsPage = () => {
                                                 Greater Than Or Equal...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
@@ -1684,7 +1684,7 @@ const ClientsPage = () => {
                                                 Between...
                                               </div>
                                               <div 
-                                                className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                                 onClick={(e) => {
                                                   e.stopPropagation()
                                                   setCustomFilterColumn(col.baseKey)
