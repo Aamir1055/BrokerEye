@@ -764,14 +764,14 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-gray-700 hover:text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-50 border border-gray-300 hover:border-blue-400 transition-all inline-flex items-center gap-1.5 text-xs font-medium"
+                  className="text-emerald-700 hover:text-emerald-800 px-2.5 py-1.5 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   Filter
                   {(filterByPositions || filterByCredit) && (
-                    <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-full">
+                    <span className="ml-0.5 px-1.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold rounded-full shadow-sm">
                       {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0)}
                     </span>
                   )}
@@ -779,29 +779,29 @@ const ClientsPage = () => {
                 {showFilterMenu && (
                   <div
                     ref={filterMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-52"
+                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-emerald-50 to-white rounded-lg shadow-xl border-2 border-emerald-200 py-2 z-50 w-52"
                   >
-                    <div className="px-2.5 py-1.5 border-b border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Filter Options</p>
+                    <div className="px-3 py-2 border-b border-emerald-200">
+                      <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Filter Options</p>
                     </div>
-                    <div className="py-1.5">
-                      <label className="flex items-center px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                    <div className="py-2">
+                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
                         <input
                           type="checkbox"
                           checked={filterByPositions}
                           onChange={(e) => setFilterByPositions(e.target.checked)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Has Floating</span>
+                        <span className="ml-2 text-xs font-semibold text-gray-700">Has Floating</span>
                       </label>
-                      <label className="flex items-center px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
                         <input
                           type="checkbox"
                           checked={filterByCredit}
                           onChange={(e) => setFilterByCredit(e.target.checked)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Has Credit</span>
+                        <span className="ml-2 text-xs font-semibold text-gray-700">Has Credit</span>
                       </label>
                     </div>
                   </div>
@@ -812,7 +812,7 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-700 hover:text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-50 border border-gray-300 hover:border-blue-400 transition-all inline-flex items-center gap-1.5 text-xs font-medium"
+                  className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -822,24 +822,24 @@ const ClientsPage = () => {
                 {showColumnSelector && (
                   <div
                     ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-52"
+                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-amber-50 to-white rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-52"
                     style={{ maxHeight: '400px', overflowY: 'auto' }}
                   >
-                    <div className="px-2.5 py-1.5 border-b border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Show/Hide Columns</p>
+                    <div className="px-3 py-2 border-b border-amber-200">
+                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
                     </div>
                     {allColumns.map(col => (
                       <label
                         key={col.key}
-                        className="flex items-center px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                        className="flex items-center px-3 py-2 hover:bg-amber-100 cursor-pointer transition-colors rounded-md mx-2"
                       >
                         <input
                           type="checkbox"
                           checked={visibleColumns[col.key]}
                           onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-xs font-medium text-gray-700">{col.label}</span>
+                        <span className="ml-2 text-xs font-semibold text-gray-700">{col.label}</span>
                       </label>
                     ))}
                   </div>
@@ -1279,13 +1279,13 @@ const ClientsPage = () => {
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-md shadow-sm border border-gray-200 p-2.5">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md border border-blue-200 p-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-600">Show:</span>
+              <span className="text-xs font-semibold text-blue-700">Show:</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
-                className="px-2.5 py-1 text-xs font-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all"
+                className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
               >
                 {pageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -1293,7 +1293,7 @@ const ClientsPage = () => {
                   </option>
                 ))}
               </select>
-              <span className="text-xs font-medium text-gray-600">entries</span>
+              <span className="text-xs font-semibold text-blue-700">entries</span>
             </div>
             
             <div className="flex items-center gap-3">
@@ -1303,10 +1303,10 @@ const ClientsPage = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`p-1.5 rounded-md transition-all ${
+                    className={`p-1.5 rounded-md transition-all shadow-sm ${
                       currentPage === 1
-                        ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer border border-gray-200 hover:border-blue-300'
+                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1314,17 +1314,17 @@ const ClientsPage = () => {
                     </svg>
                   </button>
                   
-                  <span className="text-xs font-semibold text-gray-800 px-2.5 py-1 bg-gray-50 rounded-md border border-gray-200">
+                  <span className="text-xs font-bold text-white px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md shadow-md border border-blue-700">
                     Page {currentPage} of {totalPages}
                   </span>
                   
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-md transition-all ${
+                    className={`p-1.5 rounded-md transition-all shadow-sm ${
                       currentPage === totalPages
-                        ? 'text-gray-300 bg-gray-50 cursor-not-allowed'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer border border-gray-200 hover:border-blue-300'
+                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1338,7 +1338,7 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="text-gray-700 hover:text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-50 border border-gray-300 hover:border-blue-400 transition-all inline-flex items-center gap-1.5 text-xs font-medium"
+                  className="text-purple-700 hover:text-purple-800 px-2.5 py-1.5 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1349,44 +1349,44 @@ const ClientsPage = () => {
                 {showDisplayMenu && (
                   <div
                     ref={displayMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-52"
+                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-xl border-2 border-purple-200 py-2 z-50 w-52"
                   >
-                    <div className="px-2.5 py-1.5 border-b border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Display Mode</p>
+                    <div className="px-3 py-2 border-b border-purple-200">
+                      <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Display Mode</p>
                     </div>
-                    <div className="px-2 py-1.5 space-y-1">
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-blue-50 p-1.5 rounded cursor-pointer transition-colors">
+                    <div className="px-2 py-2 space-y-1">
+                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="displayModeToggle"
                           value="value"
                           checked={displayMode === 'value'}
                           onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
                         />
-                        <span className="font-medium">Without Percentage</span>
+                        <span className="font-semibold">Without Percentage</span>
                       </label>
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-blue-50 p-1.5 rounded cursor-pointer transition-colors">
+                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="displayModeToggle"
                           value="percentage"
                           checked={displayMode === 'percentage'}
                           onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
                         />
-                        <span className="font-medium">Show My Percentage</span>
+                        <span className="font-semibold">Show My Percentage</span>
                       </label>
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-blue-50 p-1.5 rounded cursor-pointer transition-colors">
+                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="displayModeToggle"
                           value="both"
                           checked={displayMode === 'both'}
                           onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
                         />
-                        <span className="font-medium">Both</span>
+                        <span className="font-semibold">Both</span>
                       </label>
                     </div>
                   </div>

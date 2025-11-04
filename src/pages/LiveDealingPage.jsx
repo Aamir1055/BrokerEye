@@ -1287,58 +1287,58 @@ const LiveDealingPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="text-xs font-medium text-gray-700 hover:text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-50 border border-gray-200 hover:border-blue-400 transition-colors inline-flex items-center gap-1.5 bg-white shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   Filter
-                  <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                  <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-semibold rounded-full">
                     {timeFilter === '24h' ? '24h' : timeFilter === '7d' ? '7d' : 'Custom'}
                   </span>
                 </button>
                 {showFilterMenu && (
                   <div
                     ref={filterMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-72"
+                    className="absolute right-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-72"
                   >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Time Period</p>
+                    <div className="px-3 py-1.5 border-b border-gray-200">
+                      <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Time Period</p>
                     </div>
                     
                     {/* Time Filter Options */}
-                    <div className="py-2">
-                      <label className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors">
+                    <div className="py-1">
+                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="timeFilter"
                           checked={timeFilter === '24h'}
                           onChange={() => setTimeFilter('24h')}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Last 24 Hours</span>
+                        <span className="ml-2 text-xs font-medium text-gray-700">Last 24 Hours</span>
                       </label>
                       
-                      <label className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="timeFilter"
                           checked={timeFilter === '7d'}
                           onChange={() => setTimeFilter('7d')}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Last 7 Days</span>
+                        <span className="ml-2 text-xs font-medium text-gray-700">Last 7 Days</span>
                       </label>
                       
-                      <label className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors">
+                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
                         <input
                           type="radio"
                           name="timeFilter"
                           checked={timeFilter === 'custom'}
                           onChange={() => setTimeFilter('custom')}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Custom Range</span>
+                        <span className="ml-2 text-xs font-medium text-gray-700">Custom Range</span>
                       </label>
                     </div>
                     
