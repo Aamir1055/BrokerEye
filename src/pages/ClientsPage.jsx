@@ -1199,10 +1199,13 @@ const ClientsPage = () => {
                 </div>
                 
                 {/* New Cards - Fourth Row (Percentage) */}
-                <div className="bg-white rounded-lg shadow-sm border border-green-100 p-2">
-                  <p className="text-[10px] text-gray-500 mb-0.5">Daily Deposit</p>
-                  <p className="text-base font-semibold text-green-600">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {/* Percentage Indicator Card - Start of Fourth Row */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-2 flex items-center justify-center">
+                  <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
+                    By Percentage 
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
                   </p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-red-100 p-2">
