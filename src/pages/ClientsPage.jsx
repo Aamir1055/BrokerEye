@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
@@ -10,8 +10,8 @@ import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 
 const ClientsPage = () => {
-  const { clients: cachedClients, positions: cachedPositions, fetchClients, fetchPositions, loading, connectionState } = useData()
-  const { filterByActiveGroup } = useGroups()
+  const { clients: cachedClients, positions: cachedPositions, clientStats, fetchClients, fetchPositions, loading, connectionState } = useData()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -21,6 +21,8 @@ const ClientsPage = () => {
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [systemTime, setSystemTime] = useState(Date.now())
+  const [appTime, setAppTime] = useState(null)
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
   const displayMenuRef = useRef(null)
@@ -47,15 +49,25 @@ const ClientsPage = () => {
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
 
   // Search states
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('') // Immediate input value
+  const [searchQuery, setSearchQuery] = useState('') // Debounced search value
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+
+  // Debounce search input (300ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
   
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const [filterPosition, setFilterPosition] = useState(null)
   const filterRefs = useRef({})
+  const filterPanelRef = useRef(null)
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
@@ -68,6 +80,15 @@ const ClientsPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
   
   const tableRef = useRef(null)
+
+  // Column resizing states
+  const [columnWidths, setColumnWidths] = useState({})
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+
+  // Page zoom states
+  const [zoomLevel, setZoomLevel] = useState(100)
 
   // Default visible columns - load from localStorage or use defaults
   const getInitialVisibleColumns = () => {
@@ -245,6 +266,53 @@ const ClientsPage = () => {
     }
   }, [fetchClients, fetchPositions])
 
+  // Update system time every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSystemTime(Date.now())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Subscribe to WebSocket to capture actual server timestamps from messages
+  useEffect(() => {
+    // Import websocket service
+    import('../services/websocket').then(({ default: websocketService }) => {
+      // Subscribe to ACCOUNT_UPDATED to get real-time server timestamps
+      const unsubscribe = websocketService.subscribe('ACCOUNT_UPDATED', (message) => {
+        // Get timestamp from the WebSocket message itself (server time)
+        if (message?.timestamp) {
+          let timestamp = message.timestamp
+          // Auto-detect if timestamp is in seconds or milliseconds
+          // If timestamp is < 10000000000, it's in seconds (before year 2286)
+          // If timestamp is >= 10000000000, it's in milliseconds
+          if (timestamp < 10000000000) {
+            // Already in seconds, convert to milliseconds for consistency
+            timestamp = timestamp * 1000
+          }
+          setAppTime(timestamp)
+        }
+      })
+      
+      return () => {
+        if (unsubscribe) unsubscribe()
+      }
+    }).catch(err => {
+      console.error('Failed to subscribe to WebSocket:', err)
+    })
+  }, [])
+
+  // Also update from client data on initial load
+  useEffect(() => {
+    if (clients && clients.length > 0 && !appTime) {
+      // Look for timestamp in client data
+      const latestTimestamp = clients[0]?.timestamp || clients[0]?.lastUpdate
+      if (latestTimestamp) {
+        setAppTime(latestTimestamp)
+      }
+    }
+  }, [clients, appTime])
+
   // Handle manual refresh - force fetch without full page reload
   const handleManualRefresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -259,6 +327,54 @@ const ClientsPage = () => {
       setIsRefreshing(false)
     }
   }, [fetchClients, fetchPositions])
+
+  // Column resize handlers
+  const handleResizeStart = useCallback((e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = columnWidths[columnKey] || 150 // Default width 150px
+  }, [columnWidths])
+
+  const handleResizeMove = useCallback((e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX.current
+    const newWidth = Math.max(50, resizeStartWidth.current + diff) // Min width 50px
+    setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
+  }, [resizingColumn])
+
+  const handleResizeEnd = useCallback(() => {
+    setResizingColumn(null)
+  }, [])
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      document.addEventListener('mousemove', handleResizeMove)
+      document.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', handleResizeMove)
+        document.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, handleResizeMove, handleResizeEnd])
+
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev + 10, 200)) // Max 200%
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev - 10, 50)) // Min 50%
+  }, [])
+
+  const handleResetZoom = useCallback(() => {
+    setZoomLevel(100)
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -558,18 +674,20 @@ const ClientsPage = () => {
   }
 
   const handleSuggestionClick = (client) => {
-    setSearchQuery(String(client.login || ''))
+    const login = String(client.login || '')
+    setSearchInput(login)
+    setSearchQuery(login)
     setShowSuggestions(false)
     setCurrentPage(1)
   }
 
-  const filteredBase = getFilteredClients()
-  const searchedBase = searchClients(filteredBase)
-  
-  // Apply group filter if active
-  const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
-  
-  const filteredClients = sortClients(groupFilteredBase)
+  // Memoize expensive filtering operations
+  const filteredClients = useMemo(() => {
+    const filteredBase = getFilteredClients()
+    const searchedBase = searchClients(filteredBase)
+    const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
+    return sortClients(groupFilteredBase)
+  }, [cachedClients, filterByPositions, filterByCredit, searchQuery, columnFilters, sortColumn, sortDirection, activeGroupFilters])
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -603,11 +721,16 @@ const ClientsPage = () => {
   
   const pageSizeOptions = generatePageSizeOptions()
   
-  // Pagination logic
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
-  const displayedClients = filteredClients.slice(startIndex, endIndex)
+  // Pagination logic - memoized
+  const { totalPages, displayedClients } = useMemo(() => {
+    const total = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
+    const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
+    const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
+    return {
+      totalPages: total,
+      displayedClients: filteredClients.slice(startIndex, endIndex)
+    }
+  }, [filteredClients, itemsPerPage, currentPage])
   
   // Reset to page 1 when filters or items per page changes
   useEffect(() => {
@@ -617,8 +740,11 @@ const ClientsPage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (showFilterDropdown) {
+        const clickedInsideButton = filterRefs.current[showFilterDropdown]?.contains(event.target)
+        const clickedInsidePanel = filterPanelRef.current?.contains(event.target)
+        
+        if (!clickedInsideButton && !clickedInsidePanel) {
           setShowFilterDropdown(null)
         }
       }
@@ -669,6 +795,33 @@ const ClientsPage = () => {
     const result = (isNegative ? '-' : '') + formatted
     return decimalPart ? `${result}.${decimalPart}` : result
   }
+
+  // Memoize face card stats - only recalculate when filters change
+  const faceCardStats = useMemo(() => {
+    const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
+    
+    if (!hasFilters) {
+      // No filters - use pre-calculated stats
+      return clientStats
+    }
+    
+    // Has filters - calculate on filtered subset
+    return {
+      totalClients: filteredClients.length,
+      totalBalance: filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0),
+      totalCredit: filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0),
+      totalEquity: filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0),
+      totalPnl: filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0),
+      totalProfit: filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0),
+      dailyDeposit: filteredClients.reduce((sum, c) => sum + (c.daily_deposit || 0), 0),
+      dailyWithdrawal: filteredClients.reduce((sum, c) => sum + (c.daily_withdrawal || 0), 0),
+      // Invert the sign by multiplying by -1 (negative becomes positive, positive becomes negative)
+      dailyPnL: filteredClients.reduce((sum, c) => sum + ((c.dailyPnL || 0) * -1), 0),
+      thisWeekPnL: filteredClients.reduce((sum, c) => sum + ((c.thisWeekPnL || 0) * -1), 0),
+      thisMonthPnL: filteredClients.reduce((sum, c) => sum + ((c.thisMonthPnL || 0) * -1), 0),
+      lifetimePnL: filteredClients.reduce((sum, c) => sum + ((c.lifetimePnL || 0) * -1), 0)
+    }
+  }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters])
 
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
@@ -739,45 +892,46 @@ const ClientsPage = () => {
 
   return (
     <div className="h-screen flex overflow-hidden relative">
-      {/* Navy Blue Professional Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a2332] via-[#0f1a2e] to-[#0a1628]"></div>
-      
-      {/* Subtle Trading Chart Pattern Overlay */}
-      <div className="absolute inset-0 opacity-[0.08]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 L20 45 L40 55 L60 35 L80 40 L100 30' stroke='%2364b5f6' stroke-width='1' fill='none'/%3E%3Cpath d='M0 70 L20 65 L40 75 L60 55 L80 60 L100 50' stroke='%2364b5f6' stroke-width='1' fill='none'/%3E%3Cpath d='M20 0 L20 100 M40 0 L40 100 M60 0 L60 100 M80 0 L80 100' stroke='%2364b5f6' stroke-width='0.5' opacity='0.3'/%3E%3C/svg%3E")`,
-        backgroundSize: '100px 100px'
-      }}></div>
-      
-      {/* Animated Floating Elements - Subtle Bull/Finance Icons */}
-      <div className="absolute top-20 right-20 opacity-[0.06] animate-pulse">
-        <svg className="w-32 h-32 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.18 0-6-2.46-6-5.5 0-1.85 1.23-3.45 3-4.27V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v1.73c1.77.82 3 2.42 3 4.27 0 3.04-2.82 5.5-6 5.5z"/>
-        </svg>
-      </div>
-      <div className="absolute bottom-40 left-32 opacity-[0.04] animate-pulse" style={{ animationDelay: '1s' }}>
-        <svg className="w-40 h-40 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
-        </svg>
-      </div>
+      {/* Clean White Background */}
+      <div className="absolute inset-0 bg-white"></div>
       
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
         <div className="max-w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/20">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-white hover:text-blue-200 p-2.5 rounded-lg hover:bg-white/10 border border-white/30 transition-all"
+                className="lg:hidden text-gray-700 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight drop-shadow-lg">Clients</h1>
-                <p className="text-xs font-medium text-blue-200 mt-1 drop-shadow">Manage and view all client accounts</p>
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Clients</h1>
+                <p className="text-xs font-medium text-gray-600 mt-1">Manage and view all client accounts</p>
+                {/* Timestamp Info */}
+                <div className="mt-2 flex items-center gap-4 text-[10px] font-mono">
+                  <div className="flex items-center gap-1">
+                    <span className="text-gray-500 font-semibold">System:</span>
+                    <span className="text-blue-600 font-bold">{Math.floor(systemTime / 1000)}</span>
+                  </div>
+                  {appTime && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500 font-semibold">App:</span>
+                        <span className="text-green-600 font-bold">{Math.floor(appTime / 1000)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500 font-semibold">Diff:</span>
+                        <span className="text-orange-600 font-bold">{Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))}s</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -869,6 +1023,37 @@ const ClientsPage = () => {
                 )}
               </div>
               
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 py-1 shadow-sm">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 50}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel <= 50 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom Out (Min 50%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleResetZoom}
+                  className="px-2 py-0.5 text-xs font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
+                  title="Reset Zoom to 100%"
+                >
+                  {zoomLevel}%
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 200}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel >= 200 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom In (Max 200%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </button>
+              </div>
+              
               {/* Groups Button */}
               <GroupSelector 
                 moduleName="clients" 
@@ -905,62 +1090,36 @@ const ClientsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Clients</p>
-                    <div className="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
-                      <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-slate-800">{filteredClients.length}</p>
-                </div>
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Balance</p>
-                    <div className="w-6 h-6 bg-indigo-50 rounded-lg flex items-center justify-center border border-indigo-100">
-                      <svg className="w-3 h-3 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-indigo-700">
-                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toFixed(2))}
+                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+                  <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Clients</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {faceCardStats.totalClients}
                   </p>
                 </div>
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Credit</p>
-                    <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center border border-emerald-100">
-                      <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-slate-800">
-                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toFixed(2))}
+                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+                  <p className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1">Total Balance</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {formatIndianNumber(faceCardStats.totalBalance.toFixed(2))}
                   </p>
                 </div>
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-white/50 p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[10px] font-semibold text-slate-600 uppercase">Total Equity</p>
-                    <div className="w-6 h-6 bg-sky-50 rounded-lg flex items-center justify-center border border-sky-100">
-                      <svg className="w-3 h-3 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-slate-800">
-                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toFixed(2))}
+                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
+                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">Total Credit</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {formatIndianNumber(faceCardStats.totalCredit.toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
+                  <p className="text-[10px] font-semibold text-sky-600 uppercase tracking-wider mb-1">Total Equity</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {formatIndianNumber(faceCardStats.totalEquity.toFixed(2))}
+                  </p>
+                </div>
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
-                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? (
+                    <p className={`text-[10px] font-semibold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
+                    <div className={`w-6 h-6 ${faceCardStats.totalPnl >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-3 h-3 ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        {faceCardStats.totalPnl >= 0 ? (
                           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                         ) : (
                           <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
@@ -968,69 +1127,69 @@ const ClientsPage = () => {
                       </svg>
                     </div>
                   </div>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toFixed(2))}
+                  <p className={`text-sm font-bold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {faceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.totalPnl >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.totalPnl).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
-                    <div className={`w-6 h-6 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'bg-teal-50 border border-teal-100' : 'bg-orange-50 border border-orange-100'} rounded-lg flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <p className={`text-[10px] font-semibold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
+                    <div className={`w-6 h-6 ${faceCardStats.totalProfit >= 0 ? 'bg-teal-50 border border-teal-100' : 'bg-orange-50 border border-orange-100'} rounded-lg flex items-center justify-center`}>
+                      <svg className={`w-3 h-3 ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                       </svg>
                     </div>
                   </div>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toFixed(2))}
+                  <p className={`text-sm font-bold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                    {faceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.totalProfit >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.totalProfit).toFixed(2))}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-1">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toFixed(2))}
+                    {formatIndianNumber(faceCardStats.dailyDeposit.toFixed(2))}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-1">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {formatIndianNumber(filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toFixed(2))}
+                    {formatIndianNumber(faceCardStats.dailyWithdrawal.toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-1`}>Daily PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toFixed(2))}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-1`}>Daily PnL</p>
+                  <p className={`text-sm font-bold ${faceCardStats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {faceCardStats.dailyPnL >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.dailyPnL >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.dailyPnL).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-1`}>This Week PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toFixed(2))}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-1`}>This Week PnL</p>
+                  <p className={`text-sm font-bold ${faceCardStats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
+                    {faceCardStats.thisWeekPnL >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.thisWeekPnL >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.thisWeekPnL).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-1`}>This Month PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toFixed(2))}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-1`}>This Month PnL</p>
+                  <p className={`text-sm font-bold ${faceCardStats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
+                    {faceCardStats.thisMonthPnL >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.thisMonthPnL >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.thisMonthPnL).toFixed(2))}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-1`}>Lifetime PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toFixed(2))}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-1`}>Lifetime PnL</p>
+                  <p className={`text-sm font-bold ${faceCardStats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
+                    {faceCardStats.lifetimePnL >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.lifetimePnL >= 0 ? '' : '-'}
+                    {formatIndianNumber(Math.abs(faceCardStats.lifetimePnL).toFixed(2))}
                   </p>
                 </div>
               </>
@@ -1078,13 +1237,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
@@ -1126,40 +1285,40 @@ const ClientsPage = () => {
                 {/* Value Cards - First Row */}
                 <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
                   <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">{filteredClients.length}</p>
+                  <p className="text-sm font-bold text-gray-900">{faceCardStats.totalClients}</p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
                   <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
                   <p className="text-sm font-bold text-indigo-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
                   <p className="text-sm font-bold text-emerald-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
                   <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
                   <p className="text-sm font-bold text-sky-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
+                  <p className={`text-sm font-bold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {faceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.totalPnl >= 0 ? '' : '-'}
+                    {Math.abs(faceCardStats.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
+                  <p className={`text-sm font-bold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                    {faceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
+                    {faceCardStats.totalProfit >= 0 ? '' : '-'}
+                    {Math.abs(faceCardStats.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 
@@ -1213,13 +1372,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyDeposit || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyWithdrawal || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
@@ -1372,7 +1531,7 @@ const ClientsPage = () => {
                 {showDisplayMenu && (
                   <div
                     ref={displayMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-xl border-2 border-purple-200 py-2 z-50 w-52"
+                    className="absolute right-0 bottom-full mb-2 bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-xl border-2 border-purple-200 py-2 z-[100] w-52"
                   >
                     <div className="px-3 py-2 border-b border-purple-200">
                       <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Display Mode</p>
@@ -1421,9 +1580,9 @@ const ClientsPage = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    value={searchQuery}
+                    value={searchInput}
                     onChange={(e) => {
-                      setSearchQuery(e.target.value)
+                      setSearchInput(e.target.value)
                       setShowSuggestions(true)
                       setCurrentPage(1)
                     }}
@@ -1435,9 +1594,9 @@ const ClientsPage = () => {
                   <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  {searchQuery && (
+                  {searchInput && (
                     <button
-                      onClick={() => { setSearchQuery(''); setShowSuggestions(false) }}
+                      onClick={() => { setSearchInput(''); setSearchQuery(''); setShowSuggestions(false) }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -1473,10 +1632,29 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/50 flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'hidden' }}>
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <table ref={tableRef} className="w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 shadow-md" style={{ zIndex: 100, overflow: 'visible' }}>
+          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'hidden' }}>
+            <div className="overflow-y-auto flex-1 pb-6" style={{ 
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#3b82f6 #e5e7eb',
+              zoom: `${zoomLevel}%`
+            }}>
+              <style>{`
+                .flex-1::-webkit-scrollbar {
+                  width: 8px;
+                }
+                .flex-1::-webkit-scrollbar-track {
+                  background: #f3f4f6;
+                }
+                .flex-1::-webkit-scrollbar-thumb {
+                  background: linear-gradient(180deg, #2563eb 0%, #4f46e5 100%);
+                  border-radius: 4px;
+                }
+                .flex-1::-webkit-scrollbar-thumb:hover {
+                  background: linear-gradient(180deg, #1d4ed8 0%, #4338ca 100%);
+                }
+              `}</style>
+              <table ref={tableRef} className="w-full divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed' }}>
+                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible' }}>
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
@@ -1508,8 +1686,17 @@ const ClientsPage = () => {
                         <th
                           key={col.key}
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all"
-                          style={{ width: `${col.width}%`, overflow: 'visible' }}
+                          style={{ width: columnWidths[col.key] || col.width + '%', overflow: 'visible', position: 'relative' }}
                         >
+                          {/* Column Resize Handle */}
+                          <div 
+                            className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-400 z-20 group/resize"
+                            onMouseDown={(e) => handleResizeStart(e, col.key)}
+                            title="Drag to resize column"
+                          >
+                            <div className="absolute right-0 top-0 w-1 h-full bg-white/20 group-hover/resize:bg-blue-400 transition-colors"></div>
+                          </div>
+                          
                           <div className="flex items-center gap-1 justify-between">
                             <div 
                               className="flex items-center gap-1 truncate cursor-pointer flex-1"
@@ -1575,13 +1762,18 @@ const ClientsPage = () => {
                                 </button>
 
                                 {showFilterDropdown === col.baseKey && filterPosition && createPortal(
-                                  <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 max-h-[80vh] flex flex-col"
+                                  <div 
+                                    ref={filterPanelRef}
+                                    className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 h-[500px] flex flex-col"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onWheel={(e) => e.stopPropagation()}
+                                    onScroll={(e) => e.stopPropagation()}
                                     style={{
-                                      overflow: 'hidden',
-                                      top: `${Math.min(filterPosition.top - 40, window.innerHeight - 600)}px`,
+                                      top: `${Math.min(filterPosition.top + 40, window.innerHeight * 0.2)}px`,
                                       left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
                                       right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
-                                      zIndex: 999999
+                                      zIndex: 9999999
                                     }}>
                                     {/* Header */}
                                     <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-lg">
@@ -1810,7 +2002,31 @@ const ClientsPage = () => {
                                     </div>
 
                                     {/* Filter List */}
-                                    <div className="flex-1 overflow-y-auto">
+                                    <div 
+                                      className="overflow-y-scroll overflow-x-hidden" 
+                                      style={{ 
+                                        height: '380px',
+                                        scrollbarWidth: 'thin',
+                                        scrollbarColor: '#94a3b8 #e2e8f0'
+                                      }}
+                                      onWheel={(e) => e.stopPropagation()}
+                                    >
+                                      <style>{`
+                                        div.overflow-y-scroll::-webkit-scrollbar {
+                                          width: 8px;
+                                        }
+                                        div.overflow-y-scroll::-webkit-scrollbar-track {
+                                          background: #e2e8f0;
+                                          border-radius: 4px;
+                                        }
+                                        div.overflow-y-scroll::-webkit-scrollbar-thumb {
+                                          background: #94a3b8;
+                                          border-radius: 4px;
+                                        }
+                                        div.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+                                          background: #64748b;
+                                        }
+                                      `}</style>
                                       <div className="p-2 space-y-1">
                                         {getUniqueColumnValues(col.baseKey).length === 0 ? (
                                           <div className="px-3 py-3 text-center text-xs text-slate-500 font-medium">
@@ -1875,7 +2091,9 @@ const ClientsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {displayedClients.map((client) => {
+                  {displayedClients.map((client, index) => {
+                    const isLastRow = index === displayedClients.length - 1
+                    
                     // Build render columns for each row consistent with header
                     const baseVisible = allColumns.filter(c => visibleColumns[c.key])
                     const renderCols = []
@@ -1911,7 +2129,7 @@ const ClientsPage = () => {
                     return (
                       <tr
                         key={client.login}
-                        className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/30 transition-all duration-200 border-b border-gray-100 hover:border-blue-200"
+                        className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/30 transition-all duration-200 ${isLastRow ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
                       >
                         {renderCols.map(col => {
                           // Special handling for login column - make it clickable
@@ -1920,7 +2138,7 @@ const ClientsPage = () => {
                               <td 
                                 key={col.key} 
                                 className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline group-hover:font-bold transition-all" 
-                                style={{ width: `${col.width}%` }}
+                                style={{ width: columnWidths[col.key] || `${col.width}%` }}
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setSelectedClient(client)
@@ -1940,7 +2158,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: `${col.width}%` }}>
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: columnWidths[col.key] || `${col.width}%` }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>

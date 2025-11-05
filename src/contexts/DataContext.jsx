@@ -21,6 +21,22 @@ export const DataProvider = ({ children }) => {
   const [deals, setDeals] = useState([])
   const [accounts, setAccounts] = useState([]) // For margin level
   
+  // Aggregated stats for face cards - updated incrementally
+  const [clientStats, setClientStats] = useState({
+    totalClients: 0,
+    totalBalance: 0,
+    totalCredit: 0,
+    totalEquity: 0,
+    totalPnl: 0,
+    totalProfit: 0,
+    dailyDeposit: 0,
+    dailyWithdrawal: 0,
+    dailyPnL: 0,
+    thisWeekPnL: 0,
+    thisMonthPnL: 0,
+    lifetimePnL: 0
+  })
+  
   const [loading, setLoading] = useState({
     clients: false,
     positions: false,
@@ -46,6 +62,76 @@ export const DataProvider = ({ children }) => {
     return Date.now() - lastFetch[key] > CACHE_DURATION
   }
 
+  // Calculate stats from full clients array (used on initial load)
+  const calculateFullStats = useCallback((clientsArray) => {
+    const stats = {
+      totalClients: clientsArray.length,
+      totalBalance: 0,
+      totalCredit: 0,
+      totalEquity: 0,
+      totalPnl: 0,
+      totalProfit: 0,
+      dailyDeposit: 0,
+      dailyWithdrawal: 0,
+      dailyPnL: 0,
+      thisWeekPnL: 0,
+      thisMonthPnL: 0,
+      lifetimePnL: 0
+    }
+    
+    clientsArray.forEach(client => {
+      stats.totalBalance += (client.balance || 0)
+      stats.totalCredit += (client.credit || 0)
+      stats.totalEquity += (client.equity || 0)
+      stats.totalPnl += (client.pnl || 0)
+      stats.totalProfit += (client.profit || 0)
+      stats.dailyDeposit += (client.dailyDeposit || 0)
+      stats.dailyWithdrawal += (client.dailyWithdrawal || 0)
+      // Invert the sign by multiplying by -1 (negative becomes positive, positive becomes negative)
+      stats.dailyPnL += ((client.dailyPnL || 0) * -1)
+      stats.thisWeekPnL += ((client.thisWeekPnL || 0) * -1)
+      stats.thisMonthPnL += ((client.thisMonthPnL || 0) * -1)
+      stats.lifetimePnL += ((client.lifetimePnL || 0) * -1)
+    })
+    
+    return stats
+  }, [])
+
+  // Update stats incrementally based on old vs new client data
+  const updateStatsIncremental = useCallback((oldClient, newClient) => {
+    setClientStats(prev => {
+      const delta = {
+        totalBalance: (newClient?.balance || 0) - (oldClient?.balance || 0),
+        totalCredit: (newClient?.credit || 0) - (oldClient?.credit || 0),
+        totalEquity: (newClient?.equity || 0) - (oldClient?.equity || 0),
+        totalPnl: (newClient?.pnl || 0) - (oldClient?.pnl || 0),
+        totalProfit: (newClient?.profit || 0) - (oldClient?.profit || 0),
+        dailyDeposit: (newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0),
+        dailyWithdrawal: (newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0),
+        // Invert the sign for PnL deltas by multiplying by -1
+        dailyPnL: ((newClient?.dailyPnL || 0) * -1) - ((oldClient?.dailyPnL || 0) * -1),
+        thisWeekPnL: ((newClient?.thisWeekPnL || 0) * -1) - ((oldClient?.thisWeekPnL || 0) * -1),
+        thisMonthPnL: ((newClient?.thisMonthPnL || 0) * -1) - ((oldClient?.thisMonthPnL || 0) * -1),
+        lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1)
+      }
+      
+      return {
+        ...prev,
+        totalBalance: prev.totalBalance + delta.totalBalance,
+        totalCredit: prev.totalCredit + delta.totalCredit,
+        totalEquity: prev.totalEquity + delta.totalEquity,
+        totalPnl: prev.totalPnl + delta.totalPnl,
+        totalProfit: prev.totalProfit + delta.totalProfit,
+        dailyDeposit: prev.dailyDeposit + delta.dailyDeposit,
+        dailyWithdrawal: prev.dailyWithdrawal + delta.dailyWithdrawal,
+        dailyPnL: prev.dailyPnL + delta.dailyPnL,
+        thisWeekPnL: prev.thisWeekPnL + delta.thisWeekPnL,
+        thisMonthPnL: prev.thisMonthPnL + delta.thisMonthPnL,
+        lifetimePnL: prev.lifetimePnL + delta.lifetimePnL
+      }
+    })
+  }, [])
+
   // Fetch clients data
   const fetchClients = useCallback(async (force = false) => {
     if (!isAuthenticated) {
@@ -63,6 +149,10 @@ export const DataProvider = ({ children }) => {
       const response = await brokerAPI.getClients()
       const data = response.data?.clients || []
       setClients(data)
+      // Calculate full stats on initial load
+      const stats = calculateFullStats(data)
+      setClientStats(stats)
+      console.log('[DataContext] 📊 Initial stats calculated:', stats)
       setLastFetch(prev => ({ ...prev, clients: Date.now() }))
       return data
     } catch (error) {
@@ -216,8 +306,14 @@ export const DataProvider = ({ children }) => {
             const index = prev.findIndex(c => c.login === accountLogin)
             if (index === -1) {
               console.log('[DataContext] 🆕 NEW CLIENT DETECTED via ACCOUNT_UPDATED:', accountLogin, 'Total clients before:', prev.length)
+              // New client - update stats by adding new values
+              updateStatsIncremental(null, updatedAccount)
+              setClientStats(s => ({ ...s, totalClients: s.totalClients + 1 }))
               return [...prev, updatedAccount]
             }
+            // Existing client - calculate delta
+            const oldClient = prev[index]
+            updateStatsIncremental(oldClient, updatedAccount)
             // Don't log every update - too noisy
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedAccount }
@@ -256,6 +352,9 @@ export const DataProvider = ({ children }) => {
               return prev
             }
             console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
+            // Update stats incrementally for new user
+            updateStatsIncremental(null, newUser)
+            setClientStats(s => ({ ...s, totalClients: s.totalClients + 1 }))
             return [newUser, ...prev]
           })
           
@@ -600,6 +699,9 @@ export const DataProvider = ({ children }) => {
     orders,
     deals,
     accounts,
+    
+    // Aggregated stats (incrementally updated)
+    clientStats,
     
     // Loading states
     loading,

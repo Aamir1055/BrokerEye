@@ -44,13 +44,14 @@ const AppContent = () => {
       <Route path="/client-percentage" element={<ClientPercentagePage />} />
       <Route path="/broker-rules" element={<BrokerRulePage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="*" element={<DashboardPage />} />
     </Routes>
   )
 }
 
 function App() {
   return (
-    <Router>
+    <Router basename="/v2">
       <AuthProvider>
         <DataProvider>
           <GroupProvider>

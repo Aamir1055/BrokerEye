@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
+  base: '/v2/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -30,8 +30,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
+        scope: '/v2/',
+        start_url: '/v2/',
         icons: [
           {
             src: 'pwa-192x192.png',

@@ -80,7 +80,7 @@ const WebSocketIndicator = () => {
 
       {/* Debug Panel */}
       {showDebug && debugInfo && (
-        <div className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 z-50 w-80">
+        <div className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 w-80" style={{ zIndex: 99999999 }}>
           <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
             <h3 className="text-xs font-semibold text-gray-900">WebSocket Debug Info</h3>
             <button
