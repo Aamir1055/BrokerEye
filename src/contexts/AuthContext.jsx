@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState(null)
   const [requires2FA, setRequires2FA] = useState(false)
   const [tempToken, setTempToken] = useState(null)
   const refreshTimerRef = React.useRef(null)
@@ -128,6 +129,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       setLoading(true)
+      setAuthError(null)
       const response = await authAPI.login(username, password)
       
       // Check if the response indicates 2FA is required
@@ -142,16 +144,39 @@ export const AuthProvider = ({ children }) => {
         return { success: true, requires2FA: false }
       } else {
         // Unexpected response format
+        const errMsg = response.message || 'Login failed'
+        setAuthError(errMsg)
         return { 
           success: false, 
-          error: response.message || 'Login failed' 
+          error: errMsg 
         }
       }
     } catch (error) {
       console.error('Login error:', error)
+      console.error('Error response:', error.response)
+      console.error('Error data:', error.response?.data)
+      
+      // Extract error message from various possible locations
+      let errorMessage = 'Login failed. Please check your credentials.'
+      
+      if (error.response?.data) {
+        // Try different paths where error message might be
+        errorMessage = error.response.data.message 
+          || error.response.data.data?.message 
+          || error.response.data.error
+          || error.response.data.data?.error
+          || (typeof error.response.data === 'string' ? error.response.data : null)
+          || errorMessage
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      console.log('Final error message to display:', errorMessage)
+      setAuthError(errorMessage)
+      
       return { 
         success: false, 
-        error: error.response?.data?.message || error.response?.data?.data?.message || 'Login failed' 
+        error: errorMessage 
       }
     } finally {
       setLoading(false)
@@ -194,6 +219,7 @@ export const AuthProvider = ({ children }) => {
     // Update state
     setUser(data.broker)
     setIsAuthenticated(true)
+  setAuthError(null)
     
     // Start token refresh schedule
     const expiresIn = Number(data?.expires_in || 3600)
@@ -293,6 +319,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     requires2FA,
+    authError,
     login,
     verify2FA,
     logout,

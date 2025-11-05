@@ -20,6 +20,7 @@ export const DataProvider = ({ children }) => {
   const [orders, setOrders] = useState([])
   const [deals, setDeals] = useState([])
   const [accounts, setAccounts] = useState([]) // For margin level
+  const [latestServerTimestamp, setLatestServerTimestamp] = useState(null) // Track latest batch timestamp
   
   // Aggregated stats for face cards - updated incrementally
   const [clientStats, setClientStats] = useState({
@@ -149,11 +150,12 @@ export const DataProvider = ({ children }) => {
       const response = await brokerAPI.getClients()
       const data = response.data?.clients || []
       setClients(data)
+      setAccounts(data) // Keep accounts in sync
       // Calculate full stats on initial load
       const stats = calculateFullStats(data)
       setClientStats(stats)
       console.log('[DataContext] 📊 Initial stats calculated:', stats)
-      setLastFetch(prev => ({ ...prev, clients: Date.now() }))
+      setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
       return data
     } catch (error) {
       console.error('[DataContext] Failed to fetch clients:', error)
@@ -262,17 +264,25 @@ export const DataProvider = ({ children }) => {
       }
     })
 
-    // Debug: Log all unique event types (only once per type)
+    // Debug: Log all unique event types and monitor message flow
     const seenEvents = new Set()
+    let totalMessagesReceived = 0
+    let lastActivityLog = Date.now()
+    
     const unsubDebug = websocketService.subscribe('all', (message) => {
-      const eventType = message.event || message.type
-      if (eventType && !seenEvents.has(eventType) && eventType !== 'ACCOUNT_UPDATED') {
-        seenEvents.add(eventType)
-        console.log('[DataContext] 🔔 New WebSocket event type detected:', eventType, message)
+      totalMessagesReceived++
+      
+      // Log activity every 10 seconds
+      if (Date.now() - lastActivityLog > 10000) {
+        console.log(`[DataContext] 📡 WebSocket active: ${totalMessagesReceived} messages in last 10s`)
+        totalMessagesReceived = 0
+        lastActivityLog = Date.now()
       }
-      // Also check for USER_ADDED specifically
-      if (eventType === 'USER_ADDED') {
-        console.log('[DataContext] ‼️ USER_ADDED EVENT CAPTURED:', message)
+      
+      const eventType = message.event || message.type
+      if (eventType && !seenEvents.has(eventType)) {
+        seenEvents.add(eventType)
+        console.log('[DataContext] 🔔 New event type:', eventType)
       }
     })
 
@@ -290,47 +300,160 @@ export const DataProvider = ({ children }) => {
       }
     })
 
-    // Subscribe to ACCOUNT_UPDATED for individual updates
+    // ULTRA-OPTIMIZED batch processing
+    let pendingUpdates = new Map()
+    let batchTimer = null
+    let totalProcessed = 0
+    let lastBatchTimestamp = 0
+    
+    // Create index map for O(1) lookups instead of O(n) findIndex
+    let clientIndexMap = new Map()
+    let accountIndexMap = new Map()
+    
+    const rebuildIndexMaps = (clientsArray, accountsArray) => {
+      clientIndexMap.clear()
+      accountIndexMap.clear()
+      clientsArray.forEach((c, i) => clientIndexMap.set(c.login, i))
+      accountsArray.forEach((a, i) => accountIndexMap.set(a.login, i))
+    }
+    
+    const processBatch = () => {
+      if (pendingUpdates.size === 0) return
+      
+      const startTime = performance.now()
+      const batchSize = pendingUpdates.size
+      const updates = Array.from(pendingUpdates.values())
+      pendingUpdates.clear()
+      
+      totalProcessed += batchSize
+      
+      // Find the most recent timestamp in this batch
+      let batchMaxTimestamp = 0
+      for (let i = 0; i < updates.length; i++) {
+        const ts = updates[i].updatedAccount?.serverTimestamp || 0
+        if (ts > batchMaxTimestamp) batchMaxTimestamp = ts
+      }
+      
+      if (batchMaxTimestamp > lastBatchTimestamp) {
+        lastBatchTimestamp = batchMaxTimestamp
+        setLatestServerTimestamp(batchMaxTimestamp)
+      }
+      
+      // Log batch processing with timing
+      if (batchSize > 200 || totalProcessed % 1000 === 0) {
+        const latency = batchMaxTimestamp > 0 ? Math.floor((Date.now() - batchMaxTimestamp) / 1000) : 0
+        const processingTime = Math.round(performance.now() - startTime)
+        console.log(`[DataContext] 📦 ${batchSize} updates in ${processingTime}ms (Total: ${totalProcessed}, Lag: ${latency}s)`)
+      }
+      
+      // OPTIMIZED: Single state update for clients with index map
+      setClients(prev => {
+        // Rebuild index if needed
+        if (clientIndexMap.size === 0 && prev.length > 0) {
+          prev.forEach((c, i) => clientIndexMap.set(c.login, i))
+        }
+        
+        const updated = [...prev]
+        let hasNewClients = false
+        
+        for (let i = 0; i < updates.length; i++) {
+          const { updatedAccount, accountLogin } = updates[i]
+          const index = clientIndexMap.get(accountLogin)
+          
+          if (index === undefined) {
+            // New client - add to end
+            updateStatsIncremental(null, updatedAccount)
+            const newIndex = updated.length
+            updated.push(updatedAccount)
+            clientIndexMap.set(accountLogin, newIndex)
+            hasNewClients = true
+          } else {
+            // Update existing - O(1) access
+            const oldClient = updated[index]
+            updateStatsIncremental(oldClient, updatedAccount)
+            updated[index] = { ...updated[index], ...updatedAccount }
+          }
+        }
+        
+        if (hasNewClients) {
+          setClientStats(s => ({ ...s, totalClients: updated.length }))
+        }
+        
+        return updated
+      })
+      
+      // OPTIMIZED: Single state update for accounts with index map
+      setAccounts(prev => {
+        // Rebuild index if needed
+        if (accountIndexMap.size === 0 && prev.length > 0) {
+          prev.forEach((a, i) => accountIndexMap.set(a.login, i))
+        }
+        
+        const updated = [...prev]
+        
+        for (let i = 0; i < updates.length; i++) {
+          const { updatedAccount, accountLogin } = updates[i]
+          const index = accountIndexMap.get(accountLogin)
+          
+          if (index === undefined) {
+            // New account
+            const newIndex = updated.length
+            updated.push(updatedAccount)
+            accountIndexMap.set(accountLogin, newIndex)
+          } else {
+            // Update existing - O(1) access
+            updated[index] = { ...updated[index], ...updatedAccount }
+          }
+        }
+        
+        return updated
+      })
+    }
+
+    // Track if we're receiving updates
+    let updateCount = 0
+    let lastUpdateLog = Date.now()
+    
+    // Subscribe to ACCOUNT_UPDATED for individual updates (BATCHED)
     const unsubAccountUpdate = websocketService.subscribe('ACCOUNT_UPDATED', (message) => {
       try {
+        updateCount++
+        
+        // Log every 5 seconds to confirm we're receiving updates
+        if (Date.now() - lastUpdateLog > 5000) {
+          console.log(`[DataContext] ✅ Receiving updates: ${updateCount} in last 5s`)
+          updateCount = 0
+          lastUpdateLog = Date.now()
+        }
+        
         const updatedAccount = message.data
         const accountLogin = message.login || updatedAccount?.login
         
-        // Only log occasionally to avoid console spam
-        if (Math.random() < 0.05) {
-          console.log('[DataContext] 📊 ACCOUNT_UPDATED sample:', accountLogin, updatedAccount)
+        if (!updatedAccount || !accountLogin) {
+          console.warn('[DataContext] ⚠️ Invalid ACCOUNT_UPDATED message:', message)
+          return
         }
         
-        if (updatedAccount && accountLogin) {
-          setClients(prev => {
-            const index = prev.findIndex(c => c.login === accountLogin)
-            if (index === -1) {
-              console.log('[DataContext] 🆕 NEW CLIENT DETECTED via ACCOUNT_UPDATED:', accountLogin, 'Total clients before:', prev.length)
-              // New client - update stats by adding new values
-              updateStatsIncremental(null, updatedAccount)
-              setClientStats(s => ({ ...s, totalClients: s.totalClients + 1 }))
-              return [...prev, updatedAccount]
-            }
-            // Existing client - calculate delta
-            const oldClient = prev[index]
-            updateStatsIncremental(oldClient, updatedAccount)
-            // Don't log every update - too noisy
-            const updated = [...prev]
-            updated[index] = { ...updated[index], ...updatedAccount }
-            return updated
-          })
-          
-          setAccounts(prev => {
-            const index = prev.findIndex(c => c.login === accountLogin)
-            if (index === -1) {
-              console.log('[DataContext] 🆕 NEW ACCOUNT added to accounts array:', accountLogin)
-              return [...prev, updatedAccount]
-            }
-            const updated = [...prev]
-            updated[index] = { ...updated[index], ...updatedAccount }
-            return updated
-          })
+        // Keep SERVER timestamp to measure actual system latency
+        const serverTimestamp = message.timestamp
+        if (serverTimestamp) {
+          const timestampMs = serverTimestamp < 10000000000 ? serverTimestamp * 1000 : serverTimestamp
+          updatedAccount.serverTimestamp = timestampMs
         }
+        
+        // Add to batch (Map prevents duplicates)
+        pendingUpdates.set(accountLogin, { updatedAccount, accountLogin })
+        
+        // AGGRESSIVE: Process immediately when batch is large (>500), otherwise debounce
+        if (pendingUpdates.size > 500) {
+          if (batchTimer) clearTimeout(batchTimer)
+          processBatch()
+        } else {
+          // Small batches: debounce for 30ms
+          if (batchTimer) clearTimeout(batchTimer)
+          batchTimer = setTimeout(processBatch, 30)
+        }
+        
       } catch (error) {
         console.error('[DataContext] Error processing ACCOUNT_UPDATED:', error)
       }
@@ -651,6 +774,12 @@ export const DataProvider = ({ children }) => {
     })
 
     return () => {
+      // Clean up batch timer
+      if (batchTimer) {
+        clearTimeout(batchTimer)
+        processBatch() // Process any pending updates
+      }
+      
       unsubDebug()
       unsubState()
       unsubClients()
@@ -702,6 +831,9 @@ export const DataProvider = ({ children }) => {
     
     // Aggregated stats (incrementally updated)
     clientStats,
+    
+    // Latest server timestamp from WebSocket batch
+    latestServerTimestamp,
     
     // Loading states
     loading,

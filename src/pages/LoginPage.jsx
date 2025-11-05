@@ -6,11 +6,11 @@ const LoginPage = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
 
-  const { login, requires2FA, loading } = useAuth()
+  const { login, requires2FA, authError } = useAuth()
 
   useEffect(() => {
     setIsVisible(true)
@@ -18,25 +18,37 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-    setIsLoading(true)
+    
+    // Clear previous error
+    setErrorMessage('')
 
-    if (!username || !password) {
-      setError('Please fill in all fields')
-      setIsLoading(false)
+    // Validation
+    if (!username.trim() || !password.trim()) {
+      setErrorMessage('Please fill in all fields')
       return
     }
+
+    setIsLoading(true)
 
     try {
       const result = await login(username, password)
       
-      if (!result.success) {
-        setError(result.error)
+      // Handle login response
+      if (result?.requires2FA) {
+        // 2FA required - AuthContext will handle the state
+        setIsLoading(false)
+      } else if (result?.success) {
+        // Login successful - user will be redirected by AuthContext
+        setIsLoading(false)
+      } else {
+        // Login failed - show error
+        setErrorMessage(result?.error || 'Invalid username or password. Please try again.')
+        setIsLoading(false)
       }
     } catch (err) {
+      // Handle unexpected errors
       console.error('Login error:', err)
-      setError('Unable to connect to server. Please check your connection.')
-    } finally {
+      setErrorMessage('An unexpected error occurred. Please try again.')
       setIsLoading(false)
     }
   }
@@ -181,8 +193,8 @@ const LoginPage = () => {
                   </div>
                 </div>
 
-                {/* Enhanced Error Message - Responsive */}
-                {error && (
+                {/* Error Message */}
+                {(errorMessage || authError) && (
                   <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 animate-shake">
                     <div className="flex items-center">
                       <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-full flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
@@ -190,20 +202,20 @@ const LoginPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-red-800">{error}</span>
+                      <span className="text-xs sm:text-sm font-medium text-red-800">{errorMessage || authError}</span>
                     </div>
                   </div>
                 )}
 
-                {/* Enhanced Submit Button - Responsive */}
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoading || loading}
-                  className="group relative w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-2.5 sm:py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                  className="group relative w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-2.5 sm:py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative flex items-center justify-center">
-                    {isLoading || loading ? (
+                    {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3" />
                         <span className="text-sm sm:text-base">Signing in...</span>

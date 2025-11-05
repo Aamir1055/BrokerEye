@@ -10,7 +10,7 @@ import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 
 const ClientsPage = () => {
-  const { clients: cachedClients, positions: cachedPositions, clientStats, fetchClients, fetchPositions, loading, connectionState } = useData()
+  const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, fetchClients, fetchPositions, loading, connectionState } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
@@ -39,6 +39,8 @@ const ClientsPage = () => {
   // Display mode for values vs percentages
   // 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
+  // Show face cards toggle - default is true (on)
+  const [showFaceCards, setShowFaceCards] = useState(true)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -274,44 +276,39 @@ const ClientsPage = () => {
     return () => clearInterval(interval)
   }, [])
 
-  // Subscribe to WebSocket to capture actual server timestamps from messages
-  useEffect(() => {
-    // Import websocket service
-    import('../services/websocket').then(({ default: websocketService }) => {
-      // Subscribe to ACCOUNT_UPDATED to get real-time server timestamps
-      const unsubscribe = websocketService.subscribe('ACCOUNT_UPDATED', (message) => {
-        // Get timestamp from the WebSocket message itself (server time)
-        if (message?.timestamp) {
-          let timestamp = message.timestamp
-          // Auto-detect if timestamp is in seconds or milliseconds
-          // If timestamp is < 10000000000, it's in seconds (before year 2286)
-          // If timestamp is >= 10000000000, it's in milliseconds
-          if (timestamp < 10000000000) {
-            // Already in seconds, convert to milliseconds for consistency
-            timestamp = timestamp * 1000
-          }
-          setAppTime(timestamp)
-        }
-      })
-      
-      return () => {
-        if (unsubscribe) unsubscribe()
-      }
-    }).catch(err => {
-      console.error('Failed to subscribe to WebSocket:', err)
-    })
-  }, [])
+  // Note: WebSocket is handled by DataContext, we get updates via clients array changes
 
-  // Also update from client data on initial load
+  // Track the latest timestamp from DataContext (server batch timestamp)
   useEffect(() => {
-    if (clients && clients.length > 0 && !appTime) {
-      // Look for timestamp in client data
-      const latestTimestamp = clients[0]?.timestamp || clients[0]?.lastUpdate
-      if (latestTimestamp) {
-        setAppTime(latestTimestamp)
+    if (latestServerTimestamp) {
+      setAppTime(latestServerTimestamp)
+    } else if (clients && clients.length > 0) {
+      // Fallback: scan clients for timestamp if context doesn't have it yet
+      let maxTimestamp = 0
+      for (let i = 0; i < Math.min(clients.length, 50); i++) {
+        const ts = clients[i]?.serverTimestamp
+        if (ts && ts > maxTimestamp) {
+          maxTimestamp = ts
+        }
+      }
+      if (maxTimestamp > 0) {
+        setAppTime(maxTimestamp)
       }
     }
-  }, [clients, appTime])
+  }, [latestServerTimestamp, clients])
+
+  // Performance monitor - log lag warnings (throttled)
+  const lastLagWarning = useRef(0)
+  useEffect(() => {
+    if (systemTime && appTime) {
+      const lagSeconds = Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))
+      // Only log once every 10 seconds to avoid console spam
+      if (lagSeconds > 10 && Date.now() - lastLagWarning.current > 10000) {
+        console.warn(`[ClientsPage] ⚠️ HIGH LAG: ${lagSeconds}s - Check if WebSocket is receiving updates`)
+        lastLagWarning.current = Date.now()
+      }
+    }
+  }, [systemTime, appTime])
 
   // Handle manual refresh - force fetch without full page reload
   const handleManualRefresh = useCallback(async () => {
@@ -549,17 +546,20 @@ const ClientsPage = () => {
   }
   
   // Get filtered clients based on filter settings
-  const getFilteredClients = () => {
-    let filtered = [...clients]
+  const getFilteredClients = useCallback(() => {
+    // Safety check: ensure clients is an array
+    if (!Array.isArray(clients)) return []
+    
+    let filtered = [...clients].filter(c => c != null)
     
     if (filterByPositions) {
       // Filter clients who have floating values
-      filtered = filtered.filter(c => c.floating && Math.abs(c.floating) > 0)
+      filtered = filtered.filter(c => c && c.floating && Math.abs(c.floating) > 0)
     }
     
     if (filterByCredit) {
       // Filter clients who have credit (positive or negative, but not zero)
-      filtered = filtered.filter(c => c.credit && c.credit !== 0)
+      filtered = filtered.filter(c => c && c.credit && c.credit !== 0)
     }
 
     // Apply column filters
@@ -568,12 +568,14 @@ const ClientsPage = () => {
         // Number filter
         const actualColumnKey = columnKey.replace('_number', '')
         filtered = filtered.filter(client => {
+          if (!client) return false
           const clientValue = client[actualColumnKey]
           return matchesNumberFilter(clientValue, values)
         })
       } else if (values && values.length > 0) {
         // Regular checkbox filter
         filtered = filtered.filter(client => {
+          if (!client) return false
           const clientValue = client[columnKey]
           return values.includes(clientValue)
         })
@@ -581,10 +583,10 @@ const ClientsPage = () => {
     })
     
     return filtered
-  }
+  }, [clients, filterByPositions, filterByCredit, columnFilters])
   
   // Sorting function with type detection
-  const sortClients = (clientsToSort) => {
+  const sortClients = useCallback((clientsToSort) => {
     if (!sortColumn) return clientsToSort
     
     const sorted = [...clientsToSort].sort((a, b) => {
@@ -640,10 +642,10 @@ const ClientsPage = () => {
     })
     
     return sorted
-  }
+  }, [sortColumn, sortDirection, displayMode, percentageFieldMap])
   
   // Search helpers
-  const searchClients = (list) => {
+  const searchClients = useCallback((list) => {
     if (!searchQuery || typeof searchQuery !== 'string' || !searchQuery.trim()) return list
     const q = searchQuery.toLowerCase().trim()
     return list.filter(c => {
@@ -654,9 +656,9 @@ const ClientsPage = () => {
       const group = String(c.group || '').toLowerCase()
       return login.includes(q) || name.includes(q) || email.includes(q) || phone.includes(q) || group.includes(q)
     })
-  }
+  }, [searchQuery])
 
-  const getSuggestions = (sorted) => {
+  const getSuggestions = useCallback((sorted) => {
     if (!searchQuery || typeof searchQuery !== 'string' || !searchQuery.trim() || searchQuery.length < 1) return []
     const q = searchQuery.toLowerCase().trim()
     const matchedClients = []
@@ -671,23 +673,32 @@ const ClientsPage = () => {
       }
     })
     return matchedClients.slice(0, 10)
-  }
+  }, [searchQuery])
 
-  const handleSuggestionClick = (client) => {
+  const handleSuggestionClick = useCallback((client) => {
     const login = String(client.login || '')
     setSearchInput(login)
     setSearchQuery(login)
     setShowSuggestions(false)
     setCurrentPage(1)
-  }
+  }, [])
 
-  // Memoize expensive filtering operations
+  // Memoize expensive filtering operations - OPTIMIZED
   const filteredClients = useMemo(() => {
+    // Skip unnecessary processing if no clients
+    if (!clients || !Array.isArray(clients) || clients.length === 0) return []
+    
     const filteredBase = getFilteredClients()
+    if (!Array.isArray(filteredBase)) return []
+    
     const searchedBase = searchClients(filteredBase)
+    if (!Array.isArray(searchedBase)) return []
+    
     const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
+    if (!Array.isArray(groupFilteredBase)) return []
+    
     return sortClients(groupFilteredBase)
-  }, [cachedClients, filterByPositions, filterByCredit, searchQuery, columnFilters, sortColumn, sortDirection, activeGroupFilters])
+  }, [clients, getFilteredClients, searchClients, sortClients, filterByActiveGroup, activeGroupFilters])
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -796,32 +807,46 @@ const ClientsPage = () => {
     return decimalPart ? `${result}.${decimalPart}` : result
   }
 
-  // Memoize face card stats - only recalculate when filters change
+  // Memoize face card stats - ULTRA optimized
   const faceCardStats = useMemo(() => {
     const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
     
     if (!hasFilters) {
-      // No filters - use pre-calculated stats
+      // No filters - use pre-calculated stats (O(1))
       return clientStats
     }
     
-    // Has filters - calculate on filtered subset
-    return {
-      totalClients: filteredClients.length,
-      totalBalance: filteredClients.reduce((sum, c) => sum + (c.balance || 0), 0),
-      totalCredit: filteredClients.reduce((sum, c) => sum + (c.credit || 0), 0),
-      totalEquity: filteredClients.reduce((sum, c) => sum + (c.equity || 0), 0),
-      totalPnl: filteredClients.reduce((sum, c) => sum + (c.pnl || 0), 0),
-      totalProfit: filteredClients.reduce((sum, c) => sum + (c.profit || 0), 0),
-      dailyDeposit: filteredClients.reduce((sum, c) => sum + (c.daily_deposit || 0), 0),
-      dailyWithdrawal: filteredClients.reduce((sum, c) => sum + (c.daily_withdrawal || 0), 0),
-      // Invert the sign by multiplying by -1 (negative becomes positive, positive becomes negative)
-      dailyPnL: filteredClients.reduce((sum, c) => sum + ((c.dailyPnL || 0) * -1), 0),
-      thisWeekPnL: filteredClients.reduce((sum, c) => sum + ((c.thisWeekPnL || 0) * -1), 0),
-      thisMonthPnL: filteredClients.reduce((sum, c) => sum + ((c.thisMonthPnL || 0) * -1), 0),
-      lifetimePnL: filteredClients.reduce((sum, c) => sum + ((c.lifetimePnL || 0) * -1), 0)
+    // Has filters - calculate ONLY if showing face cards
+    if (!showFaceCards) {
+      return clientStats // Don't waste CPU if face cards are hidden
     }
-  }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters])
+    
+    // Optimized single-loop calculation
+    const len = filteredClients.length
+    let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
+    let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
+    
+    for (let i = 0; i < len; i++) {
+      const c = filteredClients[i]
+      totalBalance += c.balance || 0
+      totalCredit += c.credit || 0
+      totalEquity += c.equity || 0
+      totalPnl += c.pnl || 0
+      totalProfit += c.profit || 0
+      dailyDeposit += c.daily_deposit || 0
+      dailyWithdrawal += c.daily_withdrawal || 0
+      dailyPnL += (c.dailyPnL || 0) * -1
+      thisWeekPnL += (c.thisWeekPnL || 0) * -1
+      thisMonthPnL += (c.thisMonthPnL || 0) * -1
+      lifetimePnL += (c.lifetimePnL || 0) * -1
+    }
+    
+    return {
+      totalClients: len,
+      totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
+      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
+    }
+  }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters, showFaceCards])
 
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
@@ -915,19 +940,27 @@ const ClientsPage = () => {
                 <p className="text-xs font-medium text-gray-600 mt-1">Manage and view all client accounts</p>
                 {/* Timestamp Info */}
                 <div className="mt-2 flex items-center gap-4 text-[10px] font-mono">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" title="Current system time">
                     <span className="text-gray-500 font-semibold">System:</span>
                     <span className="text-blue-600 font-bold">{Math.floor(systemTime / 1000)}</span>
                   </div>
                   {appTime && (
                     <>
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-500 font-semibold">App:</span>
-                        <span className="text-green-600 font-bold">{Math.floor(appTime / 1000)}</span>
+                      <div className="flex items-center gap-1" title="Latest WebSocket event timestamp from server">
+                        <span className="text-gray-500 font-semibold">Event:</span>
+                        <span className="text-purple-600 font-bold">{Math.floor(appTime / 1000)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-500 font-semibold">Diff:</span>
-                        <span className="text-orange-600 font-bold">{Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))}s</span>
+                      <div className="flex items-center gap-1" title="Processing latency - how far behind we are">
+                        <span className="text-gray-500 font-semibold">Lag:</span>
+                        <span className={`font-bold ${
+                          Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000)) <= 2 
+                            ? 'text-green-600' 
+                            : Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000)) <= 5
+                              ? 'text-orange-500'
+                              : 'text-red-600'
+                        }`}>
+                          {Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))}s
+                        </span>
                       </div>
                     </>
                   )}
@@ -941,7 +974,7 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-emerald-700 hover:text-emerald-800 px-2.5 py-1.5 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                  className="text-emerald-700 hover:text-emerald-800 px-3 py-2 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -989,7 +1022,7 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                  className="text-amber-700 hover:text-amber-800 px-3 py-2 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -1024,7 +1057,7 @@ const ClientsPage = () => {
               </div>
               
               {/* Zoom Controls */}
-              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 py-1 shadow-sm">
+              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
                 <button
                   onClick={handleZoomOut}
                   disabled={zoomLevel <= 50}
@@ -1037,7 +1070,7 @@ const ClientsPage = () => {
                 </button>
                 <button
                   onClick={handleResetZoom}
-                  className="px-2 py-0.5 text-xs font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
+                  className="px-2 text-sm font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
                   title="Reset Zoom to 100%"
                 >
                   {zoomLevel}%
@@ -1067,13 +1100,35 @@ const ClientsPage = () => {
                 }}
               />
               
+              {/* Show Face Cards Toggle */}
+              <button
+                onClick={() => setShowFaceCards(!showFaceCards)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
+                  showFaceCards 
+                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                }`}
+                title={showFaceCards ? "Hide cards" : "Show cards"}
+              >
+                <span>Cards</span>
+                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
+                  showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
+                }`}>
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showFaceCards ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </button>
+              
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className={`text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`text-blue-600 hover:text-blue-700 p-2 rounded-md border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh clients data"
               >
-                <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -1087,6 +1142,7 @@ const ClientsPage = () => {
           )}
 
           {/* Stats Summary */}
+          {showFaceCards && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             {displayMode === 'value' && (
               <>
@@ -1459,6 +1515,7 @@ const ClientsPage = () => {
               </>
             )}
           </div>
+          )}
 
           {/* Pagination Controls - Top */}
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
@@ -1632,11 +1689,16 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'hidden' }}>
-            <div className="overflow-y-auto flex-1 pb-6" style={{ 
+          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
+            height: showFaceCards ? 'calc(100vh - 480px)' : 'calc(100vh - 260px)',
+            minHeight: '400px',
+            overflow: 'hidden'
+          }}>
+            <div className="overflow-y-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
               scrollbarColor: '#3b82f6 #e5e7eb',
-              zoom: `${zoomLevel}%`
+              zoom: `${zoomLevel}%`,
+              position: 'relative'
             }}>
               <style>{`
                 .flex-1::-webkit-scrollbar {
@@ -1748,14 +1810,14 @@ const ClientsPage = () => {
                                       setShowFilterDropdown(col.baseKey)
                                     }
                                   }}
-                                  className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                  className={`p-1.5 rounded-md transition-all ${filterCount > 0 ? 'bg-green-400 text-blue-900 hover:bg-green-300 shadow-md' : 'bg-white/20 text-white hover:bg-white/30'}`}
                                   title="Filter column"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                   </svg>
                                   {filterCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-lg border-2 border-white">
                                       {filterCount}
                                     </span>
                                   )}
@@ -2172,86 +2234,6 @@ const ClientsPage = () => {
               </table>
             </div>
           </div>
-
-          {/* Pagination Controls - Bottom */}
-          {itemsPerPage !== 'All' && totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Previous
-              </button>
-              
-              <div className="flex gap-1">
-                {/* First page */}
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      1
-                    </button>
-                    {currentPage > 4 && <span className="px-2 py-2 text-gray-500">...</span>}
-                  </>
-                )}
-                
-                {/* Page numbers around current page */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => {
-                    return page === currentPage || 
-                           page === currentPage - 1 || 
-                           page === currentPage + 1 ||
-                           (currentPage <= 2 && page <= 3) ||
-                           (currentPage >= totalPages - 1 && page >= totalPages - 2)
-                  })
-                  .map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white font-medium'
-                          : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                
-                {/* Last page */}
-                {currentPage < totalPages - 2 && (
-                  <>
-                    {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-500">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-3 py-2 text-sm rounded-lg bg-white text-gray-700 hover:bg-blue-50 border border-gray-300"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-300'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          )}
 
         </div>
       </main>
