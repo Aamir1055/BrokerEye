@@ -1690,11 +1690,11 @@ const ClientsPage = () => {
                         >
                           {/* Column Resize Handle */}
                           <div 
-                            className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-400 z-20 group/resize"
+                            className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20 group/resize"
                             onMouseDown={(e) => handleResizeStart(e, col.key)}
                             title="Drag to resize column"
                           >
-                            <div className="absolute right-0 top-0 w-1 h-full bg-white/20 group-hover/resize:bg-blue-400 transition-colors"></div>
+                            <div className="absolute right-0 top-0 w-1.5 h-full bg-white/30 group-hover/resize:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
                           </div>
                           
                           <div className="flex items-center gap-1 justify-between">
