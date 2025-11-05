@@ -73,32 +73,32 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 lg:z-auto
-          w-64 lg:w-60 bg-gradient-to-b from-slate-50 via-white to-slate-50
-          border-r border-slate-200/60 shadow-xl
+          w-64 lg:w-60 bg-white
+          border-r border-slate-200 shadow-lg
           transform lg:transform-none transition-transform duration-300 ease-in-out
           flex flex-col h-screen
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Sidebar Header */}
-        <div className="relative px-5 py-5 border-b border-slate-200/80 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="relative px-5 py-5 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 transform hover:scale-105 transition-transform duration-200">
+              <div className="relative w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md transform hover:scale-105 transition-transform duration-200">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
               </div>
               <div>
-                <span className="block text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Broker Eyes</span>
+                <span className="block text-base font-bold text-slate-800">Broker Eyes</span>
                 <span className="block text-[10px] font-medium text-slate-500">Trading Platform</span>
               </div>
             </div>
             <button
               onClick={() => typeof onClose === 'function' && onClose()}
-              className="lg:hidden text-slate-600 hover:text-slate-900 hover:bg-white/80 p-2 rounded-lg transition-all duration-200 hover:shadow-md"
+              className="lg:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100 p-2 rounded-lg transition-all duration-200"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -124,8 +124,8 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
                   transition-all duration-200 transform hover:scale-[1.02]
                   ${
                   isActivePath(item.path)
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/40 hover:shadow-xl hover:shadow-blue-500/50'
-                    : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 hover:shadow-md'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 {item.icon === 'dashboard' && (
@@ -171,12 +171,12 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
                 )}
                 <span className="flex-1 tracking-wide">{item.name}</span>
                 {item.icon === 'margin' && displayCount > 0 && (
-                  <span className="ml-auto bg-gradient-to-r from-red-500 to-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg shadow-red-500/40 animate-pulse">
+                  <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md animate-pulse">
                     {displayCount}
                   </span>
                 )}
                 {isActivePath(item.path) && (
-                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full shadow-lg"></div>
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full"></div>
                 )}
               </button>
             ))}
@@ -184,10 +184,10 @@ const Sidebar = ({ isOpen, onClose, marginLevelCount = 0 }) => {
         </div>
 
         {/* Logout Button at Bottom */}
-        <div className="p-4 border-t border-slate-200/80 bg-gradient-to-r from-slate-50 to-white">
+        <div className="p-4 border-t border-slate-200 bg-slate-50">
           <button
             onClick={handleLogout}
-            className="group w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 hover:text-white rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-red-500/40 transform hover:scale-[1.02]"
+            className="group w-full flex items-center px-4 py-3 text-sm font-medium text-slate-700 hover:bg-red-500 hover:text-white rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
           >
             <svg className="w-5 h-5 mr-3 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
