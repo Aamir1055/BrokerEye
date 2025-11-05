@@ -948,7 +948,7 @@ const ClientsPage = () => {
                   </svg>
                   Filter
                   {(filterByPositions || filterByCredit) && (
-                    <span className="ml-0.5 px-1.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    <span className="ml-0.5 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-sm">
                       {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0)}
                     </span>
                   )}
@@ -956,7 +956,7 @@ const ClientsPage = () => {
                 {showFilterMenu && (
                   <div
                     ref={filterMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-emerald-50 to-white rounded-lg shadow-xl border-2 border-emerald-200 py-2 z-50 w-52"
+                    className="absolute right-0 top-full mt-2 bg-emerald-50 rounded-lg shadow-xl border-2 border-emerald-200 py-2 z-50 w-52"
                   >
                     <div className="px-3 py-2 border-b border-emerald-200">
                       <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Filter Options</p>
@@ -999,7 +999,7 @@ const ClientsPage = () => {
                 {showColumnSelector && (
                   <div
                     ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-gradient-to-br from-amber-50 to-white rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-52"
+                    className="absolute right-0 top-full mt-2 bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-52"
                     style={{ maxHeight: '400px', overflowY: 'auto' }}
                   >
                     <div className="px-3 py-2 border-b border-amber-200">
@@ -1461,7 +1461,7 @@ const ClientsPage = () => {
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md border border-blue-200 p-3">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-blue-700">Show:</span>
               <select
@@ -1496,7 +1496,7 @@ const ClientsPage = () => {
                     </svg>
                   </button>
                   
-                  <span className="text-xs font-bold text-white px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md shadow-md border border-blue-700">
+                  <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
                     Page {currentPage} of {totalPages}
                   </span>
                   
@@ -1531,7 +1531,7 @@ const ClientsPage = () => {
                 {showDisplayMenu && (
                   <div
                     ref={displayMenuRef}
-                    className="absolute right-0 bottom-full mb-2 bg-gradient-to-br from-purple-50 to-white rounded-lg shadow-xl border-2 border-purple-200 py-2 z-[100] w-52"
+                    className="absolute right-0 bottom-full mb-2 bg-purple-50 rounded-lg shadow-xl border-2 border-purple-200 py-2 z-[100] w-52"
                   >
                     <div className="px-3 py-2 border-b border-purple-200">
                       <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Display Mode</p>
@@ -1646,15 +1646,15 @@ const ClientsPage = () => {
                   background: #f3f4f6;
                 }
                 .flex-1::-webkit-scrollbar-thumb {
-                  background: linear-gradient(180deg, #2563eb 0%, #4f46e5 100%);
+                  background: #2563eb;
                   border-radius: 4px;
                 }
                 .flex-1::-webkit-scrollbar-thumb:hover {
-                  background: linear-gradient(180deg, #1d4ed8 0%, #4338ca 100%);
+                  background: #1d4ed8;
                 }
               `}</style>
               <table ref={tableRef} className="w-full divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible' }}>
+                <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible' }}>
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
@@ -1776,7 +1776,7 @@ const ClientsPage = () => {
                                       zIndex: 9999999
                                     }}>
                                     {/* Header */}
-                                    <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white rounded-t-lg">
+                                    <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 rounded-t-lg">
                                       <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Filter Menu</span>
                                         <button
@@ -2129,7 +2129,7 @@ const ClientsPage = () => {
                     return (
                       <tr
                         key={client.login}
-                        className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50/30 transition-all duration-200 ${isLastRow ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
+                        className={`hover:bg-blue-50 transition-all duration-200 ${isLastRow ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
                       >
                         {renderCols.map(col => {
                           // Special handling for login column - make it clickable
