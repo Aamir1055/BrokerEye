@@ -76,6 +76,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     comment: false
   })
   
+  // Column resizing states for positions
+  const [positionsColumnWidths, setPositionsColumnWidths] = useState({})
+  const [resizingPositionsColumn, setResizingPositionsColumn] = useState(null)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  
+  // Column resizing states for deals
+  const [dealsColumnWidths, setDealsColumnWidths] = useState({})
+  const [resizingDealsColumn, setResizingDealsColumn] = useState(null)
+  
   const positionsColumns = [
     { key: 'position', label: 'Position' },
     { key: 'time', label: 'Time' },
@@ -734,6 +744,70 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     setDealsCurrentPage(1)
   }, [dealsSearchQuery, hasAppliedFilter])
 
+  // Column resize handlers for positions
+  const handlePositionsResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    setResizingPositionsColumn(columnKey)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = positionsColumnWidths[columnKey] || 150
+  }
+
+  const handlePositionsResizeMove = (e) => {
+    if (!resizingPositionsColumn) return
+    const diff = e.clientX - resizeStartX.current
+    const newWidth = Math.max(80, resizeStartWidth.current + diff)
+    setPositionsColumnWidths(prev => ({
+      ...prev,
+      [resizingPositionsColumn]: newWidth
+    }))
+  }
+
+  const handlePositionsResizeEnd = () => {
+    setResizingPositionsColumn(null)
+  }
+
+  // Column resize handlers for deals
+  const handleDealsResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    setResizingDealsColumn(columnKey)
+    resizeStartX.current = e.clientX
+    resizeStartWidth.current = dealsColumnWidths[columnKey] || 150
+  }
+
+  const handleDealsResizeMove = (e) => {
+    if (!resizingDealsColumn) return
+    const diff = e.clientX - resizeStartX.current
+    const newWidth = Math.max(80, resizeStartWidth.current + diff)
+    setDealsColumnWidths(prev => ({
+      ...prev,
+      [resizingDealsColumn]: newWidth
+    }))
+  }
+
+  const handleDealsResizeEnd = () => {
+    setResizingDealsColumn(null)
+  }
+
+  // Add mouse event listeners for resize
+  useEffect(() => {
+    if (resizingPositionsColumn || resizingDealsColumn) {
+      const handleMove = (e) => {
+        handlePositionsResizeMove(e)
+        handleDealsResizeMove(e)
+      }
+      const handleEnd = () => {
+        handlePositionsResizeEnd()
+        handleDealsResizeEnd()
+      }
+      document.addEventListener('mousemove', handleMove)
+      document.addEventListener('mouseup', handleEnd)
+      return () => {
+        document.removeEventListener('mousemove', handleMove)
+        document.removeEventListener('mouseup', handleEnd)
+      }
+    }
+  }, [resizingPositionsColumn, resizingDealsColumn, positionsColumnWidths, dealsColumnWidths])
+
   const handleFundsOperation = async (e) => {
     e.preventDefault()
     
@@ -793,71 +867,71 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Modal Header - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex-shrink-0 flex items-center justify-between p-5 border-b-2 border-slate-200 bg-blue-600">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-xl font-bold text-white tracking-tight">
               {client.name} - {client.login}
             </h2>
-            <div className="flex items-center gap-4 mt-1">
-              <p className="text-xs text-gray-500">{client.email || 'No email'}</p>
+            <div className="flex items-center gap-4 mt-2">
+              <p className="text-xs text-blue-100">{client.email || 'No email'}</p>
               {client.lastAccess && (
-                <p className="text-xs text-gray-500">
-                  Last Access: <span className="font-medium text-gray-700">{formatTime(client.lastAccess)}</span>
+                <p className="text-xs text-blue-100">
+                  Last Access: <span className="font-semibold text-white">{formatTime(client.lastAccess)}</span>
                 </p>
               )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-white transition-colors"
+            className="text-white hover:text-blue-100 p-2.5 rounded-xl hover:bg-blue-700 transition-all duration-200"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Tabs - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-gray-200 px-4 bg-gray-50">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 px-2 bg-white shadow-sm">
           <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'positions'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
               }`}
             >
               Positions ({positions.length})
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'deals'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
               }`}
             >
               Deals ({deals.length})
             </button>
             <button
               onClick={() => setActiveTab('funds')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'funds'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
               }`}
             >
               Money Transactions
             </button>
             <button
               onClick={() => setActiveTab('rules')}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'rules'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
               }`}
             >
               Broker Rules ({clientRules.filter(r => r.is_active === true).length})
@@ -961,7 +1035,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Tab Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50">
           {activeTab === 'positions' && (
             <div>
               {loading ? (
@@ -1062,17 +1136,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       )}
                     </div>
                   ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-96">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['time'] || 'auto', minWidth: '80px' }}
+                        >
                           <div className="flex items-center gap-1.5">
                             Time
                             <div className="relative" ref={el => filterRefs.current['time'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'time' ? null : 'time')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('time') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveFilterCount('time') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1080,7 +1157,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveFilterCount('time') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveFilterCount('time')}
                                 </span>
                               )}
@@ -1112,15 +1189,31 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'time')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase" 
+                          style={{ width: positionsColumnWidths['position'] || 'auto', minWidth: '80px' }}
+                        >
+                          Position
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'position')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
+                        >
                           <div className="flex items-center gap-1.5">
                             Symbol
                             <div className="relative" ref={el => filterRefs.current['symbol'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'symbol' ? null : 'symbol')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('symbol') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveFilterCount('symbol') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1128,7 +1221,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveFilterCount('symbol') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveFilterCount('symbol')}
                                 </span>
                               )}
@@ -1160,14 +1253,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'symbol')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['type'] || 'auto', minWidth: '80px' }}
+                        >
                           <div className="flex items-center gap-1.5">
                             Type
                             <div className="relative" ref={el => filterRefs.current['type'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'type' ? null : 'type')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveFilterCount('type') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveFilterCount('type') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1175,7 +1275,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveFilterCount('type') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveFilterCount('type')}
                                 </span>
                               )}
@@ -1207,13 +1307,71 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'type')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Volume</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Open Price</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Current Price</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">S/L</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">T/P</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Profit</th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
+                        >
+                          Volume
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'volume')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['openPrice'] || 'auto', minWidth: '80px' }}
+                        >
+                          Open Price
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'openPrice')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['currentPrice'] || 'auto', minWidth: '80px' }}
+                        >
+                          Current Price
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'currentPrice')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['sl'] || 'auto', minWidth: '80px' }}
+                        >
+                          S/L
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'sl')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['tp'] || 'auto', minWidth: '80px' }}
+                        >
+                          T/P
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'tp')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
+                        >
+                          Profit
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'profit')}
+                          />
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -1265,7 +1423,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {activeTab === 'deals' && (
             <div>
               {/* Date Filter with Pagination */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 mb-3 border border-blue-100">
+              <div className="bg-blue-50 rounded-lg p-2 mb-3 border border-blue-200">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs">
                     <span className="font-medium text-gray-700 whitespace-nowrap">Date Range:</span>
@@ -1284,7 +1442,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     />
                     <button
                       onClick={handleApplyDateFilter}
-                      className="px-3 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 transition-all inline-flex items-center gap-1"
+                      className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all inline-flex items-center gap-1"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1464,17 +1622,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </div>
                   ) : (
                     <>
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto max-h-96">
                         <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                          <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                              <th 
+                                className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                                style={{ width: dealsColumnWidths['time'] || 'auto', minWidth: '80px' }}
+                              >
                                 <div className="flex items-center gap-1.5">
                                   Time
                                   <div className="relative" ref={el => dealsFilterRefs.current['time'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'time' ? null : 'time')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('time') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveDealsFilterCount('time') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1482,7 +1643,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveDealsFilterCount('time') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveDealsFilterCount('time')}
                                 </span>
                               )}
@@ -1514,17 +1675,51 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'time')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Deal</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Order</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Position</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['deal'] || 'auto', minWidth: '80px' }}
+                        >
+                          Deal
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'deal')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['order'] || 'auto', minWidth: '80px' }}
+                        >
+                          Order
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'order')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['position'] || 'auto', minWidth: '80px' }}
+                        >
+                          Position
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'position')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
+                        >
                           <div className="flex items-center gap-1.5">
                             Symbol
                             <div className="relative" ref={el => dealsFilterRefs.current['symbol'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'symbol' ? null : 'symbol')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('symbol') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveDealsFilterCount('symbol') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1532,7 +1727,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveDealsFilterCount('symbol') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveDealsFilterCount('symbol')}
                                 </span>
                               )}
@@ -1564,14 +1759,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'symbol')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase relative">
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['action'] || 'auto', minWidth: '80px' }}
+                        >
                           <div className="flex items-center gap-1.5">
                             Action
                             <div className="relative" ref={el => dealsFilterRefs.current['action'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'action' ? null : 'action')}
-                                className={`p-0.5 rounded hover:bg-blue-200 transition-colors ${getActiveDealsFilterCount('action') > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                className={`p-0.5 rounded hover:bg-blue-700 transition-colors ${getActiveDealsFilterCount('action') > 0 ? 'text-yellow-300' : 'text-blue-100'}`}
                                 title="Filter"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1579,7 +1781,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                 </svg>
                               </button>
                               {getActiveDealsFilterCount('action') > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-yellow-400 text-blue-900 text-[9px] font-bold rounded-full flex items-center justify-center">
                                   {getActiveDealsFilterCount('action')}
                                 </span>
                               )}
@@ -1611,13 +1813,71 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'action')}
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Volume</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Commission</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Storage</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Profit</th>
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Comment</th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
+                        >
+                          Volume
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'volume')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['price'] || 'auto', minWidth: '80px' }}
+                        >
+                          Price
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'price')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['commission'] || 'auto', minWidth: '80px' }}
+                        >
+                          Commission
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'commission')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['storage'] || 'auto', minWidth: '80px' }}
+                        >
+                          Storage
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'storage')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
+                        >
+                          Profit
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'profit')}
+                          />
+                        </th>
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: dealsColumnWidths['comment'] || 'auto', minWidth: '80px' }}
+                        >
+                          Comment
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handleDealsResizeStart(e, 'comment')}
+                          />
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -1675,37 +1935,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
           {activeTab === 'funds' && (
             <div>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
+              <div className="bg-blue-50 rounded-xl p-5 border-2 border-blue-200 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Money Transactions</h3>
                 
                 {/* Success Message */}
                 {operationSuccess && (
-                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-green-700 text-xs">{operationSuccess}</span>
-                    </div>
+                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 shadow-sm">
+                    <span className="text-emerald-800 text-sm font-medium">{operationSuccess}</span>
                   </div>
                 )}
 
                 {/* Error Message */}
                 {operationError && (
-                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-red-700 text-xs">{operationError}</span>
-                    </div>
+                  <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 shadow-sm">
+                    <span className="text-red-800 text-sm font-medium">{operationError}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleFundsOperation} className="space-y-3">
+                <form onSubmit={handleFundsOperation} className="space-y-4">
                   {/* Operation Type */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Operation Type
                     </label>
                     <select
@@ -1715,7 +1965,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         setOperationSuccess('')
                         setOperationError('')
                       }}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900 font-medium shadow-sm hover:border-blue-400 transition-colors"
                     >
                       <option value="deposit" className="text-gray-900">Deposit Funds</option>
                       <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
@@ -1726,7 +1976,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Amount ($)
                     </label>
                     <input
@@ -1735,28 +1985,28 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       min="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Enter amount"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                      placeholder="0.00"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-gray-900 placeholder-gray-400 font-medium shadow-sm hover:border-emerald-400 transition-colors"
                       required
                     />
                   </div>
 
                   {/* Comment */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Comment (Optional)
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Comment <span className="text-xs font-normal text-gray-500">(Optional)</span>
                     </label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Add a comment for this transaction"
-                      rows="2"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                      placeholder="Add a note or description for this transaction..."
+                      rows="3"
+                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900 placeholder-gray-400 resize-none shadow-sm hover:border-purple-400 transition-colors"
                     />
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="flex justify-end gap-2 pt-1">
+                  {/* Submit Buttons */}
+                  <div className="flex justify-end gap-3 pt-2 border-t-2 border-gray-200">
                     <button
                       type="button"
                       onClick={() => {
@@ -1765,30 +2015,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         setOperationSuccess('')
                         setOperationError('')
                       }}
-                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
                     >
                       Clear
                     </button>
                     <button
                       type="submit"
                       disabled={operationLoading}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 transition-all inline-flex items-center gap-1.5"
+                      className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
                     >
                       {operationLoading ? (
-                        <>
-                          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </>
+                        <>Processing...</>
                       ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Execute Operation
-                        </>
+                        <>Execute Transaction</>
                       )}
                     </button>
                   </div>
@@ -1800,26 +2039,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Summary Cards - Fixed at Bottom */}
-        <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+        <div className="flex-shrink-0 p-3 bg-slate-50 border-t-2 border-blue-200">
           {activeTab === 'positions' && filteredPositions.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
-                <p className="text-xs text-gray-600 mb-1">Total Positions</p>
-                <p className="text-lg font-semibold text-gray-900">{filteredPositions.length}</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
+                <p className="text-base font-bold text-blue-900">{filteredPositions.length}</p>
               </div>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
-                <p className="text-xs text-gray-600 mb-1">Total Volume</p>
-                <p className="text-lg font-semibold text-gray-900">
+              <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
+                <p className="text-base font-bold text-indigo-900">
                   {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                 </p>
               </div>
-              <div className={`rounded-lg p-3 border ${
+              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
                 filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
-                  : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
+                  ? 'bg-emerald-50 border-emerald-200'
+                  : 'bg-red-50 border-red-200'
               }`}>
-                <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                  filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                    ? 'text-emerald-600'
+                    : 'text-red-600'
+                }`}>Total P/L</p>
+                <p className={`text-base font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
                   {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
                 </p>
               </div>
@@ -1827,30 +2070,34 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           )}
 
           {activeTab === 'deals' && displayedDeals.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
-                <p className="text-xs text-gray-600 mb-1">Total Deals</p>
-                <p className="text-lg font-semibold text-gray-900">{displayedDeals.length}</p>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Deals</p>
+                <p className="text-base font-bold text-blue-900">{displayedDeals.length}</p>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
-                <p className="text-xs text-gray-600 mb-1">Total Volume</p>
-                <p className="text-lg font-semibold text-gray-900">
+              <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">Total Volume</p>
+                <p className="text-base font-bold text-purple-900">
                   {displayedDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
                 </p>
               </div>
-              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
-                <p className="text-xs text-gray-600 mb-1">Total Commission</p>
-                <p className="text-lg font-semibold text-gray-900">
+              <div className="bg-amber-50 rounded-lg border border-amber-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-amber-600 uppercase mb-0.5">Total Commission</p>
+                <p className="text-base font-bold text-amber-900">
                   {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.commission, 0))}
                 </p>
               </div>
-              <div className={`rounded-lg p-3 border ${
+              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
                 displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-100'
-                  : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
+                  ? 'bg-emerald-50 border-emerald-200'
+                  : 'bg-red-50 border-red-200'
               }`}>
-                <p className="text-xs text-gray-600 mb-1">Total P/L</p>
-                <p className={`text-lg font-semibold ${getProfitColor(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
+                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                  displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
+                    ? 'text-emerald-600'
+                    : 'text-red-600'
+                }`}>Total P/L</p>
+                <p className={`text-base font-bold ${getProfitColor(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
                   {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}
                 </p>
               </div>
@@ -1858,22 +2105,22 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           )}
 
           {activeTab === 'funds' && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Balance</p>
-                <p className="text-xl font-bold text-blue-600">{formatCurrency(clientData.balance)}</p>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Balance</p>
+                <p className="text-base font-bold text-blue-900">{formatCurrency(clientData.balance)}</p>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Equity</p>
-                <p className="text-xl font-bold text-green-600">{formatCurrency(clientData.equity)}</p>
+              <div className="bg-emerald-50 rounded-lg border border-emerald-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-emerald-600 uppercase mb-0.5">Equity</p>
+                <p className="text-base font-bold text-emerald-900">{formatCurrency(clientData.equity)}</p>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Credit</p>
-                <p className="text-xl font-bold text-purple-600">{formatCurrency(clientData.credit)}</p>
+              <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">Credit</p>
+                <p className="text-base font-bold text-purple-900">{formatCurrency(clientData.credit)}</p>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-orange-100 shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Positions</p>
-                <p className="text-xl font-bold text-orange-600">{positions.length}</p>
+              <div className="bg-amber-50 rounded-lg border border-amber-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-amber-600 uppercase mb-0.5">Positions</p>
+                <p className="text-base font-bold text-amber-900">{positions.length}</p>
               </div>
             </div>
           )}
@@ -1882,22 +2129,32 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {activeTab === 'rules' && (
             <div>
               {rulesLoading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+                  <p className="text-sm font-medium text-gray-600 mt-4">Loading rules...</p>
+                </div>
+              ) : availableRules.filter(r => r.is_active).length === 0 ? (
+                <div className="text-center py-16 bg-blue-50 rounded-xl border-2 border-dashed border-gray-300">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-900 mb-2">No Rules Available</h4>
+                  <p className="text-sm text-gray-600">There are currently no active broker rules to display.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="overflow-x-auto">
+                <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 overflow-hidden">
+                  <div className="overflow-x-auto max-h-96">
                     <table className="w-full">
-                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                      <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
-                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Toggle</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Rule Name</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Time Parameter</th>
+                          <th className="px-3 py-3 text-center text-xs font-bold text-white uppercase">Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-100">
                         {availableRules.filter(r => r.is_active).map((rule) => {
                           // Find if this rule is applied to this client
                           const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
@@ -1909,14 +2166,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           const currentTimeParam = clientRule?.time_parameter || ''
                           
                           return (
-                            <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
-                              <td className="px-4 py-3">
+                            <tr key={rule.id} className="bg-white hover:bg-blue-50 transition-all duration-200">
+                              <td className="px-3 py-2 text-xs text-gray-900 font-medium">{rule.rule_name}</td>
+                              <td className="px-3 py-2">
                                 {requiresTimeParam ? (
                                   <select
                                     value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
                                     onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-400 transition-colors"
                                   >
                                     <option value="">Select time</option>
                                     {timeOptions.map((time) => (
@@ -1924,24 +2181,31 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                                     ))}
                                   </select>
                                 ) : (
-                                  <span className="text-sm text-gray-400">-</span>
+                                  <span className="text-xs text-gray-400">N/A</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3">
-                                <div className="flex justify-center">
+                              <td className="px-3 py-2">
+                                <div className="flex justify-center items-center gap-2">
                                   <button
                                     onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
                                     disabled={rulesLoading}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      isApplied ? 'bg-blue-600' : 'bg-gray-300'
+                                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      isApplied 
+                                        ? 'bg-emerald-500 focus:ring-emerald-500' 
+                                        : 'bg-gray-300 focus:ring-gray-500'
                                     }`}
                                   >
                                     <span
-                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        isApplied ? 'translate-x-6' : 'translate-x-1'
+                                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                                        isApplied ? 'translate-x-6' : 'translate-x-0.5'
                                       }`}
                                     />
                                   </button>
+                                  <span className={`text-[10px] font-semibold uppercase ${
+                                    isApplied ? 'text-emerald-600' : 'text-gray-500'
+                                  }`}>
+                                    {isApplied ? 'Active' : 'Inactive'}
+                                  </span>
                                 </div>
                               </td>
                             </tr>
