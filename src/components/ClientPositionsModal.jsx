@@ -1190,7 +1190,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'time')}
                           />
                         </th>
@@ -1200,7 +1200,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Position
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'position')}
                           />
                         </th>
@@ -1254,7 +1254,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'symbol')}
                           />
                         </th>
@@ -1308,7 +1308,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'type')}
                           />
                         </th>
@@ -1318,7 +1318,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Volume
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'volume')}
                           />
                         </th>
@@ -1328,7 +1328,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Open Price
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'openPrice')}
                           />
                         </th>
@@ -1338,7 +1338,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Current Price
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'currentPrice')}
                           />
                         </th>
@@ -1348,7 +1348,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           S/L
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'sl')}
                           />
                         </th>
@@ -1358,7 +1358,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           T/P
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'tp')}
                           />
                         </th>
@@ -1368,7 +1368,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Profit
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'profit')}
                           />
                         </th>
@@ -1676,7 +1676,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'time')}
                           />
                         </th>
@@ -1686,7 +1686,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Deal
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'deal')}
                           />
                         </th>
@@ -1696,7 +1696,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Order
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'order')}
                           />
                         </th>
@@ -1706,7 +1706,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Position
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'position')}
                           />
                         </th>
@@ -1760,7 +1760,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'symbol')}
                           />
                         </th>
@@ -1814,7 +1814,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </div>
                           </div>
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'action')}
                           />
                         </th>
@@ -1824,7 +1824,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Volume
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'volume')}
                           />
                         </th>
@@ -1834,7 +1834,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Price
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'price')}
                           />
                         </th>
@@ -1844,7 +1844,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Commission
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'commission')}
                           />
                         </th>
@@ -1854,7 +1854,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Storage
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'storage')}
                           />
                         </th>
@@ -1864,7 +1864,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Profit
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'profit')}
                           />
                         </th>
@@ -1874,7 +1874,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           Comment
                           <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500"
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'comment')}
                           />
                         </th>
@@ -2226,3 +2226,4 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 }
 
 export default ClientPositionsModal
+
