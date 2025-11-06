@@ -245,6 +245,9 @@ const DashboardPage = () => {
     let creditOut = 0
 
     clients.forEach(client => {
+      // Skip invalid/null clients
+      if (!client) return
+      
       // Credit IN/OUT logic: positive credit = IN, negative would be OUT
       const credit = client.credit || 0
       if (credit > 0) {
