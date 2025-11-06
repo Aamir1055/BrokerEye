@@ -42,8 +42,8 @@ const ClientsPage = () => {
   // Show face cards toggle - default is true (on)
   const [showFaceCards, setShowFaceCards] = useState(true)
   
-  // Face card drag and drop - Default order for 13 cards (including new Total Deposit)
-  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  // Face card drag and drop - Default order for 12 cards
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
   const [faceCardOrder, setFaceCardOrder] = useState(() => {
     const saved = localStorage.getItem('clientsFaceCardOrder')
     return saved ? JSON.parse(saved) : defaultFaceCardOrder
@@ -1119,7 +1119,6 @@ const ClientsPage = () => {
       4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
       5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
       6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
-      7: { id: 7, title: 'Total Deposit', value: formatIndianNumber(stats.totalDeposit.toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
       8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
       9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
       10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
@@ -1148,7 +1147,6 @@ const ClientsPage = () => {
     const len = filteredClients.length
     let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
     let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
-    let totalDeposit = 0  // NEW: Cumulative sum of all daily deposits
     
     for (let i = 0; i < len; i++) {
       const c = filteredClients[i]
@@ -1163,14 +1161,12 @@ const ClientsPage = () => {
       thisWeekPnL += (c.thisWeekPnL || 0) * -1
       thisMonthPnL += (c.thisMonthPnL || 0) * -1
       lifetimePnL += (c.lifetimePnL || 0) * -1
-      totalDeposit += c.dailyDeposit || 0  // NEW: Sum all daily deposits for Total Deposit
     }
     
     return {
       totalClients: len,
       totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
-      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL,
-      totalDeposit  // NEW: Add totalDeposit to returned stats
+      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
     }
   }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters, showFaceCards])
 
