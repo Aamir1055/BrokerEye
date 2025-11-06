@@ -951,10 +951,13 @@ const ClientsPage = () => {
       return
     }
 
+    // Get visible columns only
+    const columnsToExport = allColumns.filter(col => visibleColumns[col.key])
+    
     // Prepare CSV content
-    const headers = visibleColumns.map(col => col.label).join(',')
+    const headers = columnsToExport.map(col => col.label).join(',')
     const rows = filteredClients.map(client => {
-      return visibleColumns.map(col => {
+      return columnsToExport.map(col => {
         let value = client[col.key]
         
         // Handle different data types
@@ -991,7 +994,7 @@ const ClientsPage = () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }, [filteredClients, visibleColumns])
+  }, [filteredClients, visibleColumns, allColumns])
 
   // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
   const handleAutoFit = useCallback((visKey, baseKey) => {
