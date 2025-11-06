@@ -152,7 +152,7 @@ const DashboardPage = () => {
       },
       10: {
         id: 10,
-        title: 'Net Client',
+        title: 'Net Credit',
         value: formatIndianNumber(stats.netClient),
         borderColor: 'border-cyan-200',
         textColor: 'text-cyan-600',
