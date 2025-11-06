@@ -367,6 +367,12 @@ export const brokerAPI = {
       updates
     })
     return response.data
+  },
+
+  // Get IB commission totals
+  getIBCommissionTotals: async () => {
+    const response = await api.get('/api/amari/ib/commissions/total')
+    return response.data
   }
 }
 

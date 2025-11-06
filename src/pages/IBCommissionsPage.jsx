@@ -20,6 +20,11 @@ const IBCommissionsPage = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showBulkSyncModal, setShowBulkSyncModal] = useState(false)
   
+  // Face card states
+  const [totalCommission, setTotalCommission] = useState(0)
+  const [totalAvailableCommission, setTotalAvailableCommission] = useState(0)
+  const [totalsLoading, setTotalsLoading] = useState(true)
+  
   // Bulk update states
   const [selectedIBs, setSelectedIBs] = useState([])
   const [bulkPercentage, setBulkPercentage] = useState('')
@@ -42,7 +47,25 @@ const IBCommissionsPage = () => {
 
   useEffect(() => {
     fetchCommissions()
+    fetchCommissionTotals()
   }, [currentPage, itemsPerPage])
+
+  // Fetch commission totals for face cards
+  const fetchCommissionTotals = async () => {
+    try {
+      setTotalsLoading(true)
+      const response = await brokerAPI.getIBCommissionTotals()
+      
+      if (response.status === 'success' && response.data) {
+        setTotalCommission(response.data.total_commission || 0)
+        setTotalAvailableCommission(response.data.total_available_commission || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching commission totals:', error)
+    } finally {
+      setTotalsLoading(false)
+    }
+  }
 
   // Debounced search
   useEffect(() => {
@@ -96,11 +119,13 @@ const IBCommissionsPage = () => {
     setShowEditModal(false)
     setEditingIB(null)
     fetchCommissions() // Refresh the list
+    fetchCommissionTotals() // Refresh face card totals
   }
 
   const handleBulkSyncSuccess = () => {
     setShowBulkSyncModal(false)
     fetchCommissions() // Refresh the list
+    fetchCommissionTotals() // Refresh face card totals
   }
 
   // Handle select all checkbox
@@ -158,6 +183,7 @@ const IBCommissionsPage = () => {
         setBulkPercentage('')
         setShowBulkUpdateModal(false)
         fetchCommissions()
+        fetchCommissionTotals() // Refresh face card totals
       } else {
         setError('Bulk update failed: ' + (response.message || 'Unknown error'))
         setTimeout(() => setError(''), 3000)
@@ -286,8 +312,41 @@ const IBCommissionsPage = () => {
           </div>
         </header>
 
+        {/* Face Cards - 2 Metrics */}
+        <div className="px-6 pt-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+            {/* Total Commission Card */}
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">
+                Total Commission
+              </p>
+              <p className="text-sm font-bold text-blue-700">
+                {totalsLoading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : (
+                  `$${parseFloat(totalCommission || 0).toFixed(2)}`
+                )}
+              </p>
+            </div>
+
+            {/* Total Available Commission Card */}
+            <div className="bg-white rounded shadow-sm border border-green-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
+              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">
+                Available Commission
+              </p>
+              <p className="text-sm font-bold text-green-700">
+                {totalsLoading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : (
+                  `$${parseFloat(totalAvailableCommission || 0).toFixed(2)}`
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden p-6">
+        <main className="flex-1 overflow-hidden px-6 pb-6">
           <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
             {/* Top Controls: match Clients style (search + pagination + per-page) */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-t-xl border-b border-blue-200 p-4">
