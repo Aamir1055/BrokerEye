@@ -89,6 +89,39 @@ export const DataProvider = ({ children }) => {
   const [connectionState, setConnectionState] = useState('disconnected')
   const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes cache
 
+  // Helper function to normalize USC currency values (divide by 100)
+  const normalizeUSCValues = (client) => {
+    if (!client || !client.currency || client.currency.toLowerCase() !== 'usc') {
+      return client
+    }
+    return {
+      ...client,
+      balance: (client.balance || 0) / 100,
+      credit: (client.credit || 0) / 100,
+      equity: (client.equity || 0) / 100,
+      margin: (client.margin || 0) / 100,
+      marginFree: (client.marginFree || 0) / 100,
+      profit: (client.profit || 0) / 100,
+      floating: (client.floating || 0) / 100,
+      pnl: (client.pnl || 0) / 100,
+      assets: (client.assets || 0) / 100,
+      liabilities: (client.liabilities || 0) / 100,
+      blockedCommission: (client.blockedCommission || 0) / 100,
+      blockedProfit: (client.blockedProfit || 0) / 100,
+      storage: (client.storage || 0) / 100,
+      marginInitial: (client.marginInitial || 0) / 100,
+      marginMaintenance: (client.marginMaintenance || 0) / 100,
+      soEquity: (client.soEquity || 0) / 100,
+      soMargin: (client.soMargin || 0) / 100,
+      dailyDeposit: (client.dailyDeposit || 0) / 100,
+      dailyWithdrawal: (client.dailyWithdrawal || 0) / 100,
+      dailyPnL: (client.dailyPnL || 0) / 100,
+      thisWeekPnL: (client.thisWeekPnL || 0) / 100,
+      thisMonthPnL: (client.thisMonthPnL || 0) / 100,
+      lifetimePnL: (client.lifetimePnL || 0) / 100
+    }
+  }
+
   // Check if data is stale
   const isStale = (key) => {
     if (!lastFetch[key]) return true
@@ -241,9 +274,42 @@ export const DataProvider = ({ children }) => {
       const response = await brokerAPI.getClients()
       const rawData = response.data?.clients || []
       
+      // Normalize USC currency values (divide by 100)
+      const normalizedData = rawData.map(client => {
+        if (client && client.currency && client.currency.toLowerCase() === 'usc') {
+          return {
+            ...client,
+            balance: (client.balance || 0) / 100,
+            credit: (client.credit || 0) / 100,
+            equity: (client.equity || 0) / 100,
+            margin: (client.margin || 0) / 100,
+            marginFree: (client.marginFree || 0) / 100,
+            profit: (client.profit || 0) / 100,
+            floating: (client.floating || 0) / 100,
+            pnl: (client.pnl || 0) / 100,
+            assets: (client.assets || 0) / 100,
+            liabilities: (client.liabilities || 0) / 100,
+            blockedCommission: (client.blockedCommission || 0) / 100,
+            blockedProfit: (client.blockedProfit || 0) / 100,
+            storage: (client.storage || 0) / 100,
+            marginInitial: (client.marginInitial || 0) / 100,
+            marginMaintenance: (client.marginMaintenance || 0) / 100,
+            soEquity: (client.soEquity || 0) / 100,
+            soMargin: (client.soMargin || 0) / 100,
+            dailyDeposit: (client.dailyDeposit || 0) / 100,
+            dailyWithdrawal: (client.dailyWithdrawal || 0) / 100,
+            dailyPnL: (client.dailyPnL || 0) / 100,
+            thisWeekPnL: (client.thisWeekPnL || 0) / 100,
+            thisMonthPnL: (client.thisMonthPnL || 0) / 100,
+            lifetimePnL: (client.lifetimePnL || 0) / 100
+          }
+        }
+        return client
+      })
+      
       // Deduplicate clients by login (keep last occurrence)
       const clientsMap = new Map()
-      rawData.forEach(client => {
+      normalizedData.forEach(client => {
         if (client && client.login) {
           clientsMap.set(client.login, client)
         }
@@ -415,17 +481,20 @@ export const DataProvider = ({ children }) => {
       try {
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
+          // Normalize USC currency values for all clients
+          const normalizedClients = rawClients.map(normalizeUSCValues)
+          
           // Deduplicate clients by login
           const clientsMap = new Map()
-          rawClients.forEach(client => {
+          normalizedClients.forEach(client => {
             if (client && client.login) {
               clientsMap.set(client.login, client)
             }
           })
           const newClients = Array.from(clientsMap.values())
           
-          if (rawClients.length !== newClients.length) {
-            console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${rawClients.length - newClients.length} duplicate clients`)
+          if (normalizedClients.length !== newClients.length) {
+            console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${normalizedClients.length - newClients.length} duplicate clients`)
           }
           
           setClients(newClients)
@@ -581,15 +650,18 @@ export const DataProvider = ({ children }) => {
           return
         }
         
+        // Normalize USC currency values
+        const normalizedAccount = normalizeUSCValues(updatedAccount)
+        
         // Keep SERVER timestamp to measure actual system latency
         const serverTimestamp = message.timestamp
         if (serverTimestamp) {
           const timestampMs = serverTimestamp < 10000000000 ? serverTimestamp * 1000 : serverTimestamp
-          updatedAccount.serverTimestamp = timestampMs
+          normalizedAccount.serverTimestamp = timestampMs
         }
         
         // Add to batch (Map prevents duplicates)
-        pendingUpdates.set(accountLogin, { updatedAccount, accountLogin })
+        pendingUpdates.set(accountLogin, { updatedAccount: normalizedAccount, accountLogin })
         
         // AGGRESSIVE: Process immediately when batch is large (>500), otherwise debounce
         if (pendingUpdates.size > 500) {
@@ -615,6 +687,9 @@ export const DataProvider = ({ children }) => {
         console.log('[DataContext] 👤 USER_ADDED:', userLogin, newUser)
         
         if (newUser && userLogin) {
+          // Normalize USC currency values
+          const normalizedUser = normalizeUSCValues(newUser)
+          
           setClients(prev => {
             const exists = prev.some(c => c.login === userLogin)
             if (exists) {
@@ -624,19 +699,19 @@ export const DataProvider = ({ children }) => {
             console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
             
             // Initialize signature tracking for new user
-            const signature = `${newUser.balance || 0}_${newUser.credit || 0}_${newUser.equity || 0}_${newUser.dailyDeposit || 0}_${newUser.dailyWithdrawal || 0}_${newUser.dailyPnL || 0}_${newUser.lastUpdate || 0}`
+            const signature = `${normalizedUser.balance || 0}_${normalizedUser.credit || 0}_${normalizedUser.equity || 0}_${normalizedUser.dailyDeposit || 0}_${normalizedUser.dailyWithdrawal || 0}_${normalizedUser.dailyPnL || 0}_${normalizedUser.lastUpdate || 0}`
             lastClientStateRef.current.set(userLogin, signature)
             
             // Update stats incrementally for new user
-            updateStatsIncremental(null, newUser)
+            updateStatsIncremental(null, normalizedUser)
             setClientStats(s => ({ ...s, totalClients: s.totalClients + 1 }))
-            return [newUser, ...prev]
+            return [normalizedUser, ...prev]
           })
           
           setAccounts(prev => {
             const exists = prev.some(c => c.login === userLogin)
             if (exists) return prev
-            return [newUser, ...prev]
+            return [normalizedUser, ...prev]
           })
         }
       } catch (error) {
@@ -651,6 +726,9 @@ export const DataProvider = ({ children }) => {
         const userLogin = message.login || updatedUser?.login
         
         if (updatedUser && userLogin) {
+          // Normalize USC currency values
+          const normalizedUser = normalizeUSCValues(updatedUser)
+          
           let oldClient = null
           
           setClients(prev => {
@@ -669,23 +747,23 @@ export const DataProvider = ({ children }) => {
             if (index === -1) {
               // User not found, add as new
               oldClient = null
-              return [updatedUser, ...dedupedPrev]
+              return [normalizedUser, ...dedupedPrev]
             }
             // Update existing user - store old client for stats update
             oldClient = dedupedPrev[index]
             const updated = [...dedupedPrev]
-            updated[index] = { ...updated[index], ...updatedUser }
+            updated[index] = { ...updated[index], ...normalizedUser }
             return updated
           })
           
           // Update stats incrementally based on the change
-          updateStatsIncremental(oldClient, updatedUser)
+          updateStatsIncremental(oldClient, normalizedUser)
           
           setAccounts(prev => {
             const index = prev.findIndex(c => c && c.login === userLogin)
-            if (index === -1) return [updatedUser, ...prev]
+            if (index === -1) return [normalizedUser, ...prev]
             const updated = [...prev]
-            updated[index] = { ...updated[index], ...updatedUser }
+            updated[index] = { ...updated[index], ...normalizedUser }
             return updated
           })
         }
