@@ -762,30 +762,8 @@ const ClientsPage = () => {
   const sortClients = useCallback((clientsToSort) => {
     if (!sortColumn) return clientsToSort
     
-    // GUARD: Check for duplicate logins before sorting (prevents React key errors)
-    const loginSet = new Set()
-    const hasDuplicates = clientsToSort.some(client => {
-      if (loginSet.has(client.login)) {
-        return true
-      }
-      loginSet.add(client.login)
-      return false
-    })
-    
-    // If duplicates detected, deduplicate before sorting
-    if (hasDuplicates) {
-      const deduped = Array.from(
-        clientsToSort.reduce((map, client) => {
-          map.set(client.login, client)
-          return map
-        }, new Map()).values()
-      )
-      // Only log if significant duplicates found (more than 5% of data)
-      if ((clientsToSort.length - deduped.length) > clientsToSort.length * 0.05) {
-        console.warn(`[ClientsPage] ⚠️ EXCESSIVE DUPLICATES: ${clientsToSort.length - deduped.length} clients deduplicated before sort`)
-      }
-      clientsToSort = deduped
-    }
+    // Deduplication now happens in filteredClients useMemo, not here
+    // This avoids double processing
     
     const sorted = [...clientsToSort].sort((a, b) => {
       // Determine actual field to sort by
@@ -951,32 +929,18 @@ const ClientsPage = () => {
   
   const pageSizeOptions = generatePageSizeOptions()
   
-  // Pagination logic - memoized with duplicate protection
+  // Pagination logic - optimized (deduplication already done in filteredClients)
   const { totalPages, displayedClients } = useMemo(() => {
     const total = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
     const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
     const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
     
-    // Final guard: Ensure no duplicate keys in displayedClients before rendering
+    // Simple slice - deduplication already handled in filteredClients useMemo
     const sliced = filteredClients.slice(startIndex, endIndex)
-    const loginSet = new Set()
-    const deduped = sliced.filter(client => {
-      if (loginSet.has(client.login)) {
-        return false
-      }
-      loginSet.add(client.login)
-      return true
-    })
-    
-    // Only log if excessive duplicates (>5% or >20 duplicates)
-    const dupCount = sliced.length - deduped.length
-    if (dupCount > 20 || (dupCount > 0 && dupCount > sliced.length * 0.05)) {
-      console.warn(`[ClientsPage] ⚠️ EXCESSIVE DUPLICATES: Filtered ${dupCount} duplicate keys from ${sliced.length} displayed clients`)
-    }
     
     return {
       totalPages: total,
-      displayedClients: deduped
+      displayedClients: sliced
     }
   }, [filteredClients, itemsPerPage, currentPage])
 
