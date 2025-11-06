@@ -201,6 +201,17 @@ const IBCommissionsPage = () => {
     return `$${parseFloat(value || 0).toFixed(2)}`
   }
 
+  // Format number in Indian currency format (no $ symbol, with commas)
+  const formatIndianNumber = (value) => {
+    if (value === null || value === undefined || isNaN(value)) return '0.00'
+    const num = parseFloat(value).toFixed(2)
+    const [intPart, decPart] = num.split('.')
+    const lastThree = intPart.slice(-3)
+    const otherDigits = intPart.slice(0, -3)
+    const formatted = otherDigits.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (otherDigits ? ',' : '') + lastThree
+    return `${formatted}.${decPart}`
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -324,7 +335,7 @@ const IBCommissionsPage = () => {
                 {totalsLoading ? (
                   <span className="text-gray-400">Loading...</span>
                 ) : (
-                  `$${parseFloat(totalCommission || 0).toFixed(2)}`
+                  formatIndianNumber(totalCommission)
                 )}
               </p>
             </div>
@@ -338,7 +349,7 @@ const IBCommissionsPage = () => {
                 {totalsLoading ? (
                   <span className="text-gray-400">Loading...</span>
                 ) : (
-                  `$${parseFloat(totalAvailableCommission || 0).toFixed(2)}`
+                  formatIndianNumber(totalAvailableCommission)
                 )}
               </p>
             </div>
