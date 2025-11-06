@@ -23,6 +23,8 @@ const IBCommissionsPage = () => {
   // Face card states
   const [totalCommission, setTotalCommission] = useState(0)
   const [totalAvailableCommission, setTotalAvailableCommission] = useState(0)
+  const [totalCommissionPercentage, setTotalCommissionPercentage] = useState(0)
+  const [totalAvailableCommissionPercentage, setTotalAvailableCommissionPercentage] = useState(0)
   const [totalsLoading, setTotalsLoading] = useState(true)
   
   // Bulk update states
@@ -48,6 +50,14 @@ const IBCommissionsPage = () => {
   useEffect(() => {
     fetchCommissions()
     fetchCommissionTotals()
+    
+    // Set up hourly interval for fetching commission totals
+    const intervalId = setInterval(() => {
+      fetchCommissionTotals()
+    }, 60 * 60 * 1000) // 1 hour in milliseconds
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId)
   }, [currentPage, itemsPerPage])
 
   // Fetch commission totals for face cards
@@ -59,6 +69,8 @@ const IBCommissionsPage = () => {
       if (response.status === 'success' && response.data) {
         setTotalCommission(response.data.total_commission || 0)
         setTotalAvailableCommission(response.data.total_available_commission || 0)
+        setTotalCommissionPercentage(response.data.total_commission_percentage || 0)
+        setTotalAvailableCommissionPercentage(response.data.total_available_commission_percentage || 0)
       }
     } catch (error) {
       console.error('Error fetching commission totals:', error)
@@ -323,7 +335,7 @@ const IBCommissionsPage = () => {
           </div>
         </header>
 
-        {/* Face Cards - 2 Metrics */}
+        {/* Face Cards - 4 Metrics */}
         <div className="px-6 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
             {/* Total Commission Card */}
@@ -350,6 +362,34 @@ const IBCommissionsPage = () => {
                   <span className="text-gray-400">Loading...</span>
                 ) : (
                   formatIndianNumber(totalAvailableCommission)
+                )}
+              </p>
+            </div>
+
+            {/* Total Commission Percentage Card */}
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider mb-1">
+                Total Commission %
+              </p>
+              <p className="text-sm font-bold text-purple-700">
+                {totalsLoading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : (
+                  `${parseFloat(totalCommissionPercentage || 0).toFixed(2)}%`
+                )}
+              </p>
+            </div>
+
+            {/* Total Available Commission Percentage Card */}
+            <div className="bg-white rounded shadow-sm border border-orange-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
+              <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1">
+                Available Commission %
+              </p>
+              <p className="text-sm font-bold text-orange-700">
+                {totalsLoading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : (
+                  `${parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)}%`
                 )}
               </p>
             </div>
