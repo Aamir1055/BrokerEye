@@ -367,55 +367,6 @@ const ClientsPage = () => {
     }
   }, [fetchClients, fetchPositions])
 
-  // Export to Excel
-  const handleExportToExcel = useCallback(() => {
-    if (!filteredClients || filteredClients.length === 0) {
-      alert('No data to export')
-      return
-    }
-
-    // Prepare CSV content
-    const headers = visibleColumns.map(col => col.label).join(',')
-    const rows = filteredClients.map(client => {
-      return visibleColumns.map(col => {
-        let value = client[col.key]
-        
-        // Handle different data types
-        if (value === null || value === undefined) {
-          return ''
-        }
-        
-        // Format numbers
-        if (typeof value === 'number') {
-          value = value.toString()
-        }
-        
-        // Escape commas and quotes in strings
-        if (typeof value === 'string') {
-          value = value.replace(/"/g, '""')
-          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-            value = `"${value}"`
-          }
-        }
-        
-        return value
-      }).join(',')
-    }).join('\n')
-
-    const csvContent = headers + '\n' + rows
-
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `clients_${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }, [filteredClients, visibleColumns])
-
   // Column resize handlers with RAF for smooth performance
   const handleResizeStart = useCallback((e, columnKey) => {
     e.preventDefault()
@@ -992,6 +943,55 @@ const ClientsPage = () => {
       displayedClients: sliced
     }
   }, [filteredClients, itemsPerPage, currentPage])
+
+  // Export to Excel (placed after filteredClients is defined)
+  const handleExportToExcel = useCallback(() => {
+    if (!filteredClients || filteredClients.length === 0) {
+      alert('No data to export')
+      return
+    }
+
+    // Prepare CSV content
+    const headers = visibleColumns.map(col => col.label).join(',')
+    const rows = filteredClients.map(client => {
+      return visibleColumns.map(col => {
+        let value = client[col.key]
+        
+        // Handle different data types
+        if (value === null || value === undefined) {
+          return ''
+        }
+        
+        // Format numbers
+        if (typeof value === 'number') {
+          value = value.toString()
+        }
+        
+        // Escape commas and quotes in strings
+        if (typeof value === 'string') {
+          value = value.replace(/"/g, '""')
+          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            value = `"${value}"`
+          }
+        }
+        
+        return value
+      }).join(',')
+    }).join('\n')
+
+    const csvContent = headers + '\n' + rows
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `clients_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }, [filteredClients, visibleColumns])
 
   // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
   const handleAutoFit = useCallback((visKey, baseKey) => {
