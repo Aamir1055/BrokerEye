@@ -367,6 +367,55 @@ const ClientsPage = () => {
     }
   }, [fetchClients, fetchPositions])
 
+  // Export to Excel
+  const handleExportToExcel = useCallback(() => {
+    if (!filteredClients || filteredClients.length === 0) {
+      alert('No data to export')
+      return
+    }
+
+    // Prepare CSV content
+    const headers = visibleColumns.map(col => col.label).join(',')
+    const rows = filteredClients.map(client => {
+      return visibleColumns.map(col => {
+        let value = client[col.key]
+        
+        // Handle different data types
+        if (value === null || value === undefined) {
+          return ''
+        }
+        
+        // Format numbers
+        if (typeof value === 'number') {
+          value = value.toString()
+        }
+        
+        // Escape commas and quotes in strings
+        if (typeof value === 'string') {
+          value = value.replace(/"/g, '""')
+          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            value = `"${value}"`
+          }
+        }
+        
+        return value
+      }).join(',')
+    }).join('\n')
+
+    const csvContent = headers + '\n' + rows
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `clients_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }, [filteredClients, visibleColumns])
+
   // Column resize handlers with RAF for smooth performance
   const handleResizeStart = useCallback((e, columnKey) => {
     e.preventDefault()
@@ -1422,6 +1471,16 @@ const ClientsPage = () => {
               >
                 <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleExportToExcel}
+                className="text-green-600 hover:text-green-700 p-2 rounded-md border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                title="Download as Excel (CSV)"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </button>
             </div>
