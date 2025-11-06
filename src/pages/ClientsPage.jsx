@@ -328,7 +328,10 @@ const ClientsPage = () => {
     }
   }, [latestServerTimestamp, clients])
 
-  // Performance monitor - log lag warnings (throttled)
+  // Performance monitor - log lag warnings (throttled) - DISABLED
+  // The lag warning was misleading because appTime (latestServerTimestamp) doesn't update
+  // every second, only when stats recalculate. WebSocket is actually working fine.
+  // Keeping the code structure but disabling the warning.
   const lastLagWarning = useRef(0)
   const hasReceivedFirstUpdate = useRef(false)
   const firstUpdateTime = useRef(0)
@@ -343,18 +346,9 @@ const ClientsPage = () => {
         }
       }
       
-      // Only check lag after we've been running for at least 30 seconds
-      const timeRunning = Date.now() - firstUpdateTime.current
-      if (timeRunning < 30000) {
-        return // Skip lag warnings during initial warm-up period
-      }
-      
-      const lagSeconds = Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))
-      // Only log if we've received updates and only once every 10 seconds
-      if (hasReceivedFirstUpdate.current && lagSeconds > 10 && Date.now() - lastLagWarning.current > 10000) {
-        console.warn(`[ClientsPage] ⚠️ HIGH LAG: ${lagSeconds}s - Check if WebSocket is receiving updates`)
-        lastLagWarning.current = Date.now()
-      }
+      // Lag detection disabled - was generating false warnings
+      // WebSocket activity is already logged in DataContext
+      // If truly needed, check isConnected from DataContext instead
     }
   }, [systemTime, appTime])
 
