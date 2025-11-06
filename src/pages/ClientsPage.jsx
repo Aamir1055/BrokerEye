@@ -1170,8 +1170,8 @@ const ClientsPage = () => {
 
   // Get face card configuration by ID (for draggable cards)
   const getFaceCardConfig = (cardId, stats) => {
-    // Calculate Net Deposit
-    const netDeposit = (stats.dailyDeposit || 0) - (stats.dailyWithdrawal || 0)
+    // Calculate Net DW (Deposit - Withdrawal)
+    const netDW = (stats.dailyDeposit || 0) - (stats.dailyWithdrawal || 0)
     
     const configs = {
       1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
@@ -1186,7 +1186,7 @@ const ClientsPage = () => {
       11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
       12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
       13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
-      14: { id: 14, title: 'Net Deposit', value: netDeposit, withArrow: true, isPositive: netDeposit >= 0, formattedValue: formatIndianNumber(Math.abs(netDeposit).toFixed(2)), borderColor: netDeposit >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDeposit >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDeposit >= 0 ? 'text-green-700' : 'text-red-700' }
+      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' }
     }
     return configs[cardId]
   }
@@ -1500,7 +1500,7 @@ const ClientsPage = () => {
                       { id: 6, label: 'Floating Profit' },
                       { id: 8, label: 'Daily Deposit' },
                       { id: 9, label: 'Daily Withdrawal' },
-                      { id: 14, label: 'Net Deposit' },
+                      { id: 14, label: 'Net DW' },
                       { id: 10, label: 'Daily PnL' },
                       { id: 11, label: 'This Week PnL' },
                       { id: 12, label: 'This Month PnL' },
