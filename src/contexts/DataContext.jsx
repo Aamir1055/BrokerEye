@@ -35,7 +35,8 @@ export const DataProvider = ({ children }) => {
     dailyPnL: 0,
     thisWeekPnL: 0,
     thisMonthPnL: 0,
-    lifetimePnL: 0
+    lifetimePnL: 0,
+    totalDeposit: 0
   })
   
   // Batch stats updates to avoid excessive re-renders
@@ -52,7 +53,8 @@ export const DataProvider = ({ children }) => {
       dailyPnL: 0,
       thisWeekPnL: 0,
       thisMonthPnL: 0,
-      lifetimePnL: 0
+      lifetimePnL: 0,
+      totalDeposit: 0
     }
   })
   
@@ -107,7 +109,8 @@ export const DataProvider = ({ children }) => {
       dailyPnL: 0,
       thisWeekPnL: 0,
       thisMonthPnL: 0,
-      lifetimePnL: 0
+      lifetimePnL: 0,
+      totalDeposit: 0
     }
     
     clientsArray.forEach(client => {
@@ -124,6 +127,7 @@ export const DataProvider = ({ children }) => {
       stats.thisWeekPnL += ((client.thisWeekPnL || 0) * -1)
       stats.thisMonthPnL += ((client.thisMonthPnL || 0) * -1)
       stats.lifetimePnL += ((client.lifetimePnL || 0) * -1)
+      stats.totalDeposit += (client.dailyDeposit || 0)  // Sum all daily deposits
     })
     
     return stats
@@ -162,7 +166,8 @@ export const DataProvider = ({ children }) => {
       dailyPnL: ((newClient?.dailyPnL || 0) * -1) - ((oldClient?.dailyPnL || 0) * -1),
       thisWeekPnL: ((newClient?.thisWeekPnL || 0) * -1) - ((oldClient?.thisWeekPnL || 0) * -1),
       thisMonthPnL: ((newClient?.thisMonthPnL || 0) * -1) - ((oldClient?.thisMonthPnL || 0) * -1),
-      lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1)
+      lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1),
+      totalDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0))
     }
     
     // Accumulate deltas in batch
@@ -178,6 +183,7 @@ export const DataProvider = ({ children }) => {
     batch.deltas.thisWeekPnL += delta.thisWeekPnL
     batch.deltas.thisMonthPnL += delta.thisMonthPnL
     batch.deltas.lifetimePnL += delta.lifetimePnL
+    batch.deltas.totalDeposit += delta.totalDeposit
     
     // Schedule batch update (debounced to 1 second)
     if (!batch.pending) {
@@ -195,13 +201,15 @@ export const DataProvider = ({ children }) => {
           dailyPnL: prev.dailyPnL + batch.deltas.dailyPnL,
           thisWeekPnL: prev.thisWeekPnL + batch.deltas.thisWeekPnL,
           thisMonthPnL: prev.thisMonthPnL + batch.deltas.thisMonthPnL,
-          lifetimePnL: prev.lifetimePnL + batch.deltas.lifetimePnL
+          lifetimePnL: prev.lifetimePnL + batch.deltas.lifetimePnL,
+          totalDeposit: prev.totalDeposit + batch.deltas.totalDeposit
         }))
         
         // Reset batch
         batch.deltas = {
           totalBalance: 0, totalCredit: 0, totalEquity: 0, totalPnl: 0, totalProfit: 0,
-          dailyDeposit: 0, dailyWithdrawal: 0, dailyPnL: 0, thisWeekPnL: 0, thisMonthPnL: 0, lifetimePnL: 0
+          dailyDeposit: 0, dailyWithdrawal: 0, dailyPnL: 0, thisWeekPnL: 0, thisMonthPnL: 0, lifetimePnL: 0,
+          totalDeposit: 0
         }
         batch.pending = false
       }, 1000) // Update stats every 1 second instead of on every message

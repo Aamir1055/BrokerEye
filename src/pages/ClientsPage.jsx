@@ -42,6 +42,14 @@ const ClientsPage = () => {
   // Show face cards toggle - default is true (on)
   const [showFaceCards, setShowFaceCards] = useState(true)
   
+  // Face card drag and drop - Default order for 13 cards (including new Total Deposit)
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  const [faceCardOrder, setFaceCardOrder] = useState(() => {
+    const saved = localStorage.getItem('clientsFaceCardOrder')
+    return saved ? JSON.parse(saved) : defaultFaceCardOrder
+  })
+  const [draggedFaceCard, setDraggedFaceCard] = useState(null)
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(50)
@@ -1039,6 +1047,47 @@ const ClientsPage = () => {
   }
 
   // Format numbers in Indian currency style (lakhs/crores)
+  // Drag and drop handlers for face cards
+  const handleFaceCardDragStart = (e, cardId) => {
+    setDraggedFaceCard(cardId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.target)
+    e.target.style.opacity = '0.5'
+  }
+
+  const handleFaceCardDragEnd = (e) => {
+    e.target.style.opacity = '1'
+    setDraggedFaceCard(null)
+  }
+
+  const handleFaceCardDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleFaceCardDrop = (e, targetCardId) => {
+    e.preventDefault()
+    
+    if (draggedFaceCard === targetCardId) return
+
+    const newOrder = [...faceCardOrder]
+    const draggedIndex = newOrder.indexOf(draggedFaceCard)
+    const targetIndex = newOrder.indexOf(targetCardId)
+
+    // Swap positions
+    newOrder[draggedIndex] = targetCardId
+    newOrder[targetIndex] = draggedFaceCard
+
+    setFaceCardOrder(newOrder)
+    localStorage.setItem('clientsFaceCardOrder', JSON.stringify(newOrder))
+  }
+
+  // Reset face card order to default
+  const resetFaceCardOrder = () => {
+    setFaceCardOrder(defaultFaceCardOrder)
+    localStorage.setItem('clientsFaceCardOrder', JSON.stringify(defaultFaceCardOrder))
+  }
+
   const formatIndianNumber = (num) => {
     const numStr = num.toString()
     const [integerPart, decimalPart] = numStr.split('.')
@@ -1061,6 +1110,26 @@ const ClientsPage = () => {
     return decimalPart ? `${result}.${decimalPart}` : result
   }
 
+  // Get face card configuration by ID (for draggable cards)
+  const getFaceCardConfig = (cardId, stats) => {
+    const configs = {
+      1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
+      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
+      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit.toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
+      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
+      5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
+      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
+      7: { id: 7, title: 'Total Deposit', value: formatIndianNumber(stats.totalDeposit.toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+      11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
+      12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
+      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' }
+    }
+    return configs[cardId]
+  }
+
   // Memoize face card stats - ULTRA optimized
   const faceCardStats = useMemo(() => {
     const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
@@ -1079,6 +1148,7 @@ const ClientsPage = () => {
     const len = filteredClients.length
     let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
     let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
+    let totalDeposit = 0  // NEW: Cumulative sum of all daily deposits
     
     for (let i = 0; i < len; i++) {
       const c = filteredClients[i]
@@ -1093,12 +1163,14 @@ const ClientsPage = () => {
       thisWeekPnL += (c.thisWeekPnL || 0) * -1
       thisMonthPnL += (c.thisMonthPnL || 0) * -1
       lifetimePnL += (c.lifetimePnL || 0) * -1
+      totalDeposit += c.dailyDeposit || 0  // NEW: Sum all daily deposits for Total Deposit
     }
     
     return {
       totalClients: len,
       totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
-      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
+      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL,
+      totalDeposit  // NEW: Add totalDeposit to returned stats
     }
   }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters, showFaceCards])
 
@@ -1397,111 +1469,112 @@ const ClientsPage = () => {
 
           {/* Stats Summary */}
           {showFaceCards && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          <>
+            {/* Drag and Drop Instructions */}
+            <div className="flex items-center justify-between mb-2 px-2">
+              <div className="flex items-center gap-2 text-gray-600 text-xs">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+                <span>Drag cards to reorder</span>
+              </div>
+              <button
+                onClick={resetFaceCardOrder}
+                className="text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium"
+              >
+                Reset Order
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             {displayMode === 'value' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {faceCardStats.totalClients}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                  <p className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1">Total Balance</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {formatIndianNumber(faceCardStats.totalBalance.toFixed(2))}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">Total Credit</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {formatIndianNumber(faceCardStats.totalCredit.toFixed(2))}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-                  <p className="text-[10px] font-semibold text-sky-600 uppercase tracking-wider mb-1">Total Equity</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {formatIndianNumber(faceCardStats.totalEquity.toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-semibold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>PNL</p>
-                    <div className={`w-6 h-6 ${faceCardStats.totalPnl >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        {faceCardStats.totalPnl >= 0 ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                        )}
-                      </svg>
-                    </div>
-                  </div>
-                  <p className={`text-sm font-bold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {faceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.totalPnl >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.totalPnl).toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] font-semibold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase`}>Floating Profit</p>
-                    <div className={`w-6 h-6 ${faceCardStats.totalProfit >= 0 ? 'bg-teal-50 border border-teal-100' : 'bg-orange-50 border border-orange-100'} rounded-lg flex items-center justify-center`}>
-                      <svg className={`w-3 h-3 ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p className={`text-sm font-bold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {faceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.totalProfit >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.totalProfit).toFixed(2))}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-                  <p className="text-[10px] font-semibold text-green-600 uppercase mb-1">Daily Deposit</p>
-                  <p className="text-sm font-bold text-green-700">
-                    {formatIndianNumber(faceCardStats.dailyDeposit.toFixed(2))}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-1">Daily Withdrawal</p>
-                  <p className="text-sm font-bold text-red-700">
-                    {formatIndianNumber(faceCardStats.dailyWithdrawal.toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-1`}>Daily PnL</p>
-                  <p className={`text-sm font-bold ${faceCardStats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                    {faceCardStats.dailyPnL >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.dailyPnL >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.dailyPnL).toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-1`}>This Week PnL</p>
-                  <p className={`text-sm font-bold ${faceCardStats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
-                    {faceCardStats.thisWeekPnL >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.thisWeekPnL >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.thisWeekPnL).toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-1`}>This Month PnL</p>
-                  <p className={`text-sm font-bold ${faceCardStats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
-                    {faceCardStats.thisMonthPnL >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.thisMonthPnL >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.thisMonthPnL).toFixed(2))}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-1`}>Lifetime PnL</p>
-                  <p className={`text-sm font-bold ${faceCardStats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
-                    {faceCardStats.lifetimePnL >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.lifetimePnL >= 0 ? '' : '-'}
-                    {formatIndianNumber(Math.abs(faceCardStats.lifetimePnL).toFixed(2))}
-                  </p>
-                </div>
+                {faceCardOrder.map((cardId) => {
+                  const card = getFaceCardConfig(cardId, faceCardStats)
+                  if (!card) return null
+                  
+                  // Simple cards (no icons)
+                  if (card.simple) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-opacity`}
+                      >
+                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${card.valueColor || 'text-gray-900'}`}>
+                          {card.value}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with icon (PNL, Floating Profit)
+                  if (card.withIcon) {
+                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-opacity`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
+                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
+                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              {card.id === 5 && card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                              )}
+                              {card.id === 5 && !card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                              )}
+                              {card.id === 6 && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                              )}
+                            </svg>
+                          </div>
+                        </div>
+                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with arrow (PnL cards)
+                  if (card.withArrow) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-opacity`}
+                      >
+                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${card.valueColor}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  return null
+                })}
               </>
             )}
             {displayMode === 'percentage' && (
@@ -1769,6 +1842,7 @@ const ClientsPage = () => {
               </>
             )}
           </div>
+          </>
           )}
 
           {/* Pagination Controls - Top */}
