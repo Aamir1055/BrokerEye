@@ -1232,6 +1232,52 @@ const ClientsPage = () => {
     }
   }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters, showFaceCards])
 
+  // NEW: Real-time face card stats - recalculate from raw client data every 100ms
+  const [realtimeFaceCardStats, setRealtimeFaceCardStats] = useState(faceCardStats)
+  
+  useEffect(() => {
+    // Calculate stats directly from clients array every 100ms
+    const calculateStats = () => {
+      if (!clients || clients.length === 0) {
+        return
+      }
+      
+      const len = clients.length
+      let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
+      let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
+      
+      for (let i = 0; i < len; i++) {
+        const c = clients[i]
+        if (!c) continue
+        totalBalance += c.balance || 0
+        totalCredit += c.credit || 0
+        totalEquity += c.equity || 0
+        totalPnl += c.pnl || 0
+        totalProfit += c.profit || 0
+        dailyDeposit += c.dailyDeposit || 0
+        dailyWithdrawal += c.dailyWithdrawal || 0
+        dailyPnL += (c.dailyPnL || 0) * -1
+        thisWeekPnL += (c.thisWeekPnL || 0) * -1
+        thisMonthPnL += (c.thisMonthPnL || 0) * -1
+        lifetimePnL += (c.lifetimePnL || 0) * -1
+      }
+      
+      setRealtimeFaceCardStats({
+        totalClients: len,
+        totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
+        dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
+      })
+    }
+    
+    // Initial calculation
+    calculateStats()
+    
+    // Recalculate every 100ms
+    const interval = setInterval(calculateStats, 100)
+    
+    return () => clearInterval(interval)
+  }, [clients])
+
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
       // Handle PNL calculation
@@ -1613,7 +1659,7 @@ const ClientsPage = () => {
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
-                  const card = getFaceCardConfig(cardId, faceCardStats)
+                  const card = getFaceCardConfig(cardId, realtimeFaceCardStats)
                   if (!card || !cardVisibility[cardId]) return null
                   
                   // Simple cards (no icons)
@@ -1743,13 +1789,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {faceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {faceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
@@ -1791,39 +1837,39 @@ const ClientsPage = () => {
                 {/* Value Cards - First Row */}
                 <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
                   <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">{faceCardStats.totalClients}</p>
+                  <p className="text-sm font-bold text-gray-900">{realtimeFaceCardStats.totalClients}</p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
                   <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
                   <p className="text-sm font-bold text-indigo-700">
-                    {faceCardStats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
                   <p className="text-sm font-bold text-emerald-700">
-                    {faceCardStats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
                   <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
                   <p className="text-sm font-bold text-sky-700">
-                    {faceCardStats.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
-                  <p className={`text-sm font-bold ${faceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {faceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.totalPnl >= 0 ? '' : '-'}
+                <div className={`bg-white rounded shadow-sm border ${realtimeFaceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${realtimeFaceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
+                  <p className={`text-sm font-bold ${realtimeFaceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {realtimeFaceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
+                    {realtimeFaceCardStats.totalPnl >= 0 ? '' : '-'}
                     {Math.abs(faceCardStats.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
-                  <p className={`text-sm font-bold ${faceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {faceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
-                    {faceCardStats.totalProfit >= 0 ? '' : '-'}
+                <div className={`bg-white rounded shadow-sm border ${realtimeFaceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${realtimeFaceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
+                  <p className={`text-sm font-bold ${realtimeFaceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                    {realtimeFaceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
+                    {realtimeFaceCardStats.totalProfit >= 0 ? '' : '-'}
                     {Math.abs(faceCardStats.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
@@ -1878,13 +1924,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {faceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {faceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {realtimeFaceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
