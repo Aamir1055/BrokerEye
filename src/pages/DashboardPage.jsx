@@ -13,10 +13,224 @@ const DashboardPage = () => {
   const { clients, positions, orders, clientStats, loading, connectionState } = useData()
   const navigate = useNavigate()
 
+  // Default card order (IDs 1-17)
+  const defaultCardOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  
+  // Load card order from localStorage or use default
+  const [cardOrder, setCardOrder] = useState(() => {
+    const saved = localStorage.getItem('dashboardCardOrder')
+    return saved ? JSON.parse(saved) : defaultCardOrder
+  })
+
+  // Drag and drop state
+  const [draggedCard, setDraggedCard] = useState(null)
+
+  // Drag and drop handlers
+  const handleDragStart = (e, cardId) => {
+    setDraggedCard(cardId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.target)
+    e.target.style.opacity = '0.5'
+  }
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1'
+    setDraggedCard(null)
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e, targetCardId) => {
+    e.preventDefault()
+    
+    if (draggedCard === targetCardId) return
+
+    const newOrder = [...cardOrder]
+    const draggedIndex = newOrder.indexOf(draggedCard)
+    const targetIndex = newOrder.indexOf(targetCardId)
+
+    // Swap positions
+    newOrder[draggedIndex] = targetCardId
+    newOrder[targetIndex] = draggedCard
+
+    setCardOrder(newOrder)
+    localStorage.setItem('dashboardCardOrder', JSON.stringify(newOrder))
+  }
+
+  // Reset card order to default
+  const resetCardOrder = () => {
+    setCardOrder(defaultCardOrder)
+    localStorage.setItem('dashboardCardOrder', JSON.stringify(defaultCardOrder))
+  }
+
   // Format Indian number (with commas)
   const formatIndianNumber = (value) => {
     if (value === null || value === undefined) return '0.00'
     return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+
+  // Get card configuration by ID
+  const getCardConfig = (cardId, stats) => {
+    const configs = {
+      1: {
+        id: 1,
+        title: 'Total Client',
+        value: clientStats.totalClients,
+        borderColor: 'border-blue-200',
+        textColor: 'text-blue-600',
+        valueColor: 'text-gray-900'
+      },
+      2: {
+        id: 2,
+        title: 'Total Deposit',
+        value: formatIndianNumber(stats.totalDeposit),
+        borderColor: 'border-green-200',
+        textColor: 'text-green-600',
+        valueColor: 'text-green-700'
+      },
+      3: {
+        id: 3,
+        title: 'Total Withdrawal',
+        value: formatIndianNumber(stats.totalWithdrawal),
+        borderColor: 'border-red-200',
+        textColor: 'text-red-600',
+        valueColor: 'text-red-700'
+      },
+      4: {
+        id: 4,
+        title: 'Net Deposit',
+        value: stats.netDeposit,
+        borderColor: stats.netDeposit >= 0 ? 'border-emerald-200' : 'border-rose-200',
+        textColor: stats.netDeposit >= 0 ? 'text-emerald-600' : 'text-rose-600',
+        valueColor: stats.netDeposit >= 0 ? 'text-emerald-700' : 'text-rose-700',
+        showArrow: true,
+        isPositive: stats.netDeposit >= 0,
+        formattedValue: formatIndianNumber(Math.abs(stats.netDeposit))
+      },
+      5: {
+        id: 5,
+        title: 'Total Balance',
+        value: formatIndianNumber(clientStats.totalBalance),
+        borderColor: 'border-indigo-200',
+        textColor: 'text-indigo-600',
+        valueColor: 'text-gray-900'
+      },
+      6: {
+        id: 6,
+        title: 'Total Equity',
+        value: formatIndianNumber(clientStats.totalEquity),
+        borderColor: 'border-sky-200',
+        textColor: 'text-sky-600',
+        valueColor: 'text-gray-900'
+      },
+      7: {
+        id: 7,
+        title: 'Total Correction',
+        value: formatIndianNumber(stats.totalCorrection),
+        borderColor: 'border-purple-200',
+        textColor: 'text-purple-600',
+        valueColor: 'text-gray-900'
+      },
+      8: {
+        id: 8,
+        title: 'Total Credit IN',
+        value: formatIndianNumber(stats.creditIn),
+        borderColor: 'border-emerald-200',
+        textColor: 'text-emerald-600',
+        valueColor: 'text-emerald-700'
+      },
+      9: {
+        id: 9,
+        title: 'Total Credit Out',
+        value: formatIndianNumber(stats.creditOut),
+        borderColor: 'border-orange-200',
+        textColor: 'text-orange-600',
+        valueColor: 'text-orange-700'
+      },
+      10: {
+        id: 10,
+        title: 'Net Client',
+        value: formatIndianNumber(stats.netClient),
+        borderColor: 'border-cyan-200',
+        textColor: 'text-cyan-600',
+        valueColor: 'text-gray-900'
+      },
+      11: {
+        id: 11,
+        title: 'Floating P&L',
+        value: stats.floatingPnL,
+        borderColor: stats.floatingPnL >= 0 ? 'border-green-200' : 'border-red-200',
+        textColor: stats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600',
+        valueColor: stats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600',
+        showIcon: true,
+        isPositive: stats.floatingPnL >= 0,
+        formattedValue: formatIndianNumber(Math.abs(stats.floatingPnL))
+      },
+      12: {
+        id: 12,
+        title: 'Lifetime P&L',
+        value: clientStats.lifetimePnL,
+        borderColor: clientStats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200',
+        textColor: clientStats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600',
+        valueColor: clientStats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700',
+        showArrow: true,
+        isPositive: clientStats.lifetimePnL >= 0,
+        formattedValue: formatIndianNumber(Math.abs(clientStats.lifetimePnL))
+      },
+      13: {
+        id: 13,
+        title: 'Daily Deposit',
+        value: formatIndianNumber(clientStats.dailyDeposit),
+        borderColor: 'border-green-200',
+        textColor: 'text-green-600',
+        valueColor: 'text-green-700'
+      },
+      14: {
+        id: 14,
+        title: 'Daily Withdrawal',
+        value: formatIndianNumber(clientStats.dailyWithdrawal),
+        borderColor: 'border-red-200',
+        textColor: 'text-red-600',
+        valueColor: 'text-red-700'
+      },
+      15: {
+        id: 15,
+        title: 'Daily P&L',
+        value: clientStats.dailyPnL,
+        borderColor: clientStats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200',
+        textColor: clientStats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600',
+        valueColor: clientStats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700',
+        showArrow: true,
+        isPositive: clientStats.dailyPnL >= 0,
+        formattedValue: formatIndianNumber(Math.abs(clientStats.dailyPnL))
+      },
+      16: {
+        id: 16,
+        title: 'This Week P&L',
+        value: clientStats.thisWeekPnL,
+        borderColor: clientStats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200',
+        textColor: clientStats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600',
+        valueColor: clientStats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700',
+        showArrow: true,
+        isPositive: clientStats.thisWeekPnL >= 0,
+        formattedValue: formatIndianNumber(Math.abs(clientStats.thisWeekPnL))
+      },
+      17: {
+        id: 17,
+        title: 'This Month P&L',
+        value: clientStats.thisMonthPnL,
+        borderColor: clientStats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200',
+        textColor: clientStats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600',
+        valueColor: clientStats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700',
+        showArrow: true,
+        isPositive: clientStats.thisMonthPnL >= 0,
+        formattedValue: formatIndianNumber(Math.abs(clientStats.thisMonthPnL))
+      }
+    }
+    return configs[cardId]
   }
 
   // Calculate additional metrics from clients array
@@ -136,166 +350,83 @@ const DashboardPage = () => {
             <WebSocketIndicator />
           </div>
 
-          {/* Face Cards - 17 Metrics */}
+          {/* Face Cards Header with Reset Button */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              <p className="text-xs text-gray-600">Drag cards to reorder</p>
+            </div>
+            <button
+              onClick={resetCardOrder}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5 border border-blue-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset Order
+            </button>
+          </div>
+
+          {/* Face Cards - 17 Metrics (Draggable) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            {/* 1. Total Client */}
-            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Client</p>
-              <p className="text-sm font-bold text-gray-900">
-                {clientStats.totalClients}
-              </p>
-            </div>
-
-            {/* 2. Total Deposit */}
-            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">Total Deposit</p>
-              <p className="text-sm font-bold text-green-700">
-                {formatIndianNumber(dashboardStats.totalDeposit)}
-              </p>
-            </div>
-
-            {/* 3. Total Withdrawal */}
-            <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-              <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">Total Withdrawal</p>
-              <p className="text-sm font-bold text-red-700">
-                {formatIndianNumber(dashboardStats.totalWithdrawal)}
-              </p>
-            </div>
-
-            {/* 4. Net Deposit */}
-            <div className={`bg-white rounded shadow-sm border ${dashboardStats.netDeposit >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-              <p className={`text-[10px] font-semibold ${dashboardStats.netDeposit >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase tracking-wider mb-1`}>Net Deposit</p>
-              <p className={`text-sm font-bold ${dashboardStats.netDeposit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {dashboardStats.netDeposit >= 0 ? '▲ ' : '▼ '}
-                {dashboardStats.netDeposit >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(dashboardStats.netDeposit))}
-              </p>
-            </div>
-
-            {/* 5. Total Balance */}
-            <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-              <p className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1">Total Balance</p>
-              <p className="text-sm font-bold text-gray-900">
-                {formatIndianNumber(clientStats.totalBalance)}
-              </p>
-            </div>
-
-            {/* 6. Total Equity */}
-            <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-              <p className="text-[10px] font-semibold text-sky-600 uppercase tracking-wider mb-1">Total Equity</p>
-              <p className="text-sm font-bold text-gray-900">
-                {formatIndianNumber(clientStats.totalEquity)}
-              </p>
-            </div>
-
-            {/* 7. Total Correction */}
-            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
-              <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider mb-1">Total Correction</p>
-              <p className="text-sm font-bold text-gray-900">
-                {formatIndianNumber(dashboardStats.totalCorrection)}
-              </p>
-            </div>
-
-            {/* 8. Total Credit IN */}
-            <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-              <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">Total Credit IN</p>
-              <p className="text-sm font-bold text-emerald-700">
-                {formatIndianNumber(dashboardStats.creditIn)}
-              </p>
-            </div>
-
-            {/* 9. Total Credit Out */}
-            <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
-              <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1">Total Credit Out</p>
-              <p className="text-sm font-bold text-orange-700">
-                {formatIndianNumber(dashboardStats.creditOut)}
-              </p>
-            </div>
-
-            {/* 10. Net Client */}
-            <div className="bg-white rounded shadow-sm border border-cyan-200 p-2">
-              <p className="text-[10px] font-semibold text-cyan-600 uppercase tracking-wider mb-1">Net Client</p>
-              <p className="text-sm font-bold text-gray-900">
-                {formatIndianNumber(dashboardStats.netClient)}
-              </p>
-            </div>
-
-            {/* 11. Floating P & L */}
-            <div className={`bg-white rounded shadow-sm border ${dashboardStats.floatingPnL >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-              <div className="flex items-center justify-between mb-1">
-                <p className={`text-[10px] font-semibold ${dashboardStats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600'} uppercase`}>Floating P&L</p>
-                <div className={`w-6 h-6 ${dashboardStats.floatingPnL >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
-                  <svg className={`w-3 h-3 ${dashboardStats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    {dashboardStats.floatingPnL >= 0 ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                    )}
-                  </svg>
+            {cardOrder.map((cardId) => {
+              const card = getCardConfig(cardId, dashboardStats)
+              
+              return (
+                <div
+                  key={card.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, card.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, card.id)}
+                  className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                >
+                  {card.showIcon ? (
+                    <>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase`}>
+                          {card.title}
+                        </p>
+                        <div className={`w-6 h-6 ${card.isPositive ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
+                          <svg className={`w-3 h-3 ${card.valueColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            {card.isPositive ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                            )}
+                          </svg>
+                        </div>
+                      </div>
+                      <p className={`text-sm font-bold ${card.valueColor}`}>
+                        {card.isPositive ? '▲ ' : '▼ '}
+                        {card.isPositive ? '' : '-'}
+                        {card.formattedValue}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>
+                        {card.title}
+                      </p>
+                      <p className={`text-sm font-bold ${card.valueColor}`}>
+                        {card.showArrow ? (
+                          <>
+                            {card.isPositive ? '▲ ' : '▼ '}
+                            {card.isPositive ? '' : '-'}
+                            {card.formattedValue}
+                          </>
+                        ) : (
+                          card.value
+                        )}
+                      </p>
+                    </>
+                  )}
                 </div>
-              </div>
-              <p className={`text-sm font-bold ${dashboardStats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {dashboardStats.floatingPnL >= 0 ? '▲ ' : '▼ '}
-                {dashboardStats.floatingPnL >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(dashboardStats.floatingPnL))}
-              </p>
-            </div>
-
-            {/* 12. Lifetime P&L */}
-            <div className={`bg-white rounded shadow-sm border ${clientStats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-              <p className={`text-[10px] font-semibold ${clientStats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase tracking-wider mb-1`}>Lifetime P&L</p>
-              <p className={`text-sm font-bold ${clientStats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
-                {clientStats.lifetimePnL >= 0 ? '▲ ' : '▼ '}
-                {clientStats.lifetimePnL >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(clientStats.lifetimePnL))}
-              </p>
-            </div>
-
-            {/* 13. Daily Deposit */}
-            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">Daily Deposit</p>
-              <p className="text-sm font-bold text-green-700">
-                {formatIndianNumber(clientStats.dailyDeposit)}
-              </p>
-            </div>
-
-            {/* 14. Daily Withdrawal */}
-            <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-              <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">Daily Withdrawal</p>
-              <p className="text-sm font-bold text-red-700">
-                {formatIndianNumber(clientStats.dailyWithdrawal)}
-              </p>
-            </div>
-
-            {/* 15. Daily P&L */}
-            <div className={`bg-white rounded shadow-sm border ${clientStats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-              <p className={`text-[10px] font-semibold ${clientStats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase tracking-wider mb-1`}>Daily P&L</p>
-              <p className={`text-sm font-bold ${clientStats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {clientStats.dailyPnL >= 0 ? '▲ ' : '▼ '}
-                {clientStats.dailyPnL >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(clientStats.dailyPnL))}
-              </p>
-            </div>
-
-            {/* 16. This Week P&L */}
-            <div className={`bg-white rounded shadow-sm border ${clientStats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-              <p className={`text-[10px] font-semibold ${clientStats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase tracking-wider mb-1`}>This Week P&L</p>
-              <p className={`text-sm font-bold ${clientStats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
-                {clientStats.thisWeekPnL >= 0 ? '▲ ' : '▼ '}
-                {clientStats.thisWeekPnL >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(clientStats.thisWeekPnL))}
-              </p>
-            </div>
-
-            {/* 17. This Month P&L */}
-            <div className={`bg-white rounded shadow-sm border ${clientStats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-              <p className={`text-[10px] font-semibold ${clientStats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase tracking-wider mb-1`}>This Month P&L</p>
-              <p className={`text-sm font-bold ${clientStats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
-                {clientStats.thisMonthPnL >= 0 ? '▲ ' : '▼ '}
-                {clientStats.thisMonthPnL >= 0 ? '' : '-'}
-                {formatIndianNumber(Math.abs(clientStats.thisMonthPnL))}
-              </p>
-            </div>
+              )
+            })}
           </div>
 
           {/* Quick Actions */}
