@@ -1503,7 +1503,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-opacity`}
+                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
                       >
                         <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
                         <p className={`text-sm font-bold ${card.valueColor || 'text-gray-900'}`}>
@@ -1524,7 +1524,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-opacity`}
+                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
@@ -1561,7 +1561,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-opacity`}
+                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
                       >
                         <p className={`text-[10px] font-semibold ${card.textColor} uppercase mb-1`}>{card.title}</p>
                         <p className={`text-sm font-bold ${card.valueColor}`}>
