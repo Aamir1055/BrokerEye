@@ -901,7 +901,19 @@ const ClientsPage = () => {
     const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
     if (!Array.isArray(groupFilteredBase)) return []
     
-    return sortClients(groupFilteredBase)
+    const sorted = sortClients(groupFilteredBase)
+    
+    // Deduplicate by login to prevent duplicate key warnings
+    const loginSet = new Set()
+    const deduped = sorted.filter(client => {
+      if (!client || !client.login || loginSet.has(client.login)) {
+        return false
+      }
+      loginSet.add(client.login)
+      return true
+    })
+    
+    return deduped
   }, [clients, getFilteredClients, searchClients, sortClients, filterByActiveGroup, activeGroupFilters])
   
   // Handle column header click for sorting with debounce protection

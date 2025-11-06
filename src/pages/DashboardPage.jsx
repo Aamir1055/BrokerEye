@@ -235,18 +235,16 @@ const DashboardPage = () => {
 
   // Calculate additional metrics from clients array
   const dashboardStats = useMemo(() => {
-    let totalDeposit = 0
-    let totalWithdrawal = 0
-    let totalCorrection = 0
+    // For now, use placeholder values since these fields don't exist in API yet
+    const totalDeposit = 0
+    const totalWithdrawal = 0
+    const totalCorrection = 0
+    
+    // Calculate Credit IN/OUT from actual credit values
     let creditIn = 0
     let creditOut = 0
 
     clients.forEach(client => {
-      // Sum lifetime deposits and withdrawals if they exist
-      totalDeposit += (client.totalDeposit || 0)
-      totalWithdrawal += (client.totalWithdrawal || 0)
-      totalCorrection += (client.correction || 0)
-      
       // Credit IN/OUT logic: positive credit = IN, negative would be OUT
       const credit = client.credit || 0
       if (credit > 0) {
