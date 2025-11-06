@@ -42,13 +42,25 @@ const ClientsPage = () => {
   // Show face cards toggle - default is true (on)
   const [showFaceCards, setShowFaceCards] = useState(true)
   
-  // Face card drag and drop - Default order for 12 cards
-  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
+  // Face card drag and drop - Default order for 13 cards (added card 14: Net Deposit)
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 14, 10, 11, 12, 13]
   const [faceCardOrder, setFaceCardOrder] = useState(() => {
     const saved = localStorage.getItem('clientsFaceCardOrder')
     return saved ? JSON.parse(saved) : defaultFaceCardOrder
   })
   const [draggedFaceCard, setDraggedFaceCard] = useState(null)
+  
+  // Card visibility filter - Default all cards visible
+  const defaultCardVisibility = {
+    1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
+    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true
+  }
+  const [cardVisibility, setCardVisibility] = useState(() => {
+    const saved = localStorage.getItem('clientsCardVisibility')
+    return saved ? JSON.parse(saved) : defaultCardVisibility
+  })
+  const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
+  const cardFilterMenuRef = useRef(null)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -290,6 +302,11 @@ const ClientsPage = () => {
     localStorage.setItem('clientsPageVisibleColumns', JSON.stringify(visibleColumns))
   }, [visibleColumns])
 
+  // Save card visibility to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('clientsCardVisibility', JSON.stringify(cardVisibility))
+  }, [cardVisibility])
+
   useEffect(() => {
     if (!hasInitialLoad.current) {
       hasInitialLoad.current = true
@@ -335,6 +352,7 @@ const ClientsPage = () => {
   const lastLagWarning = useRef(0)
   const hasReceivedFirstUpdate = useRef(false)
   const firstUpdateTime = useRef(0)
+  const hasAutoRefreshedRef = useRef(false)
   useEffect(() => {
     if (systemTime && appTime) {
       // Mark that we've received a RECENT update (within last 30 seconds)
@@ -349,6 +367,16 @@ const ClientsPage = () => {
       // Lag detection disabled - was generating false warnings
       // WebSocket activity is already logged in DataContext
       // If truly needed, check isConnected from DataContext instead
+
+      // Hard safety: if lag >= 100s, auto refresh the full page to recover
+      const lagSeconds = Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))
+      if (!hasAutoRefreshedRef.current && lagSeconds >= 100) {
+        hasAutoRefreshedRef.current = true
+        // Use a tiny delay to let UI render the lag state before refresh
+        setTimeout(() => {
+          window.location.reload()
+        }, 300)
+      }
     }
   }, [systemTime, appTime])
 
@@ -491,6 +519,9 @@ const ClientsPage = () => {
       }
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false)
+      }
+      if (cardFilterMenuRef.current && !cardFilterMenuRef.current.contains(event.target)) {
+        setShowCardFilterMenu(false)
       }
     }
 
@@ -874,17 +905,22 @@ const ClientsPage = () => {
     if (!Array.isArray(groupFilteredBase)) return []
     
     const sorted = sortClients(groupFilteredBase)
-    
-    // Deduplicate by login to prevent duplicate key warnings
-    const loginSet = new Set()
+
+    // Deduplicate robustly while never dropping keyless clients
+    // Prefer 'login', then 'clientID', then 'mqid'; if none, keep the row
+    const seen = new Set()
     const deduped = sorted.filter(client => {
-      if (!client || !client.login || loginSet.has(client.login)) {
-        return false
+      if (!client) return false
+      const key = client.login ?? client.clientID ?? client.mqid
+      if (key == null || key === '') {
+        // Keep entries without a stable key (rare); they will be included
+        return true
       }
-      loginSet.add(client.login)
+      if (seen.has(key)) return false
+      seen.add(key)
       return true
     })
-    
+
     return deduped
   }, [clients, getFilteredClients, searchClients, sortClients, filterByActiveGroup, activeGroupFilters])
   
@@ -1134,6 +1170,9 @@ const ClientsPage = () => {
 
   // Get face card configuration by ID (for draggable cards)
   const getFaceCardConfig = (cardId, stats) => {
+    // Calculate Net Deposit
+    const netDeposit = (stats.dailyDeposit || 0) - (stats.dailyWithdrawal || 0)
+    
     const configs = {
       1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
       2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
@@ -1146,7 +1185,8 @@ const ClientsPage = () => {
       10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
       11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
       12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
-      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' }
+      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
+      14: { id: 14, title: 'Net Deposit', value: netDeposit, withArrow: true, isPositive: netDeposit >= 0, formattedValue: formatIndianNumber(Math.abs(netDeposit).toFixed(2)), borderColor: netDeposit >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDeposit >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDeposit >= 0 ? 'text-green-700' : 'text-red-700' }
     }
     return configs[cardId]
   }
@@ -1430,6 +1470,61 @@ const ClientsPage = () => {
                   </svg>
                 </button>
               </div>
+
+              {/* Card Filter Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
+                  className="text-pink-700 hover:text-pink-800 px-3 py-2 rounded-md hover:bg-pink-50 border-2 border-pink-300 hover:border-pink-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Card Filter
+                </button>
+                {showCardFilterMenu && (
+                  <div
+                    ref={cardFilterMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-pink-50 rounded-lg shadow-xl border-2 border-pink-200 py-2 z-50 w-56"
+                    style={{ maxHeight: '400px', overflowY: 'auto' }}
+                  >
+                    <div className="px-3 py-2 border-b border-pink-200">
+                      <p className="text-[10px] font-bold text-pink-700 uppercase tracking-wide">Show/Hide Cards</p>
+                    </div>
+                    {[
+                      { id: 1, label: 'Total Clients' },
+                      { id: 2, label: 'Total Balance' },
+                      { id: 3, label: 'Total Credit' },
+                      { id: 4, label: 'Total Equity' },
+                      { id: 5, label: 'PNL' },
+                      { id: 6, label: 'Floating Profit' },
+                      { id: 8, label: 'Daily Deposit' },
+                      { id: 9, label: 'Daily Withdrawal' },
+                      { id: 14, label: 'Net Deposit' },
+                      { id: 10, label: 'Daily PnL' },
+                      { id: 11, label: 'This Week PnL' },
+                      { id: 12, label: 'This Month PnL' },
+                      { id: 13, label: 'Lifetime PnL' }
+                    ].map(card => (
+                      <label
+                        key={card.id}
+                        className="flex items-center px-3 py-2 hover:bg-pink-100 cursor-pointer transition-colors rounded-md mx-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={cardVisibility[card.id]}
+                          onChange={() => setCardVisibility(prev => ({
+                            ...prev,
+                            [card.id]: !prev[card.id]
+                          }))}
+                          className="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 focus:ring-1"
+                        />
+                        <span className="ml-2 text-xs font-semibold text-gray-700">{card.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
               
               {/* Groups Button */}
               <GroupSelector 
@@ -1519,7 +1614,7 @@ const ClientsPage = () => {
               <>
                 {faceCardOrder.map((cardId) => {
                   const card = getFaceCardConfig(cardId, faceCardStats)
-                  if (!card) return null
+                  if (!card || !cardVisibility[cardId]) return null
                   
                   // Simple cards (no icons)
                   if (card.simple) {
@@ -2591,7 +2686,7 @@ const ClientsPage = () => {
 
                     return (
                       <tr
-                        key={client.login}
+                        key={client.login ?? client.clientID ?? client.mqid ?? `${client.name || 'unknown'}-${client.email || 'noemail'}-${index}`}
                         className={`hover:bg-blue-50 transition-all duration-200 ${isLastRow ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
                       >
                         {renderCols.map(col => {
