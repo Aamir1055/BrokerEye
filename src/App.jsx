@@ -12,6 +12,7 @@ import PendingOrdersPage from './pages/PendingOrdersPage'
 import MarginLevelPage from './pages/MarginLevelPage'
 import ClientPercentagePage from './pages/ClientPercentagePage'
 import BrokerRulePage from './pages/BrokerRulePage'
+import IBCommissionsPage from './pages/IBCommissionsPage'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Main App Content Component
@@ -43,6 +44,7 @@ const AppContent = () => {
       <Route path="/live-dealing" element={<LiveDealingPage />} />
       <Route path="/client-percentage" element={<ClientPercentagePage />} />
       <Route path="/broker-rules" element={<BrokerRulePage />} />
+      <Route path="/ib-commissions" element={<IBCommissionsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<DashboardPage />} />
     </Routes>

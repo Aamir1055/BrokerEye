@@ -1,0 +1,667 @@
+import { useState, useEffect, useRef } from 'react'
+import { brokerAPI } from '../services/api'
+import EditPercentageModal from '../components/EditPercentageModal'
+import BulkSyncModal from '../components/BulkSyncModal'
+import BulkUpdatePercentageModal from '../components/BulkUpdatePercentageModal'
+import LoadingSpinner from '../components/LoadingSpinner'
+import Sidebar from '../components/Sidebar'
+
+const IBCommissionsPage = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [commissions, setCommissions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const [editingIB, setEditingIB] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showBulkSyncModal, setShowBulkSyncModal] = useState(false)
+  
+  // Bulk update states
+  const [selectedIBs, setSelectedIBs] = useState([])
+  const [bulkPercentage, setBulkPercentage] = useState('')
+  const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
+  
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  
+  // Column resizing states
+  const [columnWidths, setColumnWidths] = useState({})
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  const headerRefs = useRef({})
+  
+  // Search debounce
+  const searchTimeoutRef = useRef(null)
+
+  useEffect(() => {
+    fetchCommissions()
+  }, [currentPage, itemsPerPage])
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      if (currentPage === 1) {
+        fetchCommissions()
+      } else {
+        setCurrentPage(1) // Reset to page 1, which will trigger fetchCommissions via the first useEffect
+      }
+    }, 500)
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [searchQuery])
+
+  const fetchCommissions = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const response = await brokerAPI.getIBCommissions(currentPage, itemsPerPage, searchQuery)
+      
+      if (response.status === 'success' && response.data) {
+        setCommissions(response.data.records || [])
+        const pagination = response.data.pagination || {}
+        setTotalPages(pagination.total_pages || 1)
+        setTotalRecords(pagination.total_records || 0)
+      } else {
+        setError('Failed to load IB commissions')
+      }
+    } catch (error) {
+      console.error('Error fetching IB commissions:', error)
+      setError(error.response?.data?.message || 'Failed to load IB commissions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (ib) => {
+    setEditingIB(ib)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateSuccess = () => {
+    setShowEditModal(false)
+    setEditingIB(null)
+    fetchCommissions() // Refresh the list
+  }
+
+  const handleBulkSyncSuccess = () => {
+    setShowBulkSyncModal(false)
+    fetchCommissions() // Refresh the list
+  }
+
+  // Handle select all checkbox
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIBs(sortedCommissions.map(ib => ib.id))
+    } else {
+      setSelectedIBs([])
+    }
+  }
+
+  // Handle individual checkbox
+  const handleSelectIB = (ibId) => {
+    setSelectedIBs(prev => {
+      if (prev.includes(ibId)) {
+        return prev.filter(id => id !== ibId)
+      } else {
+        return [...prev, ibId]
+      }
+    })
+  }
+
+  // Handle opening bulk update modal
+  const handleOpenBulkModal = () => {
+    if (selectedIBs.length === 0) {
+      setError('Please select at least one IB by checking the checkboxes')
+      setTimeout(() => setError(''), 3000)
+      return
+    }
+    setShowBulkUpdateModal(true)
+  }
+
+  // Handle bulk update
+  const handleBulkUpdate = async () => {
+    const percentage = parseFloat(bulkPercentage)
+    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+      setError('Please enter a valid percentage between 0 and 100')
+      setTimeout(() => setError(''), 3000)
+      return
+    }
+
+    try {
+      setBulkUpdating(true)
+      
+      // Format updates array as expected by API
+      const updates = selectedIBs.map(id => ({
+        id,
+        percentage
+      }))
+      
+      const response = await brokerAPI.bulkUpdateIBPercentages(updates)
+      
+      if (response.status === 'success') {
+        setSelectedIBs([])
+        setBulkPercentage('')
+        setShowBulkUpdateModal(false)
+        fetchCommissions()
+      } else {
+        setError('Bulk update failed: ' + (response.message || 'Unknown error'))
+        setTimeout(() => setError(''), 3000)
+      }
+    } catch (error) {
+      console.error('Error during bulk update:', error)
+      setError('Bulk update failed: ' + (error.response?.data?.message || error.message))
+      setTimeout(() => setError(''), 3000)
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
+  const formatCurrency = (value) => {
+    return `$${parseFloat(value || 0).toFixed(2)}`
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${minutes}`
+  }
+
+  // Handle column sorting
+  const handleSort = (columnKey) => {
+    if (sortColumn === columnKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(columnKey)
+      setSortDirection('asc')
+    }
+  }
+
+  // Sort commissions client-side
+  const sortedCommissions = [...commissions].sort((a, b) => {
+    if (!sortColumn) return 0
+    
+    let aVal = a[sortColumn]
+    let bVal = b[sortColumn]
+    
+    // Handle null/undefined
+    if (aVal == null && bVal == null) return 0
+    if (aVal == null) return 1
+    if (bVal == null) return -1
+    
+    // Numeric comparison for id, percentage, commissions
+    if (['id', 'percentage', 'total_commission', 'available_commission'].includes(sortColumn)) {
+      aVal = parseFloat(aVal)
+      bVal = parseFloat(bVal)
+      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+    }
+    
+    // String comparison
+    const aStr = String(aVal).toLowerCase()
+    const bStr = String(bVal).toLowerCase()
+    if (sortDirection === 'asc') {
+      return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
+    } else {
+      return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
+    }
+  })
+
+  // Column resize handlers
+  const handleResizeStart = (e, columnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    resizeStartX.current = e.clientX
+    const measured = headerRefs.current?.[columnKey]?.getBoundingClientRect()?.width
+    resizeStartWidth.current = measured || columnWidths[columnKey] || 150
+  }
+
+  const handleResizeMove = (e) => {
+    if (!resizingColumn) return
+    const diff = e.clientX - resizeStartX.current
+    const newWidth = Math.max(80, resizeStartWidth.current + diff)
+    setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
+  }
+
+  const handleResizeEnd = () => {
+    setResizingColumn(null)
+  }
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      document.addEventListener('mousemove', handleResizeMove)
+      document.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', handleResizeMove)
+        document.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn])
+
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden text-gray-600 hover:text-gray-900"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">IB Commissions</h1>
+                <p className="text-sm text-gray-600 mt-1">Manage introducing broker commission percentages</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden p-6">
+          <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
+            {/* Top Controls: match Clients style (search + pagination + per-page) */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-t-xl border-b border-blue-200 p-4">
+                {/* Left: per page + page nav */}
+                <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-blue-700">Show:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value))
+                setCurrentPage(1)
+              }}
+              className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
+            >
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+            <span className="text-xs font-semibold text-blue-700">entries</span>
+                  </div>
+                  {/* Page navigation */}
+                  <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className={`p-1.5 rounded-md transition-all shadow-sm ${
+                currentPage === 1
+                  ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                  : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className={`p-1.5 rounded-md transition-all shadow-sm ${
+                currentPage === totalPages
+                  ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                  : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+                    </button>
+                  </div>
+                </div>
+
+              {/* Right: Bulk Update Button + Search */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleOpenBulkModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Bulk Update
+                </button>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name or email..."
+                    className="pl-9 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
+                  />
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800 text-sm font-medium">{error}</p>
+              </div>
+            )}
+
+            {/* Table Container */}
+            <div className="flex-1 overflow-auto p-4">
+              {loading ? (
+                <LoadingSpinner />
+              ) : commissions.length === 0 ? (
+                <div className="text-center py-16">
+                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                  <p className="text-gray-500 text-lg font-medium mb-2">No IB commissions found</p>
+                  {searchQuery && (
+                    <p className="text-gray-400 text-sm">
+                      Try adjusting your search terms
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-blue-600 sticky top-0 z-10">
+                      <tr>
+                        {/* Checkbox Column */}
+                        <th className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 w-12">
+                          <input
+                            type="checkbox"
+                            checked={sortedCommissions.length > 0 && selectedIBs.length === sortedCommissions.length}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                          />
+                        </th>
+                        {[
+                          { key: 'id', label: 'ID', align: 'left', width: columnWidths.id || 80 },
+                          { key: 'name', label: 'Name', align: 'left', width: columnWidths.name || 200 },
+                          { key: 'email', label: 'Email', align: 'left', width: columnWidths.email || 250 },
+                          { key: 'percentage', label: 'Percentage', align: 'left', width: columnWidths.percentage || 120 },
+                          { key: 'total_commission', label: 'Total Commission', align: 'right', width: columnWidths.total_commission || 150 },
+                          { key: 'available_commission', label: 'Available Commission', align: 'right', width: columnWidths.available_commission || 180 },
+                          { key: 'last_synced_at', label: 'Last Synced', align: 'left', width: columnWidths.last_synced_at || 160 },
+                          { key: 'action', label: 'Action', align: 'center', width: columnWidths.action || 180 }
+                        ].map((col) => (
+                          <th 
+                            key={col.key}
+                            ref={el => { if (el) headerRefs.current[col.key] = el }}
+                            className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 relative group cursor-pointer hover:bg-blue-700 transition-colors"
+                            style={{ width: col.width, textAlign: col.align }}
+                            onClick={() => col.key !== 'action' && handleSort(col.key)}
+                          >
+                            <div className="flex items-center gap-1" style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}>
+                              <span>{col.label}</span>
+                              {sortColumn === col.key && col.key !== 'action' && (
+                                <svg
+                                  className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              )}
+                            </div>
+                            {/* Resize Handle */}
+                            {col.key !== 'action' && (
+                              <div 
+                                className="absolute right-0 top-0 w-2 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20"
+                                onMouseDown={(e) => handleResizeStart(e, col.key)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="absolute right-0 top-0 w-1.5 h-full bg-white/30 group-hover:bg-yellow-400 transition-colors"></div>
+                              </div>
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {sortedCommissions.map((ib) => (
+                        <tr key={ib.id} className={`hover:bg-blue-50 transition-colors ${selectedIBs.includes(ib.id) ? 'bg-blue-100' : ''}`}>
+                          {/* Checkbox Cell */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedIBs.includes(ib.id)}
+                              onChange={() => handleSelectIB(ib.id)}
+                              className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {ib.id}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {ib.name}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {ib.email}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-blue-600">
+                            {parseFloat(ib.percentage).toFixed(2)}%
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right tabular-nums">
+                            {formatCurrency(ib.total_commission)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-green-600 text-right tabular-nums">
+                            {formatCurrency(ib.available_commission)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(ib.last_synced_at)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => handleEdit(ib)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm transition-colors"
+                              title="Edit Percentage"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* Bulk Sync Modal */}
+        {showBulkSyncModal && (
+          <BulkSyncModal
+            isOpen={showBulkSyncModal}
+            onClose={() => setShowBulkSyncModal(false)}
+            onSuccess={handleBulkSyncSuccess}
+          />
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingIB && (
+          <EditPercentageModal
+            ib={editingIB}
+            onClose={() => {
+              setShowEditModal(false)
+              setEditingIB(null)
+            }}
+            onSuccess={handleUpdateSuccess}
+          />
+        )}
+
+        {/* Bulk Update Modal */}
+        {showBulkUpdateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-xl">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Bulk Update Percentage
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowBulkUpdateModal(false)
+                      setBulkPercentage('')
+                    }}
+                    className="text-white hover:text-gray-200 transition-colors"
+                    disabled={bulkUpdating}
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4">
+                {/* Info Message */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> Please check the IDs you want to update using the checkboxes in the table, then enter the percentage value to apply.
+                  </p>
+                </div>
+
+                {/* Selected IDs Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Selected IB IDs ({selectedIBs.length})
+                  </label>
+                  <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
+                    {selectedIBs.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedIBs.map(id => (
+                          <span
+                            key={id}
+                            className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
+                          >
+                            #{id}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Percentage Input Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Percentage Value (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={bulkPercentage}
+                    onChange={(e) => setBulkPercentage(e.target.value)}
+                    placeholder="Enter percentage (0-100)"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                    disabled={bulkUpdating}
+                    autoFocus
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This percentage will be applied to all {selectedIBs.length} selected IB(s)
+                  </p>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex items-center justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowBulkUpdateModal(false)
+                    setBulkPercentage('')
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                  disabled={bulkUpdating}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkUpdate}
+                  disabled={bulkUpdating || !bulkPercentage || selectedIBs.length === 0}
+                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+                >
+                  {bulkUpdating ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Update All
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default IBCommissionsPage

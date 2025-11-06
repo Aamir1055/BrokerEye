@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import websocketService from '../services/websocket'
 import { useAuth } from './AuthContext'
@@ -37,6 +37,36 @@ export const DataProvider = ({ children }) => {
     thisMonthPnL: 0,
     lifetimePnL: 0
   })
+  
+  // Batch stats updates to avoid excessive re-renders
+  const statsUpdateBatchRef = useRef({
+    pending: false,
+    deltas: {
+      totalBalance: 0,
+      totalCredit: 0,
+      totalEquity: 0,
+      totalPnl: 0,
+      totalProfit: 0,
+      dailyDeposit: 0,
+      dailyWithdrawal: 0,
+      dailyPnL: 0,
+      thisWeekPnL: 0,
+      thisMonthPnL: 0,
+      lifetimePnL: 0
+    }
+  })
+  
+  // Track last processed state per client to prevent duplicate delta calculations
+  const lastClientStateRef = useRef(new Map())
+  
+  // Flag to prevent multiple simultaneous full stats calculations
+  const isCalculatingStatsRef = useRef(false)
+  
+  // Lock to prevent concurrent fetchClients calls
+  const isFetchingClientsRef = useRef(false)
+  
+  // Track if initial sync has been done
+  const hasInitialSyncedRef = useRef(false)
   
   const [loading, setLoading] = useState({
     clients: false,
@@ -86,6 +116,7 @@ export const DataProvider = ({ children }) => {
       stats.totalEquity += (client.equity || 0)
       stats.totalPnl += (client.pnl || 0)
       stats.totalProfit += (client.profit || 0)
+      // API uses camelCase for deposit/withdrawal fields
       stats.dailyDeposit += (client.dailyDeposit || 0)
       stats.dailyWithdrawal += (client.dailyWithdrawal || 0)
       // Invert the sign by multiplying by -1 (negative becomes positive, positive becomes negative)
@@ -98,39 +129,83 @@ export const DataProvider = ({ children }) => {
     return stats
   }, [])
 
-  // Update stats incrementally based on old vs new client data
+  // Update stats incrementally based on old vs new client data (batched)
   const updateStatsIncremental = useCallback((oldClient, newClient) => {
-    setClientStats(prev => {
-      const delta = {
-        totalBalance: (newClient?.balance || 0) - (oldClient?.balance || 0),
-        totalCredit: (newClient?.credit || 0) - (oldClient?.credit || 0),
-        totalEquity: (newClient?.equity || 0) - (oldClient?.equity || 0),
-        totalPnl: (newClient?.pnl || 0) - (oldClient?.pnl || 0),
-        totalProfit: (newClient?.profit || 0) - (oldClient?.profit || 0),
-        dailyDeposit: (newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0),
-        dailyWithdrawal: (newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0),
-        // Invert the sign for PnL deltas by multiplying by -1
-        dailyPnL: ((newClient?.dailyPnL || 0) * -1) - ((oldClient?.dailyPnL || 0) * -1),
-        thisWeekPnL: ((newClient?.thisWeekPnL || 0) * -1) - ((oldClient?.thisWeekPnL || 0) * -1),
-        thisMonthPnL: ((newClient?.thisMonthPnL || 0) * -1) - ((oldClient?.thisMonthPnL || 0) * -1),
-        lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1)
-      }
-      
-      return {
-        ...prev,
-        totalBalance: prev.totalBalance + delta.totalBalance,
-        totalCredit: prev.totalCredit + delta.totalCredit,
-        totalEquity: prev.totalEquity + delta.totalEquity,
-        totalPnl: prev.totalPnl + delta.totalPnl,
-        totalProfit: prev.totalProfit + delta.totalProfit,
-        dailyDeposit: prev.dailyDeposit + delta.dailyDeposit,
-        dailyWithdrawal: prev.dailyWithdrawal + delta.dailyWithdrawal,
-        dailyPnL: prev.dailyPnL + delta.dailyPnL,
-        thisWeekPnL: prev.thisWeekPnL + delta.thisWeekPnL,
-        thisMonthPnL: prev.thisMonthPnL + delta.thisMonthPnL,
-        lifetimePnL: prev.lifetimePnL + delta.lifetimePnL
-      }
-    })
+    if (!newClient?.login) return
+    
+    // Check if we've already processed this exact update
+    const clientLogin = newClient.login
+    const lastState = lastClientStateRef.current.get(clientLogin)
+    
+    // Create a signature of the current state for key financial fields
+    const currentSignature = `${newClient.balance || 0}_${newClient.credit || 0}_${newClient.equity || 0}_${newClient.dailyDeposit || 0}_${newClient.dailyWithdrawal || 0}_${newClient.dailyPnL || 0}_${newClient.lastUpdate || 0}`
+    
+    // Skip if this is a duplicate update (same signature as last processed)
+    if (lastState === currentSignature) {
+      return // Already processed this exact state
+    }
+    
+    // Update the last processed signature
+    lastClientStateRef.current.set(clientLogin, currentSignature)
+    
+    // Calculate delta (use lastState parsed values if available, otherwise use oldClient)
+    const delta = {
+      totalBalance: (newClient?.balance || 0) - (oldClient?.balance || 0),
+      totalCredit: (newClient?.credit || 0) - (oldClient?.credit || 0),
+      totalEquity: (newClient?.equity || 0) - (oldClient?.equity || 0),
+      totalPnl: (newClient?.pnl || 0) - (oldClient?.pnl || 0),
+      totalProfit: (newClient?.profit || 0) - (oldClient?.profit || 0),
+      // API uses camelCase for deposit/withdrawal fields
+      dailyDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0)),
+      dailyWithdrawal: ((newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0)),
+      // Invert the sign for PnL deltas by multiplying by -1
+      dailyPnL: ((newClient?.dailyPnL || 0) * -1) - ((oldClient?.dailyPnL || 0) * -1),
+      thisWeekPnL: ((newClient?.thisWeekPnL || 0) * -1) - ((oldClient?.thisWeekPnL || 0) * -1),
+      thisMonthPnL: ((newClient?.thisMonthPnL || 0) * -1) - ((oldClient?.thisMonthPnL || 0) * -1),
+      lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1)
+    }
+    
+    // Accumulate deltas in batch
+    const batch = statsUpdateBatchRef.current
+    batch.deltas.totalBalance += delta.totalBalance
+    batch.deltas.totalCredit += delta.totalCredit
+    batch.deltas.totalEquity += delta.totalEquity
+    batch.deltas.totalPnl += delta.totalPnl
+    batch.deltas.totalProfit += delta.totalProfit
+    batch.deltas.dailyDeposit += delta.dailyDeposit
+    batch.deltas.dailyWithdrawal += delta.dailyWithdrawal
+    batch.deltas.dailyPnL += delta.dailyPnL
+    batch.deltas.thisWeekPnL += delta.thisWeekPnL
+    batch.deltas.thisMonthPnL += delta.thisMonthPnL
+    batch.deltas.lifetimePnL += delta.lifetimePnL
+    
+    // Schedule batch update (debounced to 1 second)
+    if (!batch.pending) {
+      batch.pending = true
+      setTimeout(() => {
+        setClientStats(prev => ({
+          ...prev,
+          totalBalance: prev.totalBalance + batch.deltas.totalBalance,
+          totalCredit: prev.totalCredit + batch.deltas.totalCredit,
+          totalEquity: prev.totalEquity + batch.deltas.totalEquity,
+          totalPnl: prev.totalPnl + batch.deltas.totalPnl,
+          totalProfit: prev.totalProfit + batch.deltas.totalProfit,
+          dailyDeposit: prev.dailyDeposit + batch.deltas.dailyDeposit,
+          dailyWithdrawal: prev.dailyWithdrawal + batch.deltas.dailyWithdrawal,
+          dailyPnL: prev.dailyPnL + batch.deltas.dailyPnL,
+          thisWeekPnL: prev.thisWeekPnL + batch.deltas.thisWeekPnL,
+          thisMonthPnL: prev.thisMonthPnL + batch.deltas.thisMonthPnL,
+          lifetimePnL: prev.lifetimePnL + batch.deltas.lifetimePnL
+        }))
+        
+        // Reset batch
+        batch.deltas = {
+          totalBalance: 0, totalCredit: 0, totalEquity: 0, totalPnl: 0, totalProfit: 0,
+          dailyDeposit: 0, dailyWithdrawal: 0, dailyPnL: 0, thisWeekPnL: 0, thisMonthPnL: 0, lifetimePnL: 0
+        }
+        batch.pending = false
+      }, 1000) // Update stats every 1 second instead of on every message
+    }
   }, [])
 
   // Fetch clients data
@@ -140,21 +215,60 @@ export const DataProvider = ({ children }) => {
       return []
     }
     
+    // Prevent concurrent fetches using ref-based lock (immediate check)
+    if (isFetchingClientsRef.current) {
+      console.log('[DataContext] ⚠️ fetchClients already in progress, skipping duplicate call')
+      return clients
+    }
+    
     if (!force && clients.length > 0 && !isStale('clients')) {
       return clients
     }
 
+    // Set lock immediately (before async state update)
+    isFetchingClientsRef.current = true
     setLoading(prev => ({ ...prev, clients: true }))
     
     try {
       const response = await brokerAPI.getClients()
-      const data = response.data?.clients || []
+      const rawData = response.data?.clients || []
+      
+      // Deduplicate clients by login (keep last occurrence)
+      const clientsMap = new Map()
+      rawData.forEach(client => {
+        if (client && client.login) {
+          clientsMap.set(client.login, client)
+        }
+      })
+      const data = Array.from(clientsMap.values())
+      
+      if (rawData.length !== data.length) {
+        console.warn(`[DataContext] ⚠️ Deduplicated ${rawData.length - data.length} duplicate clients (${rawData.length} → ${data.length})`)
+      }
+      
       setClients(data)
       setAccounts(data) // Keep accounts in sync
-      // Calculate full stats on initial load
-      const stats = calculateFullStats(data)
-      setClientStats(stats)
-      console.log('[DataContext] 📊 Initial stats calculated:', stats)
+      
+      // Initialize last state tracking for all clients to prevent duplicate processing
+      lastClientStateRef.current.clear()
+      data.forEach(client => {
+        if (client?.login) {
+          const signature = `${client.balance || 0}_${client.credit || 0}_${client.equity || 0}_${client.dailyDeposit || 0}_${client.dailyWithdrawal || 0}_${client.dailyPnL || 0}_${client.lastUpdate || 0}`
+          lastClientStateRef.current.set(client.login, signature)
+        }
+      })
+      
+      // Calculate full stats on initial load (with guard against concurrent calls)
+      if (!isCalculatingStatsRef.current) {
+        isCalculatingStatsRef.current = true
+        const stats = calculateFullStats(data)
+        setClientStats(stats)
+        console.log('[DataContext] 📊 Initial stats calculated:', stats)
+        // Reset flag after a short delay to allow state update to complete
+        setTimeout(() => { isCalculatingStatsRef.current = false }, 100)
+      } else {
+        console.log('[DataContext] ⚠️ Skipped redundant stats calculation (already in progress)')
+      }
       setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
       return data
     } catch (error) {
@@ -162,6 +276,8 @@ export const DataProvider = ({ children }) => {
       throw error
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
+      // Release lock
+      isFetchingClientsRef.current = false
     }
   }, [clients, isAuthenticated])
 
@@ -289,8 +405,21 @@ export const DataProvider = ({ children }) => {
     // Subscribe to clients updates
     const unsubClients = websocketService.subscribe('clients', (data) => {
       try {
-        const newClients = data.data?.clients || data.clients
-        if (newClients && Array.isArray(newClients)) {
+        const rawClients = data.data?.clients || data.clients
+        if (rawClients && Array.isArray(rawClients)) {
+          // Deduplicate clients by login
+          const clientsMap = new Map()
+          rawClients.forEach(client => {
+            if (client && client.login) {
+              clientsMap.set(client.login, client)
+            }
+          })
+          const newClients = Array.from(clientsMap.values())
+          
+          if (rawClients.length !== newClients.length) {
+            console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${rawClients.length - newClients.length} duplicate clients`)
+          }
+          
           setClients(newClients)
           setAccounts(newClients) // Update accounts too (same data)
           setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
@@ -356,6 +485,16 @@ export const DataProvider = ({ children }) => {
         const updated = [...prev]
         let hasNewClients = false
         
+        // Cache original values BEFORE any modifications (for accurate delta calculation)
+        const originalValues = new Map()
+        for (let i = 0; i < updates.length; i++) {
+          const { accountLogin } = updates[i]
+          const index = clientIndexMap.get(accountLogin)
+          if (index !== undefined && !originalValues.has(accountLogin)) {
+            originalValues.set(accountLogin, updated[index])
+          }
+        }
+        
         for (let i = 0; i < updates.length; i++) {
           const { updatedAccount, accountLogin } = updates[i]
           const index = clientIndexMap.get(accountLogin)
@@ -368,8 +507,8 @@ export const DataProvider = ({ children }) => {
             clientIndexMap.set(accountLogin, newIndex)
             hasNewClients = true
           } else {
-            // Update existing - O(1) access
-            const oldClient = updated[index]
+            // Update existing - use cached original value for accurate delta
+            const oldClient = originalValues.get(accountLogin)
             updateStatsIncremental(oldClient, updatedAccount)
             updated[index] = { ...updated[index], ...updatedAccount }
           }
@@ -475,6 +614,11 @@ export const DataProvider = ({ children }) => {
               return prev
             }
             console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
+            
+            // Initialize signature tracking for new user
+            const signature = `${newUser.balance || 0}_${newUser.credit || 0}_${newUser.equity || 0}_${newUser.dailyDeposit || 0}_${newUser.dailyWithdrawal || 0}_${newUser.dailyPnL || 0}_${newUser.lastUpdate || 0}`
+            lastClientStateRef.current.set(userLogin, signature)
+            
             // Update stats incrementally for new user
             updateStatsIncremental(null, newUser)
             setClientStats(s => ({ ...s, totalClients: s.totalClients + 1 }))
@@ -498,23 +642,39 @@ export const DataProvider = ({ children }) => {
         const updatedUser = message.data
         const userLogin = message.login || updatedUser?.login
         
-        console.log('[DataContext] 👤 USER_UPDATED:', userLogin, updatedUser)
-        
         if (updatedUser && userLogin) {
+          let oldClient = null
+          
           setClients(prev => {
-            const index = prev.findIndex(c => c.login === userLogin)
+            // First, deduplicate the previous array to ensure clean state
+            // Filter out null/undefined entries and deduplicate by login
+            const dedupedPrev = Array.from(
+              prev.filter(client => client && client.login).reduce((map, client) => {
+                if (!map.has(client.login)) {
+                  map.set(client.login, client)
+                }
+                return map
+              }, new Map()).values()
+            )
+            
+            const index = dedupedPrev.findIndex(c => c && c.login === userLogin)
             if (index === -1) {
-              console.log('[DataContext] ➕ User not found, adding as new:', userLogin)
-              return [updatedUser, ...prev]
+              // User not found, add as new
+              oldClient = null
+              return [updatedUser, ...dedupedPrev]
             }
-            console.log('[DataContext] ✏️ Updating existing user:', userLogin)
-            const updated = [...prev]
+            // Update existing user - store old client for stats update
+            oldClient = dedupedPrev[index]
+            const updated = [...dedupedPrev]
             updated[index] = { ...updated[index], ...updatedUser }
             return updated
           })
           
+          // Update stats incrementally based on the change
+          updateStatsIncremental(oldClient, updatedUser)
+          
           setAccounts(prev => {
-            const index = prev.findIndex(c => c.login === userLogin)
+            const index = prev.findIndex(c => c && c.login === userLogin)
             if (index === -1) return [updatedUser, ...prev]
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedUser }
@@ -535,10 +695,33 @@ export const DataProvider = ({ children }) => {
         console.log('[DataContext] 👤 USER_DELETED:', userLogin)
         
         if (userLogin) {
+          // Remove from signature tracking
+          lastClientStateRef.current.delete(userLogin)
+          
+          let deletedClient = null
+          
           setClients(prev => {
+            // Find the client BEFORE removing to capture their values
+            deletedClient = prev.find(c => c.login === userLogin)
+            
             const filtered = prev.filter(c => c.login !== userLogin)
             if (filtered.length < prev.length) {
               console.log('[DataContext] ➖ Removed user from clients:', userLogin)
+              
+              // Subtract deleted client's values from stats
+              if (deletedClient) {
+                // Create a "zero client" to calculate negative delta
+                const zeroClient = {
+                  login: userLogin,
+                  balance: 0, credit: 0, equity: 0, pnl: 0, profit: 0,
+                  dailyDeposit: 0, dailyWithdrawal: 0,
+                  dailyPnL: 0, thisWeekPnL: 0, thisMonthPnL: 0, lifetimePnL: 0
+                }
+                // This will subtract all of deletedClient's values
+                updateStatsIncremental(deletedClient, zeroClient)
+                // Decrement total client count
+                setClientStats(s => ({ ...s, totalClients: Math.max(0, s.totalClients - 1) }))
+              }
             }
             return filtered
           })
@@ -804,6 +987,14 @@ export const DataProvider = ({ children }) => {
   // On successful authentication, perform an initial data sync
   useEffect(() => {
     if (!isAuthenticated) return
+    
+    // Prevent duplicate initial sync (React StrictMode calls effects twice in dev)
+    if (hasInitialSyncedRef.current) {
+      console.log('[DataContext] ⚠️ Initial sync already completed, skipping duplicate')
+      return
+    }
+    
+    hasInitialSyncedRef.current = true
     
     const initialSync = async () => {
       try {

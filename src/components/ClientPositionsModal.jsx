@@ -116,10 +116,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   // Toggle column visibility
   const togglePositionsColumn = (columnKey) => {
-    setPositionsVisibleColumns(prev => ({
-      ...prev,
-      [columnKey]: !prev[columnKey]
-    }))
+    setPositionsVisibleColumns(prev => {
+      const newState = {
+        ...prev,
+        [columnKey]: !prev[columnKey]
+      }
+      return newState
+    })
   }
   
   // Close filter dropdown and search suggestions when clicking outside
@@ -867,7 +870,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Modal Header - Fixed */}
         <div className="flex-shrink-0 flex items-center justify-between p-5 border-b-2 border-slate-200 bg-blue-600">
           <div>
@@ -983,7 +986,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         >
                           <input
                             type="checkbox"
-                            checked={positionsVisibleColumns[col.key]}
+                            checked={positionsVisibleColumns[col.key] === true}
                             onChange={() => togglePositionsColumn(col.key)}
                             className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                           />
@@ -1140,6 +1143,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
+                        {positionsVisibleColumns.time && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['time'] || 'auto', minWidth: '80px' }}
@@ -1194,8 +1198,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'time')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.position && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['position'] || 'auto', minWidth: '80px' }}
                         >
                           Position
@@ -1204,6 +1210,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'position')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.symbol && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
@@ -1258,9 +1266,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'symbol')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.action && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
-                          style={{ width: positionsColumnWidths['type'] || 'auto', minWidth: '80px' }}
+                          style={{ width: positionsColumnWidths['action'] || 'auto', minWidth: '80px' }}
                         >
                           <div className="flex items-center gap-1.5">
                             Type
@@ -1309,9 +1319,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handlePositionsResizeStart(e, 'type')}
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'action')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.volume && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
@@ -1322,26 +1334,32 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'volume')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.priceOpen && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
-                          style={{ width: positionsColumnWidths['openPrice'] || 'auto', minWidth: '80px' }}
+                          style={{ width: positionsColumnWidths['priceOpen'] || 'auto', minWidth: '80px' }}
                         >
                           Open Price
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handlePositionsResizeStart(e, 'openPrice')}
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'priceOpen')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.priceCurrent && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
-                          style={{ width: positionsColumnWidths['currentPrice'] || 'auto', minWidth: '80px' }}
+                          style={{ width: positionsColumnWidths['priceCurrent'] || 'auto', minWidth: '80px' }}
                         >
                           Current Price
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handlePositionsResizeStart(e, 'currentPrice')}
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'priceCurrent')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.sl && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['sl'] || 'auto', minWidth: '80px' }}
@@ -1352,6 +1370,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'sl')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.tp && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['tp'] || 'auto', minWidth: '80px' }}
@@ -1362,6 +1382,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'tp')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.profit && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
                           style={{ width: positionsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
@@ -1372,43 +1394,98 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'profit')}
                           />
                         </th>
+                        )}
+                        {positionsVisibleColumns.commission && (
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['commission'] || 'auto', minWidth: '80px' }}
+                        >
+                          Commission
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'commission')}
+                          />
+                        </th>
+                        )}
+                        {positionsVisibleColumns.comment && (
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['comment'] || 'auto', minWidth: '80px' }}
+                        >
+                          Comment
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'comment')}
+                          />
+                        </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {displayedPositions.map((position) => (
                         <tr key={position.position} className="hover:bg-blue-50 transition-colors">
+                          {positionsVisibleColumns.time && (
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(position.timeCreate)}
                           </td>
+                          )}
+                          {positionsVisibleColumns.position && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             #{position.position}
                           </td>
+                          )}
+                          {positionsVisibleColumns.symbol && (
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {position.symbol}
                           </td>
+                          )}
+                          {positionsVisibleColumns.action && (
                           <td className="px-3 py-2 text-sm whitespace-nowrap">
                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(position.action)}`}>
                               {getActionLabel(position.action)}
                             </span>
                           </td>
+                          )}
+                          {positionsVisibleColumns.volume && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {position.volume}
                           </td>
+                          )}
+                          {positionsVisibleColumns.priceOpen && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {position.priceOpen.toFixed(5)}
+                            {typeof position.priceOpen === 'number' ? position.priceOpen.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {positionsVisibleColumns.priceCurrent && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {position.priceCurrent.toFixed(5)}
+                            {typeof position.priceCurrent === 'number' ? position.priceCurrent.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {positionsVisibleColumns.sl && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {position.priceSL > 0 ? position.priceSL.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {positionsVisibleColumns.tp && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {position.priceTP > 0 ? position.priceTP.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {positionsVisibleColumns.profit && (
                           <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(position.profit)}`}>
                             {formatCurrency(position.profit)}
                           </td>
+                          )}
+                          {positionsVisibleColumns.commission && (
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {typeof position.commission === 'number' ? formatCurrency(position.commission) : '-'}
+                          </td>
+                          )}
+                          {positionsVisibleColumns.comment && (
+                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
+                            {position.comment || '-'}
+                          </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -1935,27 +2012,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
           {activeTab === 'funds' && (
             <div>
-              <div className="bg-blue-50 rounded-xl p-5 border-2 border-blue-200 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Money Transactions</h3>
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <h3 className="text-sm font-bold text-gray-900 mb-2">Money Transactions</h3>
                 
                 {/* Success Message */}
                 {operationSuccess && (
-                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 shadow-sm">
-                    <span className="text-emerald-800 text-sm font-medium">{operationSuccess}</span>
+                  <div className="mb-2 bg-emerald-50 border border-emerald-200 rounded p-2">
+                    <span className="text-emerald-800 text-xs font-medium">{operationSuccess}</span>
                   </div>
                 )}
 
                 {/* Error Message */}
                 {operationError && (
-                  <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 shadow-sm">
-                    <span className="text-red-800 text-sm font-medium">{operationError}</span>
+                  <div className="mb-2 bg-red-50 border border-red-200 rounded p-2">
+                    <span className="text-red-800 text-xs font-medium">{operationError}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleFundsOperation} className="space-y-4">
+                <form onSubmit={handleFundsOperation} className="space-y-2">
                   {/* Operation Type */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Operation Type
                     </label>
                     <select
@@ -1965,18 +2042,18 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         setOperationSuccess('')
                         setOperationError('')
                       }}
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900 font-medium shadow-sm hover:border-blue-400 transition-colors"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs bg-white text-gray-900 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="deposit" className="text-gray-900">Deposit Funds</option>
-                      <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
-                      <option value="credit_in" className="text-gray-900">Credit In</option>
-                      <option value="credit_out" className="text-gray-900">Credit Out</option>
+                      <option value="deposit">Deposit Funds</option>
+                      <option value="withdrawal">Withdraw Funds</option>
+                      <option value="credit_in">Credit In</option>
+                      <option value="credit_out">Credit Out</option>
                     </select>
                   </div>
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Amount ($)
                     </label>
                     <input
@@ -1986,27 +2063,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-gray-900 placeholder-gray-400 font-medium shadow-sm hover:border-emerald-400 transition-colors"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-400 hover:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                       required
                     />
                   </div>
 
                   {/* Comment */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Comment <span className="text-xs font-normal text-gray-500">(Optional)</span>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Comment <span className="text-[10px] font-normal text-gray-500">(Optional)</span>
                     </label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="Add a note or description for this transaction..."
-                      rows="3"
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm text-gray-900 placeholder-gray-400 resize-none shadow-sm hover:border-purple-400 transition-colors"
+                      rows="2"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-400 resize-none hover:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                     />
                   </div>
 
                   {/* Submit Buttons */}
-                  <div className="flex justify-end gap-3 pt-2 border-t-2 border-gray-200">
+                  <div className="flex justify-end gap-2 pt-1.5 border-t border-gray-200">
                     <button
                       type="button"
                       onClick={() => {
@@ -2015,14 +2092,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         setOperationSuccess('')
                         setOperationError('')
                       }}
-                      className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+                      className="px-3 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400"
                     >
                       Clear
                     </button>
                     <button
                       type="submit"
                       disabled={operationLoading}
-                      className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+                      className="px-4 py-1 text-xs font-bold text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                     >
                       {operationLoading ? (
                         <>Processing...</>

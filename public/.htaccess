@@ -10,6 +10,7 @@ RewriteCond %{REQUEST_URI} ^/api/
 RewriteRule ^api/(.*)$ http://185.136.159.142:8080/api/$1 [P,L]
 
 # Fallback to index.html for React Router (SPA)
+# Use per-directory relative path to avoid breaking when deployed in a subfolder like /v2
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+RewriteRule ^ index.html [L]

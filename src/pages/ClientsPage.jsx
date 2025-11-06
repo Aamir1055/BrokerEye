@@ -72,6 +72,7 @@ const ClientsPage = () => {
   const filterPanelRef = useRef(null)
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
   
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
@@ -80,6 +81,13 @@ const ClientsPage = () => {
   const [customFilterValue1, setCustomFilterValue1] = useState('')
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
+
+  // Text filter modal states
+  const [showCustomTextFilterModal, setShowCustomTextFilterModal] = useState(false)
+  const [customTextFilterColumn, setCustomTextFilterColumn] = useState(null)
+  const [customTextFilterType, setCustomTextFilterType] = useState('contains')
+  const [customTextFilterValue, setCustomTextFilterValue] = useState('')
+  const [customTextFilterCaseSensitive, setCustomTextFilterCaseSensitive] = useState(false)
   
   const tableRef = useRef(null)
 
@@ -88,6 +96,11 @@ const ClientsPage = () => {
   const [resizingColumn, setResizingColumn] = useState(null)
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
+  const resizeRightStartWidth = useRef(0)
+  const resizeRAF = useRef(null)
+  const headerRefs = useRef({})
+  const measureCanvasRef = useRef(null)
+  const resizeRightNeighborKey = useRef(null)
 
   // Page zoom states
   const [zoomLevel, setZoomLevel] = useState(100)
@@ -254,6 +267,16 @@ const ClientsPage = () => {
 
   const isMetricColumn = (key) => Object.prototype.hasOwnProperty.call(percentageFieldMap, key)
 
+  // Define string/text columns (no number filters)
+  const stringColumns = [
+    'name', 'lastName', 'middleName', 'email', 'phone', 'group', 
+    'country', 'city', 'state', 'address', 'zipCode', 'currency',
+    'company', 'comment', 'color', 'leadCampaign', 'leadSource',
+    'status', 'mqid', 'language', 'rights', 'rightsMask'
+  ]
+
+  const isStringColumn = (key) => stringColumns.includes(key)
+
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('clientsPageVisibleColumns', JSON.stringify(visibleColumns))
@@ -299,11 +322,28 @@ const ClientsPage = () => {
 
   // Performance monitor - log lag warnings (throttled)
   const lastLagWarning = useRef(0)
+  const hasReceivedFirstUpdate = useRef(false)
+  const firstUpdateTime = useRef(0)
   useEffect(() => {
     if (systemTime && appTime) {
+      // Mark that we've received a RECENT update (within last 30 seconds)
+      const ageOfData = Date.now() - appTime
+      if (appTime > 0 && ageOfData < 30000) {
+        if (!hasReceivedFirstUpdate.current) {
+          hasReceivedFirstUpdate.current = true
+          firstUpdateTime.current = Date.now()
+        }
+      }
+      
+      // Only check lag after we've been running for at least 30 seconds
+      const timeRunning = Date.now() - firstUpdateTime.current
+      if (timeRunning < 30000) {
+        return // Skip lag warnings during initial warm-up period
+      }
+      
       const lagSeconds = Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))
-      // Only log once every 10 seconds to avoid console spam
-      if (lagSeconds > 10 && Date.now() - lastLagWarning.current > 10000) {
+      // Only log if we've received updates and only once every 10 seconds
+      if (hasReceivedFirstUpdate.current && lagSeconds > 10 && Date.now() - lastLagWarning.current > 10000) {
         console.warn(`[ClientsPage] ⚠️ HIGH LAG: ${lagSeconds}s - Check if WebSocket is receiving updates`)
         lastLagWarning.current = Date.now()
       }
@@ -325,23 +365,63 @@ const ClientsPage = () => {
     }
   }, [fetchClients, fetchPositions])
 
-  // Column resize handlers
+  // Column resize handlers with RAF for smooth performance
   const handleResizeStart = useCallback((e, columnKey) => {
     e.preventDefault()
     e.stopPropagation()
     setResizingColumn(columnKey)
     resizeStartX.current = e.clientX
-    resizeStartWidth.current = columnWidths[columnKey] || 150 // Default width 150px
+    // Measure the actual current width of the header cell for accurate resizing
+    const measured = headerRefs.current?.[columnKey]?.getBoundingClientRect()?.width
+    resizeStartWidth.current = (typeof measured === 'number' && measured > 0)
+      ? measured
+      : (columnWidths[columnKey] || 150) // Fallback to last set width or 150px
+
+    // Determine immediate right neighbor (Excel-like resize)
+    const currentEl = headerRefs.current?.[columnKey]
+    const nextEl = currentEl?.nextElementSibling || null
+    let neighborKey = null
+    if (nextEl) {
+      for (const k in headerRefs.current) {
+        if (headerRefs.current[k] === nextEl) { neighborKey = k; break }
+      }
+    }
+    resizeRightNeighborKey.current = neighborKey
+    if (neighborKey) {
+      const nMeasured = headerRefs.current?.[neighborKey]?.getBoundingClientRect()?.width
+      resizeRightStartWidth.current = (typeof nMeasured === 'number' && nMeasured > 0) ? nMeasured : (columnWidths[neighborKey] || 150)
+    } else {
+      resizeRightStartWidth.current = 0
+    }
   }, [columnWidths])
 
   const handleResizeMove = useCallback((e) => {
     if (!resizingColumn) return
-    const diff = e.clientX - resizeStartX.current
-    const newWidth = Math.max(50, resizeStartWidth.current + diff) // Min width 50px
-    setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
+    // Use requestAnimationFrame for smooth rendering
+    if (resizeRAF.current) {
+      cancelAnimationFrame(resizeRAF.current)
+    }
+    resizeRAF.current = requestAnimationFrame(() => {
+      const diff = e.clientX - resizeStartX.current
+      // Allow both directions with min width 50px
+      const leftWidth = Math.max(50, resizeStartWidth.current + diff)
+
+      // Adjust right neighbor inversely to keep total steady (Excel-like)
+      const rKey = resizeRightNeighborKey.current
+      if (rKey) {
+        const rightWidth = Math.max(50, resizeRightStartWidth.current - diff)
+        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth, [rKey]: rightWidth }))
+      } else {
+        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth }))
+      }
+    })
   }, [resizingColumn])
 
   const handleResizeEnd = useCallback(() => {
+    if (resizeRAF.current) {
+      cancelAnimationFrame(resizeRAF.current)
+      resizeRAF.current = null
+    }
     setResizingColumn(null)
   }, [])
 
@@ -359,6 +439,29 @@ const ClientsPage = () => {
       }
     }
   }, [resizingColumn, handleResizeMove, handleResizeEnd])
+
+  // Auto-fit like Excel on double click
+  const ensureCanvas = () => {
+    if (!measureCanvasRef.current) {
+      const c = document.createElement('canvas')
+      measureCanvasRef.current = c.getContext('2d')
+    }
+    return measureCanvasRef.current
+  }
+
+  const measureText = (text) => {
+    try {
+      const ctx = ensureCanvas()
+      if (!ctx) return String(text || '').length * 8
+      // Match table cell font (Tailwind text-sm -> 14px)
+      ctx.font = '14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial'
+      return ctx.measureText(String(text ?? '')).width
+    } catch {
+      return String(text || '').length * 8
+    }
+  }
+
+  
 
   // Zoom handlers
   const handleZoomIn = useCallback(() => {
@@ -404,7 +507,9 @@ const ClientsPage = () => {
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
+    if (!Array.isArray(clients)) return []
     clients.forEach(client => {
+      if (!client) return
       const value = client[columnKey]
       if (value !== null && value !== undefined && value !== '') {
         values.add(value)
@@ -462,7 +567,8 @@ const ClientsPage = () => {
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
-      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      const textFilterKey = `${columnKey}_text`
+      const { [columnKey]: _, [numberFilterKey]: __, [textFilterKey]: ___, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
@@ -479,8 +585,11 @@ const ClientsPage = () => {
     // Check for number filter
     const numberFilterKey = `${columnKey}_number`
     const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
+    // Check for text filter
+    const textFilterKey = `${columnKey}_text`
+    const hasTextFilter = columnFilters[textFilterKey] ? 1 : 0
     
-    return checkboxCount + hasNumberFilter
+    return checkboxCount + hasNumberFilter + hasTextFilter
   }
 
   const isAllSelected = (columnKey) => {
@@ -516,6 +625,32 @@ const ClientsPage = () => {
     setCustomFilterType('equal')
   }
 
+  // Apply custom text filter
+  const applyCustomTextFilter = () => {
+    if (!customTextFilterColumn) return
+
+    const filterConfig = {
+      type: customTextFilterType, // 'equal' | 'notEqual' | 'startsWith' | 'endsWith' | 'contains' | 'doesNotContain'
+      value: customTextFilterValue || '',
+      caseSensitive: !!customTextFilterCaseSensitive
+    }
+
+    setColumnFilters(prev => ({
+      ...prev,
+      [`${customTextFilterColumn}_text`]: filterConfig
+    }))
+
+    // Close modal and dropdown
+    setShowCustomTextFilterModal(false)
+    setShowFilterDropdown(null)
+    setShowTextFilterDropdown(null)
+
+    // Reset form
+    setCustomTextFilterValue('')
+    setCustomTextFilterType('contains')
+    setCustomTextFilterCaseSensitive(false)
+  }
+
   // Check if value matches number filter
   const matchesNumberFilter = (value, filterConfig) => {
     if (!filterConfig) return true
@@ -540,6 +675,34 @@ const ClientsPage = () => {
         return numValue >= value1
       case 'between':
         return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
+  }
+
+  // Check if value matches text filter
+  const matchesTextFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    const { type, value: needle, caseSensitive } = filterConfig
+    if (needle == null || needle === '') return true
+    const hayRaw = value == null ? '' : String(value)
+    const needleRaw = String(needle)
+    const hay = caseSensitive ? hayRaw : hayRaw.toLowerCase()
+    const n = caseSensitive ? needleRaw : needleRaw.toLowerCase()
+
+    switch (type) {
+      case 'equal':
+        return hay === n
+      case 'notEqual':
+        return hay !== n
+      case 'startsWith':
+        return hay.startsWith(n)
+      case 'endsWith':
+        return hay.endsWith(n)
+      case 'contains':
+        return hay.includes(n)
+      case 'doesNotContain':
+        return !hay.includes(n)
       default:
         return true
     }
@@ -572,6 +735,14 @@ const ClientsPage = () => {
           const clientValue = client[actualColumnKey]
           return matchesNumberFilter(clientValue, values)
         })
+      } else if (columnKey.endsWith('_text')) {
+        // Text filter
+        const actualColumnKey = columnKey.replace('_text', '')
+        filtered = filtered.filter(client => {
+          if (!client) return false
+          const clientValue = client[actualColumnKey]
+          return matchesTextFilter(clientValue, values)
+        })
       } else if (values && values.length > 0) {
         // Regular checkbox filter
         filtered = filtered.filter(client => {
@@ -588,6 +759,31 @@ const ClientsPage = () => {
   // Sorting function with type detection
   const sortClients = useCallback((clientsToSort) => {
     if (!sortColumn) return clientsToSort
+    
+    // GUARD: Check for duplicate logins before sorting (prevents React key errors)
+    const loginSet = new Set()
+    const hasDuplicates = clientsToSort.some(client => {
+      if (loginSet.has(client.login)) {
+        return true
+      }
+      loginSet.add(client.login)
+      return false
+    })
+    
+    // If duplicates detected, deduplicate before sorting
+    if (hasDuplicates) {
+      const deduped = Array.from(
+        clientsToSort.reduce((map, client) => {
+          map.set(client.login, client)
+          return map
+        }, new Map()).values()
+      )
+      // Only log if significant duplicates found (more than 5% of data)
+      if ((clientsToSort.length - deduped.length) > clientsToSort.length * 0.05) {
+        console.warn(`[ClientsPage] ⚠️ EXCESSIVE DUPLICATES: ${clientsToSort.length - deduped.length} clients deduplicated before sort`)
+      }
+      clientsToSort = deduped
+    }
     
     const sorted = [...clientsToSort].sort((a, b) => {
       // Determine actual field to sort by
@@ -700,17 +896,26 @@ const ClientsPage = () => {
     return sortClients(groupFilteredBase)
   }, [clients, getFilteredClients, searchClients, sortClients, filterByActiveGroup, activeGroupFilters])
   
-  // Handle column header click for sorting
-  const handleSort = (columnKey) => {
-    if (sortColumn === columnKey) {
-      // Toggle direction if same column
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
-    } else {
-      // New column, default to ascending
-      setSortColumn(columnKey)
-      setSortDirection('asc')
+  // Handle column header click for sorting with debounce protection
+  const sortTimeoutRef = useRef(null)
+  const handleSort = useCallback((columnKey) => {
+    // Clear any pending sort operation
+    if (sortTimeoutRef.current) {
+      clearTimeout(sortTimeoutRef.current)
     }
-  }
+    
+    // Debounce rapid clicks (150ms) to prevent duplicate key errors during rapid sorting
+    sortTimeoutRef.current = setTimeout(() => {
+      if (sortColumn === columnKey) {
+        // Toggle direction if same column
+        setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+      } else {
+        // New column, default to ascending
+        setSortColumn(columnKey)
+        setSortDirection('asc')
+      }
+    }, 150)
+  }, [sortColumn])
   
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
@@ -732,16 +937,65 @@ const ClientsPage = () => {
   
   const pageSizeOptions = generatePageSizeOptions()
   
-  // Pagination logic - memoized
+  // Pagination logic - memoized with duplicate protection
   const { totalPages, displayedClients } = useMemo(() => {
     const total = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
     const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
     const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
+    
+    // Final guard: Ensure no duplicate keys in displayedClients before rendering
+    const sliced = filteredClients.slice(startIndex, endIndex)
+    const loginSet = new Set()
+    const deduped = sliced.filter(client => {
+      if (loginSet.has(client.login)) {
+        return false
+      }
+      loginSet.add(client.login)
+      return true
+    })
+    
+    // Only log if excessive duplicates (>5% or >20 duplicates)
+    const dupCount = sliced.length - deduped.length
+    if (dupCount > 20 || (dupCount > 0 && dupCount > sliced.length * 0.05)) {
+      console.warn(`[ClientsPage] ⚠️ EXCESSIVE DUPLICATES: Filtered ${dupCount} duplicate keys from ${sliced.length} displayed clients`)
+    }
+    
     return {
       totalPages: total,
-      displayedClients: filteredClients.slice(startIndex, endIndex)
+      displayedClients: deduped
     }
   }, [filteredClients, itemsPerPage, currentPage])
+
+  // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
+  const handleAutoFit = useCallback((visKey, baseKey) => {
+    // Compute header label width
+    const colMeta = allColumns.find(c => c.key === baseKey)
+    const headerLabel = (visKey && visKey.endsWith('_percentage_display')) && colMeta ? `${colMeta.label} %` : (colMeta?.label || baseKey)
+    let maxW = measureText(headerLabel)
+
+    // Sample displayed rows (up to 100) for visible text widths
+    const sample = Array.isArray(displayedClients) ? displayedClients.slice(0, 100) : []
+    for (let i = 0; i < sample.length; i++) {
+      const client = sample[i]
+      if (!client) continue
+      let str
+      if (visKey && visKey.endsWith('_percentage_display')) {
+        // percentage
+        const percKey = percentageFieldMap[baseKey]
+        const val = percKey ? client[percKey] : undefined
+        str = formatPercent(val)
+      } else {
+        str = formatValue(baseKey, client[baseKey], client)
+      }
+      maxW = Math.max(maxW, measureText(str))
+    }
+
+    // Add padding and small buffer for icons
+    const paddingLR = 24 // px-3 left+right
+    const buffer = 20
+    const target = Math.max(50, Math.min(Math.ceil(maxW + paddingLR + buffer), 450))
+    setColumnWidths(prev => ({ ...prev, [visKey]: target }))
+  }, [displayedClients, percentageFieldMap])
   
   // Reset to page 1 when filters or items per page changes
   useEffect(() => {
@@ -833,8 +1087,8 @@ const ClientsPage = () => {
       totalEquity += c.equity || 0
       totalPnl += c.pnl || 0
       totalProfit += c.profit || 0
-      dailyDeposit += c.daily_deposit || 0
-      dailyWithdrawal += c.daily_withdrawal || 0
+      dailyDeposit += c.dailyDeposit || 0  // Fixed: API uses camelCase
+      dailyWithdrawal += c.dailyWithdrawal || 0  // Fixed: API uses camelCase
       dailyPnL += (c.dailyPnL || 0) * -1
       thisWeekPnL += (c.thisWeekPnL || 0) * -1
       thisMonthPnL += (c.thisMonthPnL || 0) * -1
@@ -1690,15 +1944,16 @@ const ClientsPage = () => {
 
           {/* Data Table */}
           <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
-            height: showFaceCards ? 'calc(100vh - 480px)' : 'calc(100vh - 260px)',
-            minHeight: '400px',
+            height: showFaceCards ? 'calc(100vh - 380px)' : 'calc(100vh - 200px)',
+            minHeight: '350px',
             overflow: 'hidden'
           }}>
             <div className="overflow-y-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
               scrollbarColor: '#3b82f6 #e5e7eb',
               zoom: `${zoomLevel}%`,
-              position: 'relative'
+              position: 'relative',
+              willChange: 'scroll-position'
             }}>
               <style>{`
                 .flex-1::-webkit-scrollbar {
@@ -1715,8 +1970,8 @@ const ClientsPage = () => {
                   background: #1d4ed8;
                 }
               `}</style>
-              <table ref={tableRef} className="w-full divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed' }}>
-                <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible' }}>
+              <table ref={tableRef} className="w-full divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed', willChange: 'contents' }}>
+                <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible', willChange: 'auto' }}>
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
@@ -1748,12 +2003,14 @@ const ClientsPage = () => {
                         <th
                           key={col.key}
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all"
-                          style={{ width: columnWidths[col.key] || col.width + '%', overflow: 'visible', position: 'relative' }}
+                          ref={el => { if (el) { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el } }}
+                          style={{ width: columnWidths[col.key] || col.width + '%', minWidth: 50, overflow: 'visible', position: 'relative' }}
                         >
                           {/* Column Resize Handle */}
                           <div 
-                            className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20 group/resize"
+                            className="absolute right-0 top-0 w-2 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20 group/resize"
                             onMouseDown={(e) => handleResizeStart(e, col.key)}
+                            onDoubleClick={() => handleAutoFit(col.key, col.baseKey)}
                             title="Drag to resize column"
                           >
                             <div className="absolute right-0 top-0 w-1.5 h-full bg-white/30 group-hover/resize:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
@@ -1826,7 +2083,7 @@ const ClientsPage = () => {
                                 {showFilterDropdown === col.baseKey && filterPosition && createPortal(
                                   <div 
                                     ref={filterPanelRef}
-                                    className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 h-[500px] flex flex-col"
+                                    className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 h-[500px] flex flex-col text-[11px]"
                                     onClick={(e) => e.stopPropagation()}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onWheel={(e) => e.stopPropagation()}
@@ -1835,7 +2092,7 @@ const ClientsPage = () => {
                                       top: `${Math.min(filterPosition.top + 40, window.innerHeight * 0.2)}px`,
                                       left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
                                       right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
-                                      zIndex: 9999999
+                                      zIndex: 20000000
                                     }}>
                                     {/* Header */}
                                     <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 rounded-t-lg">
@@ -1855,6 +2112,22 @@ const ClientsPage = () => {
                                       </div>
                                     </div>
 
+                                    {/* Quick Clear Filter (top like Syncfusion) */}
+                                    <div className="border-b border-slate-200 py-1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          clearColumnFilter(col.baseKey)
+                                        }}
+                                        className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Clear Filter
+                                      </button>
+                                    </div>
+
                                     {/* Sort Options */}
                                     <div className="border-b border-slate-200 py-1">
                                       <button
@@ -1863,7 +2136,7 @@ const ClientsPage = () => {
                                           handleSort(col.key)
                                           setSortDirection('asc')
                                         }}
-                                        className="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                                        className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                                       >
                                         <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -1876,55 +2149,43 @@ const ClientsPage = () => {
                                           handleSort(col.key)
                                           setSortDirection('desc')
                                         }}
-                                        className="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                                        className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                                       >
                                         <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                                         </svg>
                                         Sort Largest to Smallest
                                       </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          clearColumnFilter(col.baseKey)
-                                        }}
-                                        className="w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
-                                      >
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                        </svg>
-                                        Clear Filter
-                                      </button>
                                     </div>
 
-                                    {/* Number Filters (for all columns) */}
-                                    <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
-                                      <div className="px-2 py-1 relative group" style={{ overflow: 'visible' }}>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
-                                          }}
-                                          className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
-                                        >
-                                          <span>Number Filters</span>
-                                          <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                                          </svg>
-                                        </button>
-                                        
-                                        {/* Number Filter Dropdown - Opens to the right or left based on position */}
-                                        {showNumberFilterDropdown === col.baseKey && (
-                                          <div 
-                                            className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                                            style={{
-                                              left: isLastColumn ? 'auto' : 'calc(100% + 8px)',
-                                              right: isLastColumn ? 'calc(100% + 8px)' : 'auto',
-                                              zIndex: 100000
+                                    {/* Number Filters (only for numeric columns) */}
+                                    {!isStringColumn(col.baseKey) && (
+                                      <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                                        <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setShowNumberFilterDropdown(showNumberFilterDropdown === col.baseKey ? null : col.baseKey)
                                             }}
-                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                                           >
-                                            <div className="text-xs text-slate-700 py-1">
+                                            <span>Number Filters</span>
+                                            <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                          </button>
+                                          
+                                          {/* Number Filter Dropdown - Opens to the left to avoid overlap */}
+                                          {showNumberFilterDropdown === col.baseKey && (
+                                            <div 
+                                              className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                                              style={{
+                                                left: 'calc(100% + 8px)',
+                                                zIndex: 10000000
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                            <div className="text-[11px] text-slate-700 py-1">
                                               <div 
                                                 className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                                                 onClick={(e) => {
@@ -2018,6 +2279,44 @@ const ClientsPage = () => {
                                         )}
                                       </div>
                                     </div>
+                                    )}
+
+                                    {/* Text Filters (only for string columns) */}
+                                    {isStringColumn(col.baseKey) && (
+                                      <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                                        <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setShowTextFilterDropdown(showTextFilterDropdown === col.baseKey ? null : col.baseKey)
+                                            }}
+                                            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                                          >
+                                            <span>Text Filters</span>
+                                            <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                          </button>
+                                          {showTextFilterDropdown === col.baseKey && (
+                                            <div 
+                                              className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                                              style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <div className="text-[11px] text-slate-700 py-1">
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('equal'); setShowCustomTextFilterModal(true) }}>Equal...</div>
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('notEqual'); setShowCustomTextFilterModal(true) }}>Not Equal...</div>
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('startsWith'); setShowCustomTextFilterModal(true) }}>Starts With...</div>
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('endsWith'); setShowCustomTextFilterModal(true) }}>Ends With...</div>
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('contains'); setShowCustomTextFilterModal(true) }}>Contains...</div>
+                                                <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('doesNotContain'); setShowCustomTextFilterModal(true) }}>Does Not Contain...</div>
+                                                <div className="hover:bg-gray-50 px-2 py-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); setCustomTextFilterColumn(col.baseKey); setCustomTextFilterType('contains'); setShowCustomTextFilterModal(true) }}>Custom Filter...</div>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {/* Search Box */}
                                     <div className="p-2 border-b border-slate-200">
@@ -2034,7 +2333,7 @@ const ClientsPage = () => {
                                             }))
                                           }}
                                           onClick={(e) => e.stopPropagation()}
-                                          className="w-full pl-8 pr-3 py-1.5 text-xs font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                                          className="w-full pl-8 pr-3 py-1 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                                         />
                                         <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -2098,7 +2397,7 @@ const ClientsPage = () => {
                                           getUniqueColumnValues(col.baseKey).map(value => (
                                             <label 
                                               key={value} 
-                                              className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1.5 rounded-md cursor-pointer transition-colors"
+                                              className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded-md cursor-pointer transition-colors text-[11px]"
                                               onClick={(e) => e.stopPropagation()}
                                             >
                                               <input
@@ -2111,7 +2410,7 @@ const ClientsPage = () => {
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="w-3.5 h-3.5 rounded border-slate-300 text-slate-600 focus:ring-slate-400"
                                               />
-                                              <span className="text-xs text-slate-700 font-medium truncate flex-1">
+                                              <span className="text-[11px] text-slate-700 font-medium truncate flex-1">
                                                 {formatValue(col.baseKey, value)}
                                               </span>
                                             </label>
@@ -2121,7 +2420,7 @@ const ClientsPage = () => {
                                     </div>
 
                                     {/* Footer with Action Buttons */}
-                                    <div className="px-2 py-1.5 border-t border-gray-200 bg-gray-50 rounded-b flex items-center justify-between">
+                                    <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b flex items-center justify-between text-[11px]">
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
@@ -2220,7 +2519,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: columnWidths[col.key] || `${col.width}%` }}>
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 50 }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>
@@ -2267,11 +2566,11 @@ const ClientsPage = () => {
 
       {/* Custom Filter Modal */}
       {showCustomFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000000]">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" style={{ marginLeft: '12vw' }} onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
+            <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Custom Filter</h3>
               <button
                 onClick={() => {
                   setShowCustomFilterModal(false)
@@ -2287,10 +2586,10 @@ const ClientsPage = () => {
             </div>
 
             {/* Body */}
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-3 text-[12px]">
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
-                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
+                <p className="text-[12px] font-medium text-gray-700 mb-2">Show rows where:</p>
+                <p className="text-[12px] text-gray-600 mb-3">{customFilterColumn}</p>
               </div>
 
               {/* Filter Type Dropdown */}
@@ -2298,7 +2597,7 @@ const ClientsPage = () => {
                 <select
                   value={customFilterType}
                   onChange={(e) => setCustomFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-[12px]"
                 >
                   <option value="equal">Equal</option>
                   <option value="notEqual">Not Equal</option>
@@ -2317,7 +2616,7 @@ const ClientsPage = () => {
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
                   placeholder="Enter the value"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-[12px]"
                 />
               </div>
 
@@ -2332,7 +2631,7 @@ const ClientsPage = () => {
                         onChange={() => setCustomFilterOperator('AND')}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">AND</span>
+                      <span className="text-[12px] text-gray-700">AND</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -2341,7 +2640,7 @@ const ClientsPage = () => {
                         onChange={() => setCustomFilterOperator('OR')}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">OR</span>
+                      <span className="text-[12px] text-gray-700">OR</span>
                     </label>
                   </div>
 
@@ -2351,7 +2650,7 @@ const ClientsPage = () => {
                       value={customFilterValue2}
                       onChange={(e) => setCustomFilterValue2(e.target.value)}
                       placeholder="Enter the value"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-[12px]"
                     />
                   </div>
                 </>
@@ -2359,21 +2658,110 @@ const ClientsPage = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
+            <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-end gap-2">
               <button
                 onClick={() => {
                   setShowCustomFilterModal(false)
                   setCustomFilterValue1('')
                   setCustomFilterValue2('')
                 }}
-                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                className="px-3 py-1.5 text-[12px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={applyCustomNumberFilter}
                 disabled={!customFilterValue1}
-                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-[12px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Text Filter Modal */}
+      {showCustomTextFilterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000000]">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" style={{ marginLeft: '12vw' }} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Text Filter</h3>
+              <button
+                onClick={() => {
+                  setShowCustomTextFilterModal(false)
+                  setCustomTextFilterValue('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-3 space-y-3 text-[12px]">
+              <div>
+                <p className="text-[12px] font-medium text-gray-700 mb-2">Show rows where:</p>
+                <p className="text-[12px] text-gray-600 mb-3">{customTextFilterColumn}</p>
+              </div>
+
+              {/* Filter Type Dropdown */}
+              <div>
+                <select
+                  value={customTextFilterType}
+                  onChange={(e) => setCustomTextFilterType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-[12px]"
+                >
+                  <option value="equal">Equal</option>
+                  <option value="notEqual">Not Equal</option>
+                  <option value="startsWith">Starts With</option>
+                  <option value="endsWith">Ends With</option>
+                  <option value="contains">Contains</option>
+                  <option value="doesNotContain">Does Not Contain</option>
+                </select>
+              </div>
+
+              {/* Value Input */}
+              <div>
+                <input
+                  type="text"
+                  value={customTextFilterValue}
+                  onChange={(e) => setCustomTextFilterValue(e.target.value)}
+                  placeholder="Enter text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 text-[12px]"
+                />
+              </div>
+
+              {/* Case Sensitive */}
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={customTextFilterCaseSensitive}
+                  onChange={(e) => setCustomTextFilterCaseSensitive(e.target.checked)}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-[12px] text-gray-700">Case sensitive</span>
+              </label>
+            </div>
+
+            {/* Footer */}
+            <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCustomTextFilterModal(false)
+                  setCustomTextFilterValue('')
+                }}
+                className="px-3 py-1.5 text-[12px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyCustomTextFilter}
+                disabled={!customTextFilterColumn}
+                className="px-3 py-1.5 text-[12px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 OK
               </button>

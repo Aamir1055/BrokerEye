@@ -335,6 +335,38 @@ export const brokerAPI = {
   removeClientRule: async (login, ruleCode) => {
     const response = await api.delete(`/api/broker/clients/${login}/rules/${ruleCode}`)
     return response.data
+  },
+
+  // Get IB commissions with pagination and search
+  getIBCommissions: async (page = 1, pageSize = 50, search = '') => {
+    let url = `/api/amari/ib/commissions?page=${page}&page_size=${pageSize}`
+    if (search && search.trim()) {
+      url += `&search=${encodeURIComponent(search.trim())}`
+    }
+    const response = await api.get(url)
+    return response.data
+  },
+
+  // Get IB percentage by ID
+  getIBPercentage: async (id) => {
+    const response = await api.get(`/api/amari/ib/commissions/${id}/percentage`)
+    return response.data
+  },
+
+  // Update IB percentage
+  updateIBPercentage: async (id, percentage) => {
+    const response = await api.put(`/api/amari/ib/commissions/${id}/percentage`, {
+      percentage
+    })
+    return response.data
+  },
+
+  // Bulk update IB percentages
+  bulkUpdateIBPercentages: async (updates) => {
+    const response = await api.post('/api/amari/ib/commissions/percentage/bulk', {
+      updates
+    })
+    return response.data
   }
 }
 
