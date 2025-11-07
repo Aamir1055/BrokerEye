@@ -281,10 +281,10 @@ const IBCommissionsPage = () => {
 
   // Helpers to parse number filter input like ">=10", "10-20", "<5", or plain number
   const matchesNumberFilter = (value, filterStr) => {
-    if (filterStr == null || filterStr.trim() === '') return true
+    if (filterStr == null || String(filterStr).trim() === '') return true
     const v = parseFloat(value)
     if (isNaN(v)) return false
-    const s = filterStr.trim()
+    const s = String(filterStr).trim()
     // range: a-b
     const rangeMatch = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[-:]\s*(-?\d+(?:\.\d+)?)\s*$/)
     if (rangeMatch) {
@@ -293,11 +293,12 @@ const IBCommissionsPage = () => {
       return v >= Math.min(min, max) && v <= Math.max(min, max)
     }
     // operators
-    const opMatch = s.match(/^\s*(<=|>=|<|>|=)?\s*(-?\d+(?:\.\d+)?)\s*$/)
+    const opMatch = s.match(/^\s*(<=|>=|<|>|=|!=)?\s*(-?\d+(?:\.\d+)?)\s*$/)
     if (opMatch) {
       const op = opMatch[1] || '='
       const num = parseFloat(opMatch[2])
       switch (op) {
+        case '!=': return v !== num
         case '<': return v < num
         case '<=': return v <= num
         case '>': return v > num
@@ -309,10 +310,28 @@ const IBCommissionsPage = () => {
     return String(value).toLowerCase().includes(s.toLowerCase())
   }
 
-  const matchesTextFilter = (value, filterStr) => {
-    if (filterStr == null || filterStr.trim() === '') return true
-    const s = filterStr.trim().toLowerCase()
-    return String(value ?? '').toLowerCase().includes(s)
+  const matchesTextFilter = (value, filterObj) => {
+    if (!filterObj) return true
+    const valRaw = String(value ?? '')
+    const caseSensitive = !!filterObj.caseSensitive
+    const cmp = caseSensitive ? valRaw : valRaw.toLowerCase()
+    const needle = caseSensitive ? String(filterObj.expr || '') : String(filterObj.expr || '').toLowerCase()
+    const op = filterObj.op || 'contains'
+    switch (op) {
+      case 'equal':
+        return cmp === needle
+      case 'notEqual':
+        return cmp !== needle
+      case 'startsWith':
+        return cmp.startsWith(needle)
+      case 'endsWith':
+        return cmp.endsWith(needle)
+      case 'doesNotContain':
+        return !cmp.includes(needle)
+      case 'contains':
+      default:
+        return cmp.includes(needle)
+    }
   }
 
   const matchesDateFilter = (value, filterStr) => {
@@ -423,7 +442,7 @@ const IBCommissionsPage = () => {
           ok = matchesNumberFilter(row[base], v?.expr || '')
         } else if (k.endsWith('_text')) {
           const base = k.replace('_text','')
-          ok = matchesTextFilter(row[base], v?.expr || '')
+          ok = matchesTextFilter(row[base], v)
         } else if (Array.isArray(v) && v.length > 0) {
           ok = v.includes(String(row[k] ?? ''))
         }
@@ -741,7 +760,7 @@ const IBCommissionsPage = () => {
                           <th 
                             key={col.key}
                             ref={el => { if (el) { headerRefs.current[col.key] = el; filterRefs.current[col.key] = el } }}
-                            className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 relative group cursor-pointer hover:bg-blue-700 transition-colors"
+                            className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 border-r border-blue-500/50 relative group cursor-pointer hover:bg-blue-700 transition-colors"
                             style={{ width: col.width, textAlign: col.align }}
                             onClick={() => col.key !== 'action' && handleSort(col.key)}
                           >
@@ -749,12 +768,13 @@ const IBCommissionsPage = () => {
                               <span>{col.label}</span>
                               {col.key !== 'action' && (
                                 <button
-                                  className="ml-1 p-0.5 rounded hover:bg-white/10"
+                                  className="ml-1 p-0.5 rounded hover:bg-white/10 text-white/90"
                                   title="Filter"
                                   onClick={(e) => { e.stopPropagation(); openFilterMenu(col.key) }}
                                 >
-                                  <svg className="w-3.5 h-3.5 text-white/90" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                                  {/* Heroicons outline funnel */}
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 9h12M9 14h6M11 19h2" />
                                   </svg>
                                 </button>
                               )}
@@ -868,7 +888,7 @@ const IBCommissionsPage = () => {
                           {/* Search box */}
                           <div className="p-2 border-b border-slate-200">
                             <div className="relative">
-                              <input type="text" placeholder="Search values..." value={filterSearchQuery[showFilterDropdown] || ''} onChange={(e) => setFilterSearchQuery(prev => ({ ...prev, [showFilterDropdown]: e.target.value }))} className="w-full pl-8 pr-3 py-1 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400" />
+                              <input type="text" placeholder="Search values..." value={filterSearchQuery[showFilterDropdown] || ''} onChange={(e) => setFilterSearchQuery(prev => ({ ...prev, [showFilterDropdown]: e.target.value }))} className="w-full pl-8 pr-3 py-1 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 text-gray-700 placeholder:text-gray-400" />
                               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             </div>
                           </div>
@@ -887,7 +907,7 @@ const IBCommissionsPage = () => {
                               {getUniqueColumnValues(showFilterDropdown).map(v => (
                                 <label key={v} className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded-md cursor-pointer">
                                   <input type="checkbox" checked={(columnFilters[showFilterDropdown] || []).includes(v)} onChange={() => toggleColumnFilter(showFilterDropdown, v)} className="w-3.5 h-3.5 rounded border-slate-300" />
-                                  <span className="text-[11px] text-slate-700 truncate flex-1">{v || '(blank)'}</span>
+                                  <span className="text-[11px] text-gray-700 truncate flex-1">{v || '(blank)'}</span>
                                 </label>
                               ))}
                             </div>
