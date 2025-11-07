@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
+import { brokerAPI } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import QuickActionCard from '../components/dashboard/QuickActionCard'
 import MiniDataTable from '../components/dashboard/MiniDataTable'
@@ -13,14 +14,44 @@ const DashboardPage = () => {
   const { clients, positions, orders, clientStats, loading, connectionState } = useData()
   const navigate = useNavigate()
 
-  // Default card order (IDs 1-17)
-  const defaultCardOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  // Commission totals state
+  const [commissionTotals, setCommissionTotals] = useState(null)
+
+  // Face card drag and drop - using same card system as ClientsPage (cards 1-50)
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 14, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
   
   // Load card order from localStorage or use default
-  const [cardOrder, setCardOrder] = useState(() => {
-    const saved = localStorage.getItem('dashboardCardOrder')
-    return saved ? JSON.parse(saved) : defaultCardOrder
+  const [faceCardOrder, setFaceCardOrder] = useState(() => {
+    const saved = localStorage.getItem('dashboardFaceCardOrder')
+    return saved ? JSON.parse(saved) : defaultFaceCardOrder
   })
+
+  // Card visibility filter - Default all cards visible
+  const defaultCardVisibility = {
+    1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
+    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true,
+    15: true, 16: true, 17: true, 18: true, // Commission metrics
+    19: true, // Blocked Commission
+    20: true, 21: true, 22: true, // Daily Bonus IN/OUT/NET
+    23: true, 24: true, 25: true, // Weekly Bonus IN/OUT/NET
+    26: true, 27: true, 28: true, // Monthly Bonus IN/OUT/NET
+    29: true, 30: true, 31: true, // Lifetime Bonus IN/OUT/NET
+    32: true, 33: true, 34: true, // Weekly Deposit/Withdrawal/NET DW
+    35: true, 36: true, 37: true, // Monthly Deposit/Withdrawal/NET DW
+    38: true, 39: true, 40: true, // Lifetime Deposit/Withdrawal/NET DW
+    41: true, 42: true, 43: true, // Weekly/Monthly/Lifetime Credit IN
+    44: true, 45: true, 46: true, // Weekly/Monthly/Lifetime Credit OUT
+    47: true, // NET Credit
+    48: true, 49: true, 50: true  // Weekly/Monthly/Previous Equity
+  }
+
+  const [cardVisibility, setCardVisibility] = useState(() => {
+    const saved = localStorage.getItem('dashboardCardVisibility')
+    return saved ? JSON.parse(saved) : defaultCardVisibility
+  })
+
+  // Show/hide card filter dropdown
+  const [showCardFilter, setShowCardFilter] = useState(false)
 
   // Drag and drop state
   const [draggedCard, setDraggedCard] = useState(null)
@@ -48,7 +79,7 @@ const DashboardPage = () => {
     
     if (draggedCard === targetCardId) return
 
-    const newOrder = [...cardOrder]
+    const newOrder = [...faceCardOrder]
     const draggedIndex = newOrder.indexOf(draggedCard)
     const targetIndex = newOrder.indexOf(targetCardId)
 
@@ -56,222 +87,239 @@ const DashboardPage = () => {
     newOrder[draggedIndex] = targetCardId
     newOrder[targetIndex] = draggedCard
 
-    setCardOrder(newOrder)
-    localStorage.setItem('dashboardCardOrder', JSON.stringify(newOrder))
+    setFaceCardOrder(newOrder)
+    localStorage.setItem('dashboardFaceCardOrder', JSON.stringify(newOrder))
   }
 
   // Reset card order to default
   const resetCardOrder = () => {
-    setCardOrder(defaultCardOrder)
-    localStorage.setItem('dashboardCardOrder', JSON.stringify(defaultCardOrder))
+    setFaceCardOrder(defaultFaceCardOrder)
+    localStorage.setItem('dashboardFaceCardOrder', JSON.stringify(defaultFaceCardOrder))
   }
+
+  // Toggle card visibility
+  const toggleCardVisibility = (cardId) => {
+    const updated = { ...cardVisibility, [cardId]: !cardVisibility[cardId] }
+    setCardVisibility(updated)
+    localStorage.setItem('dashboardCardVisibility', JSON.stringify(updated))
+  }
+
+  // Fetch commission totals on mount and every hour
+  useEffect(() => {
+    const fetchCommissionTotals = async () => {
+      try {
+        console.log('[Dashboard] Fetching IB Commission Totals...')
+        const response = await brokerAPI.getIBCommissionTotals()
+        console.log('[Dashboard] Commission Totals Response:', response?.data)
+        setCommissionTotals(response?.data || null)
+      } catch (err) {
+        console.error('[Dashboard] Failed to fetch commission totals:', err)
+      }
+    }
+
+    // Initial fetch
+    fetchCommissionTotals()
+
+    // Refresh every hour (3600000 ms)
+    const interval = setInterval(fetchCommissionTotals, 3600000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Format Indian number (with commas)
-  const formatIndianNumber = (value) => {
-    if (value === null || value === undefined) return '0.00'
-    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const formatIndianNumber = (num) => {
+    const numStr = num.toString()
+    const [integerPart, decimalPart] = numStr.split('.')
+    
+    // Handle negative numbers
+    const isNegative = integerPart.startsWith('-')
+    const absoluteInteger = isNegative ? integerPart.substring(1) : integerPart
+    
+    if (absoluteInteger.length <= 3) {
+      return decimalPart ? `${integerPart}.${decimalPart}` : integerPart
+    }
+    
+    // Indian format: last 3 digits, then groups of 2
+    const lastThree = absoluteInteger.substring(absoluteInteger.length - 3)
+    const otherNumbers = absoluteInteger.substring(0, absoluteInteger.length - 3)
+    const formattedOther = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
+    const formatted = `${formattedOther},${lastThree}`
+    
+    const result = (isNegative ? '-' : '') + formatted
+    return decimalPart ? `${result}.${decimalPart}` : result
   }
 
-  // Get card configuration by ID
-  const getCardConfig = (cardId, stats) => {
+  // Calculate face card totals from clients data
+  const faceCardTotals = useMemo(() => {
+    const list = clients || []
+    const sum = (key) => list.reduce((acc, c) => {
+      const v = c?.[key]
+      return acc + (typeof v === 'number' ? v : 0)
+    }, 0)
+
+    // PnL special handling
+    const totalPnl = list.reduce((acc, c) => {
+      const hasPnl = typeof c?.pnl === 'number'
+      const computed = hasPnl ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
+      return acc + (typeof computed === 'number' && !Number.isNaN(computed) ? computed : 0)
+    }, 0)
+
+    // Bonus calculations
+    const dailyBonusIn = sum('dailyBonusIn')
+    const dailyBonusOut = sum('dailyBonusOut')
+    const weekBonusIn = sum('thisWeekBonusIn')
+    const weekBonusOut = sum('thisWeekBonusOut')
+    const monthBonusIn = sum('thisMonthBonusIn')
+    const monthBonusOut = sum('thisMonthBonusOut')
+    const lifetimeBonusIn = sum('lifetimeBonusIn')
+    const lifetimeBonusOut = sum('lifetimeBonusOut')
+
+    // Deposit/Withdrawal calculations
+    const weekDeposit = sum('thisWeekDeposit')
+    const weekWithdrawal = sum('thisWeekWithdrawal')
+    const monthDeposit = sum('thisMonthDeposit')
+    const monthWithdrawal = sum('thisMonthWithdrawal')
+    const lifetimeDeposit = sum('lifetimeDeposit')
+    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
+
+    // Credit IN/OUT calculations
+    const weekCreditIn = sum('thisWeekCreditIn')
+    const monthCreditIn = sum('thisMonthCreditIn')
+    const lifetimeCreditIn = sum('lifetimeCreditIn')
+    const weekCreditOut = sum('thisWeekCreditOut')
+    const monthCreditOut = sum('thisMonthCreditOut')
+    const lifetimeCreditOut = sum('lifetimeCreditOut')
+
+    // Previous Equity calculations
+    const weekPreviousEquity = sum('thisWeekPreviousEquity')
+    const monthPreviousEquity = sum('thisMonthPreviousEquity')
+    const previousEquity = sum('previousEquity')
+
+    return {
+      totalClients: list.length,
+      totalBalance: sum('balance'),
+      totalCredit: sum('credit'),
+      totalEquity: sum('equity'),
+      totalPnl,
+      totalProfit: sum('profit'),
+      dailyDeposit: sum('dailyDeposit'),
+      dailyWithdrawal: sum('dailyWithdrawal'),
+      dailyPnL: sum('dailyPnL'),
+      thisWeekPnL: sum('thisWeekPnL'),
+      thisMonthPnL: sum('thisMonthPnL'),
+      lifetimePnL: sum('lifetimePnL'),
+      // Commission metrics from API
+      totalCommission: commissionTotals?.total_commission || 0,
+      availableCommission: commissionTotals?.total_available_commission || 0,
+      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
+      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+      blockedCommission: sum('blockedCommission'),
+      // Bonus metrics
+      dailyBonusIn,
+      dailyBonusOut,
+      netDailyBonus: dailyBonusIn - dailyBonusOut,
+      weekBonusIn,
+      weekBonusOut,
+      netWeekBonus: weekBonusIn - weekBonusOut,
+      monthBonusIn,
+      monthBonusOut,
+      netMonthBonus: monthBonusIn - monthBonusOut,
+      lifetimeBonusIn,
+      lifetimeBonusOut,
+      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
+      // Deposit/Withdrawal metrics
+      weekDeposit,
+      weekWithdrawal,
+      netWeekDW: weekDeposit - weekWithdrawal,
+      monthDeposit,
+      monthWithdrawal,
+      netMonthDW: monthDeposit - monthWithdrawal,
+      lifetimeDeposit,
+      lifetimeWithdrawal,
+      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
+      // Credit IN/OUT metrics
+      weekCreditIn,
+      monthCreditIn,
+      lifetimeCreditIn,
+      weekCreditOut,
+      monthCreditOut,
+      lifetimeCreditOut,
+      netCredit: lifetimeCreditIn - lifetimeCreditOut,
+      // Previous Equity metrics
+      weekPreviousEquity,
+      monthPreviousEquity,
+      previousEquity
+    }
+  }, [clients, commissionTotals])
+
+  // Get face card configuration by ID
+  const getFaceCardConfig = (cardId, stats) => {
+    const netDW = (stats.dailyDeposit || 0) - (stats.dailyWithdrawal || 0)
+    
     const configs = {
-      1: {
-        id: 1,
-        title: 'Total Client',
-        value: clientStats.totalClients,
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-600',
-        valueColor: 'text-gray-900'
-      },
-      2: {
-        id: 2,
-        title: 'Total Deposit',
-        value: formatIndianNumber(stats.totalDeposit),
-        borderColor: 'border-green-200',
-        textColor: 'text-green-600',
-        valueColor: 'text-green-700'
-      },
-      3: {
-        id: 3,
-        title: 'Total Withdrawal',
-        value: formatIndianNumber(stats.totalWithdrawal),
-        borderColor: 'border-red-200',
-        textColor: 'text-red-600',
-        valueColor: 'text-red-700'
-      },
-      4: {
-        id: 4,
-        title: 'Net Deposit',
-        value: stats.netDeposit,
-        borderColor: stats.netDeposit >= 0 ? 'border-emerald-200' : 'border-rose-200',
-        textColor: stats.netDeposit >= 0 ? 'text-emerald-600' : 'text-rose-600',
-        valueColor: stats.netDeposit >= 0 ? 'text-emerald-700' : 'text-rose-700',
-        showArrow: true,
-        isPositive: stats.netDeposit >= 0,
-        formattedValue: formatIndianNumber(Math.abs(stats.netDeposit))
-      },
-      5: {
-        id: 5,
-        title: 'Total Balance',
-        value: formatIndianNumber(clientStats.totalBalance),
-        borderColor: 'border-indigo-200',
-        textColor: 'text-indigo-600',
-        valueColor: 'text-gray-900'
-      },
-      6: {
-        id: 6,
-        title: 'Total Equity',
-        value: formatIndianNumber(clientStats.totalEquity),
-        borderColor: 'border-sky-200',
-        textColor: 'text-sky-600',
-        valueColor: 'text-gray-900'
-      },
-      7: {
-        id: 7,
-        title: 'Total Correction',
-        value: formatIndianNumber(stats.totalCorrection),
-        borderColor: 'border-purple-200',
-        textColor: 'text-purple-600',
-        valueColor: 'text-gray-900'
-      },
-      8: {
-        id: 8,
-        title: 'Total Credit IN',
-        value: formatIndianNumber(stats.creditIn),
-        borderColor: 'border-emerald-200',
-        textColor: 'text-emerald-600',
-        valueColor: 'text-emerald-700'
-      },
-      9: {
-        id: 9,
-        title: 'Total Credit Out',
-        value: formatIndianNumber(stats.creditOut),
-        borderColor: 'border-orange-200',
-        textColor: 'text-orange-600',
-        valueColor: 'text-orange-700'
-      },
-      10: {
-        id: 10,
-        title: 'Net Credit',
-        value: formatIndianNumber(stats.netClient),
-        borderColor: 'border-cyan-200',
-        textColor: 'text-cyan-600',
-        valueColor: 'text-gray-900'
-      },
-      11: {
-        id: 11,
-        title: 'Floating P&L',
-        value: stats.floatingPnL,
-        borderColor: stats.floatingPnL >= 0 ? 'border-green-200' : 'border-red-200',
-        textColor: stats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600',
-        valueColor: stats.floatingPnL >= 0 ? 'text-green-600' : 'text-red-600',
-        showIcon: true,
-        isPositive: stats.floatingPnL >= 0,
-        formattedValue: formatIndianNumber(Math.abs(stats.floatingPnL))
-      },
-      12: {
-        id: 12,
-        title: 'Lifetime P&L',
-        value: clientStats.lifetimePnL,
-        borderColor: clientStats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200',
-        textColor: clientStats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600',
-        valueColor: clientStats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700',
-        showArrow: true,
-        isPositive: clientStats.lifetimePnL >= 0,
-        formattedValue: formatIndianNumber(Math.abs(clientStats.lifetimePnL))
-      },
-      13: {
-        id: 13,
-        title: 'Daily Deposit',
-        value: formatIndianNumber(clientStats.dailyDeposit),
-        borderColor: 'border-green-200',
-        textColor: 'text-green-600',
-        valueColor: 'text-green-700'
-      },
-      14: {
-        id: 14,
-        title: 'Daily Withdrawal',
-        value: formatIndianNumber(clientStats.dailyWithdrawal),
-        borderColor: 'border-red-200',
-        textColor: 'text-red-600',
-        valueColor: 'text-red-700'
-      },
-      15: {
-        id: 15,
-        title: 'Daily P&L',
-        value: clientStats.dailyPnL,
-        borderColor: clientStats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200',
-        textColor: clientStats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600',
-        valueColor: clientStats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700',
-        showArrow: true,
-        isPositive: clientStats.dailyPnL >= 0,
-        formattedValue: formatIndianNumber(Math.abs(clientStats.dailyPnL))
-      },
-      16: {
-        id: 16,
-        title: 'This Week P&L',
-        value: clientStats.thisWeekPnL,
-        borderColor: clientStats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200',
-        textColor: clientStats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600',
-        valueColor: clientStats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700',
-        showArrow: true,
-        isPositive: clientStats.thisWeekPnL >= 0,
-        formattedValue: formatIndianNumber(Math.abs(clientStats.thisWeekPnL))
-      },
-      17: {
-        id: 17,
-        title: 'This Month P&L',
-        value: clientStats.thisMonthPnL,
-        borderColor: clientStats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200',
-        textColor: clientStats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600',
-        valueColor: clientStats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700',
-        showArrow: true,
-        isPositive: clientStats.thisMonthPnL >= 0,
-        formattedValue: formatIndianNumber(Math.abs(clientStats.thisMonthPnL))
-      }
+      1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
+      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
+      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit.toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
+      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
+      5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
+      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
+      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+      11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
+      12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
+      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
+      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
+      15: { id: 15, title: 'Total Commission', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
+      16: { id: 16, title: 'Available Commission', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
+      17: { id: 17, title: 'Total Commission %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Commission %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      19: { id: 19, title: 'Blocked Commission', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
+      // Daily Bonus
+      20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
+      21: { id: 21, title: 'Daily Bonus OUT', value: formatIndianNumber((stats.dailyBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      22: { id: 22, title: 'NET Daily Bonus', value: stats.netDailyBonus || 0, withArrow: true, isPositive: (stats.netDailyBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netDailyBonus || 0).toFixed(2)), borderColor: (stats.netDailyBonus || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Weekly Bonus
+      23: { id: 23, title: 'Week Bonus IN', value: formatIndianNumber((stats.weekBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-cyan-200', textColor: 'text-cyan-600', valueColor: 'text-cyan-700' },
+      24: { id: 24, title: 'Week Bonus OUT', value: formatIndianNumber((stats.weekBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      25: { id: 25, title: 'NET Week Bonus', value: stats.netWeekBonus || 0, withArrow: true, isPositive: (stats.netWeekBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekBonus || 0).toFixed(2)), borderColor: (stats.netWeekBonus || 0) >= 0 ? 'border-cyan-200' : 'border-orange-200', textColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-600' : 'text-orange-600', valueColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-700' : 'text-orange-700' },
+      // Monthly Bonus
+      26: { id: 26, title: 'Monthly Bonus IN', value: formatIndianNumber((stats.monthBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      27: { id: 27, title: 'Monthly Bonus OUT', value: formatIndianNumber((stats.monthBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      28: { id: 28, title: 'NET Monthly Bonus', value: stats.netMonthBonus || 0, withArrow: true, isPositive: (stats.netMonthBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthBonus || 0).toFixed(2)), borderColor: (stats.netMonthBonus || 0) >= 0 ? 'border-blue-200' : 'border-red-200', textColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-600' : 'text-red-600', valueColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-700' : 'text-red-700' },
+      // Lifetime Bonus
+      29: { id: 29, title: 'Lifetime Bonus IN', value: formatIndianNumber((stats.lifetimeBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      30: { id: 30, title: 'Lifetime Bonus OUT', value: formatIndianNumber((stats.lifetimeBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-pink-200', textColor: 'text-pink-600', valueColor: 'text-pink-700' },
+      31: { id: 31, title: 'NET Lifetime Bonus', value: stats.netLifetimeBonus || 0, withArrow: true, isPositive: (stats.netLifetimeBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeBonus || 0).toFixed(2)), borderColor: (stats.netLifetimeBonus || 0) >= 0 ? 'border-purple-200' : 'border-pink-200', textColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-600' : 'text-pink-600', valueColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-700' : 'text-pink-700' },
+      // Weekly Deposit/Withdrawal
+      32: { id: 32, title: 'Week Deposit', value: formatIndianNumber((stats.weekDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-teal-200', textColor: 'text-teal-600', valueColor: 'text-teal-700' },
+      33: { id: 33, title: 'Week Withdrawal', value: formatIndianNumber((stats.weekWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      34: { id: 34, title: 'NET Week DW', value: stats.netWeekDW || 0, withArrow: true, isPositive: (stats.netWeekDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekDW || 0).toFixed(2)), borderColor: (stats.netWeekDW || 0) >= 0 ? 'border-teal-200' : 'border-rose-200', textColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-600' : 'text-rose-600', valueColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-700' : 'text-rose-700' },
+      // Monthly Deposit/Withdrawal
+      35: { id: 35, title: 'Monthly Deposit', value: formatIndianNumber((stats.monthDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      36: { id: 36, title: 'Monthly Withdrawal', value: formatIndianNumber((stats.monthWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      37: { id: 37, title: 'NET Monthly DW', value: stats.netMonthDW || 0, withArrow: true, isPositive: (stats.netMonthDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthDW || 0).toFixed(2)), borderColor: (stats.netMonthDW || 0) >= 0 ? 'border-indigo-200' : 'border-red-200', textColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-600' : 'text-red-600', valueColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-700' : 'text-red-700' },
+      // Lifetime Deposit/Withdrawal
+      38: { id: 38, title: 'Lifetime Deposit', value: formatIndianNumber((stats.lifetimeDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      39: { id: 39, title: 'Lifetime Withdrawal', value: formatIndianNumber((stats.lifetimeWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      40: { id: 40, title: 'NET Lifetime DW', value: stats.netLifetimeDW || 0, withArrow: true, isPositive: (stats.netLifetimeDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeDW || 0).toFixed(2)), borderColor: (stats.netLifetimeDW || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Credit IN
+      41: { id: 41, title: 'Weekly Credit IN', value: formatIndianNumber((stats.weekCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600', valueColor: 'text-sky-700' },
+      42: { id: 42, title: 'Monthly Credit IN', value: formatIndianNumber((stats.monthCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      43: { id: 43, title: 'Lifetime Credit IN', value: formatIndianNumber((stats.lifetimeCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      // Credit OUT
+      44: { id: 44, title: 'Weekly Credit OUT', value: formatIndianNumber((stats.weekCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      45: { id: 45, title: 'Monthly Credit OUT', value: formatIndianNumber((stats.monthCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      46: { id: 46, title: 'Lifetime Credit OUT', value: formatIndianNumber((stats.lifetimeCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      // NET Credit
+      47: { id: 47, title: 'NET Credit', value: stats.netCredit || 0, withArrow: true, isPositive: (stats.netCredit || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netCredit || 0).toFixed(2)), borderColor: (stats.netCredit || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netCredit || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netCredit || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Previous Equity
+      48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber((stats.weekPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
+      49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber((stats.monthPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' }
     }
     return configs[cardId]
   }
-
-  // Calculate additional metrics from clients array
-  const dashboardStats = useMemo(() => {
-    // For now, use placeholder values since these fields don't exist in API yet
-    const totalDeposit = 0
-    const totalWithdrawal = 0
-    const totalCorrection = 0
-    
-    // Calculate Credit IN/OUT from actual credit values
-    let creditIn = 0
-    let creditOut = 0
-
-    clients.forEach(client => {
-      // Skip invalid/null clients
-      if (!client) return
-      
-      // Credit IN/OUT logic: positive credit = IN, negative would be OUT
-      const credit = client.credit || 0
-      if (credit > 0) {
-        creditIn += credit
-      } else if (credit < 0) {
-        creditOut += Math.abs(credit)
-      }
-    })
-
-    const netDeposit = totalDeposit - totalWithdrawal
-    const netClient = clientStats.totalBalance + clientStats.totalCredit
-    const floatingPnL = clientStats.totalPnl || clientStats.totalProfit // Use totalPnl as floating P&L
-
-    return {
-      totalDeposit,
-      totalWithdrawal,
-      netDeposit,
-      totalCorrection,
-      creditIn,
-      creditOut,
-      netClient,
-      floatingPnL
-    }
-  }, [clients, clientStats])
 
   // Format currency for tables
   const formatCurrency = (value) => {
@@ -351,7 +399,7 @@ const DashboardPage = () => {
             <WebSocketIndicator />
           </div>
 
-          {/* Face Cards Header with Reset Button */}
+          {/* Face Cards Header with Reset Button and Card Filter */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,74 +407,142 @@ const DashboardPage = () => {
               </svg>
               <p className="text-xs text-gray-600">Drag cards to reorder</p>
             </div>
-            <button
-              onClick={resetCardOrder}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5 border border-blue-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reset Order
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Card Filter Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCardFilter(!showCardFilter)}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5 border border-blue-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  Card Filter
+                </button>
+                {showCardFilter && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowCardFilter(false)}></div>
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-96 overflow-y-auto">
+                      <div className="p-3 border-b border-gray-200">
+                        <p className="text-xs font-semibold text-gray-700">Show/Hide Cards</p>
+                      </div>
+                      <div className="p-2">
+                        {defaultFaceCardOrder.map(cardId => {
+                          const card = getFaceCardConfig(cardId, faceCardTotals)
+                          if (!card) return null
+                          return (
+                            <label key={cardId} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={cardVisibility[cardId]}
+                                onChange={() => toggleCardVisibility(cardId)}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-xs text-gray-700">{card.title}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <button
+                onClick={resetCardOrder}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5 border border-blue-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset Order
+              </button>
+            </div>
           </div>
 
-          {/* Face Cards - 17 Metrics (Draggable) */}
+          {/* Face Cards - All Metrics (Draggable) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            {cardOrder.map((cardId) => {
-              const card = getCardConfig(cardId, dashboardStats)
+            {faceCardOrder.map((cardId) => {
+              const card = getFaceCardConfig(cardId, faceCardTotals)
+              if (!card || !cardVisibility[cardId]) return null
               
-              return (
-                <div
-                  key={card.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, card.id)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, card.id)}
-                  className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                >
-                  {card.showIcon ? (
-                    <>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase`}>
-                          {card.title}
-                        </p>
-                        <div className={`w-6 h-6 ${card.isPositive ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
-                          <svg className={`w-3 h-3 ${card.valueColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                            {card.isPositive ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                            ) : (
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                            )}
-                          </svg>
-                        </div>
+              // Simple cards (no icons)
+              if (card.simple) {
+                return (
+                  <div
+                    key={card.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, card.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, card.id)}
+                    className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                  >
+                    <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                    <p className={`text-sm font-bold ${card.valueColor || 'text-gray-900'}`}>
+                      {card.value}
+                    </p>
+                  </div>
+                )
+              }
+              
+              // Cards with icon (PNL, Floating Profit)
+              if (card.withIcon) {
+                const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
+                return (
+                  <div
+                    key={card.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, card.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, card.id)}
+                    className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
+                      <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
+                        <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          {card.isPositive ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                          )}
+                        </svg>
                       </div>
-                      <p className={`text-sm font-bold ${card.valueColor}`}>
-                        {card.isPositive ? '▲ ' : '▼ '}
-                        {card.isPositive ? '' : '-'}
-                        {card.formattedValue}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>
-                        {card.title}
-                      </p>
-                      <p className={`text-sm font-bold ${card.valueColor}`}>
-                        {card.showArrow ? (
-                          <>
-                            {card.isPositive ? '▲ ' : '▼ '}
-                            {card.isPositive ? '' : '-'}
-                            {card.formattedValue}
-                          </>
-                        ) : (
-                          card.value
-                        )}
-                      </p>
-                    </>
-                  )}
-                </div>
-              )
+                    </div>
+                    <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
+                      {card.isPositive ? '▲ ' : '▼ '}
+                      {card.isPositive ? '' : '-'}
+                      {card.formattedValue}
+                    </p>
+                  </div>
+                )
+              }
+              
+              // Cards with arrow (PnL cards)
+              if (card.withArrow) {
+                return (
+                  <div
+                    key={card.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, card.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, card.id)}
+                    className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                  >
+                    <p className={`text-[10px] font-semibold ${card.textColor} uppercase mb-1`}>{card.title}</p>
+                    <p className={`text-sm font-bold ${card.valueColor}`}>
+                      {card.isPositive ? '▲ ' : '▼ '}
+                      {card.isPositive ? '' : '-'}
+                      {card.formattedValue}
+                    </p>
+                  </div>
+                )
+              }
+              
+              return null
             })}
           </div>
 

@@ -21,6 +21,8 @@ export const DataProvider = ({ children }) => {
   const [deals, setDeals] = useState([])
   const [accounts, setAccounts] = useState([]) // For margin level
   const [latestServerTimestamp, setLatestServerTimestamp] = useState(null) // Track latest batch timestamp
+  const [latestMeasuredLagMs, setLatestMeasuredLagMs] = useState(null) // Wall-clock latency between server timestamp and receipt
+  const [lastWsReceiveAt, setLastWsReceiveAt] = useState(null) // Last time we received a WS update (ms)
   
   // Aggregated stats for face cards - updated incrementally
   const [clientStats, setClientStats] = useState({
@@ -92,6 +94,54 @@ export const DataProvider = ({ children }) => {
   const [connectionState, setConnectionState] = useState('disconnected')
   const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes cache
 
+  // Live diagnostics for stat drift
+  const [statsDrift, setStatsDrift] = useState({
+    lastSource: null, // 'reconcile' | 'verify'
+    lastReconciledAt: null,
+    lastVerifiedAt: null,
+    lastDeltas: null,
+    lastApiStats: null,
+    lastLocalStats: null,
+    lastCount: null
+  })
+
+  // Ensure any epoch timestamp is in milliseconds
+  const toMs = (ts) => {
+    if (!ts) return 0
+    const n = Number(ts)
+    if (!isFinite(n) || n <= 0) return 0
+    // If it's seconds (< 10^10), convert to ms
+    return n < 10000000000 ? n * 1000 : n
+  }
+
+  // Generic retry helper with exponential backoff and jitter for transient failures
+  const fetchWithRetry = useCallback(async (fn, {
+    retries = 2,
+    baseDelayMs = 600,
+    maxDelayMs = 4000,
+    label = 'request'
+  } = {}) => {
+    let attempt = 0
+    let lastError
+    while (attempt <= retries) {
+      try {
+        return await fn()
+      } catch (err) {
+        lastError = err
+        attempt++
+        if (attempt > retries) break
+        const code = err?.code || err?.response?.status
+        const isTransient = code === 'ECONNABORTED' || code === 'ETIMEDOUT' || (typeof code === 'number' && code >= 500)
+        const jitter = Math.random() * 0.3 + 0.85 // 0.85x - 1.15x
+        const delay = Math.min(maxDelayMs, Math.round((baseDelayMs * (2 ** (attempt - 1))) * jitter))
+        console.warn(`[DataContext] Retry ${attempt}/${retries} after ${delay}ms for ${label}`, err?.message || err)
+        if (!isTransient) break
+        await new Promise(res => setTimeout(res, delay))
+      }
+    }
+    throw lastError
+  }, [])
+
   // Helper function to normalize USC currency values (divide by 100)
   const normalizeUSCValues = (client) => {
     if (!client || !client.currency || client.currency.toLowerCase() !== 'usc') {
@@ -155,18 +205,31 @@ export const DataProvider = ({ children }) => {
       stats.totalEquity += (client.equity || 0)
       stats.totalPnl += (client.pnl || 0)
       stats.totalProfit += (client.profit || 0)
-      // API uses camelCase for deposit/withdrawal fields
-      stats.dailyDeposit += (client.dailyDeposit || 0)
-      stats.dailyWithdrawal += (client.dailyWithdrawal || 0)
-      // Invert the sign by multiplying by -1 (negative becomes positive, positive becomes negative)
-      stats.dailyPnL += ((client.dailyPnL || 0) * -1)
-      stats.thisWeekPnL += ((client.thisWeekPnL || 0) * -1)
-      stats.thisMonthPnL += ((client.thisMonthPnL || 0) * -1)
-      stats.lifetimePnL += ((client.lifetimePnL || 0) * -1)
+  // API uses camelCase for deposit/withdrawal fields
+  stats.dailyDeposit += (client.dailyDeposit || 0)
+  stats.dailyWithdrawal += (client.dailyWithdrawal || 0)
+  // Use backend-provided PnL buckets directly (no sign inversion)
+  stats.dailyPnL += (client.dailyPnL || 0)
+  stats.thisWeekPnL += (client.thisWeekPnL || 0)
+  stats.thisMonthPnL += (client.thisMonthPnL || 0)
+  stats.lifetimePnL += (client.lifetimePnL || 0)
       stats.totalDeposit += (client.dailyDeposit || 0)  // Sum all daily deposits
     })
     
     return stats
+  }, [])
+
+  // Helper: compute per-key deltas between two stats objects
+  const diffStats = useCallback((a, b) => {
+    const keys = [
+      'totalBalance','totalCredit','totalEquity','totalPnl','totalProfit',
+      'dailyDeposit','dailyWithdrawal','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL'
+    ]
+    const diff = {}
+    keys.forEach(k => {
+      diff[k] = (a?.[k] || 0) - (b?.[k] || 0)
+    })
+    return diff
   }, [])
 
   // Update stats incrementally based on old vs new client data (batched)
@@ -178,7 +241,21 @@ export const DataProvider = ({ children }) => {
     const lastState = lastClientStateRef.current.get(clientLogin)
     
     // Create a signature of the current state for key financial fields
-    const currentSignature = `${newClient.balance || 0}_${newClient.credit || 0}_${newClient.equity || 0}_${newClient.dailyDeposit || 0}_${newClient.dailyWithdrawal || 0}_${newClient.dailyPnL || 0}_${newClient.lastUpdate || 0}`
+    // Include all numeric fields that feed our totals so we don't skip updates that change them
+    const currentSignature = [
+      newClient.balance || 0,
+      newClient.credit || 0,
+      newClient.equity || 0,
+      newClient.pnl || 0,
+      newClient.profit || 0,
+      newClient.dailyDeposit || 0,
+      newClient.dailyWithdrawal || 0,
+      newClient.dailyPnL || 0,
+      newClient.thisWeekPnL || 0,
+      newClient.thisMonthPnL || 0,
+      newClient.lifetimePnL || 0,
+      newClient.lastUpdate || 0
+    ].join('_')
     
     // Skip if this is a duplicate update (same signature as last processed)
     if (lastState === currentSignature) {
@@ -195,14 +272,14 @@ export const DataProvider = ({ children }) => {
       totalEquity: (newClient?.equity || 0) - (oldClient?.equity || 0),
       totalPnl: (newClient?.pnl || 0) - (oldClient?.pnl || 0),
       totalProfit: (newClient?.profit || 0) - (oldClient?.profit || 0),
-      // API uses camelCase for deposit/withdrawal fields
-      dailyDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0)),
-      dailyWithdrawal: ((newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0)),
-      // Invert the sign for PnL deltas by multiplying by -1
-      dailyPnL: ((newClient?.dailyPnL || 0) * -1) - ((oldClient?.dailyPnL || 0) * -1),
-      thisWeekPnL: ((newClient?.thisWeekPnL || 0) * -1) - ((oldClient?.thisWeekPnL || 0) * -1),
-      thisMonthPnL: ((newClient?.thisMonthPnL || 0) * -1) - ((oldClient?.thisMonthPnL || 0) * -1),
-      lifetimePnL: ((newClient?.lifetimePnL || 0) * -1) - ((oldClient?.lifetimePnL || 0) * -1),
+  // API uses camelCase for deposit/withdrawal fields
+  dailyDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0)),
+  dailyWithdrawal: ((newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0)),
+  // Use backend-provided PnL bucket deltas directly (no sign inversion)
+  dailyPnL: (newClient?.dailyPnL || 0) - (oldClient?.dailyPnL || 0),
+  thisWeekPnL: (newClient?.thisWeekPnL || 0) - (oldClient?.thisWeekPnL || 0),
+  thisMonthPnL: (newClient?.thisMonthPnL || 0) - (oldClient?.thisMonthPnL || 0),
+  lifetimePnL: (newClient?.lifetimePnL || 0) - (oldClient?.lifetimePnL || 0),
       totalDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0))
     }
     
@@ -274,7 +351,7 @@ export const DataProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, clients: true }))
     
     try {
-      const response = await brokerAPI.getClients()
+      const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getClients' })
       const rawData = response.data?.clients || []
       
       // Normalize USC currency values (divide by 100)
@@ -357,6 +434,11 @@ export const DataProvider = ({ children }) => {
       return data
     } catch (error) {
       console.error('[DataContext] Failed to fetch clients:', error)
+      // Allow WebSocket to connect even if REST failed; live updates can populate state
+      if (!hasInitialData) {
+        setHasInitialData(true)
+        console.warn('[DataContext] ⚠️ Proceeding to WebSocket without initial clients due to errors')
+      }
       throw error
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
@@ -379,7 +461,7 @@ export const DataProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, positions: true }))
     
     try {
-      const response = await brokerAPI.getPositions()
+      const response = await fetchWithRetry(() => brokerAPI.getPositions(), { retries: 2, baseDelayMs: 700, label: 'getPositions' })
       const data = response.data?.positions || []
       setPositions(data)
       setLastFetch(prev => ({ ...prev, positions: Date.now() }))
@@ -390,7 +472,7 @@ export const DataProvider = ({ children }) => {
     } finally {
       setLoading(prev => ({ ...prev, positions: false }))
     }
-  }, [positions, isAuthenticated])
+  }, [positions, isAuthenticated, fetchWithRetry])
 
   // Fetch orders data
   const fetchOrders = useCallback(async (force = false) => {
@@ -406,7 +488,7 @@ export const DataProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, orders: true }))
     
     try {
-      const response = await brokerAPI.getOrders()
+      const response = await fetchWithRetry(() => brokerAPI.getOrders(), { retries: 2, baseDelayMs: 700, label: 'getOrders' })
       const data = response.data?.orders || []
       setOrders(data)
       setLastFetch(prev => ({ ...prev, orders: Date.now() }))
@@ -417,7 +499,7 @@ export const DataProvider = ({ children }) => {
     } finally {
       setLoading(prev => ({ ...prev, orders: false }))
     }
-  }, [orders, isAuthenticated])
+  }, [orders, isAuthenticated, fetchWithRetry])
 
   // Fetch accounts data (for margin level)
   const fetchAccounts = useCallback(async (force = false) => {
@@ -433,7 +515,7 @@ export const DataProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, accounts: true }))
     
     try {
-      const response = await brokerAPI.getClients()
+      const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getAccounts(getClients)' })
       const data = response.data?.clients || []
       setAccounts(data)
       setLastFetch(prev => ({ ...prev, accounts: Date.now() }))
@@ -444,7 +526,7 @@ export const DataProvider = ({ children }) => {
     } finally {
       setLoading(prev => ({ ...prev, accounts: false }))
     }
-  }, [accounts, isAuthenticated])
+  }, [accounts, isAuthenticated, fetchWithRetry])
 
   // Setup WebSocket subscriptions (only after initial data is loaded)
   useEffect(() => {
@@ -496,8 +578,10 @@ export const DataProvider = ({ children }) => {
     })
 
     // Subscribe to clients updates
-    const unsubClients = websocketService.subscribe('clients', (data) => {
+  const unsubClients = websocketService.subscribe('clients', (data) => {
       try {
+        // Mark receive timestamp for latency instrumentation
+        setLastWsReceiveAt(Date.now())
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
           // Normalize USC currency values for all clients
@@ -519,16 +603,48 @@ export const DataProvider = ({ children }) => {
           setClients(newClients)
           setAccounts(newClients) // Update accounts too (same data)
           setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+
+          // Reset signature tracking to this fresh snapshot
+          lastClientStateRef.current.clear()
+          newClients.forEach(c => {
+            if (c?.login) {
+              const sig = [
+                c.balance || 0,
+                c.credit || 0,
+                c.equity || 0,
+                c.pnl || 0,
+                c.profit || 0,
+                c.dailyDeposit || 0,
+                c.dailyWithdrawal || 0,
+                c.dailyPnL || 0,
+                c.thisWeekPnL || 0,
+                c.thisMonthPnL || 0,
+                c.lifetimePnL || 0,
+                c.lastUpdate || 0
+              ].join('_')
+              lastClientStateRef.current.set(c.login, sig)
+            }
+          })
+
+          // Recalculate full stats on fresh snapshot
+          try {
+            const snapStats = calculateFullStats(newClients)
+            setClientStats(snapStats)
+          } catch (e) {
+            console.warn('[DataContext] Failed recalculating stats from full snapshot', e)
+          }
           
           // Update timestamp from bulk data
           if (newClients.length > 0) {
             let maxTs = 0
             for (let i = 0; i < Math.min(newClients.length, 100); i++) {
-              const ts = newClients[i]?.serverTimestamp || newClients[i]?.lastUpdate || 0
-              if (ts > maxTs) maxTs = ts
+              const rawTs = newClients[i]?.serverTimestamp || newClients[i]?.lastUpdate || 0
+              const tsMs = toMs(rawTs)
+              if (tsMs > maxTs) maxTs = tsMs
             }
             if (maxTs === 0) maxTs = Date.now() // Fallback to current time
             setLatestServerTimestamp(maxTs)
+            setLatestMeasuredLagMs(Math.max(0, Date.now() - maxTs))
           }
         }
       } catch (error) {
@@ -556,6 +672,9 @@ export const DataProvider = ({ children }) => {
     const processBatch = () => {
       if (pendingUpdates.size === 0) return
       
+      // Mark receive timestamp at the start of processing a batch
+      setLastWsReceiveAt(Date.now())
+
       const startTime = performance.now()
       const batchSize = pendingUpdates.size
       const updates = Array.from(pendingUpdates.values())
@@ -563,10 +682,11 @@ export const DataProvider = ({ children }) => {
       
       totalProcessed += batchSize
       
-      // Find the most recent timestamp in this batch
+      // Find the most recent timestamp in this batch (ensure ms)
       let batchMaxTimestamp = 0
       for (let i = 0; i < updates.length; i++) {
-        const ts = updates[i].updatedAccount?.serverTimestamp || updates[i].updatedAccount?.lastUpdate || 0
+        const rawTs = updates[i].updatedAccount?.serverTimestamp || updates[i].updatedAccount?.lastUpdate || 0
+        const ts = toMs(rawTs)
         if (ts > batchMaxTimestamp) batchMaxTimestamp = ts
       }
       
@@ -578,6 +698,7 @@ export const DataProvider = ({ children }) => {
       if (batchMaxTimestamp > lastBatchTimestamp) {
         lastBatchTimestamp = batchMaxTimestamp
         setLatestServerTimestamp(batchMaxTimestamp)
+        setLatestMeasuredLagMs(Math.max(0, Date.now() - batchMaxTimestamp))
       }
       
       // Log batch processing with timing
@@ -1105,6 +1226,85 @@ export const DataProvider = ({ children }) => {
     }
   }, [isAuthenticated, hasInitialData])
 
+  // Periodic reconciliation: recompute stats from current clients to prevent drift
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        if (clients && clients.length > 0) {
+          const recomputed = calculateFullStats(clients)
+          // If any key differs beyond a tiny epsilon, snap to recomputed totals
+          const eps = 0.0001
+          const deltas = diffStats(recomputed, clientStats)
+          const hasDiff = Object.values(deltas).some(v => Math.abs(v) > eps)
+          // record drift
+          setStatsDrift(prev => ({
+            ...prev,
+            lastSource: 'reconcile',
+            lastReconciledAt: Date.now(),
+            lastDeltas: deltas,
+            lastLocalStats: clientStats
+          }))
+          if (hasDiff) {
+            setClientStats(recomputed)
+          }
+        }
+      } catch (e) {
+        console.warn('[DataContext] Periodic stats reconciliation failed', e)
+      }
+    }, 60000) // 1 minute
+    return () => clearInterval(interval)
+  }, [clients, clientStats, calculateFullStats, diffStats])
+
+  // Verify current totals against a fresh API read; optionally apply fix
+  const verifyAgainstAPI = useCallback(async (apply = false) => {
+    const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 1, baseDelayMs: 600, label: 'verify:getClients' })
+    const raw = response.data?.clients || []
+    const normalized = raw.map(normalizeUSCValues)
+    // Dedup
+    const map = new Map()
+    normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
+    const fresh = Array.from(map.values())
+    const apiStats = calculateFullStats(fresh)
+    const localStats = calculateFullStats(clients || [])
+    const deltas = diffStats(apiStats, localStats)
+    setStatsDrift(prev => ({
+      ...prev,
+      lastSource: 'verify',
+      lastVerifiedAt: Date.now(),
+      lastDeltas: deltas,
+      lastApiStats: apiStats,
+      lastLocalStats: localStats,
+      lastCount: fresh.length
+    }))
+    if (apply) {
+      setClients(fresh)
+      setAccounts(fresh)
+      setClientStats(apiStats)
+      // Reset signatures to API snapshot
+      lastClientStateRef.current.clear()
+      fresh.forEach(c => {
+        if (c?.login) {
+          const sig = [
+            c.balance || 0,
+            c.credit || 0,
+            c.equity || 0,
+            c.pnl || 0,
+            c.profit || 0,
+            c.dailyDeposit || 0,
+            c.dailyWithdrawal || 0,
+            c.dailyPnL || 0,
+            c.thisWeekPnL || 0,
+            c.thisMonthPnL || 0,
+            c.lifetimePnL || 0,
+            c.lastUpdate || 0
+          ].join('_')
+          lastClientStateRef.current.set(c.login, sig)
+        }
+      })
+    }
+    return { apiStats, localStats, deltas, count: fresh.length }
+  }, [clients, calculateFullStats, fetchWithRetry])
+
   // On successful authentication, perform an initial data sync
   useEffect(() => {
     if (!isAuthenticated) return
@@ -1120,13 +1320,18 @@ export const DataProvider = ({ children }) => {
     const initialSync = async () => {
       try {
         await Promise.all([
-          fetchClients(true),
-          fetchPositions(true),
-          fetchOrders(true),
-          fetchAccounts(true)
+          fetchClients(true).catch(err => { console.error('[DataContext] Initial clients fetch failed:', err?.message || err) }),
+          fetchPositions(true).catch(err => { console.error('[DataContext] Initial positions fetch failed:', err?.message || err) }),
+          fetchOrders(true).catch(err => { console.error('[DataContext] Initial orders fetch failed:', err?.message || err) }),
+          fetchAccounts(true).catch(err => { console.error('[DataContext] Initial accounts fetch failed:', err?.message || err) })
         ])
       } catch (error) {
-        console.error('[DataContext] Initial sync error:', error)
+        console.error('[DataContext] Initial sync error (aggregated):', error)
+      } finally {
+        if (!hasInitialData) {
+          setHasInitialData(true)
+          console.warn('[DataContext] ⚠️ Proceeding to connect WebSocket despite partial/failed initial sync')
+        }
       }
     }
     
@@ -1146,6 +1351,8 @@ export const DataProvider = ({ children }) => {
     
     // Latest server timestamp from WebSocket batch
     latestServerTimestamp,
+    latestMeasuredLagMs,
+    lastWsReceiveAt,
     
     // Loading states
     loading,
@@ -1164,7 +1371,11 @@ export const DataProvider = ({ children }) => {
     setPositions,
     setOrders,
     setDeals,
-    setAccounts
+    setAccounts,
+
+    // Diagnostics
+    verifyAgainstAPI,
+    statsDrift
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

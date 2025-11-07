@@ -8,21 +8,28 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
+import workerManager from '../workers/workerManager'
+import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
-  const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, fetchClients, fetchPositions, loading, connectionState } = useData()
+  const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const [columnSearchQuery, setColumnSearchQuery] = useState('')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  // Removed verification states
   const [systemTime, setSystemTime] = useState(Date.now())
   const [appTime, setAppTime] = useState(null)
+  // Latency instrumentation state
+  const latencySamplesRef = useRef([])
+  const [latencyStats, setLatencyStats] = useState({ last: null, median: null, max: null })
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
   const displayMenuRef = useRef(null)
@@ -42,8 +49,8 @@ const ClientsPage = () => {
   // Show face cards toggle - default is true (on)
   const [showFaceCards, setShowFaceCards] = useState(true)
   
-  // Face card drag and drop - Default order for 13 cards (added card 14: Net Deposit)
-  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 14, 10, 11, 12, 13]
+  // Face card drag and drop - extended with all new cards (15-53)
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 14, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
   const [faceCardOrder, setFaceCardOrder] = useState(() => {
     const saved = localStorage.getItem('clientsFaceCardOrder')
     return saved ? JSON.parse(saved) : defaultFaceCardOrder
@@ -53,7 +60,21 @@ const ClientsPage = () => {
   // Card visibility filter - Default all cards visible
   const defaultCardVisibility = {
     1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
-    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true
+    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true,
+    15: true, 16: true, 17: true, 18: true, // Commission metrics
+    19: true, // Blocked Commission
+    20: true, 21: true, 22: true, // Daily Bonus IN/OUT/NET
+    23: true, 24: true, 25: true, // Weekly Bonus IN/OUT/NET
+    26: true, 27: true, 28: true, // Monthly Bonus IN/OUT/NET
+    29: true, 30: true, 31: true, // Lifetime Bonus IN/OUT/NET
+    32: true, 33: true, 34: true, // Weekly Deposit/Withdrawal/NET DW
+    35: true, 36: true, 37: true, // Monthly Deposit/Withdrawal/NET DW
+    38: true, 39: true, 40: true, // Lifetime Deposit/Withdrawal/NET DW
+    41: true, 42: true, 43: true, 44: true, // Weekly/Monthly/Lifetime Credit IN
+    45: true, 46: true, 47: true, // Weekly/Monthly/Lifetime Credit OUT
+    48: true, // NET Credit
+    49: true, 50: true, 51: true, // Weekly/Monthly Previous Equity
+    52: true, 53: true // Daily/Week SO Compensation IN/OUT (placeholders)
   }
   const [cardVisibility, setCardVisibility] = useState(() => {
     const saved = localStorage.getItem('clientsCardVisibility')
@@ -111,6 +132,15 @@ const ClientsPage = () => {
   const [customTextFilterValue, setCustomTextFilterValue] = useState('')
   const [customTextFilterCaseSensitive, setCustomTextFilterCaseSensitive] = useState(false)
   
+  // IB Commission totals state (fetched from API every hour)
+  const [commissionTotals, setCommissionTotals] = useState(null)
+  
+  // Web Worker states for stats calculation
+  const [workerStats, setWorkerStats] = useState(null)
+  const [isCalculatingInWorker, setIsCalculatingInWorker] = useState(false)
+  const workerCalculationTimeoutRef = useRef(null)
+  const lastWorkerInputRef = useRef(null) // Track last input to prevent duplicate calculations
+  
   const tableRef = useRef(null)
 
   // Column resizing states
@@ -126,6 +156,8 @@ const ClientsPage = () => {
 
   // Page zoom states
   const [zoomLevel, setZoomLevel] = useState(100)
+
+  // Verification handler removed
 
   // Default visible columns - load from localStorage or use defaults
   const getInitialVisibleColumns = () => {
@@ -146,12 +178,13 @@ const ClientsPage = () => {
       balance: true,
       equity: true,
       profit: true,
+      dailyDeposit: true,
       // Hidden by default
       pnl: false,
       lastName: false,
       middleName: false,
       email: false,
-    phone: false,
+      phone: false,
     credit: false,
     margin: false,
     marginFree: false,
@@ -195,7 +228,6 @@ const ClientsPage = () => {
     accountLastUpdate: false,
     userLastUpdate: false,
     lastUpdate: false,
-    dailyDeposit: false,
     dailyWithdrawal: false,
     lifetimePnL: false,
     dailyPnL: false,
@@ -297,7 +329,53 @@ const ClientsPage = () => {
     'status', 'mqid', 'language', 'rights', 'rightsMask'
   ]
 
+  // Dynamically detect all columns from API data
+  const dynamicColumns = useMemo(() => {
+    if (!clients || clients.length === 0) return allColumns
+
+    // Get all unique keys from the actual data
+    const allKeys = new Set()
+    clients.forEach(client => {
+      if (client && typeof client === 'object') {
+        Object.keys(client).forEach(key => allKeys.add(key))
+      }
+    })
+
+    // Create a map of existing columns for quick lookup
+    const existingColumnsMap = new Map(
+      allColumns.map(col => [col.key, col])
+    )
+
+    // Combine predefined columns with dynamically detected ones
+    const detectedColumns = Array.from(allKeys).map(key => {
+      if (existingColumnsMap.has(key)) {
+        return existingColumnsMap.get(key)
+      }
+      // Create a new column entry for keys not in allColumns
+      return {
+        key: key,
+        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()
+      }
+    })
+
+    // Sort columns: predefined ones first (in order), then alphabetically
+    return detectedColumns.sort((a, b) => {
+      const aIndex = allColumns.findIndex(col => col.key === a.key)
+      const bIndex = allColumns.findIndex(col => col.key === b.key)
+      
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+      if (aIndex !== -1) return -1
+      if (bIndex !== -1) return 1
+      return a.label.localeCompare(b.label)
+    })
+  }, [clients])
+
   const isStringColumn = (key) => stringColumns.includes(key)
+
+  // Memoize visible columns list for performance
+  const visibleColumnsList = useMemo(() => {
+    return dynamicColumns.filter(c => visibleColumns[c.key] === true)
+  }, [dynamicColumns, visibleColumns])
 
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
@@ -309,14 +387,7 @@ const ClientsPage = () => {
     localStorage.setItem('clientsCardVisibility', JSON.stringify(cardVisibility))
   }, [cardVisibility])
 
-  useEffect(() => {
-    if (!hasInitialLoad.current) {
-      hasInitialLoad.current = true
-      // Fetch data from context (will use cache if available)
-      fetchClients().catch(err => console.error('Failed to load clients:', err))
-      fetchPositions().catch(err => console.error('Failed to load positions:', err))
-    }
-  }, [fetchClients, fetchPositions])
+  // Remove page-level initial fetch to avoid duplicate REST calls; DataContext handles initial sync
 
   // Update system time every second
   useEffect(() => {
@@ -328,21 +399,33 @@ const ClientsPage = () => {
 
   // Note: WebSocket is handled by DataContext, we get updates via clients array changes
 
-  // Track the latest timestamp from DataContext (server batch timestamp)
+  // Track latest server timestamp; clamp to prevent backward drift & convert seconds to ms if needed
   useEffect(() => {
-    if (latestServerTimestamp) {
-      setAppTime(latestServerTimestamp)
-    } else if (clients && clients.length > 0) {
-      // Fallback: scan clients for timestamp if context doesn't have it yet
-      let maxTimestamp = 0
+    const toMs = (ts) => {
+      if (!ts) return 0
+      const n = Number(ts)
+      if (!isFinite(n) || n <= 0) return 0
+      return n < 10000000000 ? n * 1000 : n
+    }
+    const incoming = toMs(latestServerTimestamp)
+    if (incoming > 0) {
+      setAppTime(prev => {
+        // Prevent regression to older timestamps (which inflates perceived lag)
+        if (prev && incoming < prev) return prev
+        return incoming
+      })
+      return
+    }
+    // Fallback: derive from first 50 clients if context timestamp missing
+    if (clients && clients.length > 0) {
+      let maxTs = 0
       for (let i = 0; i < Math.min(clients.length, 50); i++) {
-        const ts = clients[i]?.serverTimestamp
-        if (ts && ts > maxTimestamp) {
-          maxTimestamp = ts
-        }
+        const rawTs = clients[i]?.serverTimestamp || clients[i]?.lastUpdate || 0
+        const tsMs = toMs(rawTs)
+        if (tsMs > maxTs) maxTs = tsMs
       }
-      if (maxTimestamp > 0) {
-        setAppTime(maxTimestamp)
+      if (maxTs > 0) {
+        setAppTime(prev => (prev && maxTs < prev) ? prev : maxTs)
       }
     }
   }, [latestServerTimestamp, clients])
@@ -351,44 +434,63 @@ const ClientsPage = () => {
   // The lag warning was misleading because appTime (latestServerTimestamp) doesn't update
   // every second, only when stats recalculate. WebSocket is actually working fine.
   // Keeping the code structure but disabling the warning.
-  const lastLagWarning = useRef(0)
-  const hasReceivedFirstUpdate = useRef(false)
-  const firstUpdateTime = useRef(0)
-  const hasAutoRefreshedRef = useRef(false)
+  // Simplified safety: auto refresh only if no server timestamp progress for >120s
+  const lastProgressRef = useRef(Date.now())
   useEffect(() => {
-    if (systemTime && appTime) {
-      // Mark that we've received a RECENT update (within last 30 seconds)
-      const ageOfData = Date.now() - appTime
-      if (appTime > 0 && ageOfData < 30000) {
-        if (!hasReceivedFirstUpdate.current) {
-          hasReceivedFirstUpdate.current = true
-          firstUpdateTime.current = Date.now()
-        }
+    if (appTime) {
+      lastProgressRef.current = Date.now()
+    }
+  }, [appTime])
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (Date.now() - lastProgressRef.current > 120000) {
+        // Hard recovery (rare)
+        window.location.reload()
       }
-      
-      // Lag detection disabled - was generating false warnings
-      // WebSocket activity is already logged in DataContext
-      // If truly needed, check isConnected from DataContext instead
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [])
 
-      // Hard safety: if lag >= 100s, auto refresh the full page to recover
-      const lagSeconds = Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))
-      if (!hasAutoRefreshedRef.current && lagSeconds >= 100) {
-        hasAutoRefreshedRef.current = true
-        // Use a tiny delay to let UI render the lag state before refresh
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
+  // Fetch IB Commission Totals on mount and every hour
+  useEffect(() => {
+    const fetchCommissionTotals = async () => {
+      try {
+        console.log('Fetching IB Commission Totals...')
+        const response = await brokerAPI.getIBCommissionTotals()
+        console.log('Commission Totals Response:', response?.data)
+        setCommissionTotals(response?.data || null)
+      } catch (err) {
+        console.error('Failed to fetch commission totals:', err)
       }
     }
-  }, [systemTime, appTime])
+
+    // Initial fetch
+    fetchCommissionTotals()
+
+    // Refresh every hour (3600000 ms)
+    const interval = setInterval(fetchCommissionTotals, 3600000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Handle manual refresh - force fetch without full page reload
   const handleManualRefresh = useCallback(async () => {
     setIsRefreshing(true)
     try {
+      // Fetch commission totals along with clients and positions
+      const fetchCommissions = async () => {
+        try {
+          const response = await brokerAPI.getIBCommissionTotals()
+          setCommissionTotals(response?.data || null)
+        } catch (err) {
+          console.error('Failed to fetch commission totals:', err)
+        }
+      }
+
       await Promise.all([
         fetchClients(true), // Force refresh bypassing cache
-        fetchPositions(true) // Also refresh positions for face cards
+        fetchPositions(true), // Also refresh positions for face cards
+        fetchCommissions() // Refresh commission totals
       ])
     } catch (err) {
       console.error('Failed to refresh data:', err)
@@ -542,34 +644,49 @@ const ClientsPage = () => {
     }))
   }
 
-  // Column filter helper functions
-  const getUniqueColumnValues = (columnKey) => {
-    const values = new Set()
-    if (!Array.isArray(clients)) return []
-    clients.forEach(client => {
-      if (!client) return
-      const value = client[columnKey]
-      if (value !== null && value !== undefined && value !== '') {
-        values.add(value)
-      }
-    })
-    const sortedValues = Array.from(values).sort((a, b) => {
-      if (typeof a === 'number' && typeof b === 'number') {
-        return a - b
-      }
-      return String(a).localeCompare(String(b))
-    })
+  // Column filter helper functions - Memoized for performance
+  const getUniqueColumnValues = useMemo(() => {
+    // Create a cache object for all columns
+    const cache = {}
     
-    // Filter by search query if exists
-    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
-    if (searchQuery) {
-      return sortedValues.filter(value => 
-        String(value).toLowerCase().includes(searchQuery)
-      )
+    return (columnKey) => {
+      // Return cached result if search query hasn't changed
+      const cacheKey = `${columnKey}_${filterSearchQuery[columnKey] || ''}`
+      if (cache[cacheKey]) {
+        return cache[cacheKey]
+      }
+      
+      const values = new Set()
+      if (!Array.isArray(clients)) return []
+      
+      clients.forEach(client => {
+        if (!client) return
+        const value = client[columnKey]
+        if (value !== null && value !== undefined && value !== '') {
+          values.add(value)
+        }
+      })
+      
+      const sortedValues = Array.from(values).sort((a, b) => {
+        if (typeof a === 'number' && typeof b === 'number') {
+          return a - b
+        }
+        return String(a).localeCompare(String(b))
+      })
+      
+      // Filter by search query if exists
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      const result = searchQuery
+        ? sortedValues.filter(value => 
+            String(value).toLowerCase().includes(searchQuery)
+          )
+        : sortedValues
+      
+      // Cache the result
+      cache[cacheKey] = result
+      return result
     }
-    
-    return sortedValues
-  }
+  }, [clients, filterSearchQuery])
 
   const toggleColumnFilter = (columnKey, value) => {
     setColumnFilters(prev => {
@@ -895,39 +1012,164 @@ const ClientsPage = () => {
     setCurrentPage(1)
   }, [])
 
-  // Memoize expensive filtering operations - OPTIMIZED
-  const filteredClients = useMemo(() => {
-    // Skip unnecessary processing if no clients
-    if (!clients || !Array.isArray(clients) || clients.length === 0) return []
-    
-    const filteredBase = getFilteredClients()
-    if (!Array.isArray(filteredBase)) return []
-    
-    const searchedBase = searchClients(filteredBase)
-    if (!Array.isArray(searchedBase)) return []
-    
-    const groupFilteredBase = filterByActiveGroup(searchedBase, 'login', 'clients')
-    if (!Array.isArray(groupFilteredBase)) return []
-    
-    const sorted = sortClients(groupFilteredBase)
+  // (moved) latency effect will come after checksum definition to avoid TDZ
 
-    // Deduplicate robustly while never dropping keyless clients
-    // Prefer 'login', then 'clientID', then 'mqid'; if none, keep the row
-    const seen = new Set()
-    const deduped = sorted.filter(client => {
-      if (!client) return false
-      const key = client.login ?? client.clientID ?? client.mqid
-      if (key == null || key === '') {
-        // Keep entries without a stable key (rare); they will be included
-        return true
+  // Offload filter/sort/dedup to filter worker; keep group filter on main thread for parity
+  const [filteredClients, setFilteredClients] = useState([])
+  useEffect(() => {
+    if (!Array.isArray(clients) || clients.length === 0) {
+      setFilteredClients([])
+      return
+    }
+
+    // Resolve sort column with percentage-aware logic
+    let resolvedSortColumn = null
+    if (sortColumn) {
+      if (String(sortColumn).endsWith('_percentage_display')) {
+        const baseKey = String(sortColumn).replace('_percentage_display', '')
+        resolvedSortColumn = percentageFieldMap[baseKey] || baseKey
+      } else if (displayMode === 'percentage' && isMetricColumn(sortColumn)) {
+        resolvedSortColumn = percentageFieldMap[sortColumn] || sortColumn
+      } else {
+        resolvedSortColumn = sortColumn
       }
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+    }
 
-    return deduped
-  }, [clients, getFilteredClients, searchClients, sortClients, filterByActiveGroup, activeGroupFilters])
+    let canceled = false
+    const t = setTimeout(async () => {
+      try {
+        const result = await workerManager.execute('FILTER_SORT_DEDUP', {
+          clients,
+          filters: {
+            filterByPositions,
+            filterByCredit,
+            columnFilters,
+            searchQuery
+          },
+          sortConfig: resolvedSortColumn ? { column: resolvedSortColumn, direction: sortDirection } : null
+        }, 0)
+        if (canceled) return
+        const list = Array.isArray(result?.clients) ? result.clients : []
+        const grouped = filterByActiveGroup(list, 'login', 'clients')
+        setFilteredClients(grouped)
+      } catch (err) {
+        console.error('[ClientsPage] FILTER_SORT_DEDUP worker failed, falling back:', err?.message || err)
+        // Fallback to previous synchronous pipeline
+        try {
+          const base = getFilteredClients()
+          const searched = searchClients(base)
+          const grouped = filterByActiveGroup(searched, 'login', 'clients')
+          const sorted = sortClients(grouped)
+          const seen = new Set()
+          const deduped = sorted.filter(client => {
+            if (!client) return false
+            const key = client.login ?? client.clientID ?? client.mqid
+            if (key == null || key === '') return true
+            if (seen.has(key)) return false
+            seen.add(key)
+            return true
+          })
+          if (!canceled) setFilteredClients(deduped)
+        } catch (e) {
+          if (!canceled) setFilteredClients([])
+        }
+      }
+  }, 100) // tightened debounce for faster responsiveness
+
+    return () => { canceled = true; clearTimeout(t) }
+  }, [
+    clients,
+    filterByPositions,
+    filterByCredit,
+    columnFilters,
+    searchQuery,
+    sortColumn,
+    sortDirection,
+    displayMode,
+    filterByActiveGroup,
+    activeGroupFilters
+  ])
+
+  // Financial checksum (filtered) – detect value-only changes for worker recalculation
+  const filteredClientsChecksum = useMemo(() => {
+    if (!filteredClients || filteredClients.length === 0) return '0'
+    let sumBalance = 0, sumCredit = 0, sumEquity = 0, sumProfit = 0, sumPnl = 0,
+      sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0
+    for (let i = 0; i < filteredClients.length; i++) {
+      const c = filteredClients[i]
+      if (!c) continue
+      sumBalance += c.balance || 0
+      sumCredit += c.credit || 0
+      sumEquity += c.equity || 0
+      sumProfit += c.profit || 0
+  // Use raw pnl and bucket values directly (backend already provides correct sign)
+  sumPnl += c.pnl || 0
+  sumDaily += c.dailyPnL || 0
+  sumWeek += c.thisWeekPnL || 0
+  sumMonth += c.thisMonthPnL || 0
+  sumLife += c.lifetimePnL || 0
+    }
+    return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife]
+      .map(v => Math.round(v * 100))
+      .join('|')
+  }, [filteredClients])
+
+  // Compute render latency whenever filtered data signature changes or stats update (after checksum defined)
+  useEffect(() => {
+    if (!lastWsReceiveAt) return
+    const now = Date.now()
+    const delta = now - lastWsReceiveAt
+    if (delta < 60000) {
+      latencySamplesRef.current.push(delta)
+      if (latencySamplesRef.current.length > 50) latencySamplesRef.current.shift()
+      const sorted = [...latencySamplesRef.current].sort((a,b) => a-b)
+      const median = sorted[Math.floor(sorted.length / 2)]
+      const max = Math.max(...sorted)
+      setLatencyStats({ last: delta, median, max })
+    }
+  }, [filteredClientsChecksum, workerStats, lastWsReceiveAt])
+
+  // Web Worker effect - calculate stats in background thread (after checksum is defined)
+  useEffect(() => {
+    if (!showFaceCards) {
+      setWorkerStats(null)
+      return
+    }
+    const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
+    if (!hasFilters) {
+      setWorkerStats(null)
+      return
+    }
+    const inputSignature = `${filteredClientsChecksum}_${filterByPositions}_${filterByCredit}_${searchQuery}_${Object.keys(columnFilters).length}`
+    if (lastWorkerInputRef.current === inputSignature) return
+    lastWorkerInputRef.current = inputSignature
+    if (workerCalculationTimeoutRef.current) {
+      clearTimeout(workerCalculationTimeoutRef.current)
+    }
+    workerCalculationTimeoutRef.current = setTimeout(async () => {
+      try {
+        setIsCalculatingInWorker(true)
+        const stats = await workerManager.execute('CALCULATE_STATS', { clients: filteredClients }, 1)
+        setWorkerStats(stats)
+      } catch (error) {
+        console.error('[ClientsPage] Worker stats calculation failed:', error)
+      } finally {
+        setIsCalculatingInWorker(false)
+      }
+    }, 300) // tightened stats debounce
+    return () => {
+      if (workerCalculationTimeoutRef.current) {
+        clearTimeout(workerCalculationTimeoutRef.current)
+      }
+    }
+  }, [
+    filteredClientsChecksum,
+    filterByPositions,
+    filterByCredit,
+    searchQuery,
+    Object.keys(columnFilters).length,
+    showFaceCards
+  ])
   
   // Handle column header click for sorting with debounce protection
   const sortTimeoutRef = useRef(null)
@@ -985,6 +1227,58 @@ const ClientsPage = () => {
     }
   }, [filteredClients, itemsPerPage, currentPage])
 
+  // ------------------------
+  // Virtualization state
+  // ------------------------
+  const scrollContainerRef = useRef(null)
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportHeight, setViewportHeight] = useState(600)
+  const BASE_ROW_HEIGHT = 40 // px at 100% zoom
+
+  // Measure viewport height when layout changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      setViewportHeight(scrollContainerRef.current.clientHeight)
+    }
+  }, [showFaceCards, zoomLevel, displayedClients.length])
+
+  const handleScroll = useCallback((e) => {
+    setScrollTop(e.target.scrollTop)
+  }, [])
+
+  const effectiveRowHeight = useMemo(() => {
+    return (BASE_ROW_HEIGHT * (zoomLevel / 100))
+  }, [zoomLevel])
+
+  const virtualizationMetrics = useMemo(() => {
+    const total = displayedClients.length
+    if (total === 0) {
+      return {
+        startIndex: 0,
+        endIndex: 0,
+        topPadding: 0,
+        bottomPadding: 0,
+        virtualizedClients: []
+      }
+    }
+    const buffer = 5
+    const start = Math.max(0, Math.floor(scrollTop / effectiveRowHeight) - buffer)
+    const visibleRowsEstimate = Math.ceil(viewportHeight / effectiveRowHeight) + buffer * 2
+    const end = Math.min(total, start + visibleRowsEstimate)
+    const topPad = start * effectiveRowHeight
+    const bottomPad = (total - end) * effectiveRowHeight
+    return {
+      startIndex: start,
+      endIndex: end,
+      topPadding: topPad,
+      bottomPadding: bottomPad,
+      virtualizedClients: displayedClients.slice(start, end)
+    }
+  }, [displayedClients, scrollTop, effectiveRowHeight, viewportHeight])
+
+  const { virtualizedClients, topPadding, bottomPadding } = virtualizationMetrics
+
+
   // Export to Excel (placed after filteredClients is defined)
   const handleExportToExcel = useCallback((exportType = 'table') => {
     if (!filteredClients || filteredClients.length === 0) {
@@ -994,8 +1288,8 @@ const ClientsPage = () => {
 
     // Get columns based on export type
     const columnsToExport = exportType === 'all' 
-      ? allColumns  // Export all columns
-      : allColumns.filter(col => visibleColumns[col.key])  // Export only visible columns
+      ? dynamicColumns  // Export all columns
+      : dynamicColumns.filter(col => visibleColumns[col.key] === true)  // Export only visible columns
     
     // Prepare CSV content
     const headers = columnsToExport.map(col => col.label).join(',')
@@ -1197,103 +1491,216 @@ const ClientsPage = () => {
       11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
       12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
       13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
-      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' }
+      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
+      15: { id: 15, title: 'Total Commission', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
+      16: { id: 16, title: 'Available Commission', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
+      17: { id: 17, title: 'Total Commission %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Commission %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      19: { id: 19, title: 'Blocked Commission', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
+      // Daily Bonus
+      20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
+      21: { id: 21, title: 'Daily Bonus OUT', value: formatIndianNumber((stats.dailyBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      22: { id: 22, title: 'NET Daily Bonus', value: stats.netDailyBonus || 0, withArrow: true, isPositive: (stats.netDailyBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netDailyBonus || 0).toFixed(2)), borderColor: (stats.netDailyBonus || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Weekly Bonus
+      23: { id: 23, title: 'Week Bonus IN', value: formatIndianNumber((stats.weekBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-cyan-200', textColor: 'text-cyan-600', valueColor: 'text-cyan-700' },
+      24: { id: 24, title: 'Week Bonus OUT', value: formatIndianNumber((stats.weekBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      25: { id: 25, title: 'NET Week Bonus', value: stats.netWeekBonus || 0, withArrow: true, isPositive: (stats.netWeekBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekBonus || 0).toFixed(2)), borderColor: (stats.netWeekBonus || 0) >= 0 ? 'border-cyan-200' : 'border-orange-200', textColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-600' : 'text-orange-600', valueColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-700' : 'text-orange-700' },
+      // Monthly Bonus
+      26: { id: 26, title: 'Monthly Bonus IN', value: formatIndianNumber((stats.monthBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      27: { id: 27, title: 'Monthly Bonus OUT', value: formatIndianNumber((stats.monthBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      28: { id: 28, title: 'NET Monthly Bonus', value: stats.netMonthBonus || 0, withArrow: true, isPositive: (stats.netMonthBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthBonus || 0).toFixed(2)), borderColor: (stats.netMonthBonus || 0) >= 0 ? 'border-blue-200' : 'border-red-200', textColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-600' : 'text-red-600', valueColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-700' : 'text-red-700' },
+      // Lifetime Bonus
+      29: { id: 29, title: 'Lifetime Bonus IN', value: formatIndianNumber((stats.lifetimeBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      30: { id: 30, title: 'Lifetime Bonus OUT', value: formatIndianNumber((stats.lifetimeBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-pink-200', textColor: 'text-pink-600', valueColor: 'text-pink-700' },
+      31: { id: 31, title: 'NET Lifetime Bonus', value: stats.netLifetimeBonus || 0, withArrow: true, isPositive: (stats.netLifetimeBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeBonus || 0).toFixed(2)), borderColor: (stats.netLifetimeBonus || 0) >= 0 ? 'border-purple-200' : 'border-pink-200', textColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-600' : 'text-pink-600', valueColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-700' : 'text-pink-700' },
+      // Weekly Deposit/Withdrawal
+      32: { id: 32, title: 'Week Deposit', value: formatIndianNumber((stats.weekDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-teal-200', textColor: 'text-teal-600', valueColor: 'text-teal-700' },
+      33: { id: 33, title: 'Week Withdrawal', value: formatIndianNumber((stats.weekWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      34: { id: 34, title: 'NET Week DW', value: stats.netWeekDW || 0, withArrow: true, isPositive: (stats.netWeekDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekDW || 0).toFixed(2)), borderColor: (stats.netWeekDW || 0) >= 0 ? 'border-teal-200' : 'border-rose-200', textColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-600' : 'text-rose-600', valueColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-700' : 'text-rose-700' },
+      // Monthly Deposit/Withdrawal
+      35: { id: 35, title: 'Monthly Deposit', value: formatIndianNumber((stats.monthDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      36: { id: 36, title: 'Monthly Withdrawal', value: formatIndianNumber((stats.monthWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      37: { id: 37, title: 'NET Monthly DW', value: stats.netMonthDW || 0, withArrow: true, isPositive: (stats.netMonthDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthDW || 0).toFixed(2)), borderColor: (stats.netMonthDW || 0) >= 0 ? 'border-indigo-200' : 'border-red-200', textColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-600' : 'text-red-600', valueColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-700' : 'text-red-700' },
+      // Lifetime Deposit/Withdrawal
+      38: { id: 38, title: 'Lifetime Deposit', value: formatIndianNumber((stats.lifetimeDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      39: { id: 39, title: 'Lifetime Withdrawal', value: formatIndianNumber((stats.lifetimeWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      40: { id: 40, title: 'NET Lifetime DW', value: stats.netLifetimeDW || 0, withArrow: true, isPositive: (stats.netLifetimeDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeDW || 0).toFixed(2)), borderColor: (stats.netLifetimeDW || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Credit IN
+      41: { id: 41, title: 'Weekly Credit IN', value: formatIndianNumber((stats.weekCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600', valueColor: 'text-sky-700' },
+      42: { id: 42, title: 'Monthly Credit IN', value: formatIndianNumber((stats.monthCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      43: { id: 43, title: 'Lifetime Credit IN', value: formatIndianNumber((stats.lifetimeCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      // Credit OUT
+      44: { id: 44, title: 'Weekly Credit OUT', value: formatIndianNumber((stats.weekCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      45: { id: 45, title: 'Monthly Credit OUT', value: formatIndianNumber((stats.monthCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      46: { id: 46, title: 'Lifetime Credit OUT', value: formatIndianNumber((stats.lifetimeCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      // NET Credit
+      47: { id: 47, title: 'NET Credit', value: stats.netCredit || 0, withArrow: true, isPositive: (stats.netCredit || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netCredit || 0).toFixed(2)), borderColor: (stats.netCredit || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netCredit || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netCredit || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      // Previous Equity
+      48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber((stats.weekPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
+      49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber((stats.monthPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' }
     }
     return configs[cardId]
   }
 
-  // Memoize face card stats - ULTRA optimized
-  const faceCardStats = useMemo(() => {
-    const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
-    
-    if (!hasFilters) {
-      // No filters - use pre-calculated stats (O(1))
-      return clientStats
-    }
-    
-    // Has filters - calculate ONLY if showing face cards
-    if (!showFaceCards) {
-      return clientStats // Don't waste CPU if face cards are hidden
-    }
-    
-    // Optimized single-loop calculation
-    const len = filteredClients.length
-    let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
-    let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
-    
-    for (let i = 0; i < len; i++) {
-      const c = filteredClients[i]
-      totalBalance += c.balance || 0
-      totalCredit += c.credit || 0
-      totalEquity += c.equity || 0
-      totalPnl += c.pnl || 0
-      totalProfit += c.profit || 0
-      dailyDeposit += c.dailyDeposit || 0  // Fixed: API uses camelCase
-      dailyWithdrawal += c.dailyWithdrawal || 0  // Fixed: API uses camelCase
-      dailyPnL += (c.dailyPnL || 0) * -1
-      thisWeekPnL += (c.thisWeekPnL || 0) * -1
-      thisMonthPnL += (c.thisMonthPnL || 0) * -1
-      lifetimePnL += (c.lifetimePnL || 0) * -1
-    }
-    
-    return {
-      totalClients: len,
-      totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
-      dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
-    }
-  }, [clientStats, filteredClients, filterByPositions, filterByCredit, searchQuery, columnFilters, showFaceCards])
+  // Per-column dynamic sums based on currently displayed (filtered & paginated) clients
+  // Moved above faceCardTotals so face cards can directly reuse these sums.
+  const columnTotals = useMemo(() => {
+    const totals = {}
+    if (!displayedClients || displayedClients.length === 0) return totals
+    visibleColumnsList.forEach(col => {
+      const key = col.key
+      // Only sum numeric columns
+      const numeric = displayedClients.reduce((sum, c) => {
+        const v = c[key]
+        return sum + (typeof v === 'number' ? v : 0)
+      }, 0)
+      totals[key] = numeric
+    })
+    return totals
+  }, [displayedClients, visibleColumnsList])
 
-  // NEW: Real-time face card stats - recalculate from raw client data every 100ms
-  const [realtimeFaceCardStats, setRealtimeFaceCardStats] = useState(faceCardStats)
-  
-  useEffect(() => {
-    // Calculate stats directly from clients array every 100ms
-    const calculateStats = () => {
-      if (!clients || clients.length === 0) {
-        return
-      }
-      
-      const len = clients.length
-      let totalBalance = 0, totalCredit = 0, totalEquity = 0, totalPnl = 0, totalProfit = 0
-      let dailyDeposit = 0, dailyWithdrawal = 0, dailyPnL = 0, thisWeekPnL = 0, thisMonthPnL = 0, lifetimePnL = 0
-      
-      for (let i = 0; i < len; i++) {
-        const c = clients[i]
-        if (!c) continue
-        totalBalance += c.balance || 0
-        totalCredit += c.credit || 0
-        totalEquity += c.equity || 0
-        totalPnl += c.pnl || 0
-        totalProfit += c.profit || 0
-        dailyDeposit += c.dailyDeposit || 0
-        dailyWithdrawal += c.dailyWithdrawal || 0
-        dailyPnL += (c.dailyPnL || 0) * -1
-        thisWeekPnL += (c.thisWeekPnL || 0) * -1
-        thisMonthPnL += (c.thisMonthPnL || 0) * -1
-        lifetimePnL += (c.lifetimePnL || 0) * -1
-      }
-      
-      setRealtimeFaceCardStats({
-        totalClients: len,
-        totalBalance, totalCredit, totalEquity, totalPnl, totalProfit,
-        dailyDeposit, dailyWithdrawal, dailyPnL, thisWeekPnL, thisMonthPnL, lifetimePnL
-      })
+  // Removed header totals display helper (no longer used in header)
+
+  // Face cards derive from ALL filtered data (ignores pagination and column visibility).
+  // This ensures face cards always show global sums over the filtered dataset, and still show
+  // metrics even if their columns are hidden in the table.
+  const faceCardTotals = useMemo(() => {
+    const list = filteredClients || []
+    const sum = (key) => list.reduce((acc, c) => {
+      const v = c?.[key]
+      return acc + (typeof v === 'number' ? v : 0)
+    }, 0)
+
+    // PnL special handling to mirror row logic: prefer provided c.pnl; fallback to (credit - equity)
+    const totalPnl = list.reduce((acc, c) => {
+      const hasPnl = typeof c?.pnl === 'number'
+      const computed = hasPnl ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
+      return acc + (typeof computed === 'number' && !Number.isNaN(computed) ? computed : 0)
+    }, 0)
+
+    // Bonus calculations
+    const dailyBonusIn = sum('dailyBonusIn')
+    const dailyBonusOut = sum('dailyBonusOut')
+    const weekBonusIn = sum('thisWeekBonusIn')
+    const weekBonusOut = sum('thisWeekBonusOut')
+    const monthBonusIn = sum('thisMonthBonusIn')
+    const monthBonusOut = sum('thisMonthBonusOut')
+    const lifetimeBonusIn = sum('lifetimeBonusIn')
+    const lifetimeBonusOut = sum('lifetimeBonusOut')
+
+    // Deposit/Withdrawal calculations
+    const weekDeposit = sum('thisWeekDeposit')
+    const weekWithdrawal = sum('thisWeekWithdrawal')
+    const monthDeposit = sum('thisMonthDeposit')
+    const monthWithdrawal = sum('thisMonthWithdrawal')
+    const lifetimeDeposit = sum('lifetimeDeposit')
+    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
+
+    // Credit IN/OUT calculations
+    const weekCreditIn = sum('thisWeekCreditIn')
+    const monthCreditIn = sum('thisMonthCreditIn')
+    const lifetimeCreditIn = sum('lifetimeCreditIn')
+    const weekCreditOut = sum('thisWeekCreditOut')
+    const monthCreditOut = sum('thisMonthCreditOut')
+    const lifetimeCreditOut = sum('lifetimeCreditOut')
+
+    // Previous Equity calculations
+    const weekPreviousEquity = sum('thisWeekPreviousEquity')
+    const monthPreviousEquity = sum('thisMonthPreviousEquity')
+    const previousEquity = sum('previousEquity')
+
+    const totals = {
+      totalClients: list.length,
+      totalBalance: sum('balance'),
+      totalCredit: sum('credit'),
+      totalEquity: sum('equity'),
+      totalPnl,
+      totalProfit: sum('profit'),
+      dailyDeposit: sum('dailyDeposit'),
+      dailyWithdrawal: sum('dailyWithdrawal'),
+      dailyPnL: sum('dailyPnL'),
+      thisWeekPnL: sum('thisWeekPnL'),
+      thisMonthPnL: sum('thisMonthPnL'),
+      lifetimePnL: sum('lifetimePnL'),
+      // Commission metrics from API (not computed from client fields)
+      totalCommission: commissionTotals?.total_commission || 0,
+      availableCommission: commissionTotals?.total_available_commission || 0,
+      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
+      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+      blockedCommission: sum('blockedCommission'),
+      // Bonus metrics
+      dailyBonusIn,
+      dailyBonusOut,
+      netDailyBonus: dailyBonusIn - dailyBonusOut,
+      weekBonusIn,
+      weekBonusOut,
+      netWeekBonus: weekBonusIn - weekBonusOut,
+      monthBonusIn,
+      monthBonusOut,
+      netMonthBonus: monthBonusIn - monthBonusOut,
+      lifetimeBonusIn,
+      lifetimeBonusOut,
+      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
+      // Deposit/Withdrawal metrics
+      weekDeposit,
+      weekWithdrawal,
+      netWeekDW: weekDeposit - weekWithdrawal,
+      monthDeposit,
+      monthWithdrawal,
+      netMonthDW: monthDeposit - monthWithdrawal,
+      lifetimeDeposit,
+      lifetimeWithdrawal,
+      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
+      // Credit IN/OUT metrics
+      weekCreditIn,
+      monthCreditIn,
+      lifetimeCreditIn,
+      weekCreditOut,
+      monthCreditOut,
+      lifetimeCreditOut,
+      netCredit: lifetimeCreditIn - lifetimeCreditOut,
+      // Previous Equity metrics
+      weekPreviousEquity,
+      monthPreviousEquity,
+      previousEquity
     }
-    
-    // Initial calculation
-    calculateStats()
-    
-    // Recalculate every 100ms
-    const interval = setInterval(calculateStats, 100)
-    
-    return () => clearInterval(interval)
-  }, [clients])
+
+    return totals
+  }, [filteredClients, commissionTotals])
+
+  // Legacy total helpers removed; footer will also use columnTotals for consistency.
+  const getTotalForColumn = (key) => {
+    if (!(key in columnTotals)) return null
+    return columnTotals[key]
+  }
+
+  // Format totals consistently with face cards / row cells.
+  const formatTotalForColumn = (key, value) => {
+    if (value === null || value === undefined) return '-'
+
+    // PnL-style metrics: show signed magnitude (no arrow in footer)
+    if (['pnl', 'profit', 'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
+      const num = parseFloat(value) || 0
+      const formatted = formatIndianNumber(Math.abs(num).toFixed(2))
+      return num < 0 ? `-${formatted}` : formatted
+    }
+
+    // Generic numeric totals
+    if (typeof value === 'number') {
+      return formatIndianNumber(parseFloat(value).toFixed(2))
+    }
+
+    return value
+  }
+
+  
 
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
       // Handle PNL calculation
       if (key === 'pnl' && client) {
-        const pnl = (client.credit || 0) - (client.equity || 0)
+        const pnl = client.pnl != null ? client.pnl : ((client.credit || 0) - (client.equity || 0))
         return pnl.toLocaleString('en-US', { 
           minimumFractionDigits: 2, 
           maximumFractionDigits: 2 
@@ -1302,18 +1709,25 @@ const ClientsPage = () => {
       return '-'
     }
     
-    // Numeric currency fields
+  // Numeric currency fields
     if (['balance', 'credit', 'equity', 'margin', 'marginFree', 'profit', 'floating', 'pnl', 'assets', 'liabilities', 
          'blockedCommission', 'blockedProfit', 'storage', 'marginInitial', 'marginMaintenance', 
          'soEquity', 'soMargin'].includes(key)) {
       // For PNL, calculate credit - equity
       if (key === 'pnl' && client) {
-        const pnl = (client.credit || 0) - (client.equity || 0)
+        const pnl = client.pnl != null ? client.pnl : ((client.credit || 0) - (client.equity || 0))
         const formatted = formatIndianNumber(pnl.toFixed(2))
         return formatted
       }
       const num = parseFloat(value)
       const formatted = formatIndianNumber(num.toFixed(2))
+      return formatted
+    }
+
+    // PnL buckets: invert sign to match face card convention and format
+    if (['dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
+      const num = parseFloat(value || 0)
+      const formatted = formatIndianNumber(Math.abs(num).toFixed(2))
       return formatted
     }
     
@@ -1391,16 +1805,30 @@ const ClientsPage = () => {
                         <span className="text-gray-500 font-semibold">Event:</span>
                         <span className="text-purple-600 font-bold">{Math.floor(appTime / 1000)}</span>
                       </div>
-                      <div className="flex items-center gap-1" title="Processing latency - how far behind we are">
+                      <div className="flex items-center gap-1" title="Processing lag (difference between now and latest server event)">
                         <span className="text-gray-500 font-semibold">Lag:</span>
                         <span className={`font-bold ${
-                          Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000)) <= 2 
-                            ? 'text-green-600' 
-                            : Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000)) <= 5
+                          latestMeasuredLagMs != null && latestMeasuredLagMs <= 2000
+                            ? 'text-green-600'
+                            : latestMeasuredLagMs != null && latestMeasuredLagMs <= 5000
                               ? 'text-orange-500'
                               : 'text-red-600'
                         }`}>
-                          {Math.abs(Math.floor(systemTime / 1000) - Math.floor(appTime / 1000))}s
+                          {latestMeasuredLagMs != null ? `${Math.round(latestMeasuredLagMs/1000)}s` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1" title="UI render latency since last WS message (median/max)">
+                        <span className="text-gray-500 font-semibold">UI:</span>
+                        <span className={`font-bold ${
+                          latencyStats.median != null && latencyStats.median <= 5000 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {latencyStats.median != null ? `${latencyStats.median}ms` : '-'}
+                        </span>
+                        <span className="text-gray-500">/</span>
+                        <span className={`font-bold ${
+                          latencyStats.max != null && latencyStats.max <= 5000 ? 'text-gray-700' : 'text-red-600'
+                        }`}>
+                          {latencyStats.max != null ? `${latencyStats.max}ms` : '-'}
                         </span>
                       </div>
                     </>
@@ -1411,18 +1839,18 @@ const ClientsPage = () => {
             <div className="flex items-center gap-2">
               <WebSocketIndicator />
               
-              {/* Filter Button */}
+              {/* Filter Button (icon only) */}
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-emerald-700 hover:text-emerald-800 px-3 py-2 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+                  className="text-emerald-700 hover:text-emerald-800 p-2 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center justify-center text-sm font-semibold bg-white shadow-sm h-9 w-9"
+                  title="Filter"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Filter
                   {(filterByPositions || filterByCredit) && (
-                    <span className="ml-0.5 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-sm">
                       {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0)}
                     </span>
                   )}
@@ -1459,43 +1887,7 @@ const ClientsPage = () => {
                 )}
               </div>
 
-              {/* Columns Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-amber-700 hover:text-amber-800 px-3 py-2 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Columns
-                </button>
-                {showColumnSelector && (
-                  <div
-                    ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-52"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                  >
-                    <div className="px-3 py-2 border-b border-amber-200">
-                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
-                    </div>
-                    {allColumns.map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center px-3 py-2 hover:bg-amber-100 cursor-pointer transition-colors rounded-md mx-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-semibold text-gray-700">{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Columns Selector Button (removed from here, will appear near Percentage View) */}
               
               {/* Zoom Controls */}
               <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
@@ -1561,7 +1953,43 @@ const ClientsPage = () => {
                       { id: 10, label: 'Daily PnL' },
                       { id: 11, label: 'This Week PnL' },
                       { id: 12, label: 'This Month PnL' },
-                      { id: 13, label: 'Lifetime PnL' }
+                      { id: 13, label: 'Lifetime PnL' },
+                      { id: 15, label: 'Total Commission' },
+                      { id: 16, label: 'Available Commission' },
+                      { id: 17, label: 'Total Commission %' },
+                      { id: 18, label: 'Available Commission %' },
+                      { id: 19, label: 'Blocked Commission' },
+                      { id: 20, label: 'Daily Bonus IN' },
+                      { id: 21, label: 'Daily Bonus OUT' },
+                      { id: 22, label: 'NET Daily Bonus' },
+                      { id: 23, label: 'Week Bonus IN' },
+                      { id: 24, label: 'Week Bonus OUT' },
+                      { id: 25, label: 'NET Week Bonus' },
+                      { id: 26, label: 'Monthly Bonus IN' },
+                      { id: 27, label: 'Monthly Bonus OUT' },
+                      { id: 28, label: 'NET Monthly Bonus' },
+                      { id: 29, label: 'Lifetime Bonus IN' },
+                      { id: 30, label: 'Lifetime Bonus OUT' },
+                      { id: 31, label: 'NET Lifetime Bonus' },
+                      { id: 32, label: 'Week Deposit' },
+                      { id: 33, label: 'Week Withdrawal' },
+                      { id: 34, label: 'NET Week DW' },
+                      { id: 35, label: 'Monthly Deposit' },
+                      { id: 36, label: 'Monthly Withdrawal' },
+                      { id: 37, label: 'NET Monthly DW' },
+                      { id: 38, label: 'Lifetime Deposit' },
+                      { id: 39, label: 'Lifetime Withdrawal' },
+                      { id: 40, label: 'NET Lifetime DW' },
+                      { id: 41, label: 'Weekly Credit IN' },
+                      { id: 42, label: 'Monthly Credit IN' },
+                      { id: 43, label: 'Lifetime Credit IN' },
+                      { id: 44, label: 'Weekly Credit OUT' },
+                      { id: 45, label: 'Monthly Credit OUT' },
+                      { id: 46, label: 'Lifetime Credit OUT' },
+                      { id: 47, label: 'NET Credit' },
+                      { id: 48, label: 'Weekly Previous Equity' },
+                      { id: 49, label: 'Monthly Previous Equity' },
+                      { id: 50, label: 'Previous Equity' }
                     ].map(card => (
                       <label
                         key={card.id}
@@ -1596,7 +2024,7 @@ const ClientsPage = () => {
                 }}
               />
               
-              {/* Show Face Cards Toggle */}
+              {/* Show Face Cards Toggle (moved before Columns button) */}
               <button
                 onClick={() => setShowFaceCards(!showFaceCards)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
@@ -1669,6 +2097,17 @@ const ClientsPage = () => {
             </div>
           </div>
 
+          {statsDrift?.lastDeltas && (
+            <div className="mb-3 bg-gray-50 border border-gray-200 rounded p-2 text-[10px] font-mono text-gray-600 flex flex-wrap gap-4">
+              <span>Drift Source: {statsDrift.lastSource}</span>
+              {Object.entries(statsDrift.lastDeltas).map(([k,v]) => (
+                <span key={k}>{k}:{Math.abs(v) < 0.01 ? '0' : v.toFixed(2)}</span>
+              ))}
+              {statsDrift.lastReconciledAt && <span>Reconciled: {new Date(statsDrift.lastReconciledAt).toLocaleTimeString()}</span>}
+              {statsDrift.lastVerifiedAt && <span>Verified: {new Date(statsDrift.lastVerifiedAt).toLocaleTimeString()}</span>}
+            </div>
+          )}
+
           {error && (
             <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-3 shadow-sm">
               <p className="text-red-700 text-sm">{error}</p>
@@ -1698,7 +2137,7 @@ const ClientsPage = () => {
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
-                  const card = getFaceCardConfig(cardId, realtimeFaceCardStats)
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
                   if (!card || !cardVisibility[cardId]) return null
                   
                   // Simple cards (no icons)
@@ -1828,13 +2267,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {realtimeFaceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {realtimeFaceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
@@ -1869,6 +2308,28 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
+                
+                {/* Commission Percentage Cards - Only visible in percentage mode if enabled in card filter */}
+                {cardVisibility[17] && (
+                  <div className="bg-white rounded shadow-sm border border-amber-300 p-2">
+                    <p className="text-[10px] font-semibold text-amber-700 uppercase mb-0">Total Commission %</p>
+                    <p className="text-sm font-bold text-amber-800">
+                      {faceCardTotals.totalCommissionPercent >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.totalCommissionPercent >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.totalCommissionPercent).toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[18] && (
+                  <div className="bg-white rounded shadow-sm border border-lime-300 p-2">
+                    <p className="text-[10px] font-semibold text-lime-700 uppercase mb-0">Available Commission %</p>
+                    <p className="text-sm font-bold text-lime-800">
+                      {faceCardTotals.availableCommissionPercent >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.availableCommissionPercent >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.availableCommissionPercent).toFixed(2)}%
+                    </p>
+                  </div>
+                )}
               </>
             )}
             {displayMode === 'both' && (
@@ -1876,40 +2337,40 @@ const ClientsPage = () => {
                 {/* Value Cards - First Row */}
                 <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
                   <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">{realtimeFaceCardStats.totalClients}</p>
+                  <p className="text-sm font-bold text-gray-900">{faceCardTotals.totalClients}</p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
                   <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
                   <p className="text-sm font-bold text-indigo-700">
-                    {realtimeFaceCardStats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
                   <p className="text-sm font-bold text-emerald-700">
-                    {realtimeFaceCardStats.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
                   <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
                   <p className="text-sm font-bold text-sky-700">
-                    {realtimeFaceCardStats.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${realtimeFaceCardStats.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${realtimeFaceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
-                  <p className={`text-sm font-bold ${realtimeFaceCardStats.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {realtimeFaceCardStats.totalPnl >= 0 ? '▲ ' : '▼ '}
-                    {realtimeFaceCardStats.totalPnl >= 0 ? '' : '-'}
-                    {Math.abs(faceCardStats.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
+                  <p className={`text-sm font-bold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {faceCardTotals.totalPnl >= 0 ? '▲ ' : '▼ '}
+                    {faceCardTotals.totalPnl >= 0 ? '' : '-'}
+                    {Math.abs(faceCardTotals.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${realtimeFaceCardStats.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${realtimeFaceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
-                  <p className={`text-sm font-bold ${realtimeFaceCardStats.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {realtimeFaceCardStats.totalProfit >= 0 ? '▲ ' : '▼ '}
-                    {realtimeFaceCardStats.totalProfit >= 0 ? '' : '-'}
-                    {Math.abs(faceCardStats.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                  <p className={`text-[10px] font-semibold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
+                  <p className={`text-sm font-bold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                    {faceCardTotals.totalProfit >= 0 ? '▲ ' : '▼ '}
+                    {faceCardTotals.totalProfit >= 0 ? '' : '-'}
+                    {Math.abs(faceCardTotals.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 
@@ -1963,13 +2424,13 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
-                    {realtimeFaceCardStats.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-red-200 p-2">
                   <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
                   <p className="text-sm font-bold text-red-700">
-                    {realtimeFaceCardStats.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
@@ -2047,6 +2508,28 @@ const ClientsPage = () => {
                     {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
+                
+                {/* Commission Percentage Cards - Only visible in both mode if enabled in card filter */}
+                {cardVisibility[17] && (
+                  <div className="bg-white rounded shadow-sm border border-amber-300 p-2">
+                    <p className="text-[10px] font-semibold text-amber-700 uppercase mb-0">Total Commission %</p>
+                    <p className="text-sm font-bold text-amber-800">
+                      {faceCardTotals.totalCommissionPercent >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.totalCommissionPercent >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.totalCommissionPercent).toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[18] && (
+                  <div className="bg-white rounded shadow-sm border border-lime-300 p-2">
+                    <p className="text-[10px] font-semibold text-lime-700 uppercase mb-0">Available Commission %</p>
+                    <p className="text-sm font-bold text-lime-800">
+                      {faceCardTotals.availableCommissionPercent >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.availableCommissionPercent >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.availableCommissionPercent).toFixed(2)}%
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -2167,6 +2650,86 @@ const ClientsPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Columns Selector Button (moved next to Percentage View) */}
+              <div className="relative" ref={columnSelectorRef}>
+                <button
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
+                  className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                  title="Show/Hide Columns"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+                  </svg>
+                  Columns
+                </button>
+                {showColumnSelector && (
+                  <div className="absolute right-0 top-full mt-2 bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-64 flex flex-col" style={{ maxHeight: '500px' }}>
+                    <div className="px-3 py-2 border-b border-amber-200 flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
+                      <button
+                        onClick={() => setShowColumnSelector(false)}
+                        className="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-100"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="px-3 py-2 border-b border-amber-200">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={columnSearchQuery}
+                          onChange={(e) => setColumnSearchQuery(e.target.value)}
+                          placeholder="Search columns..."
+                          className="w-full px-3 py-1.5 text-xs border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
+                        />
+                        {columnSearchQuery && (
+                          <button
+                            onClick={() => setColumnSearchQuery('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                      {dynamicColumns
+                        .filter(col => 
+                          col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()) ||
+                          col.key.toLowerCase().includes(columnSearchQuery.toLowerCase())
+                        )
+                        .map(col => (
+                          <label
+                            key={col.key}
+                            className="flex items-center px-3 py-2 hover:bg-amber-100 cursor-pointer transition-colors rounded-md mx-2"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[col.key] === true}
+                              onChange={() => toggleColumn(col.key)}
+                              className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-semibold text-gray-700">{col.label}</span>
+                          </label>
+                        ))
+                      }
+                      {dynamicColumns.filter(col => 
+                        col.label.toLowerCase().includes(columnSearchQuery.toLowerCase()) ||
+                        col.key.toLowerCase().includes(columnSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-3 py-4 text-center text-xs text-gray-500">
+                          No columns found matching "{columnSearchQuery}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               
               {/* Search Bar */}
               <div className="relative" ref={searchRef}>
@@ -2230,7 +2793,7 @@ const ClientsPage = () => {
             minHeight: '350px',
             overflow: 'hidden'
           }}>
-            <div className="overflow-y-auto flex-1" style={{ 
+            <div ref={scrollContainerRef} onScroll={handleScroll} className="overflow-y-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
               scrollbarColor: '#3b82f6 #e5e7eb',
               zoom: `${zoomLevel}%`,
@@ -2257,7 +2820,7 @@ const ClientsPage = () => {
                   <tr>
                     {(() => {
                       // Build the list of columns to render in header based on display mode
-                      const baseVisible = allColumns.filter(c => visibleColumns[c.key])
+                      const baseVisible = visibleColumnsList
                       const renderCols = []
                       baseVisible.forEach(col => {
                         const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
@@ -2728,17 +3291,25 @@ const ClientsPage = () => {
                               </div>
                             )}
                           </div>
+                          {/* Column totals in header removed */}
                         </th>
                       )})
                     })()}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {displayedClients.map((client, index) => {
+                  {/* Virtualization padding (top) */}
+                  {topPadding > 0 && (
+                    <tr style={{ height: topPadding }}>
+                      <td colSpan={visibleColumnsList.length * (displayMode === 'both' ? 2 : 1)} style={{ padding: 0, border: 'none' }} />
+                    </tr>
+                  )}
+                  {virtualizedClients.map((client, index) => {
+                    const globalIndex = virtualizationMetrics.startIndex + index
                     const isLastRow = index === displayedClients.length - 1
                     
                     // Build render columns for each row consistent with header
-                    const baseVisible = allColumns.filter(c => visibleColumns[c.key])
+                    const baseVisible = visibleColumnsList
                     const renderCols = []
                     const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
                     const defaultWidth = 100 / widthBaseTotal
@@ -2771,8 +3342,9 @@ const ClientsPage = () => {
 
                     return (
                       <tr
-                        key={client.login ?? client.clientID ?? client.mqid ?? `${client.name || 'unknown'}-${client.email || 'noemail'}-${index}`}
-                        className={`hover:bg-blue-50 transition-all duration-200 ${isLastRow ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
+                        key={client.login ?? client.clientID ?? client.mqid ?? `${client.name || 'unknown'}-${client.email || 'noemail'}-${globalIndex}`}
+                        style={{ height: effectiveRowHeight }}
+                        className={`hover:bg-blue-50 transition-all duration-200 ${globalIndex === displayedClients.length - 1 ? 'border-b-2 border-gray-300' : 'border-b border-gray-100 hover:border-blue-200'}`}
                       >
                         {renderCols.map(col => {
                           // Special handling for login column - make it clickable
@@ -2811,7 +3383,49 @@ const ClientsPage = () => {
                       </tr>
                     )
                   })}
+                  {/* Virtualization padding (bottom) */}
+                  {bottomPadding > 0 && (
+                    <tr style={{ height: bottomPadding }}>
+                      <td colSpan={visibleColumnsList.length * (displayMode === 'both' ? 2 : 1)} style={{ padding: 0, border: 'none' }} />
+                    </tr>
+                  )}
                 </tbody>
+                {/* Totals footer now reuses columnTotals exactly like header + face cards */}
+                <tfoot className="bg-gray-50 sticky bottom-0 z-10">
+                  <tr className="border-t border-gray-200">
+                    {(() => {
+                      const baseVisible = visibleColumnsList
+                      const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
+                      const defaultWidth = 100 / widthBaseTotal
+                      const cells = []
+                      baseVisible.forEach((col, idx) => {
+                        const isMetric = isMetricColumn(col.key)
+                        const isFirst = idx === 0
+                        const totalRaw = columnTotals[col.key]
+                        let display
+                        if (totalRaw === undefined || totalRaw === null) {
+                          display = '-'
+                        } else if (['pnl','profit','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL'].includes(col.key)) {
+                          const formatted = formatIndianNumber(Math.abs(totalRaw).toFixed(2))
+                          display = totalRaw < 0 ? `-${formatted}` : formatted
+                        } else {
+                          display = formatIndianNumber(parseFloat(totalRaw).toFixed(2))
+                        }
+                        cells.push(
+                          <td key={`total_${col.key}`} className="px-3 py-2 text-[12px] font-semibold text-gray-800 bg-gray-50" style={{ width: columnWidths[col.key] || `${defaultWidth}%`, minWidth: 50 }}>
+                            {isFirst ? 'Totals' : display}
+                          </td>
+                        )
+                        if (displayMode === 'both' && isMetric) {
+                          cells.push(
+                            <td key={`total_${col.key}_percentage`} className="px-3 py-2 text-[12px] font-semibold text-gray-500 bg-gray-50" style={{ width: columnWidths[`${col.key}_percentage_display`] || `${defaultWidth}%`, minWidth: 50 }}>-</td>
+                          )
+                        }
+                      })
+                      return cells
+                    })()}
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
