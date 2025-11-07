@@ -37,16 +37,18 @@ const IBCommissionsPage = () => {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   
-  // Column filter states
-  const [columnFilters, setColumnFilters] = useState({
-    id: '',
-    name: '',
-    email: '',
-    percentage: '',
-    total_commission: '',
-    available_commission: '',
-    last_synced_at: ''
+  // Column filter states (Sync Fusion-style dropdowns like Clients)
+  const [columnFilters, setColumnFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ibColumnFilters')
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
   })
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null) // columnKey | null
+  const filterMenuRef = useRef(null)
+  const headerFilterRefs = useRef({})
   
   // Column resizing states
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -328,16 +330,45 @@ const IBCommissionsPage = () => {
     return formatDate(value).toLowerCase().includes(s.toLowerCase())
   }
 
+  // Persist filters
+  useEffect(() => {
+    try { localStorage.setItem('ibColumnFilters', JSON.stringify(columnFilters)) } catch (e) {}
+  }, [columnFilters])
+
   // Apply column filters
   const filteredCommissions = useMemo(() => {
     return commissions.filter(ib => {
-      if (!matchesTextFilter(ib.id, columnFilters.id)) return false
-      if (!matchesTextFilter(ib.name, columnFilters.name)) return false
-      if (!matchesTextFilter(ib.email, columnFilters.email)) return false
-      if (!matchesNumberFilter(ib.percentage, columnFilters.percentage)) return false
-      if (!matchesNumberFilter(ib.total_commission, columnFilters.total_commission)) return false
-      if (!matchesNumberFilter(ib.available_commission, columnFilters.available_commission)) return false
-      if (!matchesDateFilter(ib.last_synced_at, columnFilters.last_synced_at)) return false
+      // id (text/checkbox/number)
+      if (columnFilters.id) {
+        const f = columnFilters.id
+        if (f.type === 'number') {
+          if (!matchesNumberFilter(ib.id, f.value)) return false
+        } else if (f.type === 'values') {
+          if (!Array.isArray(f.values) || f.values.length === 0) return true
+          if (!f.values.includes(String(ib.id))) return false
+        } else if (f.type === 'text') {
+          if (!matchesTextFilter(ib.id, f.value)) return false
+        }
+      }
+      // name
+      if (columnFilters.name) {
+        const f = columnFilters.name
+        if (f.type === 'text' && !matchesTextFilter(ib.name, f.value)) return false
+        if (f.type === 'values' && Array.isArray(f.values) && f.values.length > 0 && !f.values.includes(String(ib.name))) return false
+      }
+      // email
+      if (columnFilters.email) {
+        const f = columnFilters.email
+        if (f.type === 'text' && !matchesTextFilter(ib.email, f.value)) return false
+        if (f.type === 'values' && Array.isArray(f.values) && f.values.length > 0 && !f.values.includes(String(ib.email))) return false
+      }
+      // percentage (number)
+      if (columnFilters.percentage && !matchesNumberFilter(ib.percentage, columnFilters.percentage.value || '')) return false
+      // totals
+      if (columnFilters.total_commission && !matchesNumberFilter(ib.total_commission, columnFilters.total_commission.value || '')) return false
+      if (columnFilters.available_commission && !matchesNumberFilter(ib.available_commission, columnFilters.available_commission.value || '')) return false
+      // date
+      if (columnFilters.last_synced_at && !matchesDateFilter(ib.last_synced_at, columnFilters.last_synced_at.value || '')) return false
       return true
     })
   }, [commissions, columnFilters])
@@ -650,13 +681,26 @@ const IBCommissionsPage = () => {
                         ].map((col) => (
                           <th 
                             key={col.key}
-                            ref={el => { if (el) headerRefs.current[col.key] = el }}
+                            ref={el => { if (el) { headerRefs.current[col.key] = el; headerFilterRefs.current[col.key] = el } }}
                             className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 relative group cursor-pointer hover:bg-blue-700 transition-colors"
                             style={{ width: col.width, textAlign: col.align }}
                             onClick={() => col.key !== 'action' && handleSort(col.key)}
                           >
                             <div className="flex items-center gap-1" style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}>
                               <span>{col.label}</span>
+                              {/* Filter trigger icon (funnel) */}
+                              {col.key !== 'action' && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setShowFilterDropdown(prev => prev === col.key ? null : col.key) }}
+                                  className="ml-1 text-white/80 hover:text-white p-0.5 rounded hover:bg-white/10"
+                                  title="Filter"
+                                >
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                                  </svg>
+                                </button>
+                              )}
                               {sortColumn === col.key && col.key !== 'action' && (
                                 <svg
                                   className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
@@ -681,74 +725,7 @@ const IBCommissionsPage = () => {
                           </th>
                         ))}
                       </tr>
-                      {/* Filter Row */}
-                      <tr className="bg-blue-50 border-b border-blue-200">
-                        <th className="px-2 py-2"></th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.id}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, id: e.target.value }))}
-                            placeholder="Filter ID"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.name}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Filter Name"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.email}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, email: e.target.value }))}
-                            placeholder="Filter Email"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.percentage}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, percentage: e.target.value }))}
-                            placeholder=">=5 or 5-10"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.total_commission}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, total_commission: e.target.value }))}
-                            placeholder=">1000 or 0-5000"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-right"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.available_commission}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, available_commission: e.target.value }))}
-                            placeholder=">=0 or 100-200"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-right"
-                          />
-                        </th>
-                        <th className="px-2 py-2">
-                          <input
-                            value={columnFilters.last_synced_at}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, last_synced_at: e.target.value }))}
-                            placeholder="YYYY-MM-DD to YYYY-MM-DD"
-                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                        </th>
-                        <th className="px-2 py-2 text-center">
-                          <button
-                            onClick={() => setColumnFilters({ id: '', name: '', email: '', percentage: '', total_commission: '', available_commission: '', last_synced_at: '' })}
-                            className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline"
-                          >
-                            Clear
-                          </button>
-                        </th>
-                      </tr>
+                      {/* No inline filter row; using dropdowns */}
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {sortedCommissions.map((ib) => (
@@ -799,6 +776,75 @@ const IBCommissionsPage = () => {
                       ))}
                     </tbody>
                   </table>
+                  {/* Floating Filter Menu */}
+                  {showFilterDropdown && (() => {
+                    const col = showFilterDropdown
+                    const isNumber = ['id','percentage','total_commission','available_commission'].includes(col)
+                    const isDate = col === 'last_synced_at'
+                    const current = columnFilters[col] || (isNumber ? { type:'number', value:'' } : isDate ? { type:'date', value:'' } : { type:'text', value:'' })
+                    const setCurrent = (next) => setColumnFilters(prev => ({ ...prev, [col]: next }))
+                    return (
+                      <div ref={filterMenuRef} className="absolute z-30 bg-white rounded-lg shadow-xl border border-gray-200 p-3" style={{ top: 0, left: 0 }}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-gray-700 uppercase">Filter {col}</span>
+                          <button className="text-gray-500 hover:text-gray-800" onClick={() => setShowFilterDropdown(null)}>✕</button>
+                        </div>
+                        {!isDate && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <label className="text-xs text-gray-600">Mode</label>
+                            <select
+                              className="text-xs border rounded px-2 py-1"
+                              value={current.type}
+                              onChange={(e)=>setCurrent({ ...(e.target.value==='values'?{values:[]}:{ value:'' }), type: e.target.value })}
+                            >
+                              <option value="text">Text</option>
+                              {isNumber && <option value="number">Number</option>}
+                              <option value="values">Values</option>
+                            </select>
+                          </div>
+                        )}
+                        {isDate ? (
+                          <input
+                            className="w-full text-xs border rounded px-2 py-1"
+                            placeholder="YYYY-MM-DD to YYYY-MM-DD"
+                            value={current.value || ''}
+                            onChange={(e)=>setCurrent({ type:'date', value:e.target.value })}
+                          />
+                        ) : current.type === 'number' ? (
+                          <input
+                            className="w-full text-xs border rounded px-2 py-1"
+                            placeholder=">=10 or 10-20"
+                            value={current.value || ''}
+                            onChange={(e)=>setCurrent({ type:'number', value:e.target.value })}
+                          />
+                        ) : current.type === 'text' ? (
+                          <input
+                            className="w-full text-xs border rounded px-2 py-1"
+                            placeholder="Search values..."
+                            value={current.value || ''}
+                            onChange={(e)=>setCurrent({ type:'text', value:e.target.value })}
+                          />
+                        ) : (
+                          <div className="h-40 overflow-auto border rounded p-2">
+                            {Array.from(new Set(commissions.map(r => String(r[col] ?? '')))).sort().map(v => (
+                              <label key={v} className="flex items-center gap-2 text-xs py-1">
+                                <input type="checkbox" checked={Array.isArray(current.values) && current.values.includes(v)} onChange={(e)=>{
+                                  const next = new Set(current.values || [])
+                                  if (e.target.checked) next.add(v); else next.delete(v)
+                                  setCurrent({ type:'values', values:Array.from(next) })
+                                }} />
+                                <span className="truncate" title={v}>{v || '(blank)'}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-2">
+                          <button className="text-xs text-gray-600 hover:text-gray-800" onClick={()=>{ const nf={...columnFilters}; delete nf[col]; setColumnFilters(nf); }}>Clear</button>
+                          <button className="text-xs px-3 py-1 bg-blue-600 text-white rounded" onClick={()=>setShowFilterDropdown(null)}>OK</button>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>
