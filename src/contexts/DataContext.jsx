@@ -70,6 +70,9 @@ export const DataProvider = ({ children }) => {
   // Track if initial sync has been done
   const hasInitialSyncedRef = useRef(false)
   
+  // Track if initial data load is complete (to control WebSocket connection)
+  const [hasInitialData, setHasInitialData] = useState(false)
+  
   const [loading, setLoading] = useState({
     clients: false,
     positions: false,
@@ -344,6 +347,13 @@ export const DataProvider = ({ children }) => {
         console.log('[DataContext] ⚠️ Skipped redundant stats calculation (already in progress)')
       }
       setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+      
+      // Mark that we have initial data - safe to connect WebSocket now
+      if (!hasInitialData) {
+        setHasInitialData(true)
+        console.log('[DataContext] ✅ Initial data loaded, WebSocket will connect now')
+      }
+      
       return data
     } catch (error) {
       console.error('[DataContext] Failed to fetch clients:', error)
@@ -436,10 +446,19 @@ export const DataProvider = ({ children }) => {
     }
   }, [accounts, isAuthenticated])
 
-  // Setup WebSocket subscriptions
+  // Setup WebSocket subscriptions (only after initial data is loaded)
   useEffect(() => {
-    // Connect WebSocket
-    if (isAuthenticated) { websocketService.connect() }
+    // Don't connect WebSocket until we have initial data from REST API
+    if (!isAuthenticated || !hasInitialData) {
+      if (isAuthenticated && !hasInitialData) {
+        console.log('[DataContext] ⏳ Waiting for initial data before connecting WebSocket...')
+      }
+      return
+    }
+    
+    // Connect WebSocket only after initial data is loaded
+    console.log('[DataContext] 🔌 Connecting WebSocket after initial data load...')
+    websocketService.connect()
 
     // Monitor connection state
     const unsubState = websocketService.onConnectionStateChange((state) => {
@@ -1084,7 +1103,7 @@ export const DataProvider = ({ children }) => {
       unsubOrderUpdated()
       unsubOrderDeleted()
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, hasInitialData])
 
   // On successful authentication, perform an initial data sync
   useEffect(() => {
