@@ -64,12 +64,14 @@ const IBCommissionsPage = () => {
   const [customFilterValue1, setCustomFilterValue1] = useState('')
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
+  const [customNumberError, setCustomNumberError] = useState('')
 
   const [showCustomTextFilterModal, setShowCustomTextFilterModal] = useState(false)
   const [customTextFilterColumn, setCustomTextFilterColumn] = useState(null)
   const [customTextFilterType, setCustomTextFilterType] = useState('contains')
   const [customTextFilterValue, setCustomTextFilterValue] = useState('')
   const [customTextFilterCaseSensitive, setCustomTextFilterCaseSensitive] = useState(false)
+  const [customTextError, setCustomTextError] = useState('')
   
   // Column resizing states
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -840,79 +842,81 @@ const IBCommissionsPage = () => {
                       {showFilterDropdown && filterPosition && createPortal(
                         <div 
                           ref={filterPanelRef}
-                          className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 h-[460px] flex flex-col text-[11px]"
+                          className="fixed bg-white/95 backdrop-blur border-2 border-blue-300 rounded-lg shadow-2xl w-64 h-[460px] flex flex-col text-[11px] text-slate-800"
                           onClick={(e) => e.stopPropagation()}
                           style={{
-                            top: `${Math.min(filterPosition.top + 40, window.innerHeight * 0.2)}px`,
+                            top: `${Math.min(filterPosition.top + 24, window.innerHeight - 480)}px`,
                             left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
                             right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
-                            zIndex: 20000000
+                            zIndex: 99999999
                           }}
                         >
-                          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 rounded-t-lg flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Filter Menu</span>
-                            <button className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded" onClick={() => setShowFilterDropdown(null)}>
+                          <div className="px-3 py-2 border-b border-blue-200 bg-blue-50 rounded-t-lg flex items-center justify-between">
+                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Filter Menu</span>
+                            <button className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 rounded" onClick={() => setShowFilterDropdown(null)}>
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                           </div>
 
-                          <div className="border-b border-slate-200 py-1">
-                            <button onClick={() => { clearColumnFilter(showFilterDropdown) }} className="w-full px-3 py-1.5 text-left font-semibold text-red-600 hover:bg-slate-50 flex items-center gap-2">
+                          <div className="border-b border-blue-100 py-1 bg-slate-50">
+                            <button onClick={() => { clearColumnFilter(showFilterDropdown) }} className="w-full px-3 py-1.5 text-left font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                               Clear Filter
                             </button>
                           </div>
 
-                          <div className="border-b border-slate-200 py-1">
-                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('asc') }} className="w-full px-3 py-1.5 text-left hover:bg-slate-50 flex items-center gap-2">
-                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
+                          <div className="border-b border-blue-100 py-1 bg-white">
+                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('asc'); setShowFilterDropdown(null) }} className="w-full px-3 py-1.5 text-left hover:bg-blue-50 flex items-center gap-2 text-[11px] text-slate-800 font-medium">
+                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
                               Sort Smallest to Largest
                             </button>
-                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('desc') }} className="w-full px-3 py-1.5 text-left hover:bg-slate-50 flex items-center gap-2">
-                              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
+                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('desc'); setShowFilterDropdown(null) }} className="w-full px-3 py-1.5 text-left hover:bg-blue-50 flex items-center gap-2 text-[11px] text-slate-800 font-medium">
+                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
                               Sort Largest to Smallest
                             </button>
                           </div>
 
                           {/* Number or Text Filters */}
                           {!isStringColumn(showFilterDropdown) ? (
-                            <div className="border-b border-slate-200 py-1 relative">
+                            <div className="border-b border-blue-100 py-1 relative">
                               <div className="px-2 py-1">
-                                <button onClick={() => setShowNumberFilterDropdown(prev => prev === showFilterDropdown ? null : showFilterDropdown)} className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                                <button onClick={() => setShowNumberFilterDropdown(prev => prev === showFilterDropdown ? null : showFilterDropdown)} className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-blue-300 rounded-md hover:bg-blue-50 text-slate-800">
                                   <span>Number Filters</span>
-                                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 </button>
                               </div>
                               {showNumberFilterDropdown === showFilterDropdown && (
-                                <div className="absolute top-0 left-[calc(100%+8px)] w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl z-50">
-                                  <div className="text-[11px] text-slate-700 py-1">
+                                <div className="absolute top-0 left-[calc(100%+8px)] w-56 bg-white/95 backdrop-blur border-2 border-blue-300 rounded-lg shadow-xl">
+                                  <div className="text-[11px] text-slate-800 py-1">
                                     {['equal','notEqual','lessThan','lessThanOrEqual','greaterThan','greaterThanOrEqual','between'].map(op => (
-                                      <div key={op} className="hover:bg-slate-50 px-3 py-2 cursor-pointer" onClick={() => { setCustomFilterColumn(showFilterDropdown); setCustomFilterType(op); setCustomFilterValue1(''); setCustomFilterValue2(''); setShowCustomFilterModal(true) }}>{
-                                        op === 'equal' ? 'Equal...' : op === 'notEqual' ? 'Not Equal...' : op === 'lessThan' ? 'Less Than...' : op === 'lessThanOrEqual' ? 'Less Than Or Equal...' : op === 'greaterThan' ? 'Greater Than...' : op === 'greaterThanOrEqual' ? 'Greater Than Or Equal...' : 'Between...'
-                                      }</div>
+                                      <div key={op} className="hover:bg-blue-50 active:bg-blue-100 px-3 py-2 cursor-pointer flex items-center justify-between" onClick={() => { setCustomFilterColumn(showFilterDropdown); setCustomFilterType(op); setCustomFilterValue1(''); setCustomFilterValue2(''); setShowCustomFilterModal(true) }}>
+                                        <span>{op === 'equal' ? 'Equal...' : op === 'notEqual' ? 'Not Equal...' : op === 'lessThan' ? 'Less Than...' : op === 'lessThanOrEqual' ? 'Less Than Or Equal...' : op === 'greaterThan' ? 'Greater Than...' : op === 'greaterThanOrEqual' ? 'Greater Than Or Equal...' : 'Between...'}</span>
+                                        <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                      </div>
                                     ))}
-                                    <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer" onClick={() => { setCustomFilterColumn(showFilterDropdown); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Custom Filter...</div>
+                                    <div className="hover:bg-blue-50 active:bg-blue-100 px-3 py-2 cursor-pointer" onClick={() => { setCustomFilterColumn(showFilterDropdown); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Custom Filter...</div>
                                   </div>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <div className="border-b border-slate-200 py-1 relative">
+                            <div className="border-b border-blue-100 py-1 relative">
                               <div className="px-2 py-1">
-                                <button onClick={() => setShowTextFilterDropdown(prev => prev === showFilterDropdown ? null : showFilterDropdown)} className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+                                <button onClick={() => setShowTextFilterDropdown(prev => prev === showFilterDropdown ? null : showFilterDropdown)} className="w-full flex items-center justify-between px-3 py-1.5 bg-white border border-blue-300 rounded-md hover:bg-blue-50 text-slate-800">
                                   <span>Text Filters</span>
-                                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 </button>
                               </div>
                               {showTextFilterDropdown === showFilterDropdown && (
-                                <div className="absolute top-0 left-[calc(100%+8px)] w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl z-50">
-                                  <div className="text-[11px] text-slate-700 py-1">
+                                <div className="absolute top-0 left-[calc(100%+8px)] w-64 bg-white/95 backdrop-blur border-2 border-blue-300 rounded-lg shadow-xl">
+                                  <div className="text-[11px] text-slate-800 py-1">
                                     {['equal','notEqual','startsWith','endsWith','contains','doesNotContain'].map(op => (
-                                      <div key={op} className="hover:bg-slate-50 px-3 py-2 cursor-pointer" onClick={() => { setCustomTextFilterColumn(showFilterDropdown); setCustomTextFilterType(op); setCustomTextFilterValue(''); setShowCustomTextFilterModal(true) }}>{
-                                        op === 'equal' ? 'Equal...' : op === 'notEqual' ? 'Not Equal...' : op === 'startsWith' ? 'Starts With...' : op === 'endsWith' ? 'Ends With...' : op === 'contains' ? 'Contains...' : 'Does Not Contain...'
-                                      }</div>
+                                      <div key={op} className="hover:bg-blue-50 active:bg-blue-100 px-3 py-2 cursor-pointer flex items-center justify-between" onClick={() => { setCustomTextFilterColumn(showFilterDropdown); setCustomTextFilterType(op); setCustomTextFilterValue(''); setShowCustomTextFilterModal(true) }}>
+                                        <span>{op === 'equal' ? 'Equal...' : op === 'notEqual' ? 'Not Equal...' : op === 'startsWith' ? 'Starts With...' : op === 'endsWith' ? 'Ends With...' : op === 'contains' ? 'Contains...' : 'Does Not Contain...'}</span>
+                                        <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                      </div>
                                     ))}
-                                    <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer" onClick={() => { setCustomTextFilterColumn(showFilterDropdown); setCustomTextFilterType('contains'); setShowCustomTextFilterModal(true) }}>Custom Filter...</div>
+                                    <div className="hover:bg-blue-50 active:bg-blue-100 px-3 py-2 cursor-pointer" onClick={() => { setCustomTextFilterColumn(showFilterDropdown); setCustomTextFilterType('contains'); setShowCustomTextFilterModal(true) }}>Custom Filter...</div>
                                   </div>
                                 </div>
                               )}
@@ -920,18 +924,18 @@ const IBCommissionsPage = () => {
                           )}
 
                           {/* Search box */}
-                          <div className="p-2 border-b border-slate-200">
+                          <div className="p-2 border-b border-blue-100 bg-white">
                             <div className="relative">
-                              <input type="text" placeholder="Search values..." value={filterSearchQuery[showFilterDropdown] || ''} onChange={(e) => setFilterSearchQuery(prev => ({ ...prev, [showFilterDropdown]: e.target.value }))} className="w-full pl-8 pr-3 py-1 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 text-gray-700 placeholder:text-gray-400" />
-                              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                              <input type="text" placeholder="Search values..." value={filterSearchQuery[showFilterDropdown] || ''} onChange={(e) => setFilterSearchQuery(prev => ({ ...prev, [showFilterDropdown]: e.target.value }))} className="w-full pl-8 pr-3 py-1 text-[11px] border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-300 text-slate-800 placeholder:text-slate-400" />
+                              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             </div>
                           </div>
 
                           {/* Select all */}
-                          <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
+                          <div className="px-3 py-2 border-b border-blue-100 bg-blue-50">
                             <label className="flex items-center gap-2">
                               <input type="checkbox" checked={isAllSelected(showFilterDropdown)} onChange={(e) => e.target.checked ? selectAllFilters(showFilterDropdown) : deselectAllFilters(showFilterDropdown)} className="w-3.5 h-3.5 rounded border-slate-300" />
-                              <span className="text-xs font-bold text-slate-700 uppercase">Select All</span>
+                              <span className="text-xs font-bold text-blue-700 uppercase">Select All</span>
                             </label>
                           </div>
 
@@ -941,16 +945,16 @@ const IBCommissionsPage = () => {
                               {getUniqueColumnValues(showFilterDropdown).map(v => (
                                 <label key={v} className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded-md cursor-pointer">
                                   <input type="checkbox" checked={(columnFilters[showFilterDropdown] || []).includes(v)} onChange={() => toggleColumnFilter(showFilterDropdown, v)} className="w-3.5 h-3.5 rounded border-slate-300" />
-                                  <span className="text-[11px] text-gray-700 truncate flex-1">{v || '(blank)'}</span>
+                                  <span className="text-[11px] text-slate-800 truncate flex-1">{v || '(blank)'}</span>
                                 </label>
                               ))}
                             </div>
                           </div>
 
                           {/* Footer */}
-                          <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b flex items-center justify-between">
-                            <button onClick={() => clearColumnFilter(showFilterDropdown)} className="px-2 py-1 text-[10px] text-gray-600 hover:bg-gray-200 rounded">Clear</button>
-                            <button onClick={() => setShowFilterDropdown(null)} className="px-2 py-1 text-[10px] text-white bg-blue-600 rounded">OK</button>
+                          <div className="px-2 py-1 border-t border-blue-100 bg-blue-50 rounded-b flex items-center justify-between">
+                            <button onClick={() => clearColumnFilter(showFilterDropdown)} className="px-2 py-1 text-[10px] text-blue-700 hover:bg-blue-100 rounded">Clear</button>
+                            <button onClick={() => setShowFilterDropdown(null)} className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded">OK</button>
                           </div>
                         </div>, document.body
                       )}
@@ -1075,15 +1079,20 @@ const IBCommissionsPage = () => {
                     Selected IB IDs ({selectedIBs.length})
                   </label>
 
-        {/* Custom Number Filter Modal */}
+        {/* Custom Number Filter Modal (Improved) */}
         {showCustomFilterModal && createPortal(
           <div className="fixed inset-0 bg-black/30 z-[30000000] flex items-center justify-center" onClick={() => setShowCustomFilterModal(false)}>
-            <div className="bg-white rounded-lg shadow-xl w-[420px]" onClick={(e)=>e.stopPropagation()}>
-              <div className="px-4 py-3 border-b font-semibold">Custom Filter</div>
-              <div className="p-4 space-y-3 text-sm">
-                <div>Show rows where: <strong>{customFilterColumn}</strong></div>
+            <div className="bg-white rounded-lg shadow-xl w-[460px]" onClick={(e)=>e.stopPropagation()}>
+              <div className="px-4 py-3 border-b font-semibold flex items-center justify-between">
+                <span>Number Filter: <span className="text-blue-600">{customFilterColumn}</span></span>
+                <button className="text-slate-400 hover:text-slate-700" onClick={()=>setShowCustomFilterModal(false)}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div className="p-4 space-y-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <select value={customFilterType} onChange={(e)=>setCustomFilterType(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                  <label className="text-xs font-semibold text-slate-600">Operator</label>
+                  <select value={customFilterType} onChange={(e)=>{ setCustomFilterType(e.target.value); setCustomNumberError('') }} className="border rounded px-2 py-1 text-sm">
                     <option value="equal">Equal</option>
                     <option value="notEqual">Not Equal</option>
                     <option value="lessThan">Less Than</option>
@@ -1092,45 +1101,59 @@ const IBCommissionsPage = () => {
                     <option value="greaterThanOrEqual">Greater Than Or Equal</option>
                     <option value="between">Between</option>
                   </select>
-                  <input value={customFilterValue1} onChange={(e)=>setCustomFilterValue1(e.target.value)} placeholder="Enter value" className="flex-1 border rounded px-2 py-1 text-sm" />
-                  {customFilterType === 'between' && (
-                    <input value={customFilterValue2} onChange={(e)=>setCustomFilterValue2(e.target.value)} placeholder="And value" className="flex-1 border rounded px-2 py-1 text-sm" />
-                  )}
+                  <div className="flex-1 flex gap-2">
+                    <input value={customFilterValue1} onChange={(e)=>{ setCustomFilterValue1(e.target.value); setCustomNumberError('') }} placeholder="Value" className="flex-1 border rounded px-2 py-1 text-sm" autoFocus />
+                    {customFilterType === 'between' && (
+                      <input value={customFilterValue2} onChange={(e)=>{ setCustomFilterValue2(e.target.value); setCustomNumberError('') }} placeholder="And value" className="flex-1 border rounded px-2 py-1 text-sm" />
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-1 text-xs"><input type="radio" checked={customFilterOperator==='AND'} onChange={()=>setCustomFilterOperator('AND')} /> AND</label>
                   <label className="flex items-center gap-1 text-xs"><input type="radio" checked={customFilterOperator==='OR'} onChange={()=>setCustomFilterOperator('OR')} /> OR</label>
                 </div>
+                {customNumberError && <div className="text-xs text-red-600 font-medium">{customNumberError}</div>}
               </div>
               <div className="px-4 py-3 border-t flex justify-end gap-2">
-                <button className="px-3 py-1 border rounded" onClick={()=>setShowCustomFilterModal(false)}>Cancel</button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={()=>{
+                <button className="px-3 py-1 border rounded text-sm" onClick={()=>setShowCustomFilterModal(false)}>Cancel</button>
+                <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={()=>{
                   if (!customFilterColumn) { setShowCustomFilterModal(false); return }
+                  if (customFilterType === 'between') {
+                    if (!customFilterValue1.trim() || !customFilterValue2.trim()) { setCustomNumberError('Enter both values for Between'); return }
+                  } else {
+                    if (!customFilterValue1.trim()) { setCustomNumberError('Value required'); return }
+                  }
                   let expr = ''
                   if (customFilterType === 'between') expr = `${customFilterValue1}-${customFilterValue2}`
                   else if (customFilterType === 'equal') expr = `=${customFilterValue1}`
-                  else if (customFilterType === 'notEqual') expr = `!=${customFilterValue1}` // our parser treats '=' only; fallback to substring mismatch
+                  else if (customFilterType === 'notEqual') expr = `!=${customFilterValue1}`
                   else if (customFilterType === 'lessThan') expr = `<${customFilterValue1}`
                   else if (customFilterType === 'lessThanOrEqual') expr = `<=${customFilterValue1}`
                   else if (customFilterType === 'greaterThan') expr = `>${customFilterValue1}`
                   else if (customFilterType === 'greaterThanOrEqual') expr = `>=${customFilterValue1}`
                   setColumnFilters(prev => ({ ...prev, [`${customFilterColumn}_number`]: { expr, op: customFilterType, join: customFilterOperator } }))
                   setShowCustomFilterModal(false)
-                }}>OK</button>
+                  setShowFilterDropdown(null)
+                }}>Apply</button>
               </div>
             </div>
           </div>, document.body
         )}
 
-        {/* Custom Text Filter Modal */}
+        {/* Custom Text Filter Modal (Improved) */}
         {showCustomTextFilterModal && createPortal(
           <div className="fixed inset-0 bg-black/30 z-[30000000] flex items-center justify-center" onClick={() => setShowCustomTextFilterModal(false)}>
-            <div className="bg-white rounded-lg shadow-xl w-[420px]" onClick={(e)=>e.stopPropagation()}>
-              <div className="px-4 py-3 border-b font-semibold">Custom Filter</div>
-              <div className="p-4 space-y-3 text-sm">
-                <div>Show rows where: <strong>{customTextFilterColumn}</strong></div>
+            <div className="bg-white rounded-lg shadow-xl w-[460px]" onClick={(e)=>e.stopPropagation()}>
+              <div className="px-4 py-3 border-b font-semibold flex items-center justify-between">
+                <span>Text Filter: <span className="text-blue-600">{customTextFilterColumn}</span></span>
+                <button className="text-slate-400 hover:text-slate-700" onClick={()=>setShowCustomTextFilterModal(false)}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div className="p-4 space-y-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <select value={customTextFilterType} onChange={(e)=>setCustomTextFilterType(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                  <label className="text-xs font-semibold text-slate-600">Operator</label>
+                  <select value={customTextFilterType} onChange={(e)=>{ setCustomTextFilterType(e.target.value); setCustomTextError('') }} className="border rounded px-2 py-1 text-sm">
                     <option value="equal">Equal</option>
                     <option value="notEqual">Not Equal</option>
                     <option value="startsWith">Starts With</option>
@@ -1138,21 +1161,22 @@ const IBCommissionsPage = () => {
                     <option value="contains">Contains</option>
                     <option value="doesNotContain">Does Not Contain</option>
                   </select>
-                  <input value={customTextFilterValue} onChange={(e)=>setCustomTextFilterValue(e.target.value)} placeholder="Enter value" className="flex-1 border rounded px-2 py-1 text-sm" />
+                  <input value={customTextFilterValue} onChange={(e)=>{ setCustomTextFilterValue(e.target.value); setCustomTextError('') }} placeholder="Value" className="flex-1 border rounded px-2 py-1 text-sm" autoFocus />
                 </div>
                 <label className="text-xs flex items-center gap-1"><input type="checkbox" checked={customTextFilterCaseSensitive} onChange={(e)=>setCustomTextFilterCaseSensitive(e.target.checked)} /> Case sensitive</label>
+                {customTextError && <div className="text-xs text-red-600 font-medium">{customTextError}</div>}
               </div>
               <div className="px-4 py-3 border-t flex justify-end gap-2">
-                <button className="px-3 py-1 border rounded" onClick={()=>setShowCustomTextFilterModal(false)}>Cancel</button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={()=>{
+                <button className="px-3 py-1 border rounded text-sm" onClick={()=>setShowCustomTextFilterModal(false)}>Cancel</button>
+                <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm" onClick={()=>{
                   if (!customTextFilterColumn) { setShowCustomTextFilterModal(false); return }
-                  // For simplicity encode as contains/starts/ends with custom string in one expr we parse in matchesTextFilter by substring
+                  if (!customTextFilterValue.trim()) { setCustomTextError('Value required'); return }
                   const op = customTextFilterType
                   let expr = customTextFilterValue
-                  // Store as raw string; matchesTextFilter already does case-insensitive contains; advanced ops are approximated below
                   setColumnFilters(prev => ({ ...prev, [`${customTextFilterColumn}_text`]: { expr, op, caseSensitive: customTextFilterCaseSensitive } }))
                   setShowCustomTextFilterModal(false)
-                }}>OK</button>
+                  setShowFilterDropdown(null)
+                }}>Apply</button>
               </div>
             </div>
           </div>, document.body
