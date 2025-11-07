@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
 import EditPercentageModal from '../components/EditPercentageModal'
 import BulkSyncModal from '../components/BulkSyncModal'
@@ -37,12 +37,31 @@ const IBCommissionsPage = () => {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   
+  // Column filter states
+  const [columnFilters, setColumnFilters] = useState({
+    id: '',
+    name: '',
+    email: '',
+    percentage: '',
+    total_commission: '',
+    available_commission: '',
+    last_synced_at: ''
+  })
+  
   // Column resizing states
-  const [columnWidths, setColumnWidths] = useState({})
+  const [columnWidths, setColumnWidths] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ibColumnWidths')
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
+  })
   const [resizingColumn, setResizingColumn] = useState(null)
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
   const headerRefs = useRef({})
+  const resizeRAF = useRef(null)
   
   // Search debounce
   const searchTimeoutRef = useRef(null)
@@ -245,8 +264,88 @@ const IBCommissionsPage = () => {
     }
   }
 
-  // Sort commissions client-side
-  const sortedCommissions = [...commissions].sort((a, b) => {
+  // Helpers to parse number filter input like ">=10", "10-20", "<5", or plain number
+  const matchesNumberFilter = (value, filterStr) => {
+    if (filterStr == null || filterStr.trim() === '') return true
+    const v = parseFloat(value)
+    if (isNaN(v)) return false
+    const s = filterStr.trim()
+    // range: a-b
+    const rangeMatch = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[-:]\s*(-?\d+(?:\.\d+)?)\s*$/)
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1])
+      const max = parseFloat(rangeMatch[2])
+      return v >= Math.min(min, max) && v <= Math.max(min, max)
+    }
+    // operators
+    const opMatch = s.match(/^\s*(<=|>=|<|>|=)?\s*(-?\d+(?:\.\d+)?)\s*$/)
+    if (opMatch) {
+      const op = opMatch[1] || '='
+      const num = parseFloat(opMatch[2])
+      switch (op) {
+        case '<': return v < num
+        case '<=': return v <= num
+        case '>': return v > num
+        case '>=': return v >= num
+        default: return v === num
+      }
+    }
+    // fallback: substring include on formatted value
+    return String(value).toLowerCase().includes(s.toLowerCase())
+  }
+
+  const matchesTextFilter = (value, filterStr) => {
+    if (filterStr == null || filterStr.trim() === '') return true
+    const s = filterStr.trim().toLowerCase()
+    return String(value ?? '').toLowerCase().includes(s)
+  }
+
+  const matchesDateFilter = (value, filterStr) => {
+    if (!filterStr || filterStr.trim() === '') return true
+    const s = filterStr.trim()
+    const dateVal = value ? new Date(value).getTime() : NaN
+    if (isNaN(dateVal)) return false
+    // range with 'to' or '-'
+    const toParts = s.split(/\s+to\s+|\s*-\s*/i)
+    if (toParts.length === 2) {
+      const start = Date.parse(toParts[0])
+      const end = Date.parse(toParts[1])
+      if (!isNaN(start) && !isNaN(end)) {
+        const min = Math.min(start, end)
+        const max = Math.max(start, end)
+        return dateVal >= min && dateVal <= max
+      }
+    }
+    // single date => same-day match
+    const single = Date.parse(s)
+    if (!isNaN(single)) {
+      const d = new Date(single)
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1
+      return dateVal >= dayStart && dateVal <= dayEnd
+    }
+    // fallback substring match on formatted
+    return formatDate(value).toLowerCase().includes(s.toLowerCase())
+  }
+
+  // Apply column filters
+  const filteredCommissions = useMemo(() => {
+    return commissions.filter(ib => {
+      if (!matchesTextFilter(ib.id, columnFilters.id)) return false
+      if (!matchesTextFilter(ib.name, columnFilters.name)) return false
+      if (!matchesTextFilter(ib.email, columnFilters.email)) return false
+      if (!matchesNumberFilter(ib.percentage, columnFilters.percentage)) return false
+      if (!matchesNumberFilter(ib.total_commission, columnFilters.total_commission)) return false
+      if (!matchesNumberFilter(ib.available_commission, columnFilters.available_commission)) return false
+      if (!matchesDateFilter(ib.last_synced_at, columnFilters.last_synced_at)) return false
+      return true
+    })
+  }, [commissions, columnFilters])
+
+  // Sort commissions client-side after filters
+  const sortedCommissions = useMemo(() => {
+    const arr = [...filteredCommissions]
+    return arr.sort((a, b) => {
     if (!sortColumn) return 0
     
     let aVal = a[sortColumn]
@@ -272,7 +371,8 @@ const IBCommissionsPage = () => {
     } else {
       return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
     }
-  })
+    })
+  }, [filteredCommissions, sortColumn, sortDirection])
 
   // Column resize handlers
   const handleResizeStart = (e, columnKey) => {
@@ -287,8 +387,11 @@ const IBCommissionsPage = () => {
   const handleResizeMove = (e) => {
     if (!resizingColumn) return
     const diff = e.clientX - resizeStartX.current
-    const newWidth = Math.max(80, resizeStartWidth.current + diff)
-    setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
+    const nextWidth = Math.max(100, resizeStartWidth.current + diff)
+    if (resizeRAF.current) cancelAnimationFrame(resizeRAF.current)
+    resizeRAF.current = requestAnimationFrame(() => {
+      setColumnWidths(prev => ({ ...prev, [resizingColumn]: nextWidth }))
+    })
   }
 
   const handleResizeEnd = () => {
@@ -309,6 +412,13 @@ const IBCommissionsPage = () => {
       }
     }
   }, [resizingColumn])
+
+  // Persist column widths
+  useEffect(() => {
+    try {
+      localStorage.setItem('ibColumnWidths', JSON.stringify(columnWidths))
+    } catch (e) {}
+  }, [columnWidths])
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -570,6 +680,74 @@ const IBCommissionsPage = () => {
                             )}
                           </th>
                         ))}
+                      </tr>
+                      {/* Filter Row */}
+                      <tr className="bg-blue-50 border-b border-blue-200">
+                        <th className="px-2 py-2"></th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.id}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, id: e.target.value }))}
+                            placeholder="Filter ID"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.name}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Filter Name"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.email}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="Filter Email"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.percentage}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, percentage: e.target.value }))}
+                            placeholder=">=5 or 5-10"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.total_commission}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, total_commission: e.target.value }))}
+                            placeholder=">1000 or 0-5000"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-right"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.available_commission}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, available_commission: e.target.value }))}
+                            placeholder=">=0 or 100-200"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 text-right"
+                          />
+                        </th>
+                        <th className="px-2 py-2">
+                          <input
+                            value={columnFilters.last_synced_at}
+                            onChange={(e) => setColumnFilters(prev => ({ ...prev, last_synced_at: e.target.value }))}
+                            placeholder="YYYY-MM-DD to YYYY-MM-DD"
+                            className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          />
+                        </th>
+                        <th className="px-2 py-2 text-center">
+                          <button
+                            onClick={() => setColumnFilters({ id: '', name: '', email: '', percentage: '', total_commission: '', available_commission: '', last_synced_at: '' })}
+                            className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline"
+                          >
+                            Clear
+                          </button>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
