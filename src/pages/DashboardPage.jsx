@@ -26,24 +26,30 @@ const DashboardPage = () => {
     return saved ? JSON.parse(saved) : defaultFaceCardOrder
   })
 
-  // Card visibility filter - Default all cards visible
-  const defaultCardVisibility = {
-    1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
-    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true,
-    15: true, 16: true, 17: true, 18: true, // Commission metrics
-    19: true, // Blocked Commission
-    20: true, 21: true, 22: true, // Daily Bonus IN/OUT/NET
-    23: true, 24: true, 25: true, // Weekly Bonus IN/OUT/NET
-    26: true, 27: true, 28: true, // Monthly Bonus IN/OUT/NET
-    29: true, 30: true, 31: true, // Lifetime Bonus IN/OUT/NET
-    32: true, 33: true, 34: true, // Weekly Deposit/Withdrawal/NET DW
-    35: true, 36: true, 37: true, // Monthly Deposit/Withdrawal/NET DW
-    38: true, 39: true, 40: true, // Lifetime Deposit/Withdrawal/NET DW
-    41: true, 42: true, 43: true, // Weekly/Monthly/Lifetime Credit IN
-    44: true, 45: true, 46: true, // Weekly/Monthly/Lifetime Credit OUT
-    47: true, // NET Credit
-    48: true, 49: true, 50: true  // Weekly/Monthly/Previous Equity
-  }
+  // Card visibility filter - Default: show only the key dashboard cards (rest off by default)
+  const defaultCardVisibility = (() => {
+    // Start with everything hidden
+    const vis = {}
+    for (let i = 1; i <= 50; i++) vis[i] = false
+    // Show only the cards in the provided screenshot by default
+    // Row 1
+    vis[1] = true   // Total Clients
+    vis[2] = true   // Total Balance
+    vis[3] = true   // Total Credit
+    vis[4] = true   // Total Equity
+    vis[5] = true   // PNL
+    vis[6] = true   // Floating Profit
+    // Row 2
+    vis[8] = true   // Daily Deposit
+    vis[9] = true   // Daily Withdrawal
+    vis[14] = true  // Net DW
+    vis[10] = true  // Daily PnL
+    vis[11] = true  // This Week PnL
+    vis[12] = true  // This Month PnL
+    // Row 3 (visible in screenshot): Lifetime PnL
+    vis[13] = true  // Lifetime PnL
+    return vis
+  })()
 
   const [cardVisibility, setCardVisibility] = useState(() => {
     const saved = localStorage.getItem('dashboardCardVisibility')
