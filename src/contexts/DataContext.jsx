@@ -500,6 +500,17 @@ export const DataProvider = ({ children }) => {
           setClients(newClients)
           setAccounts(newClients) // Update accounts too (same data)
           setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+          
+          // Update timestamp from bulk data
+          if (newClients.length > 0) {
+            let maxTs = 0
+            for (let i = 0; i < Math.min(newClients.length, 100); i++) {
+              const ts = newClients[i]?.serverTimestamp || newClients[i]?.lastUpdate || 0
+              if (ts > maxTs) maxTs = ts
+            }
+            if (maxTs === 0) maxTs = Date.now() // Fallback to current time
+            setLatestServerTimestamp(maxTs)
+          }
         }
       } catch (error) {
         console.error('[DataContext] Error processing clients update:', error)
@@ -536,8 +547,13 @@ export const DataProvider = ({ children }) => {
       // Find the most recent timestamp in this batch
       let batchMaxTimestamp = 0
       for (let i = 0; i < updates.length; i++) {
-        const ts = updates[i].updatedAccount?.serverTimestamp || 0
+        const ts = updates[i].updatedAccount?.serverTimestamp || updates[i].updatedAccount?.lastUpdate || 0
         if (ts > batchMaxTimestamp) batchMaxTimestamp = ts
+      }
+      
+      // If no valid server timestamp, use current time as fallback (WebSocket is live)
+      if (batchMaxTimestamp === 0 && batchSize > 0) {
+        batchMaxTimestamp = Date.now()
       }
       
       if (batchMaxTimestamp > lastBatchTimestamp) {
