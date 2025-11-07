@@ -61,6 +61,8 @@ const ClientsPage = () => {
   })
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const cardFilterMenuRef = useRef(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef(null)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -523,6 +525,9 @@ const ClientsPage = () => {
       if (cardFilterMenuRef.current && !cardFilterMenuRef.current.contains(event.target)) {
         setShowCardFilterMenu(false)
       }
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
@@ -981,14 +986,16 @@ const ClientsPage = () => {
   }, [filteredClients, itemsPerPage, currentPage])
 
   // Export to Excel (placed after filteredClients is defined)
-  const handleExportToExcel = useCallback(() => {
+  const handleExportToExcel = useCallback((exportType = 'table') => {
     if (!filteredClients || filteredClients.length === 0) {
       alert('No data to export')
       return
     }
 
-    // Get visible columns only
-    const columnsToExport = allColumns.filter(col => visibleColumns[col.key])
+    // Get columns based on export type
+    const columnsToExport = exportType === 'all' 
+      ? allColumns  // Export all columns
+      : allColumns.filter(col => visibleColumns[col.key])  // Export only visible columns
     
     // Prepare CSV content
     const headers = columnsToExport.map(col => col.label).join(',')
@@ -1025,11 +1032,15 @@ const ClientsPage = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `clients_${new Date().toISOString().split('T')[0]}.csv`)
+    const exportLabel = exportType === 'all' ? 'all-columns' : 'table-columns'
+    link.setAttribute('download', `clients_${exportLabel}_${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    
+    // Close the export menu after export
+    setShowExportMenu(false)
   }, [filteredClients, visibleColumns, allColumns])
 
   // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
@@ -1618,15 +1629,43 @@ const ClientsPage = () => {
                 </svg>
               </button>
 
-              <button
-                onClick={handleExportToExcel}
-                className="text-green-600 hover:text-green-700 p-2 rounded-md border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
-                title="Download as Excel (CSV)"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </button>
+              {/* Excel Export with Dropdown */}
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="text-green-600 hover:text-green-700 p-2 rounded-md border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                  title="Download as Excel (CSV)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border-2 border-green-300 z-50 overflow-hidden">
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleExportToExcel('table')}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Table Columns
+                      </button>
+                      <button
+                        onClick={() => handleExportToExcel('all')}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2 border-t border-gray-100"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                        All Columns
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
