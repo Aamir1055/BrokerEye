@@ -149,6 +149,7 @@ export const DataProvider = ({ children }) => {
     }
     return {
       ...client,
+      // Basic financial fields
       balance: (client.balance || 0) / 100,
       credit: (client.credit || 0) / 100,
       equity: (client.equity || 0) / 100,
@@ -166,12 +167,42 @@ export const DataProvider = ({ children }) => {
       marginMaintenance: (client.marginMaintenance || 0) / 100,
       soEquity: (client.soEquity || 0) / 100,
       soMargin: (client.soMargin || 0) / 100,
+      // Daily metrics
       dailyDeposit: (client.dailyDeposit || 0) / 100,
       dailyWithdrawal: (client.dailyWithdrawal || 0) / 100,
       dailyPnL: (client.dailyPnL || 0) / 100,
+      // Weekly/Monthly/Lifetime PnL
       thisWeekPnL: (client.thisWeekPnL || 0) / 100,
       thisMonthPnL: (client.thisMonthPnL || 0) / 100,
-      lifetimePnL: (client.lifetimePnL || 0) / 100
+      lifetimePnL: (client.lifetimePnL || 0) / 100,
+      // Bonus fields
+      dailyBonusIn: (client.dailyBonusIn || 0) / 100,
+      dailyBonusOut: (client.dailyBonusOut || 0) / 100,
+      thisWeekBonusIn: (client.thisWeekBonusIn || 0) / 100,
+      thisWeekBonusOut: (client.thisWeekBonusOut || 0) / 100,
+      thisMonthBonusIn: (client.thisMonthBonusIn || 0) / 100,
+      thisMonthBonusOut: (client.thisMonthBonusOut || 0) / 100,
+      lifetimeBonusIn: (client.lifetimeBonusIn || 0) / 100,
+      lifetimeBonusOut: (client.lifetimeBonusOut || 0) / 100,
+      // Weekly/Monthly/Lifetime Deposit/Withdrawal
+      thisWeekDeposit: (client.thisWeekDeposit || 0) / 100,
+      thisWeekWithdrawal: (client.thisWeekWithdrawal || 0) / 100,
+      thisMonthDeposit: (client.thisMonthDeposit || 0) / 100,
+      thisMonthWithdrawal: (client.thisMonthWithdrawal || 0) / 100,
+      lifetimeDeposit: (client.lifetimeDeposit || 0) / 100,
+      lifetimeWithdrawal: (client.lifetimeWithdrawal || 0) / 100,
+      // Credit IN/OUT
+      thisWeekCreditIn: (client.thisWeekCreditIn || 0) / 100,
+      thisWeekCreditOut: (client.thisWeekCreditOut || 0) / 100,
+      thisMonthCreditIn: (client.thisMonthCreditIn || 0) / 100,
+      thisMonthCreditOut: (client.thisMonthCreditOut || 0) / 100,
+      lifetimeCreditIn: (client.lifetimeCreditIn || 0) / 100,
+      lifetimeCreditOut: (client.lifetimeCreditOut || 0) / 100,
+      // Previous Equity
+      thisWeekPreviousEquity: (client.thisWeekPreviousEquity || 0) / 100,
+      thisMonthPreviousEquity: (client.thisMonthPreviousEquity || 0) / 100,
+      previousEquity: (client.previousEquity || 0) / 100,
+      // Note: login is NOT divided (it's an ID, not a currency value)
     }
   }
 
