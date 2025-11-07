@@ -40,7 +40,15 @@ const IBCommissionsPage = () => {
   
   // Removed column filter dropdown feature per request
   // Re-adding Syncfusion-like filter menu (same UX as Clients)
-  const [columnFilters, setColumnFilters] = useState({}) // baseKey -> [values], baseKey_number -> { op/value(s) as string }, baseKey_text -> { op/value }
+  const [columnFilters, setColumnFilters] = useState(() => {
+    // Load persisted filters
+    try {
+      const saved = localStorage.getItem('ibColumnFilters')
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
+  }) // baseKey -> [values], baseKey_number -> { op/value(s) as string }, baseKey_text -> { op/value }
   const [showFilterDropdown, setShowFilterDropdown] = useState(null) // columnKey | null
   const [filterPosition, setFilterPosition] = useState(null)
   const filterRefs = useRef({})
@@ -430,6 +438,22 @@ const IBCommissionsPage = () => {
     return () => document.removeEventListener('mousedown', onDown)
   }, [])
 
+  // Persist column filters
+  useEffect(() => {
+    try {
+      localStorage.setItem('ibColumnFilters', JSON.stringify(columnFilters))
+    } catch (e) {}
+  }, [columnFilters])
+
+  // Helper to count active filters for a column (value list + number + text)
+  const getFilterCount = (key) => {
+    let count = 0
+    if (Array.isArray(columnFilters[key]) && columnFilters[key].length > 0) count++
+    if (columnFilters[`${key}_number`]?.expr) count++
+    if (columnFilters[`${key}_text`]?.expr) count++
+    return count
+  }
+
   // Apply column filters
   const filteredCommissions = useMemo(() => {
     if (!columnFilters || Object.keys(columnFilters).length === 0) return commissions
@@ -747,7 +771,7 @@ const IBCommissionsPage = () => {
                             className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                           />
                         </th>
-                        {[
+                        {[ 
                           { key: 'id', label: 'ID', align: 'left', width: columnWidths.id || 80 },
                           { key: 'name', label: 'Name', align: 'left', width: columnWidths.name || 200 },
                           { key: 'email', label: 'Email', align: 'left', width: columnWidths.email || 250 },
@@ -767,16 +791,26 @@ const IBCommissionsPage = () => {
                             <div className="flex items-center gap-1" style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}>
                               <span>{col.label}</span>
                               {col.key !== 'action' && (
-                                <button
-                                  className="ml-1 p-0.5 rounded hover:bg-white/10 text-white/90"
-                                  title="Filter"
-                                  onClick={(e) => { e.stopPropagation(); openFilterMenu(col.key) }}
-                                >
-                                  {/* Heroicons outline funnel */}
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 9h12M9 14h6M11 19h2" />
-                                  </svg>
-                                </button>
+                                <>
+                                  <button
+                                    className="ml-1 p-0.5 rounded hover:bg-white/10 text-white/90"
+                                    title="Filter"
+                                    onClick={(e) => { e.stopPropagation(); openFilterMenu(col.key) }}
+                                  >
+                                    {/* Heroicons outline funnel */}
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 9h12M9 14h6M11 19h2" />
+                                    </svg>
+                                  </button>
+                                  {getFilterCount(col.key) > 0 && (
+                                    <span
+                                      className="ml-0.5 inline-flex items-center justify-center px-1 h-4 min-w-[16px] rounded bg-amber-300 text-[10px] font-bold text-slate-900 shadow-sm"
+                                      title={`${getFilterCount(col.key)} active filter${getFilterCount(col.key) > 1 ? 's' : ''}`}
+                                    >
+                                      {getFilterCount(col.key)}
+                                    </span>
+                                  )}
+                                </>
                               )}
                               {sortColumn === col.key && col.key !== 'action' && (
                                 <svg
