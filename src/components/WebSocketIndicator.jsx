@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import websocketService from '../services/websocket'
+import { useData } from '../contexts/DataContext'
 
 const WebSocketIndicator = () => {
   const [connectionState, setConnectionState] = useState('disconnected')
   const [showDebug, setShowDebug] = useState(false)
   const [debugInfo, setDebugInfo] = useState(null)
+  const [showPerf, setShowPerf] = useState(false)
+  const { latestMeasuredLagMs, perf } = useData() || {}
 
   useEffect(() => {
     // Subscribe to connection state changes
@@ -76,6 +79,11 @@ const WebSocketIndicator = () => {
           </div>
         </div>
         <span>{getStatusText()}</span>
+        {latestMeasuredLagMs != null && (
+          <span className="ml-1 text-xs font-medium text-gray-500" title="Approximate lag between server timestamp and receipt">
+            {Math.round(latestMeasuredLagMs/1000)}s lag
+          </span>
+        )}
       </button>
 
       {/* Debug Panel */}
@@ -139,11 +147,38 @@ const WebSocketIndicator = () => {
             )}
           </div>
 
-          <div className="mt-3 pt-2 border-t border-gray-200">
-            <p className="text-xs text-gray-500 italic">
-              Check browser DevTools → Network → WS for more details
-            </p>
+          <div className="mt-3 pt-2 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-xs text-gray-500 italic">DevTools → Network → WS</p>
+            <button
+              onClick={() => setShowPerf(p => !p)}
+              className="text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-50"
+            >{showPerf ? 'Hide Perf' : 'Show Perf'}</button>
           </div>
+
+          {showPerf && perf && (
+            <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Queue Size:</span>
+                <span className="font-semibold text-gray-900">{perf.pendingUpdatesSize}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Last Batch Age:</span>
+                <span className="font-semibold text-gray-900">{perf.lastBatchAgeMs}ms</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Process Time:</span>
+                <span className="font-semibold text-gray-900">{perf.lastBatchProcessMs}ms</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Total Updates:</span>
+                <span className="font-semibold text-gray-900">{perf.totalProcessedUpdates}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Last Flush:</span>
+                <span className="font-semibold text-gray-900">{perf.lastFlushAt ? new Date(perf.lastFlushAt).toLocaleTimeString() : '—'}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

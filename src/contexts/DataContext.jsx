@@ -23,6 +23,14 @@ export const DataProvider = ({ children }) => {
   const [latestServerTimestamp, setLatestServerTimestamp] = useState(null) // Track latest batch timestamp
   const [latestMeasuredLagMs, setLatestMeasuredLagMs] = useState(null) // Wall-clock latency between server timestamp and receipt
   const [lastWsReceiveAt, setLastWsReceiveAt] = useState(null) // Last time we received a WS update (ms)
+  // Lightweight performance metrics for visibility and tuning
+  const [perfStats, setPerfStats] = useState({
+    pendingUpdatesSize: 0,
+    lastBatchProcessMs: 0,
+    lastBatchAgeMs: 0,
+    totalProcessedUpdates: 0,
+    lastFlushAt: 0
+  })
   
   // Aggregated stats for face cards - updated incrementally
   const [clientStats, setClientStats] = useState({
@@ -59,6 +67,9 @@ export const DataProvider = ({ children }) => {
       totalDeposit: 0
     }
   })
+  // Adaptive batching delay for stats updates (ms)
+  const statsBatchDelayRef = useRef(1000)
+  const perfLastEmitRef = useRef(0)
   
   // Track last processed state per client to prevent duplicate delta calculations
   const lastClientStateRef = useRef(new Map())
@@ -329,9 +340,10 @@ export const DataProvider = ({ children }) => {
     batch.deltas.lifetimePnL += delta.lifetimePnL
     batch.deltas.totalDeposit += delta.totalDeposit
     
-    // Schedule batch update (debounced to 1 second)
+    // Schedule batch update (debounced; adaptive delay)
     if (!batch.pending) {
       batch.pending = true
+      const delay = Math.max(200, Math.min(2000, statsBatchDelayRef.current || 1000))
       setTimeout(() => {
         setClientStats(prev => ({
           ...prev,
@@ -356,7 +368,7 @@ export const DataProvider = ({ children }) => {
           totalDeposit: 0
         }
         batch.pending = false
-      }, 1000) // Update stats every 1 second instead of on every message
+      }, delay) // Adaptive stats update interval
     }
   }, [])
 
@@ -684,10 +696,13 @@ export const DataProvider = ({ children }) => {
     })
 
     // ULTRA-OPTIMIZED batch processing
-    let pendingUpdates = new Map()
-    let batchTimer = null
-    let totalProcessed = 0
-    let lastBatchTimestamp = 0
+  let pendingUpdates = new Map()
+  let batchTimer = null
+  let totalProcessed = 0
+  let lastBatchTimestamp = 0
+  // Adaptive flush tracking
+  const firstPendingAtRef = { current: 0 }
+  const lastFlushAtRef = { current: 0 }
     
     // Create index map for O(1) lookups instead of O(n) findIndex
     let clientIndexMap = new Map()
@@ -706,7 +721,7 @@ export const DataProvider = ({ children }) => {
       // Mark receive timestamp at the start of processing a batch
       setLastWsReceiveAt(Date.now())
 
-      const startTime = performance.now()
+  const startTime = performance.now()
       const batchSize = pendingUpdates.size
       const updates = Array.from(pendingUpdates.values())
       pendingUpdates.clear()
@@ -737,6 +752,30 @@ export const DataProvider = ({ children }) => {
         const latency = batchMaxTimestamp > 0 ? Math.floor((Date.now() - batchMaxTimestamp) / 1000) : 0
         const processingTime = Math.round(performance.now() - startTime)
         console.log(`[DataContext] 📦 ${batchSize} updates in ${processingTime}ms (Total: ${totalProcessed}, Lag: ${latency}s)`)
+      }
+
+      // Emit perf stats (rate-limited to 500ms)
+      const now = Date.now()
+      const ageMs = batchMaxTimestamp > 0 ? Math.max(0, now - batchMaxTimestamp) : 0
+      const processMs = Math.round(performance.now() - startTime)
+      lastFlushAtRef.current = now
+      const shouldEmit = now - (perfLastEmitRef.current || 0) >= 500
+      if (shouldEmit) {
+        perfLastEmitRef.current = now
+        setPerfStats(prev => ({
+          pendingUpdatesSize: pendingUpdates.size,
+          lastBatchProcessMs: processMs,
+          lastBatchAgeMs: ageMs,
+          totalProcessedUpdates: totalProcessed,
+          lastFlushAt: now
+        }))
+      }
+
+      // Adapt stats update delay based on load
+      if (batchSize >= 200 || ageMs >= 2000) {
+        statsBatchDelayRef.current = 500
+      } else {
+        statsBatchDelayRef.current = 1000
       }
       
       // OPTIMIZED: Single state update for clients with index map
@@ -849,15 +888,30 @@ export const DataProvider = ({ children }) => {
         
         // Add to batch (Map prevents duplicates)
         pendingUpdates.set(accountLogin, { updatedAccount: normalizedAccount, accountLogin })
-        
-        // AGGRESSIVE: Process immediately when batch is large (>500), otherwise debounce
-        if (pendingUpdates.size > 500) {
+
+        // Adaptive flush criteria:
+        // - Immediate if backlog large
+        // - Flush when first-pending age exceeds 40ms
+        // - Ensure max time between flushes is 200ms
+        const now = Date.now()
+        const size = pendingUpdates.size
+        const largeBacklog = size >= 200
+        const maxSinceFlush = now - (lastFlushAtRef.current || 0) >= 200
+        if (!firstPendingAtRef.current) firstPendingAtRef.current = now
+        const ageSinceFirst = now - firstPendingAtRef.current
+
+        if (largeBacklog || ageSinceFirst >= 40 || maxSinceFlush) {
           if (batchTimer) clearTimeout(batchTimer)
+          firstPendingAtRef.current = 0
           processBatch()
         } else {
-          // Small batches: debounce for 30ms
           if (batchTimer) clearTimeout(batchTimer)
-          batchTimer = setTimeout(processBatch, 30)
+          // Schedule flush at the 40ms mark from first pending
+          const remaining = Math.max(0, 40 - ageSinceFirst)
+          batchTimer = setTimeout(() => {
+            firstPendingAtRef.current = 0
+            processBatch()
+          }, remaining)
         }
         
       } catch (error) {
@@ -1235,6 +1289,7 @@ export const DataProvider = ({ children }) => {
         clearTimeout(batchTimer)
         processBatch() // Process any pending updates
       }
+      firstPendingAtRef.current = 0
       
       unsubDebug()
       unsubState()
@@ -1407,6 +1462,9 @@ export const DataProvider = ({ children }) => {
     // Diagnostics
     verifyAgainstAPI,
     statsDrift
+    ,
+    // Performance visibility
+    perf: perfStats
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
