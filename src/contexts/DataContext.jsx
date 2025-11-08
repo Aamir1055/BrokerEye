@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
 import websocketService from '../services/websocket'
 import { useAuth } from './AuthContext'
@@ -23,14 +23,18 @@ export const DataProvider = ({ children }) => {
   const [latestServerTimestamp, setLatestServerTimestamp] = useState(null) // Track latest batch timestamp
   const [latestMeasuredLagMs, setLatestMeasuredLagMs] = useState(null) // Wall-clock latency between server timestamp and receipt
   const [lastWsReceiveAt, setLastWsReceiveAt] = useState(null) // Last time we received a WS update (ms)
-  // Lightweight performance metrics for visibility and tuning
-  const [perfStats, setPerfStats] = useState({
+  // Lightweight performance metrics via ref + window leak-free export (avoid context re-renders)
+  const perfRef = useRef({
     pendingUpdatesSize: 0,
     lastBatchProcessMs: 0,
     lastBatchAgeMs: 0,
     totalProcessedUpdates: 0,
     lastFlushAt: 0
   })
+  // Expose to window for debug UI without causing provider re-renders
+  useEffect(() => {
+    try { window.__brokerPerf = perfRef.current } catch {}
+  }, [])
   
   // Aggregated stats for face cards - updated incrementally
   const [clientStats, setClientStats] = useState({
@@ -762,13 +766,13 @@ export const DataProvider = ({ children }) => {
       const shouldEmit = now - (perfLastEmitRef.current || 0) >= 500
       if (shouldEmit) {
         perfLastEmitRef.current = now
-        setPerfStats(prev => ({
-          pendingUpdatesSize: pendingUpdates.size,
-          lastBatchProcessMs: processMs,
-          lastBatchAgeMs: ageMs,
-          totalProcessedUpdates: totalProcessed,
-          lastFlushAt: now
-        }))
+        const perf = perfRef.current
+        perf.pendingUpdatesSize = pendingUpdates.size
+        perf.lastBatchProcessMs = processMs
+        perf.lastBatchAgeMs = ageMs
+        perf.totalProcessedUpdates = totalProcessed
+        perf.lastFlushAt = now
+        try { window.__brokerPerf = perf } catch {}
       }
 
       // Adapt stats update delay based on load
@@ -1424,34 +1428,34 @@ export const DataProvider = ({ children }) => {
     initialSync()
   }, [isAuthenticated])
 
-  const value = {
+  const value = useMemo(() => ({
     // Data
     clients,
     positions,
     orders,
     deals,
     accounts,
-    
+
     // Aggregated stats (incrementally updated)
     clientStats,
-    
+
     // Latest server timestamp from WebSocket batch
     latestServerTimestamp,
     latestMeasuredLagMs,
     lastWsReceiveAt,
-    
+
     // Loading states
     loading,
-    
+
     // Connection state
     connectionState,
-    
+
     // Fetch functions
     fetchClients,
     fetchPositions,
     fetchOrders,
     fetchAccounts,
-    
+
     // Update functions (for manual updates)
     setClients,
     setPositions,
@@ -1462,10 +1466,15 @@ export const DataProvider = ({ children }) => {
     // Diagnostics
     verifyAgainstAPI,
     statsDrift
-    ,
-    // Performance visibility
-    perf: perfStats
-  }
+  }), [
+    clients, positions, orders, deals, accounts,
+    clientStats,
+    latestServerTimestamp, latestMeasuredLagMs, lastWsReceiveAt,
+    loading, connectionState,
+    fetchClients, fetchPositions, fetchOrders, fetchAccounts,
+    setClients, setPositions, setOrders, setDeals, setAccounts,
+    verifyAgainstAPI, statsDrift
+  ])
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

@@ -7,7 +7,8 @@ const WebSocketIndicator = () => {
   const [showDebug, setShowDebug] = useState(false)
   const [debugInfo, setDebugInfo] = useState(null)
   const [showPerf, setShowPerf] = useState(false)
-  const { latestMeasuredLagMs, perf } = useData() || {}
+  const [perf, setPerf] = useState(null)
+  const { latestMeasuredLagMs } = useData() || {}
 
   useEffect(() => {
     // Subscribe to connection state changes
@@ -15,19 +16,25 @@ const WebSocketIndicator = () => {
       setConnectionState(state)
     })
 
-    // Update debug info every second when debug panel is open
+    // Update debug/perf info when the panel is open
     let interval
     if (showDebug) {
       interval = setInterval(() => {
         setDebugInfo(websocketService.getDebugInfo())
-      }, 1000)
+        if (showPerf && typeof window !== 'undefined') {
+          // Read perf snapshot published by DataContext without triggering global re-renders
+          // Copy to avoid mutating the shared object
+          const snap = window.__brokerPerf ? { ...window.__brokerPerf } : null
+          setPerf(snap)
+        }
+      }, 800)
     }
 
     return () => {
       unsubscribe()
       if (interval) clearInterval(interval)
     }
-  }, [showDebug])
+  }, [showDebug, showPerf])
 
   const getIndicatorColor = () => {
     switch (connectionState) {
