@@ -58,7 +58,7 @@ const PositionsPage = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
   const [visibleColumns, setVisibleColumns] = useState({
-    position: true,
+    position: false,
     time: true,
     login: true,
     action: true,
