@@ -787,8 +787,8 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Orders Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-            <div className="overflow-y-auto flex-1">
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden">
+            <div className="flex-1">
               {displayedOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -962,38 +962,7 @@ const PendingOrdersPage = () => {
             </div>
           </div>
 
-          {/* Pagination Controls - Bottom */}
-          {itemsPerPage !== 'All' && totalPages > 1 && (
-            <div className="mt-3 flex items-center justify-between bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                  currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                }`}
-              >
-                ← Previous
-              </button>
-              
-              <div className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </div>
-              
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                  currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                }`}
-              >
-                Next →
-              </button>
-            </div>
-          )}
+          {/* Pagination Controls - Bottom removed as per request */}
 
           {/* Connection status helper */}
           <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
