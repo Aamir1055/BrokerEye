@@ -59,16 +59,52 @@ const PositionsPage = () => {
   const [netCurrentPage, setNetCurrentPage] = useState(1)
   const [netItemsPerPage, setNetItemsPerPage] = useState('All') // numeric or 'All'
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
+  // Include all position module columns + NET-specific aggregations (some will render '-')
   const [netVisibleColumns, setNetVisibleColumns] = useState({
+    // Original position columns (mapped / placeholder if not meaningful)
+    position: false,
+    time: false,
+    login: false, // replaced by aggregated loginCount
+    action: false,
     symbol: true,
+    volume: false, // replaced by netVolume
+    volumePercentage: false,
+    priceOpen: false, // replaced by avgPrice
+    priceCurrent: false,
+    sl: false,
+    tp: false,
+    profit: false, // replaced by totalProfit
+    profitPercentage: false,
+    storage: false, // replaced by totalStorage
+    storagePercentage: false,
+    appliedPercentage: false,
+    reason: false,
+    comment: false,
+    commission: false, // replaced by totalCommission
+    // NET-specific columns
     netType: true,
     netVolume: true,
     avgPrice: true,
     totalProfit: true,
+    totalStorage: false,
+    totalCommission: false,
     loginCount: true,
-    totalPositions: true
+    totalPositions: true,
+    variantCount: false
   })
   const toggleNetColumn = (col) => setNetVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
+  // Suggestion-based search for NET view
+  const [netSearchQuery, setNetSearchQuery] = useState('')
+  const [netShowSuggestions, setNetShowSuggestions] = useState(false)
+  const netSearchRef = useRef(null)
+  // Card filter for NET summary cards
+  const [netCardFilterOpen, setNetCardFilterOpen] = useState(false)
+  const [netCardsVisible, setNetCardsVisible] = useState({
+    netSymbols: true,
+    totalNetVolume: true,
+    totalNetPL: true,
+    totalLogins: true
+  })
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -544,9 +580,11 @@ const PositionsPage = () => {
 
       if (netVolume === 0) return
 
-      let totalWeightedPrice = 0
-      let totalVolume = 0
-      let totalProfit = 0
+  let totalWeightedPrice = 0
+  let totalVolume = 0
+  let totalProfit = 0
+  let totalStorage = 0
+  let totalCommission = 0
 
       if (netVolume > 0) {
         // Net Buy - use buy positions for average
@@ -556,6 +594,8 @@ const PositionsPage = () => {
           totalWeightedPrice += price * vol
           totalVolume += vol
           totalProfit += p.profit || 0
+          totalStorage += p.storage || 0
+          totalCommission += p.commission || 0
         })
       } else {
         // Net Sell - use sell positions for average
@@ -565,6 +605,8 @@ const PositionsPage = () => {
           totalWeightedPrice += price * vol
           totalVolume += vol
           totalProfit += p.profit || 0
+          totalStorage += p.storage || 0
+          totalCommission += p.commission || 0
         })
       }
 
@@ -585,16 +627,18 @@ const PositionsPage = () => {
           const vSellVol = data.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
           const vNet = vBuyVol - vSellVol
           if (vNet === 0) return null
-          let tw = 0, tv = 0, tp = 0
+          let tw = 0, tv = 0, tp = 0, ts = 0, tc = 0
           const use = vNet > 0 ? data.buyPositions : data.sellPositions
-          use.forEach(p => { const vol = p.volume || 0; const price = p.priceOpen || 0; tw += price * vol; tv += vol; tp += p.profit || 0 })
+          use.forEach(p => { const vol = p.volume || 0; const price = p.priceOpen || 0; tw += price * vol; tv += vol; tp += p.profit || 0; ts += p.storage || 0; tc += p.commission || 0 })
           const vAvg = tv > 0 ? tw / tv : 0
           return {
             exactSymbol: exact,
             netType: vNet > 0 ? 'Sell' : 'Buy',
             netVolume: Math.abs(vNet),
             avgPrice: vAvg,
-            totalProfit: tp
+            totalProfit: tp,
+            totalStorage: ts,
+            totalCommission: tc
           }
         }).filter(Boolean)
       }
@@ -605,6 +649,8 @@ const PositionsPage = () => {
         netVolume: Math.abs(netVolume),
         avgPrice,
         totalProfit,
+        totalStorage,
+        totalCommission,
         loginCount,
         totalPositions,
         variantCount,
@@ -810,15 +856,40 @@ const PositionsPage = () => {
   // Calculate NET positions using useMemo - use cachedPositions for all data
   const netPositionsData = useMemo(() => {
     if (!showNetPositions) return []
-    // Use cachedPositions to get ALL positions regardless of filters
     return calculateGlobalNetPositions(cachedPositions)
   }, [showNetPositions, cachedPositions, groupByBaseSymbol])
 
+  // NET suggestions
+  const getNetSuggestions = () => {
+    if (!netSearchQuery.trim()) return []
+    const q = netSearchQuery.toLowerCase().trim()
+    const s = new Set()
+    netPositionsData.forEach(row => {
+      if (String(row.symbol || '').toLowerCase().includes(q)) s.add(`Symbol: ${row.symbol}`)
+      if (String(row.netType || '').toLowerCase().includes(q)) s.add(`NET Type: ${row.netType}`)
+    })
+    return Array.from(s).slice(0, 10)
+  }
+  const handleNetSuggestionClick = (suggestion) => {
+    const value = suggestion.split(': ')[1]
+    setNetSearchQuery(value)
+    setNetShowSuggestions(false)
+  }
+  const handleNetSearchKeyDown = (e) => { if (e.key === 'Enter') setNetShowSuggestions(false) }
+
+  const netFilteredPositions = useMemo(() => {
+    if (!netSearchQuery.trim()) return netPositionsData
+    const q = netSearchQuery.toLowerCase().trim()
+    return netPositionsData.filter(row =>
+      String(row.symbol || '').toLowerCase().includes(q) || String(row.netType || '').toLowerCase().includes(q)
+    )
+  }, [netSearchQuery, netPositionsData])
+
   // Pagination logic specific to NET module
-  const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(netPositionsData.length / netItemsPerPage)
+  const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(netFilteredPositions.length / netItemsPerPage)
   const netStartIndex = netItemsPerPage === 'All' ? 0 : (netCurrentPage - 1) * netItemsPerPage
-  const netEndIndex = netItemsPerPage === 'All' ? netPositionsData.length : netStartIndex + netItemsPerPage
-  const netDisplayedPositions = netPositionsData.slice(netStartIndex, netEndIndex)
+  const netEndIndex = netItemsPerPage === 'All' ? netFilteredPositions.length : netStartIndex + netItemsPerPage
+  const netDisplayedPositions = netFilteredPositions.slice(netStartIndex, netEndIndex)
   useEffect(() => { if (!isAuthenticated) return; setNetCurrentPage(1) }, [netItemsPerPage])
   const handleNetPageChange = (p) => { setNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const handleNetItemsPerPageChange = (v) => { setNetItemsPerPage(v === 'All' ? 'All' : parseInt(v)); setNetCurrentPage(1) }
@@ -1387,31 +1458,30 @@ const PositionsPage = () => {
             <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
               {/* NET Position Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">NET Symbols</p>
-                  <p className="text-lg font-semibold text-gray-900">{netPositionsData.length}</p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {formatNumber(netPositionsData.reduce((sum, p) => sum + p.netVolume, 0), 2)}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
-                  <p className={`text-lg font-semibold flex items-center gap-1 ${
-                    netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
-                    {formatNumber(Math.abs(netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total Logins</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {netPositionsData.reduce((sum, p) => sum + p.loginCount, 0)}
-                  </p>
-                </div>
+                {netCardsVisible.netSymbols && (
+                  <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
+                    <p className="text-xs text-gray-500 mb-1">NET Symbols</p>
+                    <p className="text-lg font-semibold text-gray-900">{netFilteredPositions.length}</p>
+                  </div>
+                )}
+                {netCardsVisible.totalNetVolume && (
+                  <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
+                    <p className="text-lg font-semibold text-gray-900">{formatNumber(netFilteredPositions.reduce((s,p)=>s+p.netVolume,0),2)}</p>
+                  </div>
+                )}
+                {netCardsVisible.totalNetPL && (
+                  <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
+                    <p className={`text-lg font-semibold flex items-center gap-1 ${netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'text-green-600':'text-red-600'}`}> {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'▲':'▼'} {formatNumber(Math.abs(netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)),2)}</p>
+                  </div>
+                )}
+                {netCardsVisible.totalLogins && (
+                  <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
+                    <p className="text-xs text-gray-500 mb-1">Total Logins</p>
+                    <p className="text-lg font-semibold text-gray-900">{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</p>
+                  </div>
+                )}
                 {/* Grouping toggle */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex items-center justify-between col-span-2 md:col-span-1">
                   <div>
@@ -1427,63 +1497,117 @@ const PositionsPage = () => {
 
               {/* NET Position Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
-                {/* NET module controls (pagination + columns) */}
-                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-                  {/* Pagination / show entries */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">Show:</span>
-                    <select
-                      value={netItemsPerPage}
-                      onChange={(e) => handleNetItemsPerPageChange(e.target.value)}
-                      className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {['All', 25, 50, 100, 200].map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                    <span className="text-xs text-gray-600">entries</span>
-                    <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netPositionsData.length)} of {netPositionsData.length}</span>
-                  </div>
-                  {/* Page navigation */}
-                  {netItemsPerPage !== 'All' && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleNetPageChange(netCurrentPage - 1)}
-                        disabled={netCurrentPage === 1}
-                        className={`p-1 rounded border text-xs ${netCurrentPage === 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}`}
-                      >Prev</button>
-                      <span className="text-[11px] text-gray-700 px-1">Page {netCurrentPage}/{netTotalPages}</span>
-                      <button
-                        onClick={() => handleNetPageChange(netCurrentPage + 1)}
-                        disabled={netCurrentPage === netTotalPages}
-                        className={`p-1 rounded border text-xs ${netCurrentPage === netTotalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}`}
-                      >Next</button>
-                    </div>
-                  )}
-                  {/* Columns selector */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setNetShowColumnSelector(v => !v)}
-                      className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700"
-                      title="Show/Hide NET columns"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                      Columns
-                    </button>
-                    {netShowColumnSelector && (
-                      <div className="absolute right-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44">
-                        <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
-                        {Object.keys(netVisibleColumns).map(k => (
-                          <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={netVisibleColumns[k]}
-                              onChange={() => toggleNetColumn(k)}
-                              className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-[11px] text-gray-700 capitalize">{k === 'loginCount' ? 'Logins' : k === 'totalPositions' ? 'Positions' : k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k}</span>
-                          </label>
+                {/* NET module controls */}
+                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col gap-3">
+                  {/* Search bar */}
+                  <div className="relative" ref={netSearchRef}>
+                    <input
+                      type="text"
+                      value={netSearchQuery}
+                      onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
+                      onFocus={() => setNetShowSuggestions(true)}
+                      onKeyDown={handleNetSearchKeyDown}
+                      placeholder="Search symbol or NET type..."
+                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-72"
+                    />
+                    <svg className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    {netSearchQuery && (
+                      <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    )}
+                    {netShowSuggestions && getNetSuggestions().length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                        {getNetSuggestions().map((s,i)=>(
+                          <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50">{s}</button>
                         ))}
                       </div>
                     )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center flex-wrap gap-2">
+                      <span className="text-xs text-gray-600">Show:</span>
+                      <select value={netItemsPerPage} onChange={(e)=>handleNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {['All',25,50,100,200].map(o=> <option key={o} value={o}>{o}</option>)}
+                      </select>
+                      <span className="text-xs text-gray-600">entries</span>
+                      {netItemsPerPage !== 'All' && (
+                        <>
+                          <button onClick={()=>handleNetPageChange(netCurrentPage-1)} disabled={netCurrentPage===1} className={`ml-3 px-2 py-1 rounded border text-xs ${netCurrentPage===1?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Prev</button>
+                          <span className="text-[11px] text-gray-700 px-1">Page {netCurrentPage}/{netTotalPages}</span>
+                          <button onClick={()=>handleNetPageChange(netCurrentPage+1)} disabled={netCurrentPage===netTotalPages} className={`px-2 py-1 rounded border text-xs ${netCurrentPage===netTotalPages?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Next</button>
+                        </>
+                      )}
+                      <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Columns selector */}
+                      <div className="relative">
+                        <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Show/Hide NET columns">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                          Columns
+                        </button>
+                        {netShowColumnSelector && (
+                          <div className="absolute right-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
+                            <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
+                            {Object.keys(netVisibleColumns).map(k => (
+                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                <span className="text-[11px] text-gray-700 capitalize">{
+                                  k==='netType'?'NET Type':
+                                  k==='netVolume'?'NET Volume':
+                                  k==='avgPrice'?'Avg Price':
+                                  k==='totalProfit'?'Total Profit':
+                                  k==='totalStorage'?'Total Storage':
+                                  k==='totalCommission'?'Total Commission':
+                                  k==='loginCount'?'Logins':
+                                  k==='totalPositions'?'Positions':
+                                  k==='variantCount'?'Variant Count':
+                                  k==='priceOpen'?'Price Open':
+                                  k==='priceCurrent'?'Price Current':
+                                  k==='appliedPercentage'?'Applied %':
+                                  k==='volumePercentage'?'Volume %':
+                                  k==='profitPercentage'?'Profit %':
+                                  k==='storagePercentage'?'Storage %':
+                                  k==='commission'?'Commission':
+                                  k==='position'?'Position':
+                                  k==='reason'?'Reason':
+                                  k==='comment'?'Comment':
+                                  k==='sl'?'S/L':
+                                  k==='tp'?'T/P':
+                                  k==='login'?'Login':
+                                  k==='time'?'Time':
+                                  k==='symbol'?'Symbol':
+                                  k==='volume'?'Volume':
+                                  k==='storage'?'Storage':
+                                  k==='profit'?'Profit':
+                                  k==='action'?'Action':
+                                  k==='totalLogins'?'Total Logins': k
+                                }</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {/* Card Filter */}
+                      <div className="relative">
+                        <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                          Card Filter
+                        </button>
+                        {netCardFilterOpen && (
+                          <div className="absolute right-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
+                            <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
+                            {Object.entries(netCardsVisible).map(([k,v]) => (
+                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                <input type="checkbox" checked={v} onChange={()=>setNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                <span className="text-[11px] text-gray-700">{k==='netSymbols'?'NET Symbols':k==='totalNetVolume'?'Total NET Volume':k==='totalNetPL'?'Total NET P/L':'Total Logins'}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
