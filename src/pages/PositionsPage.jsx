@@ -1429,44 +1429,6 @@ const PositionsPage = () => {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Columns Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Columns
-                </button>
-                {showColumnSelector && (
-                  <div
-                    ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
-                    </div>
-                    {allColumns.map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
               {/* Page Navigation */}
               {itemsPerPage !== 'All' && (
                 <div className="flex items-center gap-2">
