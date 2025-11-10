@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, Fragment } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroups } from '../contexts/GroupContext'
@@ -1327,7 +1327,8 @@ const PositionsPage = () => {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
                         {netPositionsData.map((netPos, idx) => (
-                          <tr key={idx} className="hover:bg-blue-50 transition-all duration-300">
+                          <Fragment key={netPos.symbol || idx}>
+                          <tr className="hover:bg-blue-50 transition-all duration-300">
                             <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                               {netPos.symbol}
                               {groupByBaseSymbol && netPos.variantCount > 1 && (
@@ -1377,10 +1378,8 @@ const PositionsPage = () => {
                               )}
                             </td>
                           </tr>
-                        ))}
-                        {groupByBaseSymbol && netPositionsData.map((netPos, idx) => (
-                          expandedNetKeys.has(netPos.symbol) && netPos.variants && netPos.variants.length > 0 ? (
-                            <tr key={`v-${idx}`} className="bg-gray-50">
+                          {groupByBaseSymbol && expandedNetKeys.has(netPos.symbol) && netPos.variants && netPos.variants.length > 0 && (
+                            <tr className="bg-gray-50">
                               <td colSpan={7} className="px-3 py-2">
                                 <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -1400,7 +1399,8 @@ const PositionsPage = () => {
                                 </div>
                               </td>
                             </tr>
-                          ) : null
+                          )}
+                          </Fragment>
                         ))}
                       </tbody>
                     </table>
