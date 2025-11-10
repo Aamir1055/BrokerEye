@@ -34,9 +34,9 @@ const IBCommissionsPage = () => {
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
   
-  // Sorting states
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc')
+  // Sorting states - default to created_at desc as per API
+  const [sortColumn, setSortColumn] = useState('created_at')
+  const [sortDirection, setSortDirection] = useState('desc')
   
   // Removed column filter dropdown feature per request
   // Re-adding Syncfusion-like filter menu (same UX as Clients)
@@ -86,7 +86,7 @@ const IBCommissionsPage = () => {
     
     // Cleanup interval on unmount
     return () => clearInterval(intervalId)
-  }, [currentPage, itemsPerPage])
+  }, [currentPage, itemsPerPage, sortColumn, sortDirection])
 
   // Fetch commission totals for face cards
   const fetchCommissionTotals = async () => {
@@ -132,7 +132,7 @@ const IBCommissionsPage = () => {
     try {
       setLoading(true)
       setError('')
-      const response = await brokerAPI.getIBCommissions(currentPage, itemsPerPage, searchQuery)
+      const response = await brokerAPI.getIBCommissions(currentPage, itemsPerPage, searchQuery, sortColumn, sortDirection)
       
       if (response.status === 'success' && response.data) {
         setCommissions(response.data.records || [])
@@ -263,13 +263,15 @@ const IBCommissionsPage = () => {
     return `${day}/${month}/${year} ${hours}:${minutes}`
   }
 
-  // Handle column sorting
+  // Handle column sorting - triggers API call via useEffect
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
+      // Toggle direction if clicking same column
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
+      // New column - default to desc for most cases, asc for name
       setSortColumn(columnKey)
-      setSortDirection('asc')
+      setSortDirection(columnKey === 'name' ? 'asc' : 'desc')
     }
   }
 
@@ -459,37 +461,9 @@ const IBCommissionsPage = () => {
     })
   }, [commissions, columnFilters])
 
-  // Sort commissions client-side after filters
-  const sortedCommissions = useMemo(() => {
-    const arr = [...filteredCommissions]
-    return arr.sort((a, b) => {
-    if (!sortColumn) return 0
-    
-    let aVal = a[sortColumn]
-    let bVal = b[sortColumn]
-    
-    // Handle null/undefined
-    if (aVal == null && bVal == null) return 0
-    if (aVal == null) return 1
-    if (bVal == null) return -1
-    
-    // Numeric comparison for id, percentage, commissions
-    if (['id', 'percentage', 'total_commission', 'available_commission'].includes(sortColumn)) {
-      aVal = parseFloat(aVal)
-      bVal = parseFloat(bVal)
-      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
-    }
-    
-    // String comparison
-    const aStr = String(aVal).toLowerCase()
-    const bStr = String(bVal).toLowerCase()
-    if (sortDirection === 'asc') {
-      return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
-    } else {
-      return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
-    }
-    })
-  }, [filteredCommissions, sortColumn, sortDirection])
+  // Since sorting is now done by API, just use filteredCommissions directly
+  // Keep the variable name for backward compatibility with existing code
+  const sortedCommissions = filteredCommissions
 
   // Column resize handlers
   const handleResizeStart = (e, columnKey) => {
@@ -593,6 +567,20 @@ const IBCommissionsPage = () => {
               </p>
             </div>
 
+            {/* Disbursed Commission Card (Total - Available) */}
+            <div className="bg-white rounded shadow-sm border border-red-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
+              <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">
+                Disbursed Commission
+              </p>
+              <p className="text-sm font-bold text-red-700">
+                {totalsLoading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : (
+                  formatIndianNumber(totalCommission - totalAvailableCommission)
+                )}
+              </p>
+            </div>
+
             {/* Total Commission Percentage Card */}
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider mb-1">
@@ -602,7 +590,7 @@ const IBCommissionsPage = () => {
                 {totalsLoading ? (
                   <span className="text-gray-400">Loading...</span>
                 ) : (
-                  `${parseFloat(totalCommissionPercentage || 0).toFixed(2)}%`
+                  parseFloat(totalCommissionPercentage || 0).toFixed(2)
                 )}
               </p>
             </div>
@@ -616,7 +604,7 @@ const IBCommissionsPage = () => {
                 {totalsLoading ? (
                   <span className="text-gray-400">Loading...</span>
                 ) : (
-                  `${parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)}%`
+                  parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)
                 )}
               </p>
             </div>

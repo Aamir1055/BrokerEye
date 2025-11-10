@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -12,6 +13,7 @@ const PendingOrdersPage = () => {
   // Use cached data from DataContext
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
   const { filterByActiveGroup } = useGroups()
+  const { filterByActiveIB } = useIB()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
@@ -383,25 +385,28 @@ const PendingOrdersPage = () => {
   // Apply group filter if active
   let groupFilteredOrders = filterByActiveGroup(searchedOrders, 'login', 'pendingorders')
   
+  // Apply IB filter if active
+  let ibFilteredOrders = filterByActiveIB(groupFilteredOrders, 'login')
+  
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
     if (columnKey.endsWith('_number')) {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
-      groupFilteredOrders = groupFilteredOrders.filter(order => {
+      ibFilteredOrders = ibFilteredOrders.filter(order => {
         const orderValue = order[actualColumnKey]
         return matchesNumberFilter(orderValue, values)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
-      groupFilteredOrders = groupFilteredOrders.filter(order => {
+      ibFilteredOrders = ibFilteredOrders.filter(order => {
         const orderValue = order[columnKey]
         return values.includes(orderValue)
       })
     }
   })
   
-  const sortedOrders = sortOrders(groupFilteredOrders)
+  const sortedOrders = sortOrders(ibFilteredOrders)
   
   // Get search suggestions
   const getSuggestions = () => {

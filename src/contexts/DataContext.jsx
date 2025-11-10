@@ -400,39 +400,9 @@ export const DataProvider = ({ children }) => {
     try {
       const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getClients' })
       const rawData = response.data?.clients || []
-      
-      // Normalize USC currency values (divide by 100)
-      const normalizedData = rawData.map(client => {
-        if (client && client.currency && client.currency.toLowerCase() === 'usc') {
-          return {
-            ...client,
-            balance: (client.balance || 0) / 100,
-            credit: (client.credit || 0) / 100,
-            equity: (client.equity || 0) / 100,
-            margin: (client.margin || 0) / 100,
-            marginFree: (client.marginFree || 0) / 100,
-            profit: (client.profit || 0) / 100,
-            floating: (client.floating || 0) / 100,
-            pnl: (client.pnl || 0) / 100,
-            assets: (client.assets || 0) / 100,
-            liabilities: (client.liabilities || 0) / 100,
-            blockedCommission: (client.blockedCommission || 0) / 100,
-            blockedProfit: (client.blockedProfit || 0) / 100,
-            storage: (client.storage || 0) / 100,
-            marginInitial: (client.marginInitial || 0) / 100,
-            marginMaintenance: (client.marginMaintenance || 0) / 100,
-            soEquity: (client.soEquity || 0) / 100,
-            soMargin: (client.soMargin || 0) / 100,
-            dailyDeposit: (client.dailyDeposit || 0) / 100,
-            dailyWithdrawal: (client.dailyWithdrawal || 0) / 100,
-            dailyPnL: (client.dailyPnL || 0) / 100,
-            thisWeekPnL: (client.thisWeekPnL || 0) / 100,
-            thisMonthPnL: (client.thisMonthPnL || 0) / 100,
-            lifetimePnL: (client.lifetimePnL || 0) / 100
-          }
-        }
-        return client
-      })
+
+      // Normalize USC consistently using the shared helper (avoids double/partial normalization)
+      const normalizedData = rawData.map(normalizeUSCValues)
       
       // Deduplicate clients by login (keep last occurrence)
       const clientsMap = new Map()

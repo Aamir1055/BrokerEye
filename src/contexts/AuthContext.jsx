@@ -224,6 +224,10 @@ export const AuthProvider = ({ children }) => {
     // Start token refresh schedule
     const expiresIn = Number(data?.expires_in || 3600)
     scheduleTokenRefreshDynamic(expiresIn)
+    
+    // Dispatch login event to trigger IB email fetch
+    window.dispatchEvent(new CustomEvent('auth:login'))
+    console.log('[Auth] Login event dispatched')
   }
 
   const logout = async () => {

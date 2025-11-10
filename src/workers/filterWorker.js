@@ -41,6 +41,7 @@ function filterClients(clients, filters) {
   const {
     filterByPositions,
     filterByCredit,
+    filterNoDeposit,
     columnFilters,
     searchQuery
   } = filters || {}
@@ -56,6 +57,10 @@ function filterClients(clients, filters) {
     // Credit
     if (filterByCredit) {
       if (!(c.credit && c.credit !== 0)) continue
+    }
+    // No Deposit
+    if (filterNoDeposit) {
+      if (c.lifetimeDeposit && c.lifetimeDeposit !== 0) continue
     }
     // Column filters
     let columnReject = false

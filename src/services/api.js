@@ -338,10 +338,16 @@ export const brokerAPI = {
   },
 
   // Get IB commissions with pagination and search
-  getIBCommissions: async (page = 1, pageSize = 50, search = '') => {
+  getIBCommissions: async (page = 1, pageSize = 50, search = '', sortBy = 'created_at', sortOrder = 'desc') => {
     let url = `/api/amari/ib/commissions?page=${page}&page_size=${pageSize}`
     if (search && search.trim()) {
       url += `&search=${encodeURIComponent(search.trim())}`
+    }
+    if (sortBy) {
+      url += `&sort_by=${encodeURIComponent(sortBy)}`
+    }
+    if (sortOrder) {
+      url += `&sort_order=${encodeURIComponent(sortOrder)}`
     }
     const response = await api.get(url)
     return response.data
@@ -372,6 +378,18 @@ export const brokerAPI = {
   // Get IB commission totals
   getIBCommissionTotals: async () => {
     const response = await api.get('/api/amari/ib/commissions/total')
+    return response.data
+  },
+
+  // Get all IB emails
+  getIBEmails: async () => {
+    const response = await api.get('/api/amari/ib/emails')
+    return response.data
+  },
+
+  // Get MT5 accounts for a specific IB
+  getIBMT5Accounts: async (email) => {
+    const response = await api.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
     return response.data
   }
 }

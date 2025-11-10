@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -24,6 +25,7 @@ const MarginLevelPage = () => {
   // Use cached data from DataContext
   const { accounts: cachedAccounts, positions: cachedPositions, fetchAccounts, loading, connectionState } = useData()
   const { filterByActiveGroup } = useGroups()
+  const { filterByActiveIB } = useIB()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
@@ -361,25 +363,28 @@ const MarginLevelPage = () => {
   // Apply group filter if active
   let groupFilteredAccounts = filterByActiveGroup(searchedAccounts, 'login', 'marginlevel')
   
+  // Apply IB filter if active
+  let ibFilteredAccounts = filterByActiveIB(groupFilteredAccounts, 'login')
+  
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
     if (columnKey.endsWith('_number')) {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
-      groupFilteredAccounts = groupFilteredAccounts.filter(account => {
+      ibFilteredAccounts = ibFilteredAccounts.filter(account => {
         const accountValue = account[actualColumnKey]
         return matchesNumberFilter(accountValue, values)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
-      groupFilteredAccounts = groupFilteredAccounts.filter(account => {
+      ibFilteredAccounts = ibFilteredAccounts.filter(account => {
         const accountValue = account[columnKey]
         return values.includes(accountValue)
       })
     }
   })
   
-  const sortedAccounts = sortAccounts(groupFilteredAccounts)
+  const sortedAccounts = sortAccounts(ibFilteredAccounts)
   
   // Get search suggestions
   const getSuggestions = () => {

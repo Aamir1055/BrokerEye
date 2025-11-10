@@ -58,6 +58,7 @@ const DashboardPage = () => {
 
   // Show/hide card filter dropdown
   const [showCardFilter, setShowCardFilter] = useState(false)
+  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
 
   // Drag and drop state
   const [draggedCard, setDraggedCard] = useState(null)
@@ -432,8 +433,21 @@ const DashboardPage = () => {
                       <div className="p-3 border-b border-gray-200">
                         <p className="text-xs font-semibold text-gray-700">Show/Hide Cards</p>
                       </div>
+                      <div className="px-3 py-2 border-b border-gray-200">
+                        <input
+                          type="text"
+                          placeholder="Search cards..."
+                          value={cardFilterSearchQuery}
+                          onChange={(e) => setCardFilterSearchQuery(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent placeholder:text-gray-400"
+                        />
+                      </div>
                       <div className="p-2">
-                        {defaultFaceCardOrder.map(cardId => {
+                        {defaultFaceCardOrder.filter(cardId => {
+                          const card = getFaceCardConfig(cardId, faceCardTotals)
+                          if (!card) return false
+                          return card.title.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                        }).map(cardId => {
                           const card = getFaceCardConfig(cardId, faceCardTotals)
                           if (!card) return null
                           return (

@@ -9,6 +9,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [netPositions, setNetPositions] = useState([])
   
   // Broker Rules states
   const [availableRules, setAvailableRules] = useState([])
@@ -33,6 +34,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [filteredDeals, setFilteredDeals] = useState([])
   const [allDeals, setAllDeals] = useState([])
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState('')
   
   // Search and filter states for positions
   const [searchQuery, setSearchQuery] = useState('')
@@ -160,8 +162,83 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     if (allPositionsCache && allPositionsCache.length >= 0) {
       const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
       setPositions(clientPositions)
+      
+      // Calculate net positions grouped by symbol
+      calculateNetPositions(clientPositions)
     }
   }, [allPositionsCache, client.login])
+  
+  // Calculate NET positions by grouping by symbol
+  const calculateNetPositions = (clientPositions) => {
+    const grouped = {}
+    
+    clientPositions.forEach(pos => {
+      const symbol = pos.symbol
+      if (!grouped[symbol]) {
+        grouped[symbol] = {
+          symbol,
+          buyVolume: 0,
+          sellVolume: 0,
+          buyPrices: [],
+          sellPrices: [],
+          totalProfit: 0,
+          positions: []
+        }
+      }
+      
+      if (pos.action === 0) { // Buy
+        grouped[symbol].buyVolume += pos.volume
+        grouped[symbol].buyPrices.push({ price: pos.priceOpen, volume: pos.volume })
+      } else { // Sell
+        grouped[symbol].sellVolume += pos.volume
+        grouped[symbol].sellPrices.push({ price: pos.priceOpen, volume: pos.volume })
+      }
+      
+      grouped[symbol].totalProfit += pos.profit
+      grouped[symbol].positions.push(pos)
+    })
+    
+    // Calculate net positions with weighted average prices
+    const netPos = Object.values(grouped).map(group => {
+      const netVolume = group.buyVolume - group.sellVolume
+      const absNetVolume = Math.abs(netVolume)
+      
+      // Determine net type (show actual result, not opposite)
+      const netType = netVolume > 0 ? 'Buy' : netVolume < 0 ? 'Sell' : 'Neutral'
+      
+      // Calculate weighted average open price for the dominant side
+      let avgOpenPrice = 0
+      if (netVolume > 0) {
+        // More buys than sells, calculate weighted average of buy prices
+        const totalWeightedPrice = group.buyPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
+        avgOpenPrice = group.buyVolume > 0 ? totalWeightedPrice / group.buyVolume : 0
+      } else if (netVolume < 0) {
+        // More sells than buys, calculate weighted average of sell prices
+        const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
+        avgOpenPrice = group.sellVolume > 0 ? totalWeightedPrice / group.sellVolume : 0
+      }
+      
+      return {
+        symbol: group.symbol,
+        netVolume: absNetVolume,
+        netType,
+        avgOpenPrice,
+        totalProfit: group.totalProfit,
+        positionCount: group.positions.length
+      }
+    }).filter(pos => pos.netVolume > 0) // Only show symbols with net positions
+    
+    setNetPositions(netPos)
+  }
+
+  // Auto-apply "Today" preset when Deals tab is first activated
+  const hasAutoLoadedDeals = useRef(false)
+  useEffect(() => {
+    if (activeTab === 'deals' && !hasAutoLoadedDeals.current) {
+      hasAutoLoadedDeals.current = true
+      handleDatePreset('today')
+    }
+  }, [activeTab])
 
   const fetchPositions = async () => {
     try {
@@ -421,6 +498,65 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     setDeals([])
     setAllDeals([])
     setHasAppliedFilter(false)
+    setOperationError('')
+    setSelectedPreset('')
+  }
+
+  const handleDatePreset = async (preset) => {
+    const now = new Date()
+    let fromDateObj, toDateObj
+    
+    setSelectedPreset(preset)
+    
+    switch (preset) {
+      case 'today':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'last3days':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'lastweek':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'lastmonth':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate(), 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'last3months':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate(), 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'last6months':
+        fromDateObj = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate(), 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      case 'allhistory':
+        // Set from date to 2 years ago for "all history"
+        fromDateObj = new Date(now.getFullYear() - 2, 0, 1, 0, 0, 0)
+        toDateObj = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+        break
+      default:
+        return
+    }
+    
+    // Update the date inputs
+    const formatToInput = (date) => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+    
+    setFromDate(formatToInput(fromDateObj))
+    setToDate(formatToInput(toDateObj))
+    
+    // Automatically apply the filter
+    const fromTimestamp = Math.floor(fromDateObj.getTime() / 1000)
+    const toTimestamp = Math.floor(toDateObj.getTime() / 1000)
+    await fetchDeals(fromTimestamp, toTimestamp)
     setOperationError('')
   }
 
@@ -908,6 +1044,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               }`}
             >
               Positions ({positions.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('netpositions')}
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                activeTab === 'netpositions'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              NET Position ({netPositions.length})
             </button>
             <button
               onClick={() => setActiveTab('deals')}
@@ -1497,9 +1643,74 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
+          {activeTab === 'netpositions' && (
+            <div>
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : netPositions.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-sm">No net positions available</p>
+                  <p className="text-gray-400 text-xs mt-1">Open some positions to see NET position summary</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-96">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-purple-600 sticky top-0 z-10 shadow-md">
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Symbol</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">NET Type</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">NET Volume</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Avg Open Price</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Total Profit</th>
+                        <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Positions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {netPositions.map((netPos, index) => (
+                        <tr key={`${netPos.symbol}-${index}`} className="hover:bg-purple-50 transition-colors">
+                          <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                            {netPos.symbol}
+                          </td>
+                          <td className="px-3 py-2 text-sm whitespace-nowrap">
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              netPos.netType === 'Buy' 
+                                ? 'text-green-600 bg-green-50' 
+                                : netPos.netType === 'Sell'
+                                ? 'text-blue-600 bg-blue-50'
+                                : 'text-gray-600 bg-gray-50'
+                            }`}>
+                              {netPos.netType}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap font-semibold">
+                            {netPos.netVolume.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {netPos.avgOpenPrice > 0 ? netPos.avgOpenPrice.toFixed(5) : '-'}
+                          </td>
+                          <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(netPos.totalProfit)}`}>
+                            {formatCurrency(netPos.totalProfit)}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">
+                            {netPos.positionCount} {netPos.positionCount === 1 ? 'position' : 'positions'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'deals' && (
             <div>
-              {/* Date Filter with Pagination */}
+              {/* Date Filter with Dropdown Presets */}
               <div className="bg-blue-50 rounded-lg p-2 mb-3 border border-blue-200">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs">
@@ -1507,14 +1718,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     <input
                       type="date"
                       value={formatDateToInput(fromDate)}
-                      onChange={(e) => setFromDate(e.target.value)}
+                      onChange={(e) => {
+                        setFromDate(e.target.value)
+                        setSelectedPreset('')
+                      }}
                       className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
                     />
                     <span className="text-gray-500">to</span>
                     <input
                       type="date"
                       value={formatDateToInput(toDate)}
-                      onChange={(e) => setToDate(e.target.value)}
+                      onChange={(e) => {
+                        setToDate(e.target.value)
+                        setSelectedPreset('')
+                      }}
                       className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
                     />
                     <button
@@ -1532,6 +1749,26 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     >
                       Clear
                     </button>
+                    
+                    {/* Quick Filters Dropdown */}
+                    <select
+                      value={selectedPreset}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleDatePreset(e.target.value)
+                        }
+                      }}
+                      className="px-3 py-1 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all shadow-sm"
+                    >
+                      <option value="">Quick Filters</option>
+                      <option value="today">Today</option>
+                      <option value="lastweek">Last Week</option>
+                      <option value="lastmonth">Last Month</option>
+                      <option value="last3months">Last 3 Months</option>
+                      <option value="last6months">Last 6 Months</option>
+                      <option value="allhistory">All History</option>
+                    </select>
+                    
                     {operationError && (
                       <span className="text-xs text-red-600 ml-2">{operationError}</span>
                     )}
@@ -1540,7 +1777,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Select date range and click Apply
+                        Select a quick filter or custom range
                       </span>
                     )}
                   </div>
@@ -2141,6 +2378,35 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 }`}>Total P/L</p>
                 <p className={`text-base font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
                   {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'netpositions' && netPositions.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">NET Symbols</p>
+                <p className="text-base font-bold text-purple-900">{netPositions.length}</p>
+              </div>
+              <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-2 hover:shadow-sm transition-shadow">
+                <p className="text-[9px] font-semibold text-indigo-600 uppercase mb-0.5">Total NET Volume</p>
+                <p className="text-base font-bold text-indigo-900">
+                  {netPositions.reduce((sum, p) => sum + p.netVolume, 0).toFixed(2)}
+                </p>
+              </div>
+              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                netPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0
+                  ? 'bg-emerald-50 border-emerald-200'
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                  netPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0
+                    ? 'text-emerald-600'
+                    : 'text-red-600'
+                }`}>Total P/L</p>
+                <p className={`text-base font-bold ${getProfitColor(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}`}>
+                  {formatCurrency(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}
                 </p>
               </div>
             </div>

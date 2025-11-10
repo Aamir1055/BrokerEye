@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import websocketService from '../services/websocket'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
@@ -15,6 +16,7 @@ const PositionsPage = () => {
   const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
   const { filterByActiveGroup } = useGroups()
+  const { filterByActiveIB } = useIB()
   
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
@@ -27,6 +29,10 @@ const PositionsPage = () => {
   const [displayMode, setDisplayMode] = useState('value')
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
   const displayMenuRef = useRef(null)
+  
+  // NET positions view options
+  const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
+  const [expandedNetKeys, setExpandedNetKeys] = useState(new Set())
   
   // Transient UI flash map: { [positionId]: { ts, type: 'add'|'update'|'pnl', priceDelta?, profitDelta? } }
   const [flashes, setFlashes] = useState({})
@@ -44,6 +50,9 @@ const PositionsPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+  
+  // NET Position states
+  const [showNetPositions, setShowNetPositions] = useState(false)
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -440,6 +449,145 @@ const PositionsPage = () => {
     }
   }
 
+  // Calculate NET positions for all clients with reversed type display
+  // Robust to multiple action encodings: 0/1, 'Buy'/'Sell', 'BUY'/'SELL', 'buy'/'sell'
+  const calculateGlobalNetPositions = (positions) => {
+    if (!positions || positions.length === 0) return []
+
+    const symbolMap = new Map()
+    const getBaseSymbol = (s) => {
+      if (!s || typeof s !== 'string') return s
+      // Split on first dot or hyphen to collapse variants like XAUUSD.f, XAUUSD-z, etc.
+      const parts = s.split(/[\.\-]/)
+      return parts[0] || s
+    }
+
+    positions.forEach(pos => {
+      const symbol = pos.symbol
+      if (!symbol) return
+      const key = groupByBaseSymbol ? getBaseSymbol(symbol) : symbol
+
+      if (!symbolMap.has(key)) {
+        symbolMap.set(key, {
+          key, // grouping key (base or exact)
+          buyPositions: [],
+          sellPositions: [],
+          logins: new Set(),
+          variantMap: new Map() // exactSymbol -> { buyPositions:[], sellPositions:[] }
+        })
+      }
+
+      const group = symbolMap.get(key)
+      group.logins.add(pos.login)
+
+      // Normalize action to handle various formats from API/WS
+      const rawAction = pos.action
+      let actionNorm = null
+      if (rawAction === 0 || rawAction === '0') actionNorm = 'buy'
+      else if (rawAction === 1 || rawAction === '1') actionNorm = 'sell'
+      else if (typeof rawAction === 'string') actionNorm = rawAction.toLowerCase()
+
+      if (actionNorm === 'buy') {
+        group.buyPositions.push(pos)
+      } else if (actionNorm === 'sell') {
+        group.sellPositions.push(pos)
+      } else {
+        // Fallback: try to infer from sign conventions if available
+        // If action cannot be determined, skip adding to buy/sell buckets
+      }
+
+      // Track exact symbol variants when grouping by base
+      if (groupByBaseSymbol) {
+        const exact = symbol
+        if (!group.variantMap.has(exact)) {
+          group.variantMap.set(exact, { buyPositions: [], sellPositions: [] })
+        }
+        const v = group.variantMap.get(exact)
+        if (actionNorm === 'buy') v.buyPositions.push(pos)
+        else if (actionNorm === 'sell') v.sellPositions.push(pos)
+      }
+    })
+
+    const netPositionsData = []
+
+    symbolMap.forEach(group => {
+      const buyVolume = group.buyPositions.reduce((sum, p) => sum + (p.volume || 0), 0)
+      const sellVolume = group.sellPositions.reduce((sum, p) => sum + (p.volume || 0), 0)
+      const netVolume = buyVolume - sellVolume
+
+      if (netVolume === 0) return
+
+      let totalWeightedPrice = 0
+      let totalVolume = 0
+      let totalProfit = 0
+
+      if (netVolume > 0) {
+        // Net Buy - use buy positions for average
+        group.buyPositions.forEach(p => {
+          const vol = p.volume || 0
+          const price = p.priceOpen || 0
+          totalWeightedPrice += price * vol
+          totalVolume += vol
+          totalProfit += p.profit || 0
+        })
+      } else {
+        // Net Sell - use sell positions for average
+        group.sellPositions.forEach(p => {
+          const vol = p.volume || 0
+          const price = p.priceOpen || 0
+          totalWeightedPrice += price * vol
+          totalVolume += vol
+          totalProfit += p.profit || 0
+        })
+      }
+
+      const avgPrice = totalVolume > 0 ? totalWeightedPrice / totalVolume : 0
+      
+      // Reversed type: if net is Buy, show Sell (what action to take to close)
+      const netType = netVolume > 0 ? 'Sell' : 'Buy'
+      const loginCount = group.logins.size
+      const totalPositions = group.buyPositions.length + group.sellPositions.length
+
+      // Build variant breakdown when grouping by base symbol
+      let variantCount = 1
+      let variants = []
+      if (groupByBaseSymbol) {
+        variantCount = group.variantMap.size
+        variants = Array.from(group.variantMap.entries()).map(([exact, data]) => {
+          const vBuyVol = data.buyPositions.reduce((s, p) => s + (p.volume || 0), 0)
+          const vSellVol = data.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
+          const vNet = vBuyVol - vSellVol
+          if (vNet === 0) return null
+          let tw = 0, tv = 0, tp = 0
+          const use = vNet > 0 ? data.buyPositions : data.sellPositions
+          use.forEach(p => { const vol = p.volume || 0; const price = p.priceOpen || 0; tw += price * vol; tv += vol; tp += p.profit || 0 })
+          const vAvg = tv > 0 ? tw / tv : 0
+          return {
+            exactSymbol: exact,
+            netType: vNet > 0 ? 'Sell' : 'Buy',
+            netVolume: Math.abs(vNet),
+            avgPrice: vAvg,
+            totalProfit: tp
+          }
+        }).filter(Boolean)
+      }
+
+      netPositionsData.push({
+        symbol: group.key,
+        netType,
+        netVolume: Math.abs(netVolume),
+        avgPrice,
+        totalProfit,
+        loginCount,
+        totalPositions,
+        variantCount,
+        variants
+      })
+    })
+
+    return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
+  }
+
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
     const options = ['All']
@@ -527,33 +675,36 @@ const PositionsPage = () => {
   // Apply group filter if active
   let groupFilteredPositions = filterByActiveGroup(searchedPositions, 'login', 'positions')
   
+  // Apply IB filter if active
+  let ibFilteredPositions = filterByActiveIB(groupFilteredPositions, 'login')
+  
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
     if (columnKey.endsWith('_number')) {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
-      groupFilteredPositions = groupFilteredPositions.filter(position => {
+      ibFilteredPositions = ibFilteredPositions.filter(position => {
         const positionValue = position[actualColumnKey]
         return matchesNumberFilter(positionValue, values)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
-      groupFilteredPositions = groupFilteredPositions.filter(position => {
+      ibFilteredPositions = ibFilteredPositions.filter(position => {
         const positionValue = position[columnKey]
         return values.includes(positionValue)
       })
     }
   })
   
-  const sortedPositions = sortPositions(groupFilteredPositions)
+  const sortedPositions = sortPositions(ibFilteredPositions)
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
-    const totalPositions = groupFilteredPositions.length
-    const totalFloatingProfit = groupFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
-    const totalFloatingProfitPercentage = groupFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
-    const uniqueLogins = new Set(groupFilteredPositions.map(p => p.login)).size
-    const uniqueSymbols = new Set(groupFilteredPositions.map(p => p.symbol)).size
+    const totalPositions = ibFilteredPositions.length
+    const totalFloatingProfit = ibFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfitPercentage = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
+    const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
     
     return {
       totalPositions,
@@ -562,7 +713,7 @@ const PositionsPage = () => {
       uniqueLogins,
       uniqueSymbols
     }
-  }, [groupFilteredPositions])
+  }, [ibFilteredPositions])
   
   // Get search suggestions
   const getSuggestions = () => {
@@ -628,6 +779,13 @@ const PositionsPage = () => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown])
+  
+  // Calculate NET positions using useMemo - use cachedPositions for all data
+  const netPositionsData = useMemo(() => {
+    if (!showNetPositions) return []
+    // Use cachedPositions to get ALL positions regardless of filters
+    return calculateGlobalNetPositions(cachedPositions)
+  }, [showNetPositions, cachedPositions, groupByBaseSymbol])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -1013,6 +1171,22 @@ const PositionsPage = () => {
                 }}
               />
               
+              {/* NET Position Toggle */}
+              <button
+                onClick={() => setShowNetPositions(!showNetPositions)}
+                className={`px-3 py-2 rounded-lg border transition-colors inline-flex items-center gap-2 text-sm font-medium ${
+                  showNetPositions 
+                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Toggle NET Position View"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                NET Position
+              </button>
+              
               <WebSocketIndicator />
               <button
                 onClick={() => {
@@ -1071,6 +1245,171 @@ const PositionsPage = () => {
             </div>
           </div>
 
+          {/* NET Position View */}
+          {showNetPositions ? (
+            <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
+              {/* NET Position Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">NET Symbols</p>
+                  <p className="text-lg font-semibold text-gray-900">{netPositionsData.length}</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatNumber(netPositionsData.reduce((sum, p) => sum + p.netVolume, 0), 2)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
+                  <p className={`text-lg font-semibold flex items-center gap-1 ${
+                    netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
+                    {formatNumber(Math.abs(netPositionsData.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total Logins</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {netPositionsData.reduce((sum, p) => sum + p.loginCount, 0)}
+                  </p>
+                </div>
+                {/* Grouping toggle */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex items-center justify-between col-span-2 md:col-span-1">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Group by Base Symbol</p>
+                    <p className="text-[11px] text-gray-500">Collapse variants like XAUUSD.f → XAUUSD</p>
+                  </div>
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={groupByBaseSymbol} onChange={(e)=>setGroupByBaseSymbol(e.target.checked)} />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all relative peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              </div>
+
+              {/* NET Position Table */}
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+                <div className="overflow-y-auto flex-1">
+                  {netPositionsData.length === 0 ? (
+                    <div className="text-center py-12">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
+                      </svg>
+                      <p className="text-gray-500 text-sm">No NET positions available</p>
+                    </div>
+                  ) : (
+                    <table className="w-full divide-y divide-gray-200">
+                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Symbol
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            NET Type
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            NET Volume
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Avg Price
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Total Profit
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Logins
+                          </th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Positions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {netPositionsData.map((netPos, idx) => (
+                          <tr key={idx} className="hover:bg-blue-50 transition-all duration-300">
+                            <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                              {netPos.symbol}
+                              {groupByBaseSymbol && netPos.variantCount > 1 && (
+                                <span className="ml-2 text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-sm whitespace-nowrap">
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                netPos.netType === 'Buy' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {netPos.netType}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                              {formatNumber(netPos.netVolume, 2)}
+                            </td>
+                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                              {formatNumber(netPos.avgPrice, 5)}
+                            </td>
+                            <td className="px-3 py-2 text-sm whitespace-nowrap">
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                netPos.totalProfit >= 0 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {formatNumber(netPos.totalProfit, 2)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                              {netPos.loginCount}
+                            </td>
+                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                              {netPos.totalPositions}
+                              {groupByBaseSymbol && netPos.variantCount > 1 && (
+                                <button
+                                  className="ml-3 text-xs text-blue-600 hover:underline"
+                                  onClick={() => {
+                                    const next = new Set(expandedNetKeys)
+                                    if (next.has(netPos.symbol)) next.delete(netPos.symbol); else next.add(netPos.symbol)
+                                    setExpandedNetKeys(next)
+                                  }}
+                                >
+                                  {expandedNetKeys.has(netPos.symbol) ? 'Hide variants' : 'Show variants'}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {groupByBaseSymbol && netPositionsData.map((netPos, idx) => (
+                          expandedNetKeys.has(netPos.symbol) && netPos.variants && netPos.variants.length > 0 ? (
+                            <tr key={`v-${idx}`} className="bg-gray-50">
+                              <td colSpan={7} className="px-3 py-2">
+                                <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                  {netPos.variants.map((v, i) => (
+                                    <div key={i} className="border border-gray-200 rounded p-2 bg-white">
+                                      <div className="flex items-center justify-between">
+                                        <div className="font-semibold text-gray-900">{v.exactSymbol}</div>
+                                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${v.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{v.netType}</span>
+                                      </div>
+                                      <div className="mt-1 text-[12px] text-gray-600 flex gap-4">
+                                        <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.netVolume, 2)}</span></div>
+                                        <div>Avg: <span className="font-semibold text-gray-900">{formatNumber(v.avgPrice, 5)}</span></div>
+                                        <div>P/L: <span className={`font-semibold ${v.totalProfit>=0?'text-green-700':'text-red-700'}`}>{formatNumber(v.totalProfit, 2)}</span></div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          ) : null
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Pagination Controls - Top */}
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
             <div className="flex items-center gap-2">
@@ -1635,6 +1974,8 @@ const PositionsPage = () => {
               )}
             </div>
           </div>
+            </>
+          )}
 
           {/* Connection status helper */}
           <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">

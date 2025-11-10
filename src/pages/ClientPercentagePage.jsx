@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import { useData } from '../contexts/DataContext'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -11,6 +12,7 @@ import GroupModal from '../components/GroupModal'
 
 const ClientPercentagePage = () => {
   const { filterByActiveGroup } = useGroups()
+  const { filterByActiveIB } = useIB()
   const { positions: cachedPositions } = useData()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [clients, setClients] = useState([])
@@ -371,17 +373,20 @@ const ClientPercentagePage = () => {
     // Apply group filter if active
     let groupFiltered = filterByActiveGroup(searched, 'client_login', 'clientpercentage')
     
+    // Apply IB filter if active
+    let ibFiltered = filterByActiveIB(groupFiltered, 'client_login')
+    
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (values && values.length > 0) {
-        groupFiltered = groupFiltered.filter(client => {
+        ibFiltered = ibFiltered.filter(client => {
           const clientValue = client[columnKey]
           return values.includes(clientValue)
         })
       }
     })
     
-    return [...groupFiltered].sort((a, b) => {
+    return [...ibFiltered].sort((a, b) => {
       let aVal = a[sortColumn]
       let bVal = b[sortColumn]
       

@@ -3,6 +3,7 @@ import websocketService from '../services/websocket'
 import { brokerAPI } from '../services/api'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -15,6 +16,7 @@ const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 const LiveDealingPage = () => {
   const { positions: cachedPositions } = useData() // Get positions from DataContext
   const { filterByActiveGroup } = useGroups()
+  const { filterByActiveIB } = useIB()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)
@@ -802,25 +804,28 @@ const LiveDealingPage = () => {
   // Apply group filter if active
   let groupFilteredDeals = filterByActiveGroup(searchedDeals, 'login', 'livedealing')
   
+  // Apply IB filter if active
+  let ibFilteredDeals = filterByActiveIB(groupFilteredDeals, 'login')
+  
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
     if (columnKey.endsWith('_number')) {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
-      groupFilteredDeals = groupFilteredDeals.filter(deal => {
+      ibFilteredDeals = ibFilteredDeals.filter(deal => {
         const dealValue = deal[actualColumnKey] || deal.rawData?.[actualColumnKey]
         return matchesNumberFilter(dealValue, values)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
-      groupFilteredDeals = groupFilteredDeals.filter(deal => {
+      ibFilteredDeals = ibFilteredDeals.filter(deal => {
         const dealValue = deal[columnKey] || deal.rawData?.[columnKey]
         return values.includes(dealValue)
       })
     }
   })
   
-  const sortedDeals = sortDeals(groupFilteredDeals)
+  const sortedDeals = sortDeals(ibFilteredDeals)
   
   // Get search suggestions from current deals
   const getSuggestions = () => {

@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import GroupSelector from '../components/GroupSelector'
+import IBSelector from '../components/IBSelector'
 import GroupModal from '../components/GroupModal'
 import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
@@ -14,6 +16,7 @@ import { brokerAPI } from '../services/api'
 const ClientsPage = () => {
   const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -43,6 +46,7 @@ const ClientsPage = () => {
   // Filter states
   const [filterByPositions, setFilterByPositions] = useState(false)
   const [filterByCredit, setFilterByCredit] = useState(false)
+  const [filterNoDeposit, setFilterNoDeposit] = useState(false)
   // Display mode for values vs percentages
   // 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
@@ -82,6 +86,7 @@ const ClientsPage = () => {
   })
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const cardFilterMenuRef = useRef(null)
+  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
   
@@ -880,6 +885,11 @@ const ClientsPage = () => {
       filtered = filtered.filter(c => c && c.credit && c.credit !== 0)
     }
 
+    if (filterNoDeposit) {
+      // Filter clients whose Lifetime Deposit is zero
+      filtered = filtered.filter(c => c && (!c.lifetimeDeposit || c.lifetimeDeposit === 0))
+    }
+
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (columnKey.endsWith('_number')) {
@@ -909,7 +919,7 @@ const ClientsPage = () => {
     })
     
     return filtered
-  }, [clients, filterByPositions, filterByCredit, columnFilters])
+  }, [clients, filterByPositions, filterByCredit, filterNoDeposit, columnFilters])
   
   // Sorting function with type detection
   const sortClients = useCallback((clientsToSort) => {
@@ -1043,6 +1053,7 @@ const ClientsPage = () => {
           filters: {
             filterByPositions,
             filterByCredit,
+            filterNoDeposit,
             columnFilters,
             searchQuery
           },
@@ -1050,8 +1061,11 @@ const ClientsPage = () => {
         }, 0)
         if (canceled) return
         const list = Array.isArray(result?.clients) ? result.clients : []
+        // Apply group filter first
         const grouped = filterByActiveGroup(list, 'login', 'clients')
-        setFilteredClients(grouped)
+        // Apply IB filter on top of group filter
+        const ibFiltered = filterByActiveIB(grouped, 'login')
+        setFilteredClients(ibFiltered)
       } catch (err) {
         console.error('[ClientsPage] FILTER_SORT_DEDUP worker failed, falling back:', err?.message || err)
         // Fallback to previous synchronous pipeline
@@ -1059,7 +1073,9 @@ const ClientsPage = () => {
           const base = getFilteredClients()
           const searched = searchClients(base)
           const grouped = filterByActiveGroup(searched, 'login', 'clients')
-          const sorted = sortClients(grouped)
+          // Apply IB filter in fallback path as well
+          const ibFiltered = filterByActiveIB(grouped, 'login')
+          const sorted = sortClients(ibFiltered)
           const seen = new Set()
           const deduped = sorted.filter(client => {
             if (!client) return false
@@ -1081,13 +1097,17 @@ const ClientsPage = () => {
     clients,
     filterByPositions,
     filterByCredit,
+    filterNoDeposit,
     columnFilters,
     searchQuery,
     sortColumn,
     sortDirection,
     displayMode,
     filterByActiveGroup,
-    activeGroupFilters
+    activeGroupFilters,
+    filterByActiveIB,
+    selectedIB,
+    ibMT5Accounts
   ])
 
   // Financial checksum (filtered) – detect value-only changes for worker recalculation
@@ -1135,12 +1155,12 @@ const ClientsPage = () => {
       setWorkerStats(null)
       return
     }
-    const hasFilters = filterByPositions || filterByCredit || searchQuery || Object.keys(columnFilters).length > 0
+    const hasFilters = filterByPositions || filterByCredit || filterNoDeposit || searchQuery || Object.keys(columnFilters).length > 0
     if (!hasFilters) {
       setWorkerStats(null)
       return
     }
-    const inputSignature = `${filteredClientsChecksum}_${filterByPositions}_${filterByCredit}_${searchQuery}_${Object.keys(columnFilters).length}`
+    const inputSignature = `${filteredClientsChecksum}_${filterByPositions}_${filterByCredit}_${filterNoDeposit}_${searchQuery}_${Object.keys(columnFilters).length}`
     if (lastWorkerInputRef.current === inputSignature) return
     lastWorkerInputRef.current = inputSignature
     if (workerCalculationTimeoutRef.current) {
@@ -1166,6 +1186,7 @@ const ClientsPage = () => {
     filteredClientsChecksum,
     filterByPositions,
     filterByCredit,
+    filterNoDeposit,
     searchQuery,
     Object.keys(columnFilters).length,
     showFaceCards
@@ -1371,7 +1392,7 @@ const ClientsPage = () => {
   // Reset to page 1 when filters or items per page changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterByPositions, filterByCredit, itemsPerPage, searchQuery, displayMode])
+  }, [filterByPositions, filterByCredit, filterNoDeposit, itemsPerPage, searchQuery, displayMode])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -1449,6 +1470,9 @@ const ClientsPage = () => {
   const resetFaceCardOrder = () => {
     setFaceCardOrder(defaultFaceCardOrder)
     localStorage.setItem('clientsFaceCardOrder', JSON.stringify(defaultFaceCardOrder))
+    // Also reset card visibility to default
+    setCardVisibility(defaultCardVisibility)
+    localStorage.setItem('clientsCardVisibility', JSON.stringify(defaultCardVisibility))
   }
 
   const formatIndianNumber = (num) => {
@@ -1544,23 +1568,7 @@ const ClientsPage = () => {
   }
 
   // Per-column dynamic sums based on currently displayed (filtered & paginated) clients
-  // Moved above faceCardTotals so face cards can directly reuse these sums.
-  const columnTotals = useMemo(() => {
-    const totals = {}
-    if (!displayedClients || displayedClients.length === 0) return totals
-    visibleColumnsList.forEach(col => {
-      const key = col.key
-      // Only sum numeric columns
-      const numeric = displayedClients.reduce((sum, c) => {
-        const v = c[key]
-        return sum + (typeof v === 'number' ? v : 0)
-      }, 0)
-      totals[key] = numeric
-    })
-    return totals
-  }, [displayedClients, visibleColumnsList])
-
-  // Removed header totals display helper (no longer used in header)
+  // (Removed columnTotals debug aggregation; not required now that totals footer is gone)
 
   // Face cards derive from ALL filtered data (ignores pagination and column visibility).
   // This ensures face cards always show global sums over the filtered dataset, and still show
@@ -1570,13 +1578,6 @@ const ClientsPage = () => {
     const sum = (key) => list.reduce((acc, c) => {
       const v = c?.[key]
       return acc + (typeof v === 'number' ? v : 0)
-    }, 0)
-
-    // PnL special handling to mirror row logic: prefer provided c.pnl; fallback to (credit - equity)
-    const totalPnl = list.reduce((acc, c) => {
-      const hasPnl = typeof c?.pnl === 'number'
-      const computed = hasPnl ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
-      return acc + (typeof computed === 'number' && !Number.isNaN(computed) ? computed : 0)
     }, 0)
 
     // Bonus calculations
@@ -1615,7 +1616,7 @@ const ClientsPage = () => {
       totalBalance: sum('balance'),
       totalCredit: sum('credit'),
       totalEquity: sum('equity'),
-      totalPnl,
+      totalPnl: sum('pnl'), // Use PnL directly from backend
       totalProfit: sum('profit'),
       dailyDeposit: sum('dailyDeposit'),
       dailyWithdrawal: sum('dailyWithdrawal'),
@@ -1669,30 +1670,7 @@ const ClientsPage = () => {
     return totals
   }, [filteredClients, commissionTotals])
 
-  // Legacy total helpers removed; footer will also use columnTotals for consistency.
-  const getTotalForColumn = (key) => {
-    if (!(key in columnTotals)) return null
-    return columnTotals[key]
-  }
-
-  // Format totals consistently with face cards / row cells.
-  const formatTotalForColumn = (key, value) => {
-    if (value === null || value === undefined) return '-'
-
-    // PnL-style metrics: show signed magnitude (no arrow in footer)
-    if (['pnl', 'profit', 'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
-      const num = parseFloat(value) || 0
-      const formatted = formatIndianNumber(Math.abs(num).toFixed(2))
-      return num < 0 ? `-${formatted}` : formatted
-    }
-
-    // Generic numeric totals
-    if (typeof value === 'number') {
-      return formatIndianNumber(parseFloat(value).toFixed(2))
-    }
-
-    return value
-  }
+  // Removed totals helpers (no longer needed)
 
   
 
@@ -1707,6 +1685,15 @@ const ClientsPage = () => {
         })
       }
       return '-'
+    }
+    
+    // Handle Processor Type (boolean) - display as true/false
+    if (key === 'processorType' || key === 'processor_type' || key === 'PROCESSOR_TYPE') {
+      if (typeof value === 'boolean') {
+        return value.toString()
+      }
+      // Handle other value types
+      return String(value)
     }
     
   // Numeric currency fields
@@ -1778,7 +1765,7 @@ const ClientsPage = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
-        <div className="max-w-full mx-auto">
+        <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
@@ -1849,9 +1836,9 @@ const ClientsPage = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  {(filterByPositions || filterByCredit) && (
+                  {(filterByPositions || filterByCredit || filterNoDeposit) && (
                     <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-sm">
-                      {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0)}
+                      {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0) + (filterNoDeposit ? 1 : 0)}
                     </span>
                   )}
                 </button>
@@ -1882,42 +1869,18 @@ const ClientsPage = () => {
                         />
                         <span className="ml-2 text-xs font-semibold text-gray-700">Has Credit</span>
                       </label>
+                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
+                        <input
+                          type="checkbox"
+                          checked={filterNoDeposit}
+                          onChange={(e) => setFilterNoDeposit(e.target.checked)}
+                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
+                        />
+                        <span className="ml-2 text-xs font-semibold text-gray-700">No Deposit</span>
+                      </label>
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Columns Selector Button (removed from here, will appear near Percentage View) */}
-              
-              {/* Zoom Controls */}
-              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
-                <button
-                  onClick={handleZoomOut}
-                  disabled={zoomLevel <= 50}
-                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel <= 50 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
-                  title="Zoom Out (Min 50%)"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleResetZoom}
-                  className="px-2 text-sm font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
-                  title="Reset Zoom to 100%"
-                >
-                  {zoomLevel}%
-                </button>
-                <button
-                  onClick={handleZoomIn}
-                  disabled={zoomLevel >= 200}
-                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel >= 200 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
-                  title="Zoom In (Max 200%)"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                </button>
               </div>
 
               {/* Card Filter Button */}
@@ -1939,6 +1902,15 @@ const ClientsPage = () => {
                   >
                     <div className="px-3 py-2 border-b border-pink-200">
                       <p className="text-[10px] font-bold text-pink-700 uppercase tracking-wide">Show/Hide Cards</p>
+                    </div>
+                    <div className="px-3 py-2 border-b border-pink-200">
+                      <input
+                        type="text"
+                        placeholder="Search cards..."
+                        value={cardFilterSearchQuery}
+                        onChange={(e) => setCardFilterSearchQuery(e.target.value)}
+                        className="w-full px-2 py-1.5 text-xs text-gray-700 border border-pink-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent placeholder:text-gray-400"
+                      />
                     </div>
                     {[
                       { id: 1, label: 'Total Clients' },
@@ -1990,7 +1962,9 @@ const ClientsPage = () => {
                       { id: 48, label: 'Weekly Previous Equity' },
                       { id: 49, label: 'Monthly Previous Equity' },
                       { id: 50, label: 'Previous Equity' }
-                    ].map(card => (
+                    ].filter(card => 
+                      card.label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                    ).map(card => (
                       <label
                         key={card.id}
                         className="flex items-center px-3 py-2 hover:bg-pink-100 cursor-pointer transition-colors rounded-md mx-2"
@@ -2010,7 +1984,6 @@ const ClientsPage = () => {
                   </div>
                 )}
               </div>
-              
               {/* Groups Button */}
               <GroupSelector 
                 moduleName="clients" 
@@ -2024,6 +1997,10 @@ const ClientsPage = () => {
                 }}
               />
               
+              {/* IB Filter Button */}
+              <IBSelector />
+              
+              {/* Show Face Cards Toggle (moved before Columns button) */}
               {/* Show Face Cards Toggle (moved before Columns button) */}
               <button
                 onClick={() => setShowFaceCards(!showFaceCards)}
@@ -2097,16 +2074,7 @@ const ClientsPage = () => {
             </div>
           </div>
 
-          {statsDrift?.lastDeltas && (
-            <div className="mb-3 bg-gray-50 border border-gray-200 rounded p-2 text-[10px] font-mono text-gray-600 flex flex-wrap gap-4">
-              <span>Drift Source: {statsDrift.lastSource}</span>
-              {Object.entries(statsDrift.lastDeltas).map(([k,v]) => (
-                <span key={k}>{k}:{Math.abs(v) < 0.01 ? '0' : v.toFixed(2)}</span>
-              ))}
-              {statsDrift.lastReconciledAt && <span>Reconciled: {new Date(statsDrift.lastReconciledAt).toLocaleTimeString()}</span>}
-              {statsDrift.lastVerifiedAt && <span>Verified: {new Date(statsDrift.lastVerifiedAt).toLocaleTimeString()}</span>}
-            </div>
-          )}
+          {/* Removed drift diagnostics panel per user request */}
 
           {error && (
             <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-3 shadow-sm">
@@ -2651,6 +2619,37 @@ const ClientsPage = () => {
                 )}
               </div>
 
+              {/* Zoom Controls (moved next to Columns button) */}
+              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 50}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel <= 50 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom Out (Min 50%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleResetZoom}
+                  className="px-2 text-sm font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
+                  title="Reset Zoom to 100%"
+                >
+                  {zoomLevel}%
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 200}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel >= 200 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom In (Max 200%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </button>
+              </div>
+
               {/* Columns Selector Button (moved next to Percentage View) */}
               <div className="relative" ref={columnSelectorRef}>
                 <button
@@ -2788,10 +2787,9 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
-            height: showFaceCards ? 'calc(100vh - 380px)' : 'calc(100vh - 200px)',
-            minHeight: '350px',
-            overflow: 'hidden'
+          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col flex-1 min-h-0" style={{ 
+            overflow: 'hidden',
+            minHeight: '250px'
           }}>
             <div ref={scrollContainerRef} onScroll={handleScroll} className="overflow-y-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
@@ -3390,42 +3388,7 @@ const ClientsPage = () => {
                     </tr>
                   )}
                 </tbody>
-                {/* Totals footer now reuses columnTotals exactly like header + face cards */}
-                <tfoot className="bg-gray-50 sticky bottom-0 z-10">
-                  <tr className="border-t border-gray-200">
-                    {(() => {
-                      const baseVisible = visibleColumnsList
-                      const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
-                      const defaultWidth = 100 / widthBaseTotal
-                      const cells = []
-                      baseVisible.forEach((col, idx) => {
-                        const isMetric = isMetricColumn(col.key)
-                        const isFirst = idx === 0
-                        const totalRaw = columnTotals[col.key]
-                        let display
-                        if (totalRaw === undefined || totalRaw === null) {
-                          display = '-'
-                        } else if (['pnl','profit','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL'].includes(col.key)) {
-                          const formatted = formatIndianNumber(Math.abs(totalRaw).toFixed(2))
-                          display = totalRaw < 0 ? `-${formatted}` : formatted
-                        } else {
-                          display = formatIndianNumber(parseFloat(totalRaw).toFixed(2))
-                        }
-                        cells.push(
-                          <td key={`total_${col.key}`} className="px-3 py-2 text-[12px] font-semibold text-gray-800 bg-gray-50" style={{ width: columnWidths[col.key] || `${defaultWidth}%`, minWidth: 50 }}>
-                            {isFirst ? 'Totals' : display}
-                          </td>
-                        )
-                        if (displayMode === 'both' && isMetric) {
-                          cells.push(
-                            <td key={`total_${col.key}_percentage`} className="px-3 py-2 text-[12px] font-semibold text-gray-500 bg-gray-50" style={{ width: columnWidths[`${col.key}_percentage_display`] || `${defaultWidth}%`, minWidth: 50 }}>-</td>
-                          )
-                        }
-                      })
-                      return cells
-                    })()}
-                  </tr>
-                </tfoot>
+                {/* Totals footer removed (was for debugging). */}
               </table>
             </div>
           </div>
