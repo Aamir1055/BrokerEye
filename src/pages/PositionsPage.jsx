@@ -480,17 +480,28 @@ const PositionsPage = () => {
       const group = symbolMap.get(key)
       group.logins.add(pos.login)
 
+      // If symbol ends with 'c' or 'C' (cent symbols), scale monetary fields by 1/100
+      const isCent = /[cC]$/.test(symbol)
+      const adj = isCent
+        ? {
+            ...pos,
+            profit: (pos.profit || 0) / 100,
+            storage: (pos.storage || 0) / 100,
+            commission: (pos.commission || 0) / 100
+          }
+        : pos
+
       // Normalize action to handle various formats from API/WS
-      const rawAction = pos.action
+      const rawAction = adj.action
       let actionNorm = null
       if (rawAction === 0 || rawAction === '0') actionNorm = 'buy'
       else if (rawAction === 1 || rawAction === '1') actionNorm = 'sell'
       else if (typeof rawAction === 'string') actionNorm = rawAction.toLowerCase()
 
       if (actionNorm === 'buy') {
-        group.buyPositions.push(pos)
+        group.buyPositions.push(adj)
       } else if (actionNorm === 'sell') {
-        group.sellPositions.push(pos)
+        group.sellPositions.push(adj)
       } else {
         // Fallback: try to infer from sign conventions if available
         // If action cannot be determined, skip adding to buy/sell buckets
@@ -503,8 +514,8 @@ const PositionsPage = () => {
           group.variantMap.set(exact, { buyPositions: [], sellPositions: [] })
         }
         const v = group.variantMap.get(exact)
-        if (actionNorm === 'buy') v.buyPositions.push(pos)
-        else if (actionNorm === 'sell') v.sellPositions.push(pos)
+        if (actionNorm === 'buy') v.buyPositions.push(adj)
+        else if (actionNorm === 'sell') v.sellPositions.push(adj)
       }
     })
 
