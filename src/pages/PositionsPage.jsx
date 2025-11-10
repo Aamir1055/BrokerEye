@@ -53,6 +53,22 @@ const PositionsPage = () => {
   
   // NET Position states
   const [showNetPositions, setShowNetPositions] = useState(false)
+  // Client NET view (netting per-login across their positions)
+  const [showClientNet, setShowClientNet] = useState(false)
+  // Dedicated NET module UI state (kept separate from main positions & client net)
+  const [netCurrentPage, setNetCurrentPage] = useState(1)
+  const [netItemsPerPage, setNetItemsPerPage] = useState('All') // numeric or 'All'
+  const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
+  const [netVisibleColumns, setNetVisibleColumns] = useState({
+    symbol: true,
+    netType: true,
+    netVolume: true,
+    avgPrice: true,
+    totalProfit: true,
+    loginCount: true,
+    totalPositions: true
+  })
+  const toggleNetColumn = (col) => setNetVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -797,6 +813,100 @@ const PositionsPage = () => {
     // Use cachedPositions to get ALL positions regardless of filters
     return calculateGlobalNetPositions(cachedPositions)
   }, [showNetPositions, cachedPositions, groupByBaseSymbol])
+
+  // Pagination logic specific to NET module
+  const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(netPositionsData.length / netItemsPerPage)
+  const netStartIndex = netItemsPerPage === 'All' ? 0 : (netCurrentPage - 1) * netItemsPerPage
+  const netEndIndex = netItemsPerPage === 'All' ? netPositionsData.length : netStartIndex + netItemsPerPage
+  const netDisplayedPositions = netPositionsData.slice(netStartIndex, netEndIndex)
+  useEffect(() => { if (!isAuthenticated) return; setNetCurrentPage(1) }, [netItemsPerPage])
+  const handleNetPageChange = (p) => { setNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const handleNetItemsPerPageChange = (v) => { setNetItemsPerPage(v === 'All' ? 'All' : parseInt(v)); setNetCurrentPage(1) }
+
+  // Calculate Client NET positions (group first by login then by symbol)
+  const clientNetPositionsData = useMemo(() => {
+    if (!showClientNet) return []
+    if (!cachedPositions || cachedPositions.length === 0) return []
+
+    // Map: login -> symbolKey -> aggregation buckets
+    const loginMap = new Map()
+    const getBaseSymbol = (s) => {
+      if (!s || typeof s !== 'string') return s
+      const parts = s.split(/[\.\-]/)
+      return parts[0] || s
+    }
+
+    cachedPositions.forEach(pos => {
+      const login = pos.login
+      const symbol = pos.symbol
+      if (login == null || !symbol) return
+      if (!loginMap.has(login)) loginMap.set(login, new Map())
+      const symbolKey = groupByBaseSymbol ? getBaseSymbol(symbol) : symbol
+      const symMap = loginMap.get(login)
+      if (!symMap.has(symbolKey)) {
+        symMap.set(symbolKey, {
+          buyPositions: [],
+          sellPositions: [],
+          variantMap: new Map() // exact -> {buyPositions:[], sellPositions:[]}
+        })
+      }
+      const bucket = symMap.get(symbolKey)
+
+      // Cent scaling logic reused (symbols ending with c/C)
+      const isCent = /[cC]$/.test(symbol)
+      const adj = isCent ? { ...pos, profit: (pos.profit||0)/100, storage:(pos.storage||0)/100, commission:(pos.commission||0)/100 } : pos
+
+      let actionNorm = null
+      const raw = adj.action
+      if (raw === 0 || raw === '0') actionNorm = 'buy'
+      else if (raw === 1 || raw === '1') actionNorm = 'sell'
+      else if (typeof raw === 'string') actionNorm = raw.toLowerCase()
+
+      if (actionNorm === 'buy') bucket.buyPositions.push(adj)
+      else if (actionNorm === 'sell') bucket.sellPositions.push(adj)
+
+      if (groupByBaseSymbol) {
+        const exact = symbol
+        if (!bucket.variantMap.has(exact)) bucket.variantMap.set(exact, { buyPositions: [], sellPositions: [] })
+        const v = bucket.variantMap.get(exact)
+        if (actionNorm === 'buy') v.buyPositions.push(adj)
+        else if (actionNorm === 'sell') v.sellPositions.push(adj)
+      }
+    })
+
+    const rows = []
+    loginMap.forEach((symMap, login) => {
+      symMap.forEach((bucket, key) => {
+        const buyVol = bucket.buyPositions.reduce((s,p)=>s+(p.volume||0),0)
+        const sellVol = bucket.sellPositions.reduce((s,p)=>s+(p.volume||0),0)
+        const netVol = buyVol - sellVol
+        if (netVol === 0) return
+        let tw=0,tv=0,tp=0
+        const use = netVol>0 ? bucket.buyPositions : bucket.sellPositions
+        use.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw+=pr*v; tv+=v; tp+=p.profit||0})
+        const avg = tv>0? tw/tv : 0
+        const netType = netVol>0? 'Sell':'Buy' // reversed closing action
+        let variantCount=1, variants=[]
+        if (groupByBaseSymbol){
+          variantCount = bucket.variantMap.size
+          variants = Array.from(bucket.variantMap.entries()).map(([exact,data]) => {
+            const bv = data.buyPositions.reduce((s,p)=>s+(p.volume||0),0)
+            const sv = data.sellPositions.reduce((s,p)=>s+(p.volume||0),0)
+            const nv = bv - sv
+            if (nv===0) return null
+            let tw2=0,tv2=0,tp2=0
+            const use2 = nv>0? data.buyPositions : data.sellPositions
+            use2.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw2+=pr*v; tv2+=v; tp2+=p.profit||0})
+            const avg2 = tv2>0? tw2/tv2:0
+            return { exactSymbol: exact, netType: nv>0? 'Sell':'Buy', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
+          }).filter(Boolean)
+        }
+        rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, variantCount, variants })
+      })
+    })
+    // Sort by login then volume desc for stability
+    return rows.sort((a,b)=> a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
+  }, [showClientNet, cachedPositions, groupByBaseSymbol])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -1184,7 +1294,7 @@ const PositionsPage = () => {
               
               {/* NET Position Toggle */}
               <button
-                onClick={() => setShowNetPositions(!showNetPositions)}
+                onClick={() => { setShowNetPositions((v)=>{const nv=!v; if (nv) setShowClientNet(false); return nv}); }}
                 className={`px-3 py-2 rounded-lg border transition-colors inline-flex items-center gap-2 text-sm font-medium ${
                   showNetPositions 
                     ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
@@ -1196,6 +1306,22 @@ const PositionsPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 NET Position
+              </button>
+
+              {/* Client NET Toggle */}
+              <button
+                onClick={() => { setShowClientNet((v)=>{const nv=!v; if (nv) setShowNetPositions(false); return nv}); }}
+                className={`px-3 py-2 rounded-lg border transition-colors inline-flex items-center gap-2 text-sm font-medium ${
+                  showClientNet 
+                    ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                title="Toggle Client NET View"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-5m0 5l-5-5M7 4h10a2 2 0 012 2v6H5V6a2 2 0 012-2zm0 0V2m0 2v2" />
+                </svg>
+                Client Net
               </button>
               
               <WebSocketIndicator />
@@ -1301,8 +1427,67 @@ const PositionsPage = () => {
 
               {/* NET Position Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+                {/* NET module controls (pagination + columns) */}
+                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+                  {/* Pagination / show entries */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Show:</span>
+                    <select
+                      value={netItemsPerPage}
+                      onChange={(e) => handleNetItemsPerPageChange(e.target.value)}
+                      className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {['All', 25, 50, 100, 200].map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <span className="text-xs text-gray-600">entries</span>
+                    <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netPositionsData.length)} of {netPositionsData.length}</span>
+                  </div>
+                  {/* Page navigation */}
+                  {netItemsPerPage !== 'All' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleNetPageChange(netCurrentPage - 1)}
+                        disabled={netCurrentPage === 1}
+                        className={`p-1 rounded border text-xs ${netCurrentPage === 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}`}
+                      >Prev</button>
+                      <span className="text-[11px] text-gray-700 px-1">Page {netCurrentPage}/{netTotalPages}</span>
+                      <button
+                        onClick={() => handleNetPageChange(netCurrentPage + 1)}
+                        disabled={netCurrentPage === netTotalPages}
+                        className={`p-1 rounded border text-xs ${netCurrentPage === netTotalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}`}
+                      >Next</button>
+                    </div>
+                  )}
+                  {/* Columns selector */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setNetShowColumnSelector(v => !v)}
+                      className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700"
+                      title="Show/Hide NET columns"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                      Columns
+                    </button>
+                    {netShowColumnSelector && (
+                      <div className="absolute right-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44">
+                        <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
+                        {Object.keys(netVisibleColumns).map(k => (
+                          <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={netVisibleColumns[k]}
+                              onChange={() => toggleNetColumn(k)}
+                              className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-[11px] text-gray-700 capitalize">{k === 'loginCount' ? 'Logins' : k === 'totalPositions' ? 'Positions' : k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="overflow-y-auto flex-1">
-                  {netPositionsData.length === 0 ? (
+                  {netDisplayedPositions.length === 0 ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -1313,85 +1498,81 @@ const PositionsPage = () => {
                     <table className="w-full divide-y divide-gray-200">
                       <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                         <tr>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Symbol
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            NET Type
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            NET Volume
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Avg Price
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Total Profit
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Logins
-                          </th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            Positions
-                          </th>
+                          {netVisibleColumns.symbol && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>
+                          )}
+                          {netVisibleColumns.netType && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>
+                          )}
+                          {netVisibleColumns.netVolume && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>
+                          )}
+                          {netVisibleColumns.avgPrice && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>
+                          )}
+                          {netVisibleColumns.totalProfit && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>
+                          )}
+                          {netVisibleColumns.loginCount && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Logins</th>
+                          )}
+                          {netVisibleColumns.totalPositions && (
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
-                        {netPositionsData.map((netPos, idx) => (
+                        {netDisplayedPositions.map((netPos, idx) => (
                           <Fragment key={netPos.symbol || idx}>
                           <tr className="hover:bg-blue-50 transition-all duration-300">
-                            <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
-                              {netPos.symbol}
-                              {groupByBaseSymbol && netPos.variantCount > 1 && (
-                                <span className="ml-2 text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-sm whitespace-nowrap">
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                                netPos.netType === 'Buy' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {netPos.netType}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                              {formatNumber(netPos.netVolume, 2)}
-                            </td>
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                              {formatNumber(netPos.avgPrice, 5)}
-                            </td>
-                            <td className="px-3 py-2 text-sm whitespace-nowrap">
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                                netPos.totalProfit >= 0 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {formatNumber(netPos.totalProfit, 2)}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                              {netPos.loginCount}
-                            </td>
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                              {netPos.totalPositions}
-                              {groupByBaseSymbol && netPos.variantCount > 1 && (
-                                <button
-                                  className="ml-3 text-xs text-blue-600 hover:underline"
-                                  onClick={() => {
-                                    const next = new Set(expandedNetKeys)
-                                    if (next.has(netPos.symbol)) next.delete(netPos.symbol); else next.add(netPos.symbol)
-                                    setExpandedNetKeys(next)
-                                  }}
-                                >
-                                  {expandedNetKeys.has(netPos.symbol) ? 'Hide variants' : 'Show variants'}
-                                </button>
-                              )}
-                            </td>
+                            {netVisibleColumns.symbol && (
+                              <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {netPos.symbol}
+                                {groupByBaseSymbol && netPos.variantCount > 1 && (
+                                  <span className="ml-2 text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
+                                )}
+                              </td>
+                            )}
+                            {netVisibleColumns.netType && (
+                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{netPos.netType}</span>
+                              </td>
+                            )}
+                            {netVisibleColumns.netVolume && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(netPos.netVolume, 2)}</td>
+                            )}
+                            {netVisibleColumns.avgPrice && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(netPos.avgPrice, 5)}</td>
+                            )}
+                            {netVisibleColumns.totalProfit && (
+                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(netPos.totalProfit, 2)}</span>
+                              </td>
+                            )}
+                            {netVisibleColumns.loginCount && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{netPos.loginCount}</td>
+                            )}
+                            {netVisibleColumns.totalPositions && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {netPos.totalPositions}
+                                {groupByBaseSymbol && netPos.variantCount > 1 && netVisibleColumns.symbol && (
+                                  <button
+                                    className="ml-3 text-xs text-blue-600 hover:underline"
+                                    onClick={() => {
+                                      const next = new Set(expandedNetKeys)
+                                      if (next.has(netPos.symbol)) next.delete(netPos.symbol); else next.add(netPos.symbol)
+                                      setExpandedNetKeys(next)
+                                    }}
+                                  >
+                                    {expandedNetKeys.has(netPos.symbol) ? 'Hide variants' : 'Show variants'}
+                                  </button>
+                                )}
+                              </td>
+                            )}
                           </tr>
                           {groupByBaseSymbol && expandedNetKeys.has(netPos.symbol) && netPos.variants && netPos.variants.length > 0 && (
                             <tr className="bg-gray-50">
-                              <td colSpan={7} className="px-3 py-2">
+                              <td colSpan={Object.values(netVisibleColumns).filter(Boolean).length} className="px-3 py-2">
                                 <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                   {netPos.variants.map((v, i) => (
@@ -1413,6 +1594,140 @@ const PositionsPage = () => {
                           )}
                           </Fragment>
                         ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : showClientNet ? (
+            <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
+              {/* Client NET Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Client NET Rows</p>
+                  <p className="text-lg font-semibold text-gray-900">{clientNetPositionsData.length}</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatNumber(clientNetPositionsData.reduce((sum, p) => sum + p.netVolume, 0), 2)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
+                  <p className={`text-lg font-semibold flex items-center gap-1 ${
+                    clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
+                    {formatNumber(Math.abs(clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
+                  <p className="text-xs text-gray-500 mb-1">Total Logins</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {new Set(clientNetPositionsData.map(r=>r.login)).size}
+                  </p>
+                </div>
+                {/* Grouping toggle */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex items-center justify-between col-span-2 md:col-span-1">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Group by Base Symbol</p>
+                    <p className="text-[11px] text-gray-500">Collapse variants like XAUUSD.f → XAUUSD</p>
+                  </div>
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={groupByBaseSymbol} onChange={(e)=>setGroupByBaseSymbol(e.target.checked)} />
+                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all relative peer-checked:bg-blue-600" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Client NET Table */}
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+                <div className="overflow-y-auto flex-1">
+                  {clientNetPositionsData.length === 0 ? (
+                    <div className="text-center py-12">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
+                      </svg>
+                      <p className="text-gray-500 text-sm">No Client NET data</p>
+                    </div>
+                  ) : (
+                    <table className="w-full divide-y divide-gray-200">
+                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Login</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {clientNetPositionsData.map((row, idx) => {
+                          const key = `${row.login}|${row.symbol}`
+                          return (
+                            <Fragment key={key}>
+                              <tr className="hover:bg-blue-50 transition-all duration-300">
+                                <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{row.login}</td>
+                                <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                  {row.symbol}
+                                  {groupByBaseSymbol && row.variantCount > 1 && (
+                                    <span className="ml-2 text-[11px] text-gray-500">(+{row.variantCount - 1} variants)</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.netVolume, 2)}</td>
+                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.avgPrice, 5)}</td>
+                                <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(row.totalProfit, 2)}</span>
+                                </td>
+                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                  {row.totalPositions ?? '-'}
+                                  {groupByBaseSymbol && row.variantCount > 1 && (
+                                    <button
+                                      className="ml-3 text-xs text-blue-600 hover:underline"
+                                      onClick={() => {
+                                        const next = new Set(expandedNetKeys)
+                                        const ek = `client|${key}`
+                                        if (next.has(ek)) next.delete(ek); else next.add(ek)
+                                        setExpandedNetKeys(next)
+                                      }}
+                                    >
+                                      {expandedNetKeys.has(`client|${key}`) ? 'Hide variants' : 'Show variants'}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                              {groupByBaseSymbol && expandedNetKeys.has(`client|${key}`) && row.variants && row.variants.length > 0 && (
+                                <tr className="bg-gray-50">
+                                  <td colSpan={7} className="px-3 py-2">
+                                    <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                      {row.variants.map((v, i) => (
+                                        <div key={i} className="border border-gray-200 rounded p-2 bg-white">
+                                          <div className="flex items-center justify-between">
+                                            <div className="font-semibold text-gray-900">{v.exactSymbol}</div>
+                                            <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${v.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{v.netType}</span>
+                                          </div>
+                                          <div className="mt-1 text-[12px] text-gray-600 flex gap-4">
+                                            <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.netVolume, 2)}</span></div>
+                                            <div>Avg: <span className="font-semibold text-gray-900">{formatNumber(v.avgPrice, 5)}</span></div>
+                                            <div>P/L: <span className={`font-semibold ${v.totalProfit>=0?'text-green-700':'text-red-700'}`}>{formatNumber(v.totalProfit, 2)}</span></div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          )
+                        })}
                       </tbody>
                     </table>
                   )}
