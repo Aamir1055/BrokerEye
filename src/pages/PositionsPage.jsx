@@ -105,6 +105,25 @@ const PositionsPage = () => {
     totalNetPL: true,
     totalLogins: true
   })
+  // Client NET controls and visibility
+  const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
+  const [clientNetVisibleColumns, setClientNetVisibleColumns] = useState({
+    login: true,
+    symbol: true,
+    netType: true,
+    netVolume: true,
+    avgPrice: true,
+    totalProfit: true,
+    totalPositions: true
+  })
+  const toggleClientNetColumn = (col) => setClientNetVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
+  const [clientNetCardFilterOpen, setClientNetCardFilterOpen] = useState(false)
+  const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
+    clientNetRows: true,
+    totalNetVolume: true,
+    totalNetPL: true,
+    totalLogins: true
+  })
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -1723,6 +1742,15 @@ const PositionsPage = () => {
                           </div>
                         )}
                       </div>
+                      {/* Compact Group Base Symbols toggle for NET */}
+                      <button
+                        onClick={() => setGroupByBaseSymbol(v => !v)}
+                        className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        title="Toggle grouping by base symbol"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                        Group Base Symbols
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1903,13 +1931,13 @@ const PositionsPage = () => {
                     <table className="w-full divide-y divide-gray-200">
                       <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
                         <tr>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Login</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>
-                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>
+                          {clientNetVisibleColumns.login && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Login</th>)}
+                          {clientNetVisibleColumns.symbol && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>)}
+                          {clientNetVisibleColumns.netType && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>)}
+                          {clientNetVisibleColumns.netVolume && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>)}
+                          {clientNetVisibleColumns.avgPrice && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>)}
+                          {clientNetVisibleColumns.totalProfit && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>)}
+                          {clientNetVisibleColumns.totalPositions && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>)}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
@@ -1918,22 +1946,22 @@ const PositionsPage = () => {
                           return (
                             <Fragment key={key}>
                               <tr className="hover:bg-blue-50 transition-all duration-300">
-                                <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{row.login}</td>
-                                <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {clientNetVisibleColumns.login && (<td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{row.login}</td>)}
+                                {clientNetVisibleColumns.symbol && (<td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                                   {row.symbol}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <span className="ml-2 text-[11px] text-gray-500">(+{row.variantCount - 1} variants)</span>
                                   )}
-                                </td>
-                                <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                </td>)}
+                                {clientNetVisibleColumns.netType && (<td className="px-3 py-2 text-sm whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
-                                </td>
-                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.netVolume, 2)}</td>
-                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.avgPrice, 5)}</td>
-                                <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                </td>)}
+                                {clientNetVisibleColumns.netVolume && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.netVolume, 2)}</td>)}
+                                {clientNetVisibleColumns.avgPrice && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.avgPrice, 5)}</td>)}
+                                {clientNetVisibleColumns.totalProfit && (<td className="px-3 py-2 text-sm whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(row.totalProfit, 2)}</span>
-                                </td>
-                                <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                </td>)}
+                                {clientNetVisibleColumns.totalPositions && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                                   {row.totalPositions ?? '-'}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <button
@@ -1948,11 +1976,11 @@ const PositionsPage = () => {
                                       {expandedNetKeys.has(`client|${key}`) ? 'Hide variants' : 'Show variants'}
                                     </button>
                                   )}
-                                </td>
+                                </td>)}
                               </tr>
                               {groupByBaseSymbol && expandedNetKeys.has(`client|${key}`) && row.variants && row.variants.length > 0 && (
                                 <tr className="bg-gray-50">
-                                  <td colSpan={7} className="px-3 py-2">
+                                  <td colSpan={Object.values(clientNetVisibleColumns).filter(Boolean).length} className="px-3 py-2">
                                     <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                       {row.variants.map((v, i) => (
