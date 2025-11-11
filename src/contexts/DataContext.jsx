@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react'
 import { brokerAPI } from '../services/api'
 import websocketService from '../services/websocket'
 import { useAuth } from './AuthContext'
@@ -14,6 +14,8 @@ export const useData = () => {
 }
 
 export const DataProvider = ({ children }) => {
+  // Helper to schedule heavy state updates at low priority to avoid blocking navigation/route transitions
+  const lowPriority = (cb) => startTransition(cb)
   const { isAuthenticated } = useAuth()
   const [clients, setClients] = useState([])
   const [positions, setPositions] = useState([])
@@ -660,7 +662,7 @@ export const DataProvider = ({ children }) => {
           
           // Guard: avoid cascading re-renders if snapshot is identical (same logins + signatures)
           let shouldUpdateSnapshot = true
-          setClients(prev => {
+          lowPriority(() => setClients(prev => {
             if (prev.length === newClients.length) {
               let allSame = true
               for (let i = 0; i < prev.length; i++) {
@@ -678,13 +680,13 @@ export const DataProvider = ({ children }) => {
               }
             }
             return newClients
-          })
-          setAccounts(prev => {
+          }))
+          lowPriority(() => setAccounts(prev => {
             if (!shouldUpdateSnapshot) return prev
             return newClients
-          })
+          }))
           if (shouldUpdateSnapshot) {
-            setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+            lowPriority(() => setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() })))
           }
 
           // Reset signature tracking to this fresh snapshot
@@ -717,7 +719,7 @@ export const DataProvider = ({ children }) => {
               const diff = diffStats(snapStats, clientStats)
               const hasMeaningfulDiff = Object.values(diff).some(v => Math.abs(v) > 0.00001)
               if (hasMeaningfulDiff) {
-                setClientStats(snapStats)
+                lowPriority(() => setClientStats(snapStats))
               }
             } catch (e) {
               console.warn('[DataContext] Failed recalculating stats from full snapshot', e)
@@ -833,7 +835,7 @@ export const DataProvider = ({ children }) => {
       
       // OPTIMIZED: Single state update for clients with index map
       let addedClientsCount = 0
-      setClients(prev => {
+      lowPriority(() => setClients(prev => {
         // Rebuild index if needed
         if (clientIndexMap.size === 0 && prev.length > 0) {
           prev.forEach((c, i) => clientIndexMap.set(c.login, i))
@@ -872,15 +874,15 @@ export const DataProvider = ({ children }) => {
           }
         }
         return updated
-      })
+      }))
 
       // Update client count outside setClients to avoid nested state updates triggering extra renders
       if (addedClientsCount > 0) {
-        setClientStats(s => ({ ...s, totalClients: s.totalClients + addedClientsCount }))
+        lowPriority(() => setClientStats(s => ({ ...s, totalClients: s.totalClients + addedClientsCount })))
       }
       
       // OPTIMIZED: Single state update for accounts with index map
-      setAccounts(prev => {
+      lowPriority(() => setAccounts(prev => {
         // Rebuild index if needed
         if (accountIndexMap.size === 0 && prev.length > 0) {
           prev.forEach((a, i) => accountIndexMap.set(a.login, i))
@@ -904,7 +906,7 @@ export const DataProvider = ({ children }) => {
         }
         
         return updated
-      })
+      }))
     }
 
     // Track if we're receiving updates
@@ -1121,8 +1123,8 @@ export const DataProvider = ({ children }) => {
         const newPositions = data.data?.positions || data.positions
         if (newPositions && Array.isArray(newPositions)) {
           console.log('[DataContext] 📦 Full positions snapshot received:', newPositions.length, 'positions')
-          setPositions(newPositions)
-          setLastFetch(prev => ({ ...prev, positions: Date.now() }))
+          lowPriority(() => setPositions(newPositions))
+          lowPriority(() => setLastFetch(prev => ({ ...prev, positions: Date.now() })))
         }
       } catch (error) {
         console.error('[DataContext] Error processing positions update:', error)
@@ -1136,7 +1138,7 @@ export const DataProvider = ({ children }) => {
         if (position) {
           const posId = position.position || position.id
           console.log('[DataContext] ➕ POSITION_OPENED:', posId, 'Login:', position.login, 'Symbol:', position.symbol)
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             // Check if position already exists
             const exists = prev.some(p => (p.position || p.id) === posId)
             if (exists) {
@@ -1144,7 +1146,7 @@ export const DataProvider = ({ children }) => {
               return prev
             }
             return [position, ...prev]
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_OPENED:', error)
@@ -1159,7 +1161,7 @@ export const DataProvider = ({ children }) => {
         
         if (posId) {
           console.log('[DataContext] ✏️ POSITION_UPDATED:', posId, 'Profit:', updatedPos.profit, 'Volume:', updatedPos.volume)
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
             if (index === -1) {
               // Position doesn't exist, add it
@@ -1169,7 +1171,7 @@ export const DataProvider = ({ children }) => {
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedPos }
             return updated
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_UPDATED:', error)
@@ -1183,11 +1185,11 @@ export const DataProvider = ({ children }) => {
         if (position) {
           const posId = position.position || position.id
           console.log('[DataContext] ➕ POSITION_ADDED (legacy):', posId)
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             const exists = prev.some(p => (p.position || p.id) === posId)
             if (exists) return prev
             return [position, ...prev]
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_ADDED:', error)
@@ -1201,7 +1203,7 @@ export const DataProvider = ({ children }) => {
         const posId = updatedPos?.position || updatedPos?.id
         
         if (posId) {
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
             if (index === -1) return prev
             
@@ -1226,7 +1228,7 @@ export const DataProvider = ({ children }) => {
             }
             
             return updated
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_PNL_UPDATE:', error)
@@ -1239,7 +1241,7 @@ export const DataProvider = ({ children }) => {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
           console.log('[DataContext] ❌ POSITION_CLOSED:', posId)
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             const newPositions = prev.filter(p => (p.position || p.id) !== posId)
             if (newPositions.length === prev.length) {
               console.log('[DataContext] ⚠️ Position not found for closure:', posId)
@@ -1247,7 +1249,7 @@ export const DataProvider = ({ children }) => {
             }
             console.log('[DataContext] ✅ Position closed. Count:', prev.length, '→', newPositions.length)
             return newPositions
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_CLOSED:', error)
@@ -1260,12 +1262,12 @@ export const DataProvider = ({ children }) => {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
           console.log('[DataContext] ❌ POSITION_DELETED (legacy):', posId)
-          setPositions(prev => {
+          lowPriority(() => setPositions(prev => {
             const newPositions = prev.filter(p => (p.position || p.id) !== posId)
             if (newPositions.length === prev.length) return prev
             console.log('[DataContext] ✅ Position removed. Count:', prev.length, '→', newPositions.length)
             return newPositions
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing POSITION_DELETED:', error)
@@ -1277,8 +1279,8 @@ export const DataProvider = ({ children }) => {
       try {
         const newOrders = data.data?.orders || data.orders
         if (newOrders && Array.isArray(newOrders)) {
-          setOrders(newOrders)
-          setLastFetch(prev => ({ ...prev, orders: Date.now() }))
+          lowPriority(() => setOrders(newOrders))
+          lowPriority(() => setLastFetch(prev => ({ ...prev, orders: Date.now() })))
         }
       } catch (error) {
         console.error('[DataContext] Error processing orders update:', error)
@@ -1290,14 +1292,14 @@ export const DataProvider = ({ children }) => {
       try {
         const order = message.data || message
         if (order) {
-          setOrders(prev => {
+          lowPriority(() => setOrders(prev => {
             // Check if order already exists
             const orderId = order.order || order.ticket || order.id
             if (prev.some(o => (o.order || o.ticket || o.id) === orderId)) {
               return prev
             }
             return [order, ...prev]
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing ORDER_ADDED:', error)
@@ -1311,7 +1313,7 @@ export const DataProvider = ({ children }) => {
         const orderId = updatedOrder?.order || updatedOrder?.ticket || updatedOrder?.id
         
         if (orderId) {
-          setOrders(prev => {
+          lowPriority(() => setOrders(prev => {
             const index = prev.findIndex(o => (o.order || o.ticket || o.id) === orderId)
             if (index === -1) {
               return [updatedOrder, ...prev]
@@ -1319,7 +1321,7 @@ export const DataProvider = ({ children }) => {
             const updated = [...prev]
             updated[index] = { ...updated[index], ...updatedOrder }
             return updated
-          })
+          }))
         }
       } catch (error) {
         console.error('[DataContext] Error processing ORDER_UPDATED:', error)
@@ -1331,7 +1333,7 @@ export const DataProvider = ({ children }) => {
       try {
         const orderId = message.order || message.ticket || message.data?.order || message.data?.ticket || message.id
         if (orderId) {
-          setOrders(prev => prev.filter(o => (o.order || o.ticket || o.id) !== orderId))
+          lowPriority(() => setOrders(prev => prev.filter(o => (o.order || o.ticket || o.id) !== orderId)))
         }
       } catch (error) {
         console.error('[DataContext] Error processing ORDER_DELETED:', error)
