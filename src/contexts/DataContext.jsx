@@ -31,6 +31,8 @@ export const DataProvider = ({ children }) => {
     totalProcessedUpdates: 0,
     lastFlushAt: 0
   })
+  // Throttle re-renders from lastWsReceiveAt updates
+  const lastReceiveEmitRef = useRef(0)
   // Expose to window for debug UI without causing provider re-renders
   useEffect(() => {
     try { window.__brokerPerf = perfRef.current } catch {}
@@ -630,8 +632,14 @@ export const DataProvider = ({ children }) => {
     // Subscribe to clients updates
   const unsubClients = websocketService.subscribe('clients', (data) => {
       try {
-        // Mark receive timestamp for latency instrumentation
-        setLastWsReceiveAt(Date.now())
+        // Mark receive timestamp for latency instrumentation (throttled)
+        {
+          const now = Date.now()
+          if (now - (lastReceiveEmitRef.current || 0) > 200) {
+            lastReceiveEmitRef.current = now
+            setLastWsReceiveAt(now)
+          }
+        }
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
           // Normalize USC currency values for all clients
@@ -650,9 +658,34 @@ export const DataProvider = ({ children }) => {
             console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${normalizedClients.length - newClients.length} duplicate clients`)
           }
           
-          setClients(newClients)
-          setAccounts(newClients) // Update accounts too (same data)
-          setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+          // Guard: avoid cascading re-renders if snapshot is identical (same logins + signatures)
+          let shouldUpdateSnapshot = true
+          setClients(prev => {
+            if (prev.length === newClients.length) {
+              let allSame = true
+              for (let i = 0; i < prev.length; i++) {
+                const a = prev[i]
+                const b = newClients[i]
+                // Compare stable identity + a few key fields that indicate change
+                if (!a || !b || a.login !== b.login || a.balance !== b.balance || a.equity !== b.equity || a.profit !== b.profit || a.lastUpdate !== b.lastUpdate) {
+                  allSame = false
+                  break
+                }
+              }
+              if (allSame) {
+                shouldUpdateSnapshot = false
+                return prev // skip state update
+              }
+            }
+            return newClients
+          })
+          setAccounts(prev => {
+            if (!shouldUpdateSnapshot) return prev
+            return newClients
+          })
+          if (shouldUpdateSnapshot) {
+            setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
+          }
 
           // Reset signature tracking to this fresh snapshot
           lastClientStateRef.current.clear()
@@ -677,11 +710,18 @@ export const DataProvider = ({ children }) => {
           })
 
           // Recalculate full stats on fresh snapshot
-          try {
-            const snapStats = calculateFullStats(newClients)
-            setClientStats(snapStats)
-          } catch (e) {
-            console.warn('[DataContext] Failed recalculating stats from full snapshot', e)
+          if (shouldUpdateSnapshot) {
+            try {
+              const snapStats = calculateFullStats(newClients)
+              // Only apply if differs meaningfully (prevent update depth loops)
+              const diff = diffStats(snapStats, clientStats)
+              const hasMeaningfulDiff = Object.values(diff).some(v => Math.abs(v) > 0.00001)
+              if (hasMeaningfulDiff) {
+                setClientStats(snapStats)
+              }
+            } catch (e) {
+              console.warn('[DataContext] Failed recalculating stats from full snapshot', e)
+            }
           }
           
           // Update timestamp from bulk data
@@ -725,8 +765,14 @@ export const DataProvider = ({ children }) => {
     const processBatch = () => {
       if (pendingUpdates.size === 0) return
       
-      // Mark receive timestamp at the start of processing a batch
-      setLastWsReceiveAt(Date.now())
+      // Mark receive timestamp at the start of processing a batch (throttled)
+      {
+        const nowTs = Date.now()
+        if (nowTs - (lastReceiveEmitRef.current || 0) > 200) {
+          lastReceiveEmitRef.current = nowTs
+          setLastWsReceiveAt(nowTs)
+        }
+      }
 
   const startTime = performance.now()
       const batchSize = pendingUpdates.size
