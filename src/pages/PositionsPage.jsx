@@ -978,6 +978,118 @@ const PositionsPage = () => {
     // Sort by login then volume desc for stability
     return rows.sort((a,b)=> a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
   }, [showClientNet, cachedPositions, groupByBaseSymbol])
+
+  // CSV helpers and export handlers
+  const toCSV = (rows, headers) => {
+    if (!rows || rows.length === 0) return headers.map(h => h.label).join(',')
+    const esc = (v) => {
+      if (v === null || v === undefined) return ''
+      let s = String(v)
+      s = s.replace(/"/g, '""')
+      if (/[",\n]/.test(s)) s = '"' + s + '"'
+      return s
+    }
+    const headerRow = headers.map(h => h.label).join(',')
+    const body = rows.map(r => headers.map(h => esc(h.accessor ? h.accessor(r) : r[h.key])).join(',')).join('\n')
+    return headerRow + '\n' + body
+  }
+
+  const downloadFile = (filename, content, mime = 'text/csv;charset=utf-8') => {
+    try {
+      const blob = new Blob([content], { type: mime })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('CSV download failed:', e)
+    }
+  }
+
+  const handleExportPositions = () => {
+    const effectiveCols = getEffectiveVisibleColumns()
+    const order = [
+      'time','login','position','symbol','action','volume','volumePercentage','priceOpen','priceCurrent','sl','tp','profit','profitPercentage','storage','storagePercentage','appliedPercentage','reason','comment','commission'
+    ]
+    const labelMap = {
+      time: 'Updated',
+      login: 'Login',
+      position: 'Position',
+      symbol: 'Symbol',
+      action: 'Action',
+      volume: 'Volume',
+      volumePercentage: 'Volume %',
+      priceOpen: 'Open',
+      priceCurrent: 'Current',
+      sl: 'S/L',
+      tp: 'T/P',
+      profit: 'Profit',
+      profitPercentage: 'Profit %',
+      storage: 'Storage',
+      storagePercentage: 'Storage %',
+      appliedPercentage: 'Applied %',
+      reason: 'Reason',
+      comment: 'Comment',
+      commission: 'Commission'
+    }
+    const accessors = {
+      time: (p) => formatTime(p.timeUpdate || p.timeCreate),
+      login: (p) => p.login,
+      position: (p) => p.position,
+      symbol: (p) => p.symbol,
+      action: (p) => p.action,
+      volume: (p) => p.volume,
+      volumePercentage: (p) => p.volume_percentage,
+      priceOpen: (p) => p.priceOpen,
+      priceCurrent: (p) => p.priceCurrent,
+      sl: (p) => p.priceSL,
+      tp: (p) => p.priceTP,
+      profit: (p) => p.profit,
+      profitPercentage: (p) => p.profit_percentage,
+      storage: (p) => p.storage,
+      storagePercentage: (p) => p.storage_percentage,
+      appliedPercentage: (p) => p.applied_percentage,
+      reason: (p) => p.reason,
+      comment: (p) => p.comment,
+      commission: (p) => p.commission
+    }
+    const headers = order
+      .filter(k => effectiveCols[k])
+      .map(k => ({ key: k, label: labelMap[k], accessor: accessors[k] }))
+    const csv = toCSV(sortedPositions, headers)
+    downloadFile(`positions_${Date.now()}.csv`, csv)
+  }
+
+  const handleExportNetPositions = () => {
+    const headers = [
+      { key: 'symbol', label: 'Symbol' },
+      { key: 'netType', label: 'NET Type' },
+      { key: 'netVolume', label: 'NET Volume' },
+      { key: 'avgPrice', label: 'Avg Price' },
+      { key: 'totalProfit', label: 'Total Profit' },
+      { key: 'loginCount', label: 'Logins' },
+      { key: 'totalPositions', label: 'Positions' }
+    ]
+    const csv = toCSV(netFilteredPositions, headers)
+    downloadFile(`net_positions_${Date.now()}.csv`, csv)
+  }
+
+  const handleExportClientNetPositions = () => {
+    const headers = [
+      { key: 'login', label: 'Login' },
+      { key: 'symbol', label: 'Symbol' },
+      { key: 'netType', label: 'NET Type' },
+      { key: 'netVolume', label: 'NET Volume' },
+      { key: 'avgPrice', label: 'Avg Price' },
+      { key: 'totalProfit', label: 'Total Profit' }
+    ]
+    const csv = toCSV(clientNetPositionsData, headers)
+    downloadFile(`client_net_${Date.now()}.csv`, csv)
+  }
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -1589,6 +1701,10 @@ const PositionsPage = () => {
                           </div>
                         )}
                       </div>
+                      <button onClick={handleExportNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export NET positions to CSV">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                        Export CSV
+                      </button>
                       {/* Card Filter */}
                       <div className="relative">
                         <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
@@ -1768,6 +1884,13 @@ const PositionsPage = () => {
 
               {/* Client NET Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+                {/* Controls (Export) */}
+                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex items-center justify-end">
+                  <button onClick={handleExportClientNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export Client NET to CSV">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                    Export CSV
+                  </button>
+                </div>
                 <div className="overflow-y-auto flex-1">
                   {clientNetPositionsData.length === 0 ? (
                     <div className="text-center py-12">
@@ -1974,6 +2097,14 @@ const PositionsPage = () => {
                   </div>
                 )}
               </div>
+              <button
+                onClick={handleExportPositions}
+                className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                title="Export current positions to CSV"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                Export CSV
+              </button>
 
               {/* Columns Button */}
               <div className="relative">
