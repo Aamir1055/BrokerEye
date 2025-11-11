@@ -993,7 +993,9 @@ const PositionsPage = () => {
             return { exactSymbol: exact, netType: nv>0? 'Sell':'Buy', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
           }).filter(Boolean)
         }
-        rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, variantCount, variants })
+  // Add totalPositions count (buy + sell) so Client NET Positions column is populated
+  const totalPositions = bucket.buyPositions.length + bucket.sellPositions.length
+  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, totalPositions, variantCount, variants })
       })
     })
     // Sort by login then volume desc for stability
