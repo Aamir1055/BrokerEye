@@ -27,35 +27,29 @@ const PositionsPage = () => {
   // Display mode for values vs percentages
   // 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
+  
+  // UI controls and refs used across toolbars
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
   const displayMenuRef = useRef(null)
+  const searchRef = useRef(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   
-  // NET positions view options
+  // Pagination and sorting for Positions view
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState('All')
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  
+  // View toggles
+  const [showNetPositions, setShowNetPositions] = useState(false)
+  const [showClientNet, setShowClientNet] = useState(false)
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
   const [expandedNetKeys, setExpandedNetKeys] = useState(new Set())
   
-  // Transient UI flash map: { [positionId]: { ts, type: 'add'|'update'|'pnl', priceDelta?, profitDelta? } }
+  // Flash highlight support
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
-  
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(50)
-  
-  // Sorting states
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
-  
-  // Search states
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const searchRef = useRef(null)
-  
-  // NET Position states
-  const [showNetPositions, setShowNetPositions] = useState(false)
-  // Client NET view (netting per-login across their positions)
-  const [showClientNet, setShowClientNet] = useState(false)
-  // Dedicated NET module UI state (kept separate from main positions & client net)
   const [netCurrentPage, setNetCurrentPage] = useState(1)
   const [netItemsPerPage, setNetItemsPerPage] = useState('All') // numeric or 'All'
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
@@ -70,7 +64,6 @@ const PositionsPage = () => {
     volume: false, // replaced by netVolume
     volumePercentage: false,
     priceOpen: false, // replaced by avgPrice
-    priceCurrent: false,
     sl: false,
     tp: false,
     profit: false, // replaced by totalProfit
@@ -124,6 +117,10 @@ const PositionsPage = () => {
     totalNetPL: true,
     totalLogins: true
   })
+  // Client NET search
+  const [clientNetSearchQuery, setClientNetSearchQuery] = useState('')
+  const [clientNetShowSuggestions, setClientNetShowSuggestions] = useState(false)
+  const clientNetSearchRef = useRef(null)
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -152,7 +149,6 @@ const PositionsPage = () => {
 
   const allColumns = [
     { key: 'position', label: 'Position' },
-    { key: 'time', label: 'Time' },
     { key: 'login', label: 'Login' },
     { key: 'action', label: 'Action' },
     { key: 'symbol', label: 'Symbol' },
@@ -484,13 +480,19 @@ const PositionsPage = () => {
       if (displayMenuRef.current && !displayMenuRef.current.contains(event.target)) {
         setShowDisplayMenu(false)
       }
+      if (netSearchRef.current && !netSearchRef.current.contains(event.target)) {
+        setNetShowSuggestions(false)
+      }
+      if (clientNetSearchRef.current && !clientNetSearchRef.current.contains(event.target)) {
+        setClientNetShowSuggestions(false)
+      }
     }
     
-    if (showSuggestions || showColumnSelector || showDisplayMenu) {
+    if (showSuggestions || showColumnSelector || showDisplayMenu || netShowSuggestions || clientNetShowSuggestions) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions, showColumnSelector, showDisplayMenu])
+  }, [showSuggestions, showColumnSelector, showDisplayMenu, netShowSuggestions, clientNetShowSuggestions])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -997,6 +999,46 @@ const PositionsPage = () => {
     // Sort by login then volume desc for stability
     return rows.sort((a,b)=> a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
   }, [showClientNet, cachedPositions, groupByBaseSymbol])
+
+  // Client NET pagination
+  const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
+  const [clientNetItemsPerPage, setClientNetItemsPerPage] = useState('All')
+  // Client NET search suggestions and filtering
+  const getClientNetSuggestions = () => {
+    if (!clientNetSearchQuery.trim()) return []
+    const q = clientNetSearchQuery.toLowerCase().trim()
+    const s = new Set()
+    clientNetPositionsData.forEach(row => {
+      if (String(row.login || '').toLowerCase().includes(q)) s.add(`Login: ${row.login}`)
+      if (String(row.symbol || '').toLowerCase().includes(q)) s.add(`Symbol: ${row.symbol}`)
+      if (String(row.netType || '').toLowerCase().includes(q)) s.add(`NET Type: ${row.netType}`)
+    })
+    return Array.from(s).slice(0, 10)
+  }
+  const handleClientNetSuggestionClick = (suggestion) => {
+    const value = suggestion.split(': ')[1]
+    setClientNetSearchQuery(value)
+    setClientNetShowSuggestions(false)
+  }
+  const handleClientNetSearchKeyDown = (e) => { if (e.key === 'Enter') setClientNetShowSuggestions(false) }
+
+  const clientNetFilteredPositions = useMemo(() => {
+    if (!clientNetSearchQuery.trim()) return clientNetPositionsData
+    const q = clientNetSearchQuery.toLowerCase().trim()
+    return clientNetPositionsData.filter(row =>
+      String(row.login || '').toLowerCase().includes(q) ||
+      String(row.symbol || '').toLowerCase().includes(q) ||
+      String(row.netType || '').toLowerCase().includes(q)
+    )
+  }, [clientNetSearchQuery, clientNetPositionsData])
+
+  const clientNetTotalPages = clientNetItemsPerPage === 'All' ? 1 : Math.ceil(clientNetFilteredPositions.length / clientNetItemsPerPage)
+  const clientNetStartIndex = clientNetItemsPerPage === 'All' ? 0 : (clientNetCurrentPage - 1) * clientNetItemsPerPage
+  const clientNetEndIndex = clientNetItemsPerPage === 'All' ? clientNetFilteredPositions.length : clientNetStartIndex + clientNetItemsPerPage
+  const clientNetDisplayedPositions = clientNetFilteredPositions.slice(clientNetStartIndex, clientNetEndIndex)
+  useEffect(() => { if (!isAuthenticated) return; setClientNetCurrentPage(1) }, [clientNetItemsPerPage])
+  const handleClientNetPageChange = (p) => { setClientNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const handleClientNetItemsPerPageChange = (v) => { setClientNetItemsPerPage(v === 'All' ? 'All' : parseInt(v)); setClientNetCurrentPage(1) }
 
   // CSV helpers and export handlers
   const toCSV = (rows, headers) => {
@@ -1613,48 +1655,13 @@ const PositionsPage = () => {
                     <p className="text-lg font-semibold text-gray-900">{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</p>
                   </div>
                 )}
-                {/* Grouping toggle */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex items-center justify-between col-span-2 md:col-span-1">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Group by Base Symbol</p>
-                    <p className="text-[11px] text-gray-500">Collapse variants like XAUUSD.f → XAUUSD</p>
-                  </div>
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={groupByBaseSymbol} onChange={(e)=>setGroupByBaseSymbol(e.target.checked)} />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all relative peer-checked:bg-blue-600" />
-                  </label>
-                </div>
+                {/* Removed grouping toggle card per new layout */}
               </div>
 
               {/* NET Position Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
                 {/* NET module controls */}
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col gap-3">
-                  {/* Search bar */}
-                  <div className="relative" ref={netSearchRef}>
-                    <input
-                      type="text"
-                      value={netSearchQuery}
-                      onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
-                      onFocus={() => setNetShowSuggestions(true)}
-                      onKeyDown={handleNetSearchKeyDown}
-                      placeholder="Search symbol or NET type..."
-                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-72"
-                    />
-                    <svg className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    {netSearchQuery && (
-                      <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    )}
-                    {netShowSuggestions && getNetSuggestions().length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                        {getNetSuggestions().map((s,i)=>(
-                          <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50">{s}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center flex-wrap gap-2">
                       <span className="text-xs text-gray-600">Show:</span>
@@ -1716,6 +1723,31 @@ const PositionsPage = () => {
                                   k==='totalLogins'?'Total Logins': k
                                 }</span>
                               </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {/* NET search placed next to Columns */}
+                      <div className="relative" ref={netSearchRef}>
+                        <input
+                          type="text"
+                          value={netSearchQuery}
+                          onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
+                          onFocus={() => setNetShowSuggestions(true)}
+                          onKeyDown={handleNetSearchKeyDown}
+                          placeholder="Search symbol or NET type..."
+                          className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
+                        />
+                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        {netSearchQuery && (
+                          <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        )}
+                        {netShowSuggestions && getNetSuggestions().length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                            {getNetSuggestions().map((s,i)=>(
+                              <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
                             ))}
                           </div>
                         )}
@@ -1874,50 +1906,140 @@ const PositionsPage = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
                   <p className="text-xs text-gray-500 mb-1">Client NET Rows</p>
-                  <p className="text-lg font-semibold text-gray-900">{clientNetPositionsData.length}</p>
+                  <p className="text-lg font-semibold text-gray-900">{clientNetFilteredPositions.length}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
                   <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {formatNumber(clientNetPositionsData.reduce((sum, p) => sum + p.netVolume, 0), 2)}
+                    {formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
                   <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
                   <p className={`text-lg font-semibold flex items-center gap-1 ${
-                    clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
-                    {formatNumber(Math.abs(clientNetPositionsData.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
+                    {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
+                    {formatNumber(Math.abs(clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
                   <p className="text-xs text-gray-500 mb-1">Total Logins</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {new Set(clientNetPositionsData.map(r=>r.login)).size}
+                    {new Set(clientNetFilteredPositions.map(r=>r.login)).size}
                   </p>
                 </div>
-                {/* Grouping toggle */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex items-center justify-between col-span-2 md:col-span-1">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Group by Base Symbol</p>
-                    <p className="text-[11px] text-gray-500">Collapse variants like XAUUSD.f → XAUUSD</p>
-                  </div>
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={groupByBaseSymbol} onChange={(e)=>setGroupByBaseSymbol(e.target.checked)} />
-                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all relative peer-checked:bg-blue-600" />
-                  </label>
-                </div>
+                {/* Removed grouping toggle card per new layout */}
               </div>
 
               {/* Client NET Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
-                {/* Controls (Export) */}
-                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex items-center justify-end">
-                  <button onClick={handleExportClientNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export Client NET to CSV">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                    Export CSV
-                  </button>
+                {/* Controls: pagination left; actions right */}
+                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  {/* Left: pagination */}
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className="text-xs text-gray-600">Show:</span>
+                    <select value={clientNetItemsPerPage} onChange={(e)=>handleClientNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      {['All',25,50,100,200].map(o=> <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <span className="text-xs text-gray-600">entries</span>
+                    {clientNetItemsPerPage !== 'All' && (
+                      <>
+                        <button onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)} disabled={clientNetCurrentPage===1} className={`ml-3 px-2 py-1 rounded border text-xs ${clientNetCurrentPage===1?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Prev</button>
+                        <span className="text-[11px] text-gray-700 px-1">Page {clientNetCurrentPage}/{clientNetTotalPages}</span>
+                        <button onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)} disabled={clientNetCurrentPage===clientNetTotalPages} className={`px-2 py-1 rounded border text-xs ${clientNetCurrentPage===clientNetTotalPages?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Next</button>
+                      </>
+                    )}
+                    <span className="text-[11px] text-gray-500 ml-2">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
+                  </div>
+                  {/* Right: actions */}
+                  <div className="flex items-center gap-3">
+                    <button onClick={handleExportClientNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export Client NET to CSV">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                      Export CSV
+                    </button>
+                    {/* Client NET search next to Export */}
+                    <div className="relative" ref={clientNetSearchRef}>
+                      <input
+                        type="text"
+                        value={clientNetSearchQuery}
+                        onChange={(e)=>{ setClientNetSearchQuery(e.target.value); setClientNetShowSuggestions(true); setClientNetCurrentPage(1) }}
+                        onFocus={()=>setClientNetShowSuggestions(true)}
+                        onKeyDown={handleClientNetSearchKeyDown}
+                        placeholder="Search login, symbol or NET type..."
+                        className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                      />
+                      <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      {clientNetSearchQuery && (
+                        <button onClick={()=>{ setClientNetSearchQuery(''); setClientNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      )}
+                      {clientNetShowSuggestions && getClientNetSuggestions().length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                          {getClientNetSuggestions().map((s,i)=>(
+                            <button key={i} onClick={()=>handleClientNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Columns selector */}
+                    <div className="relative">
+                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Show/Hide Client NET columns">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        Columns
+                      </button>
+                      {clientNetShowColumnSelector && (
+                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
+                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Client NET Columns</p>
+                          {Object.keys(clientNetVisibleColumns).map(k => (
+                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                              <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={()=>toggleClientNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                              <span className="text-[11px] text-gray-700 capitalize">{
+                                k==='netType'?'NET Type':
+                                k==='netVolume'?'NET Volume':
+                                k==='avgPrice'?'Avg Price':
+                                k==='totalProfit'?'Total Profit':
+                                k==='totalPositions'?'Positions':
+                                k
+                              }</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Card Filter */}
+                    <div className="relative">
+                      <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        Card Filter
+                      </button>
+                      {clientNetCardFilterOpen && (
+                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
+                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
+                          {Object.entries(clientNetCardsVisible).map(([k,v]) => (
+                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                              <input type="checkbox" checked={v} onChange={()=>setClientNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                              <span className="text-[11px] text-gray-700">{
+                                k==='clientNetRows'?'Client NET Rows':
+                                k==='totalNetVolume'?'Total NET Volume':
+                                k==='totalNetPL'?'Total NET P/L':'Total Logins'
+                              }</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Compact Group Base Symbols */}
+                    <button
+                      onClick={() => setGroupByBaseSymbol(v => !v)}
+                      className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      title="Toggle grouping by base symbol"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                      Group Base Symbols
+                    </button>
+                  </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
                   {clientNetPositionsData.length === 0 ? (
@@ -1941,7 +2063,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
-                        {clientNetPositionsData.map((row, idx) => {
+                        {clientNetDisplayedPositions.map((row, idx) => {
                           const key = `${row.login}|${row.symbol}`
                           return (
                             <Fragment key={key}>
