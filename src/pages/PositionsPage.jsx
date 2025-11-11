@@ -1670,16 +1670,37 @@ const PositionsPage = () => {
                       </select>
                       <span className="text-xs text-gray-600">entries</span>
                       {netItemsPerPage !== 'All' && (
-                        <>
-                          <button onClick={()=>handleNetPageChange(netCurrentPage-1)} disabled={netCurrentPage===1} className={`ml-3 px-2 py-1 rounded border text-xs ${netCurrentPage===1?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Prev</button>
-                          <span className="text-[11px] text-gray-700 px-1">Page {netCurrentPage}/{netTotalPages}</span>
-                          <button onClick={()=>handleNetPageChange(netCurrentPage+1)} disabled={netCurrentPage===netTotalPages} className={`px-2 py-1 rounded border text-xs ${netCurrentPage===netTotalPages?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Next</button>
-                        </>
+                        <div className="flex items-center gap-2 ml-3">
+                          <button
+                            onClick={()=>handleNetPageChange(netCurrentPage-1)}
+                            disabled={netCurrentPage===1}
+                            className={`p-1.5 rounded-md transition-colors ${netCurrentPage===1?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                            aria-label="Previous page"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                          </button>
+                          <span className="text-[12px] text-gray-700 font-medium px-1">
+                            Page {netCurrentPage} of {netTotalPages}
+                          </span>
+                          <button
+                            onClick={()=>handleNetPageChange(netCurrentPage+1)}
+                            disabled={netCurrentPage===netTotalPages}
+                            className={`p-1.5 rounded-md transition-colors ${netCurrentPage===netTotalPages?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                            aria-label="Next page"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                          </button>
+                        </div>
                       )}
                       <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {/* Columns selector */}
+                      {/* Export first */}
+                      <button onClick={handleExportNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export NET positions to CSV">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                        Export CSV
+                      </button>
+                      {/* Columns selector next to Export */}
                       <div className="relative">
                         <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Show/Hide NET columns">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
@@ -1752,10 +1773,6 @@ const PositionsPage = () => {
                           </div>
                         )}
                       </div>
-                      <button onClick={handleExportNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export NET positions to CSV">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                        Export CSV
-                      </button>
                       {/* Card Filter */}
                       <div className="relative">
                         <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
@@ -1944,11 +1961,27 @@ const PositionsPage = () => {
                     </select>
                     <span className="text-xs text-gray-600">entries</span>
                     {clientNetItemsPerPage !== 'All' && (
-                      <>
-                        <button onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)} disabled={clientNetCurrentPage===1} className={`ml-3 px-2 py-1 rounded border text-xs ${clientNetCurrentPage===1?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Prev</button>
-                        <span className="text-[11px] text-gray-700 px-1">Page {clientNetCurrentPage}/{clientNetTotalPages}</span>
-                        <button onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)} disabled={clientNetCurrentPage===clientNetTotalPages} className={`px-2 py-1 rounded border text-xs ${clientNetCurrentPage===clientNetTotalPages?'text-gray-300 border-gray-200 cursor-not-allowed':'text-gray-600 border-gray-300 hover:bg-gray-100'}`}>Next</button>
-                      </>
+                      <div className="flex items-center gap-2 ml-3">
+                        <button
+                          onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
+                          disabled={clientNetCurrentPage===1}
+                          className={`p-1.5 rounded-md transition-colors ${clientNetCurrentPage===1?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                          aria-label="Previous page"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+                        <span className="text-[12px] text-gray-700 font-medium px-1">
+                          Page {clientNetCurrentPage} of {clientNetTotalPages}
+                        </span>
+                        <button
+                          onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)}
+                          disabled={clientNetCurrentPage===clientNetTotalPages}
+                          className={`p-1.5 rounded-md transition-colors ${clientNetCurrentPage===clientNetTotalPages?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                          aria-label="Next page"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                      </div>
                     )}
                     <span className="text-[11px] text-gray-500 ml-2">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
                   </div>
