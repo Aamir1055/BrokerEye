@@ -93,12 +93,17 @@ const IBCommissionsPage = () => {
     try {
       setTotalsLoading(true)
       const response = await brokerAPI.getIBCommissionTotals()
-      
       if (response.status === 'success' && response.data) {
-        setTotalCommission(response.data.total_commission || 0)
-        setTotalAvailableCommission(response.data.total_available_commission || 0)
-        setTotalCommissionPercentage(response.data.total_commission_percentage || 0)
-        setTotalAvailableCommissionPercentage(response.data.total_available_commission_percentage || 0)
+        const data = { ...response.data }
+        const isUSC = (data.currency || '').toLowerCase() === 'usc'
+        if (isUSC) {
+          if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
+          if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
+        }
+        setTotalCommission(data.total_commission || 0)
+        setTotalAvailableCommission(data.total_available_commission || 0)
+        setTotalCommissionPercentage(data.total_commission_percentage || 0)
+        setTotalAvailableCommissionPercentage(data.total_available_commission_percentage || 0)
       }
     } catch (error) {
       console.error('Error fetching commission totals:', error)

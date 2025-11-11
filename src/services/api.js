@@ -216,10 +216,24 @@ export const brokerAPI = {
     return response.data
   },
   
-  // Get client deals
-  getClientDeals: async (login, from, to) => {
-    const response = await api.get(`/api/broker/clients/${login}/deals?from=${from}&to=${to}`)
-    return response.data
+  // Get client deals (attempt with limit first, fallback without if not supported)
+  getClientDeals: async (login, from, to, limit = 1000) => {
+    const endpoints = [
+      `/api/broker/clients/${login}/deals?from=${from}&to=${to}&limit=${limit}`,
+      `/api/broker/clients/${login}/deals?from=${from}&to=${to}`
+    ]
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        const endpoint = endpoints[i]
+        if (DEBUG_LOGS) console.log(`[API] ClientDeals attempt ${i + 1}: ${endpoint}`)
+        const response = await api.get(endpoint)
+        if (DEBUG_LOGS) console.log('[API] ClientDeals response length:', response.data?.data?.deals?.length || response.data?.deals?.length)
+        return response.data
+      } catch (err) {
+        if (DEBUG_LOGS) console.warn(`[API] ClientDeals endpoint failed (${endpoints[i]}):`, err.response?.status || err.code || err.message)
+      }
+    }
+    throw new Error('All client deals endpoint attempts failed')
   },
   
   // Get all recent deals (for live dealing page)

@@ -16,7 +16,15 @@ import { brokerAPI } from '../services/api'
 const ClientsPage = () => {
   const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
-  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  // Ensure IB list is prefetched when entering Clients module (navigation)
+  useEffect(() => {
+    try {
+      refreshIBList?.()
+    } catch (e) {
+      console.warn('[ClientsPage] Failed to prefetch IB list:', e)
+    }
+  }, [])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -54,7 +62,7 @@ const ClientsPage = () => {
   const [showFaceCards, setShowFaceCards] = useState(true)
   
   // Face card drag and drop - extended with all new cards (15-53)
-  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 14, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
+  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 54, 55, 14, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
   const [faceCardOrder, setFaceCardOrder] = useState(() => {
     const saved = localStorage.getItem('clientsFaceCardOrder')
     return saved ? JSON.parse(saved) : defaultFaceCardOrder
@@ -63,7 +71,7 @@ const ClientsPage = () => {
   
   // Card visibility filter - Default all cards visible
   const defaultCardVisibility = {
-    1: true, 2: true, 3: true, 4: true, 5: true, 6: true,
+    1: true, 2: true, 3: true, 4: true, 5: false, 6: true,
     8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true,
     15: true, 16: true, 17: true, 18: true, // Commission metrics
     19: true, // Blocked Commission
@@ -78,11 +86,12 @@ const ClientsPage = () => {
     45: true, 46: true, 47: true, // Weekly/Monthly/Lifetime Credit OUT
     48: true, // NET Credit
     49: true, 50: true, 51: true, // Weekly/Monthly Previous Equity
-    52: true, 53: true // Daily/Week SO Compensation IN/OUT (placeholders)
+  52: true, 53: true, 54: true, 55: true // SO Compensation/Book PnL + Daily D&W %
   }
   const [cardVisibility, setCardVisibility] = useState(() => {
     const saved = localStorage.getItem('clientsCardVisibility')
-    return saved ? JSON.parse(saved) : defaultCardVisibility
+    // Merge saved state with defaults to ensure new cards are included
+    return saved ? { ...defaultCardVisibility, ...JSON.parse(saved) } : defaultCardVisibility
   })
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const cardFilterMenuRef = useRef(null)
@@ -184,6 +193,7 @@ const ClientsPage = () => {
       equity: true,
       profit: true,
       dailyDeposit: true,
+      
       // Hidden by default
       pnl: false,
       lastName: false,
@@ -276,7 +286,7 @@ const ClientsPage = () => {
     { key: 'applied_percentage_is_custom', label: 'Custom %' },
     { key: 'assets', label: 'Assets' },
     { key: 'liabilities', label: 'Liabilities' },
-    { key: 'blockedCommission', label: 'Blocked Commission' },
+    { key: 'blockedCommission', label: 'Blocked Rebate' },
     { key: 'blockedProfit', label: 'Blocked Profit' },
     { key: 'storage', label: 'Storage' },
     { key: 'company', label: 'Company' },
@@ -302,6 +312,7 @@ const ClientsPage = () => {
     { key: 'rightsMask', label: 'Rights Mask' },
     { key: 'dailyDeposit', label: 'Daily Deposit' },
     { key: 'dailyWithdrawal', label: 'Daily Withdrawal' },
+    
     { key: 'lifetimePnL', label: 'Lifetime PnL' },
     { key: 'dailyPnL', label: 'Daily PnL' },
     { key: 'thisMonthPnL', label: 'This Month PnL' },
@@ -322,6 +333,7 @@ const ClientsPage = () => {
     dailyPnL: 'dailyPnL_percentage',
     thisMonthPnL: 'thisMonthPnL_percentage',
     thisWeekPnL: 'thisWeekPnL_percentage'
+    // Removed dailyDeposit and dailyWithdrawal - they have separate percentage cards
   }
 
   const isMetricColumn = (key) => Object.prototype.hasOwnProperty.call(percentageFieldMap, key)
@@ -462,8 +474,19 @@ const ClientsPage = () => {
       try {
         console.log('Fetching IB Commission Totals...')
         const response = await brokerAPI.getIBCommissionTotals()
-        console.log('Commission Totals Response:', response?.data)
-        setCommissionTotals(response?.data || null)
+        let data = response?.data || null
+        // If majority of clients use USC (or explicit currency flag provided) scale raw commission amounts
+        if (data) {
+          const majorityUSC = Array.isArray(clients) && clients.length > 0 && (clients.filter(c => (c?.currency || '').toLowerCase() === 'usc').length / clients.length) >= 0.5
+          const isUSCFlag = (data.currency || '').toLowerCase() === 'usc'
+          if (majorityUSC || isUSCFlag) {
+            // Only divide monetary amounts, not percentage fields
+            if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
+            if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
+          }
+        }
+        console.log('Commission Totals (normalized if USC):', data)
+        setCommissionTotals(data)
       } catch (err) {
         console.error('Failed to fetch commission totals:', err)
       }
@@ -486,7 +509,16 @@ const ClientsPage = () => {
       const fetchCommissions = async () => {
         try {
           const response = await brokerAPI.getIBCommissionTotals()
-          setCommissionTotals(response?.data || null)
+          let data = response?.data || null
+          if (data) {
+            const majorityUSC = Array.isArray(clients) && clients.length > 0 && (clients.filter(c => (c?.currency || '').toLowerCase() === 'usc').length / clients.length) >= 0.5
+            const isUSCFlag = (data.currency || '').toLowerCase() === 'usc'
+            if (majorityUSC || isUSCFlag) {
+              if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
+              if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
+            }
+          }
+          setCommissionTotals(data)
         } catch (err) {
           console.error('Failed to fetch commission totals:', err)
         }
@@ -1373,9 +1405,9 @@ const ClientsPage = () => {
       let str
       if (visKey && visKey.endsWith('_percentage_display')) {
         // percentage
-        const percKey = percentageFieldMap[baseKey]
-        const val = percKey ? client[percKey] : undefined
-        str = formatPercent(val)
+  const percKey = percentageFieldMap[baseKey]
+  const val = percKey ? client[percKey] : undefined
+  str = formatPercent(val, client)
       } else {
         str = formatValue(baseKey, client[baseKey], client)
       }
@@ -1422,11 +1454,14 @@ const ClientsPage = () => {
     setCurrentPage(1)
   }
 
-  const formatPercent = (value) => {
+  const formatPercent = (value, client = null) => {
     if (value === null || value === undefined || value === '') return '-'
-    const num = Number(value)
+    let num = Number(value)
     if (isNaN(num)) return '-'
-    // Header will carry the % label; values remain numeric
+    // If client's currency is USC, divide percentage by 100 for display (requested behavior)
+    if (client && (client.currency || '').toLowerCase() === 'usc') {
+      num = num / 100
+    }
     return num.toFixed(2)
   }
 
@@ -1515,12 +1550,12 @@ const ClientsPage = () => {
       11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
       12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
       13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
-      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
-      15: { id: 15, title: 'Total Commission', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
-      16: { id: 16, title: 'Available Commission', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
-      17: { id: 17, title: 'Total Commission %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
-      18: { id: 18, title: 'Available Commission %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
-      19: { id: 19, title: 'Blocked Commission', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
+  14: { id: 14, title: 'Daily Net D/W', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
+      15: { id: 15, title: 'Total Rebate', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
+      16: { id: 16, title: 'Available Rebate', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
+      17: { id: 17, title: 'Total Rebate %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Rebate %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      19: { id: 19, title: 'Blocked Rebate', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
       // Daily Bonus
       20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
       21: { id: 21, title: 'Daily Bonus OUT', value: formatIndianNumber((stats.dailyBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
@@ -1562,9 +1597,22 @@ const ClientsPage = () => {
       // Previous Equity
       48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber((stats.weekPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
       49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber((stats.monthPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
-      50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' }
+  50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' },
+  // Book PnL (Lifetime PnL - Floating Profit)
+  53: { id: 53, title: 'Book PnL', value: (stats.lifetimePnL || 0) - (stats.totalProfit || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalProfit || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+  // Daily Deposit & Withdrawal % of total D/W
+  54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyDepositSharePercent || 0).toFixed(2)}`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
+  55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyWithdrawalSharePercent || 0).toFixed(2)}`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
+      
     }
     return configs[cardId]
+  }
+
+  // Helper: scale percentage fields for USC clients in face-card aggregations
+  const getScaledPercent = (client, percentKey) => {
+    const raw = (client?.[percentKey] || 0)
+    const isUSC = (client?.currency || '').toLowerCase() === 'usc'
+    return isUSC ? raw / 100 : raw
   }
 
   // Per-column dynamic sums based on currently displayed (filtered & paginated) clients
@@ -1611,6 +1659,13 @@ const ClientsPage = () => {
     const monthPreviousEquity = sum('thisMonthPreviousEquity')
     const previousEquity = sum('previousEquity')
 
+    // Derived totals
+    const depositTotal = sum('dailyDeposit')
+    const withdrawalTotal = sum('dailyWithdrawal')
+    const dwTotalAbs = Math.abs(depositTotal) + Math.abs(withdrawalTotal)
+    const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
+    const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
+
     const totals = {
       totalClients: list.length,
       totalBalance: sum('balance'),
@@ -1618,8 +1673,13 @@ const ClientsPage = () => {
       totalEquity: sum('equity'),
       totalPnl: sum('pnl'), // Use PnL directly from backend
       totalProfit: sum('profit'),
-      dailyDeposit: sum('dailyDeposit'),
-      dailyWithdrawal: sum('dailyWithdrawal'),
+      dailyDeposit: depositTotal,
+      dailyWithdrawal: withdrawalTotal,
+      // Share percentages of Deposits vs Withdrawals (of total daily D/W)
+      dailyDepositSharePercent,
+      dailyWithdrawalSharePercent,
+      dailyDepositPercent: list.reduce((acc, c) => acc + (c?.dailyDeposit_percentage || 0), 0),
+      dailyWithdrawalPercent: list.reduce((acc, c) => acc + (c?.dailyWithdrawal_percentage || 0), 0),
       dailyPnL: sum('dailyPnL'),
       thisWeekPnL: sum('thisWeekPnL'),
       thisMonthPnL: sum('thisMonthPnL'),
@@ -1687,10 +1747,10 @@ const ClientsPage = () => {
       return '-'
     }
     
-    // Handle Processor Type (boolean) - display as true/false
+    // Handle Processor Type (boolean) - display as Connected/Not Connected (text)
     if (key === 'processorType' || key === 'processor_type' || key === 'PROCESSOR_TYPE') {
       if (typeof value === 'boolean') {
-        return value.toString()
+        return value ? 'Connected' : 'Not Connected'
       }
       // Handle other value types
       return String(value)
@@ -1921,16 +1981,18 @@ const ClientsPage = () => {
                       { id: 6, label: 'Floating Profit' },
                       { id: 8, label: 'Daily Deposit' },
                       { id: 9, label: 'Daily Withdrawal' },
-                      { id: 14, label: 'Net DW' },
+                      { id: 54, label: 'Daily Deposit %' },
+                      { id: 55, label: 'Daily Withdrawal %' },
+                      { id: 14, label: 'Daily Net D/W' },
                       { id: 10, label: 'Daily PnL' },
                       { id: 11, label: 'This Week PnL' },
                       { id: 12, label: 'This Month PnL' },
                       { id: 13, label: 'Lifetime PnL' },
-                      { id: 15, label: 'Total Commission' },
-                      { id: 16, label: 'Available Commission' },
-                      { id: 17, label: 'Total Commission %' },
-                      { id: 18, label: 'Available Commission %' },
-                      { id: 19, label: 'Blocked Commission' },
+                      { id: 15, label: 'Total Rebate' },
+                      { id: 16, label: 'Available Rebate' },
+                      { id: 17, label: 'Total Rebate %' },
+                      { id: 18, label: 'Available Rebate %' },
+                      { id: 19, label: 'Blocked Rebate' },
                       { id: 20, label: 'Daily Bonus IN' },
                       { id: 21, label: 'Daily Bonus OUT' },
                       { id: 22, label: 'NET Daily Bonus' },
@@ -1961,7 +2023,8 @@ const ClientsPage = () => {
                       { id: 47, label: 'NET Credit' },
                       { id: 48, label: 'Weekly Previous Equity' },
                       { id: 49, label: 'Monthly Previous Equity' },
-                      { id: 50, label: 'Previous Equity' }
+                      { id: 50, label: 'Previous Equity' },
+                      { id: 53, label: 'Book PnL' }
                     ].filter(card => 
                       card.label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
                     ).map(card => (
@@ -2122,7 +2185,7 @@ const ClientsPage = () => {
                       >
                         <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
                         <p className={`text-sm font-bold ${card.valueColor || 'text-gray-900'}`}>
-                          {card.value}
+                          {card.formattedValue != null ? card.formattedValue : card.value}
                         </p>
                       </div>
                     )
@@ -2201,37 +2264,47 @@ const ClientsPage = () => {
                 <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit %</p>
                   <p className="text-sm font-bold text-emerald-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.credit_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'credit_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
                   <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance %</p>
                   <p className="text-sm font-bold text-indigo-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.balance_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'balance_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
                   <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity %</p>
                   <p className="text-sm font-bold text-sky-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.equity_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'equity_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Floating Profit %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
+                {(() => {
+                  const pnlPctSum = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'pnl_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${pnlPctSum >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${pnlPctSum >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL %</p>
+                      <p className={`text-sm font-bold ${pnlPctSum >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {pnlPctSum >= 0 ? '▲ ' : '▼ '}
+                        {pnlPctSum >= 0 ? '' : '-'}
+                        {Math.abs(pnlPctSum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
+                {(() => {
+                  const profitPctSum = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'profit_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${profitPctSum >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${profitPctSum >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Floating Profit %</p>
+                      <p className={`text-sm font-bold ${profitPctSum >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                        {profitPctSum >= 0 ? '▲ ' : '▼ '}
+                        {profitPctSum >= 0 ? '' : '-'}
+                        {Math.abs(profitPctSum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
                 <div className="bg-white rounded shadow-sm border border-green-200 p-2">
                   <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
                   <p className="text-sm font-bold text-green-700">
@@ -2244,38 +2317,58 @@ const ClientsPage = () => {
                     {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
+                {(() => {
+                  const dPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'dailyPnL_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${dPct >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${dPct >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL %</p>
+                      <p className={`text-sm font-bold ${dPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {dPct >= 0 ? '▲ ' : '▼ '}
+                        {dPct >= 0 ? '' : '-'}
+                        {Math.abs(dPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
+                {(() => {
+                  const wPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'thisWeekPnL_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${wPct >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${wPct >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL %</p>
+                      <p className={`text-sm font-bold ${wPct >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
+                        {wPct >= 0 ? '▲ ' : '▼ '}
+                        {wPct >= 0 ? '' : '-'}
+                        {Math.abs(wPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
+                {(() => {
+                  const mPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'thisMonthPnL_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${mPct >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${mPct >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL %</p>
+                      <p className={`text-sm font-bold ${mPct >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                        {mPct >= 0 ? '▲ ' : '▼ '}
+                        {mPct >= 0 ? '' : '-'}
+                        {Math.abs(mPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
+                {(() => {
+                  const lifePct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'lifetimePnL_percentage'), 0)
+                  return (
+                    <div className={`bg-white rounded shadow-sm border ${lifePct >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
+                      <p className={`text-[10px] font-semibold ${lifePct >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL %</p>
+                      <p className={`text-sm font-bold ${lifePct >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
+                        {lifePct >= 0 ? '▲ ' : '▼ '}
+                        {lifePct >= 0 ? '' : '-'}
+                        {Math.abs(lifePct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )
+                })()}
                 
                 {/* Commission Percentage Cards - Only visible in percentage mode if enabled in card filter */}
                 {cardVisibility[17] && (
@@ -3321,8 +3414,8 @@ const ClientsPage = () => {
                       if (displayMode === 'percentage' && isMetric) {
                         const percKey = percentageFieldMap[col.key]
                         const val = percKey ? client[percKey] : undefined
-                        titleVal = formatPercent(val)
-                        displayVal = formatPercent(val)
+                        titleVal = formatPercent(val, client)
+                        displayVal = formatPercent(val, client)
                       } else {
                         titleVal = formatValue(col.key, client[col.key], client)
                         displayVal = formatValue(col.key, client[col.key], client)
@@ -3334,7 +3427,7 @@ const ClientsPage = () => {
                         const virtKey = `${col.key}_percentage_display`
                         const percKey = percentageFieldMap[col.key]
                         const val = percKey ? client[percKey] : undefined
-                        renderCols.push({ key: virtKey, width: defaultWidth, value: formatPercent(val), title: formatPercent(val) })
+                        renderCols.push({ key: virtKey, width: defaultWidth, value: formatPercent(val, client), title: formatPercent(val, client) })
                       }
                     })
 
@@ -3350,7 +3443,7 @@ const ClientsPage = () => {
                             return (
                               <td 
                                 key={col.key} 
-                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline group-hover:font-bold transition-all" 
+                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all" 
                                 style={{ width: columnWidths[col.key] || `${col.width}%` }}
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -3371,7 +3464,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800 font-medium" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 50 }}>
+                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 50 }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>

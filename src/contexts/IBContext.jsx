@@ -18,20 +18,34 @@ export const IBProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch IB list when user logs in
+  // Prefetch IB list on login event, initial mount if token exists, and manual refresh event
   useEffect(() => {
     const handleLogin = () => {
-      console.log('[IB] Login event detected, fetching IB emails...')
-      fetchIBList();
-    };
+      console.log('[IB] auth:login event → fetching IB emails...')
+      fetchIBList()
+    }
+    const handleAppRefresh = () => {
+      console.log('[IB] app:refresh event → refreshing IB emails...')
+      fetchIBList()
+    }
 
-    // Listen for login event
-    window.addEventListener('auth:login', handleLogin);
+    window.addEventListener('auth:login', handleLogin)
+    window.addEventListener('app:refresh', handleAppRefresh)
+
+    // If already authenticated (tokens present) prefetch once on mount
+    try {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        console.log('[IB] Existing access_token detected on mount → prefetch IB emails')
+        fetchIBList()
+      }
+    } catch {}
 
     return () => {
-      window.removeEventListener('auth:login', handleLogin);
-    };
-  }, []);
+      window.removeEventListener('auth:login', handleLogin)
+      window.removeEventListener('app:refresh', handleAppRefresh)
+    }
+  }, [])
 
   // Fetch MT5 accounts when IB is selected
   useEffect(() => {
@@ -145,6 +159,7 @@ export const IBProvider = ({ children }) => {
     selectIB,
     clearIBSelection,
     filterByActiveIB,
+    // Expose explicit prefetch for pages wanting to ensure readiness on navigation
     refreshIBList: fetchIBList,
   };
 

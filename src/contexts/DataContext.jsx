@@ -162,7 +162,9 @@ export const DataProvider = ({ children }) => {
     if (!client || !client.currency || client.currency.toLowerCase() !== 'usc') {
       return client
     }
-    return {
+
+    // Start with explicit known monetary mappings (safe and stable)
+    const normalized = {
       ...client,
       // Basic financial fields
       balance: (client.balance || 0) / 100,
@@ -219,6 +221,37 @@ export const DataProvider = ({ children }) => {
       previousEquity: (client.previousEquity || 0) / 100,
       // Note: login is NOT divided (it's an ID, not a currency value)
     }
+
+    // Track keys we have explicitly normalized to avoid double-scaling
+    const explicitlyScaledKeys = new Set([
+      'balance','credit','equity','margin','marginFree','profit','floating','pnl','assets','liabilities',
+      'blockedCommission','blockedProfit','storage','marginInitial','marginMaintenance','soEquity','soMargin',
+      'dailyDeposit','dailyWithdrawal','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL','dailyBonusIn','dailyBonusOut',
+      'thisWeekBonusIn','thisWeekBonusOut','thisMonthBonusIn','thisMonthBonusOut','lifetimeBonusIn','lifetimeBonusOut',
+      'thisWeekDeposit','thisWeekWithdrawal','thisMonthDeposit','thisMonthWithdrawal','lifetimeDeposit','lifetimeWithdrawal',
+      'thisWeekCreditIn','thisWeekCreditOut','thisMonthCreditIn','thisMonthCreditOut','lifetimeCreditIn','lifetimeCreditOut',
+      'thisWeekPreviousEquity','thisMonthPreviousEquity','previousEquity'
+    ])
+
+    // Exclusions: ids, timestamps, non-monetary integers, labels, and percentage keys (handled at display layer)
+    const excludedNumericKeys = new Set([
+      'login','clientID','leverage','marginLeverage','agent','soActivation','soTime','currencyDigits','rightsMask','language','mqid',
+      'registration','lastAccess','lastUpdate','accountLastUpdate','userLastUpdate','marginLevel','applied_percentage','soLevel'
+    ])
+
+    // Generic fallback: divide any other numeric field by 100, except excluded or percentage-like keys
+    for (const key of Object.keys(client)) {
+      if (explicitlyScaledKeys.has(key)) continue
+      if (excludedNumericKeys.has(key)) continue
+      const val = client[key]
+      if (typeof val === 'number') {
+        // Skip percentage fields, they are handled in UI (formatPercent)
+        if (/_percentage$/i.test(key)) continue
+        normalized[key] = val / 100
+      }
+    }
+
+    return normalized
   }
 
   // Check if data is stale
@@ -753,6 +786,7 @@ export const DataProvider = ({ children }) => {
       }
       
       // OPTIMIZED: Single state update for clients with index map
+      let addedClientsCount = 0
       setClients(prev => {
         // Rebuild index if needed
         if (clientIndexMap.size === 0 && prev.length > 0) {
@@ -783,6 +817,7 @@ export const DataProvider = ({ children }) => {
             updated.push(updatedAccount)
             clientIndexMap.set(accountLogin, newIndex)
             hasNewClients = true
+            addedClientsCount++
           } else {
             // Update existing - use cached original value for accurate delta
             const oldClient = originalValues.get(accountLogin)
@@ -790,13 +825,13 @@ export const DataProvider = ({ children }) => {
             updated[index] = { ...updated[index], ...updatedAccount }
           }
         }
-        
-        if (hasNewClients) {
-          setClientStats(s => ({ ...s, totalClients: updated.length }))
-        }
-        
         return updated
       })
+
+      // Update client count outside setClients to avoid nested state updates triggering extra renders
+      if (addedClientsCount > 0) {
+        setClientStats(s => ({ ...s, totalClients: s.totalClients + addedClientsCount }))
+      }
       
       // OPTIMIZED: Single state update for accounts with index map
       setAccounts(prev => {

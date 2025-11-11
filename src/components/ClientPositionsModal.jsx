@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import { formatTime } from '../utils/dateFormatter'
 
+// Max number of deals to request in one fetch. Increase if needed.
+const CLIENT_DEALS_FETCH_LIMIT = 1000
+
 const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, onCacheUpdate }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
@@ -35,6 +38,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [allDeals, setAllDeals] = useState([])
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState('')
+  const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
   
   // Search and filter states for positions
   const [searchQuery, setSearchQuery] = useState('')
@@ -87,6 +91,17 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column resizing states for deals
   const [dealsColumnWidths, setDealsColumnWidths] = useState({})
   const [resizingDealsColumn, setResizingDealsColumn] = useState(null)
+
+  // Build dynamic page-size options for Deals based on total rows
+  const getDealsPageSizeOptions = (total) => {
+    const base = [50, 100, 200]
+    let options = base.filter(n => n <= total)
+    if (total > 0 && options.length === 0) {
+      // If all base options exceed total, include total as the only numeric option
+      options = [total]
+    }
+    return [...options, 'All']
+  }
   
   const positionsColumns = [
     { key: 'position', label: 'Position' },
@@ -265,17 +280,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       setError('')
       
       // Fetch deals from API with specific date range
-      const response = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp)
+      const response = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, CLIENT_DEALS_FETCH_LIMIT)
       const clientDeals = response.data?.deals || []
       setDeals(clientDeals)
       setAllDeals(clientDeals)
       setFilteredDeals(clientDeals)
       setHasAppliedFilter(true)
+      setDealsServerLimitReached(clientDeals.length >= CLIENT_DEALS_FETCH_LIMIT)
     } catch (error) {
       setError('Failed to load deals')
       setDeals([])
       setAllDeals([])
       setFilteredDeals([])
+      setDealsServerLimitReached(false)
     } finally {
       setDealsLoading(false)
     }
@@ -883,6 +900,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     setDealsCurrentPage(1)
   }, [dealsSearchQuery, hasAppliedFilter])
 
+  // Keep page-size selection valid when total filtered rows changes
+  useEffect(() => {
+    const total = filteredDealsResult.length
+    const options = getDealsPageSizeOptions(total)
+    const numericOptions = options.filter(o => o !== 'All')
+    if (dealsItemsPerPage !== 'All') {
+      if (numericOptions.length === 0 || !numericOptions.includes(dealsItemsPerPage) || dealsItemsPerPage > total) {
+        setDealsItemsPerPage(numericOptions[0] || 'All')
+        setDealsCurrentPage(1)
+      }
+    }
+  }, [filteredDealsResult.length])
+
   // Column resize handlers for positions
   const handlePositionsResizeStart = (e, columnKey) => {
     e.preventDefault()
@@ -1200,6 +1230,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </div>
               ) : (
                 <>
+                  {dealsServerLimitReached && (
+                    <div className="mb-3 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Showing first {CLIENT_DEALS_FETCH_LIMIT} deals for this range. Narrow date range to see older records.
+                      </p>
+                    </div>
+                  )}
                   {/* Search Bar */}
                   <div className="mb-4 flex items-center gap-3">
                     <div className="relative flex-1" ref={searchRef}>
@@ -1792,10 +1832,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           onChange={(e) => setDealsItemsPerPage(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
                           className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                         >
-                          <option value="50">50</option>
-                          <option value="100">100</option>
-                          <option value="200">200</option>
-                          <option value="All">All</option>
+                          {getDealsPageSizeOptions(filteredDealsResult.length).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
                         </select>
                       </div>
 

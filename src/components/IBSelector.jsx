@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useIB } from '../contexts/IBContext'
 
 const IBSelector = () => {
-  const { selectedIB, ibList, ibMT5Accounts, isLoading, selectIB, clearIBSelection } = useIB()
+  const { selectedIB, ibList, ibMT5Accounts, isLoading, selectIB, clearIBSelection, refreshIBList } = useIB()
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -33,7 +33,11 @@ const IBSelector = () => {
   return (
     <div className="relative">
       <button
-        onClick={() => setShowDropdown(!showDropdown)}
+        onClick={() => {
+          const willShow = !showDropdown
+          setShowDropdown(willShow)
+          // Data is now prefetched on login, refresh, and page entry; optional on-demand refresh left disabled here
+        }}
         className="text-slate-700 hover:text-slate-900 px-3 py-2 rounded-md hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
