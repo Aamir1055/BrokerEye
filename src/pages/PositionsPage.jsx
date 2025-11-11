@@ -1500,7 +1500,8 @@ const PositionsPage = () => {
     )
   }
 
-  if (loading.positions) return <LoadingSpinner />
+  // Only show local loading inside cards/tables; keep the page chrome interactive
+  const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
@@ -1593,17 +1594,25 @@ const PositionsPage = () => {
           <div className={`grid gap-2 sm:gap-3 mb-4 ${displayMode === 'both' ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
             <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Total Positions</p>
-              <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
+              {isInitialPositionsLoading ? (
+                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
+              )}
             </div>
             
             {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
             {(displayMode === 'value' || displayMode === 'both') && (
               <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
                 <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
-                <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
-                  {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
-                </p>
+                {isInitialPositionsLoading ? (
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
+                    {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
+                  </p>
+                )}
               </div>
             )}
             
@@ -1611,20 +1620,32 @@ const PositionsPage = () => {
             {(displayMode === 'percentage' || displayMode === 'both') && (
               <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
                 <p className="text-xs text-gray-500 mb-1">Total Floating Profit Percentage</p>
-                <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼'}
-                  {Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%
-                </p>
+                {isInitialPositionsLoading ? (
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼'}
+                    {Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%
+                  </p>
+                )}
               </div>
             )}
             
             <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueLogins}</p>
+              {isInitialPositionsLoading ? (
+                <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueLogins}</p>
+              )}
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
               <p className="text-xs text-gray-500 mb-1">Symbols</p>
-              <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueSymbols}</p>
+              {isInitialPositionsLoading ? (
+                <div className="h-5 w-10 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueSymbols}</p>
+              )}
             </div>
           </div>
 
@@ -1806,7 +1827,9 @@ const PositionsPage = () => {
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
-                  {netDisplayedPositions.length === 0 ? (
+                  {isInitialPositionsLoading ? (
+                    <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+                  ) : netDisplayedPositions.length === 0 ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -2078,7 +2101,9 @@ const PositionsPage = () => {
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
-                  {clientNetPositionsData.length === 0 ? (
+                  {isInitialPositionsLoading ? (
+                    <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+                  ) : clientNetPositionsData.length === 0 ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -2394,7 +2419,9 @@ const PositionsPage = () => {
           {/* Positions Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
-              {displayedPositions.length === 0 ? (
+              {isInitialPositionsLoading ? (
+                <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+              ) : displayedPositions.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
