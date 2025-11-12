@@ -1097,26 +1097,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({deals.length})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'funds'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Money Transactions
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'rules'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Broker Rules ({clientRules.filter(r => r.is_active === true).length})
-            </button>
           </div>
 
           {/* Pagination Controls for Positions Tab */}
@@ -2305,170 +2285,67 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
-          {activeTab === 'funds' && (
-            <div>
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <h3 className="text-sm font-bold text-gray-900 mb-2">Money Transactions</h3>
-                
-                {/* Success Message */}
-                {operationSuccess && (
-                  <div className="mb-2 bg-emerald-50 border border-emerald-200 rounded p-2">
-                    <span className="text-emerald-800 text-xs font-medium">{operationSuccess}</span>
-                  </div>
-                )}
-
-                {/* Error Message */}
-                {operationError && (
-                  <div className="mb-2 bg-red-50 border border-red-200 rounded p-2">
-                    <span className="text-red-800 text-xs font-medium">{operationError}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleFundsOperation} className="space-y-2">
-                  {/* Operation Type */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Operation Type
-                    </label>
-                    <select
-                      value={operationType}
-                      onChange={(e) => {
-                        setOperationType(e.target.value)
-                        setOperationSuccess('')
-                        setOperationError('')
-                      }}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs bg-white text-gray-900 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="deposit">Deposit Funds</option>
-                      <option value="withdrawal">Withdraw Funds</option>
-                      <option value="credit_in">Credit In</option>
-                      <option value="credit_out">Credit Out</option>
-                    </select>
-                  </div>
-
-                  {/* Amount */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Amount ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-400 hover:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                      required
-                    />
-                  </div>
-
-                  {/* Comment */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Comment <span className="text-[10px] font-normal text-gray-500">(Optional)</span>
-                    </label>
-                    <textarea
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Add a note or description for this transaction..."
-                      rows="2"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded text-xs text-gray-900 placeholder-gray-400 resize-none hover:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-
-                  {/* Submit Buttons */}
-                  <div className="flex justify-end gap-2 pt-1.5 border-t border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAmount('')
-                        setComment('')
-                        setOperationSuccess('')
-                        setOperationError('')
-                      }}
-                      className="px-3 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={operationLoading}
-                      className="px-4 py-1 text-xs font-bold text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
-                    >
-                      {operationLoading ? (
-                        <>Processing...</>
-                      ) : (
-                        <>Execute Transaction</>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
         </div>
 
         {/* Summary Cards - Fixed at Bottom */}
-        <div className="flex-shrink-0 p-3 bg-slate-50 border-t-2 border-blue-200">
+        <div className="flex-shrink-0 p-2 bg-slate-50 border-t-2 border-blue-200">
           {activeTab === 'positions' && filteredPositions.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {/* First Row - Position Metrics */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
-                  <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
-                  <p className="text-base font-bold text-blue-900">{filteredPositions.length}</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                <div className="bg-blue-50 rounded border border-blue-200 p-1.5 hover:shadow-sm transition-shadow">
+                  <p className="text-[8px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
+                  <p className="text-sm font-bold text-blue-900">{filteredPositions.length}</p>
                 </div>
-                <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-2 hover:shadow-sm transition-shadow">
-                  <p className="text-[9px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
-                  <p className="text-base font-bold text-indigo-900">
+                <div className="bg-indigo-50 rounded border border-indigo-200 p-1.5 hover:shadow-sm transition-shadow">
+                  <p className="text-[8px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
+                  <p className="text-sm font-bold text-indigo-900">
                     {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
                   </p>
                 </div>
-                <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                <div className={`rounded border p-1.5 hover:shadow-sm transition-shadow ${
                   filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
                     ? 'bg-emerald-50 border-emerald-200'
                     : 'bg-red-50 border-red-200'
                 }`}>
-                  <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                  <p className={`text-[8px] font-semibold uppercase mb-0.5 ${
                     filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
                       ? 'text-emerald-600'
                       : 'text-red-600'
                   }`}>Total P/L</p>
-                  <p className={`text-base font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                  <p className={`text-sm font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
                     {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
                   </p>
                 </div>
-                <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                <div className={`rounded border p-1.5 hover:shadow-sm transition-shadow ${
                   (clientData.pnl || 0) >= 0
                     ? 'bg-teal-50 border-teal-200'
                     : 'bg-orange-50 border-orange-200'
                 }`}>
-                  <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                  <p className={`text-[8px] font-semibold uppercase mb-0.5 ${
                     (clientData.pnl || 0) >= 0
                       ? 'text-teal-600'
                       : 'text-orange-600'
                   }`}>Lifetime PnL</p>
-                  <p className={`text-base font-bold ${getProfitColor(clientData.pnl || 0)}`}>
+                  <p className={`text-sm font-bold ${getProfitColor(clientData.pnl || 0)}`}>
                     {formatCurrency(clientData.pnl || 0)}
                   </p>
                 </div>
               </div>
 
               {/* Second Row - Money Transaction Metrics */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-cyan-50 rounded-lg border border-cyan-200 p-2 hover:shadow-sm transition-shadow">
-                  <p className="text-[9px] font-semibold text-cyan-600 uppercase mb-0.5">Balance</p>
-                  <p className="text-base font-bold text-cyan-900">{formatCurrency(clientData.balance)}</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="bg-cyan-50 rounded border border-cyan-200 p-1.5 hover:shadow-sm transition-shadow">
+                  <p className="text-[8px] font-semibold text-cyan-600 uppercase mb-0.5">Balance</p>
+                  <p className="text-sm font-bold text-cyan-900">{formatCurrency(clientData.balance)}</p>
                 </div>
-                <div className="bg-green-50 rounded-lg border border-green-200 p-2 hover:shadow-sm transition-shadow">
-                  <p className="text-[9px] font-semibold text-green-600 uppercase mb-0.5">Equity</p>
-                  <p className="text-base font-bold text-green-900">{formatCurrency(clientData.equity)}</p>
+                <div className="bg-green-50 rounded border border-green-200 p-1.5 hover:shadow-sm transition-shadow">
+                  <p className="text-[8px] font-semibold text-green-600 uppercase mb-0.5">Equity</p>
+                  <p className="text-sm font-bold text-green-900">{formatCurrency(clientData.equity)}</p>
                 </div>
-                <div className="bg-violet-50 rounded-lg border border-violet-200 p-2 hover:shadow-sm transition-shadow">
-                  <p className="text-[9px] font-semibold text-violet-600 uppercase mb-0.5">Credit</p>
-                  <p className="text-base font-bold text-violet-900">{formatCurrency(clientData.credit)}</p>
+                <div className="bg-violet-50 rounded border border-violet-200 p-1.5 hover:shadow-sm transition-shadow">
+                  <p className="text-[8px] font-semibold text-violet-600 uppercase mb-0.5">Credit</p>
+                  <p className="text-sm font-bold text-violet-900">{formatCurrency(clientData.credit)}</p>
                 </div>
               </div>
             </div>
@@ -2538,120 +2415,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
-          {activeTab === 'funds' && (
-            <div className="grid grid-cols-4 gap-2">
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Balance</p>
-                <p className="text-base font-bold text-blue-900">{formatCurrency(clientData.balance)}</p>
-              </div>
-              <div className="bg-emerald-50 rounded-lg border border-emerald-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-emerald-600 uppercase mb-0.5">Equity</p>
-                <p className="text-base font-bold text-emerald-900">{formatCurrency(clientData.equity)}</p>
-              </div>
-              <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">Credit</p>
-                <p className="text-base font-bold text-purple-900">{formatCurrency(clientData.credit)}</p>
-              </div>
-              <div className="bg-amber-50 rounded-lg border border-amber-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-amber-600 uppercase mb-0.5">Positions</p>
-                <p className="text-base font-bold text-amber-900">{positions.length}</p>
-              </div>
-            </div>
-          )}
 
-          {/* Broker Rules Tab */}
-          {activeTab === 'rules' && (
-            <div>
-              {rulesLoading ? (
-                <div className="text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
-                  <p className="text-sm font-medium text-gray-600 mt-4">Loading rules...</p>
-                </div>
-              ) : availableRules.filter(r => r.is_active).length === 0 ? (
-                <div className="text-center py-16 bg-blue-50 rounded-xl border-2 border-dashed border-gray-300">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-2">No Rules Available</h4>
-                  <p className="text-sm text-gray-600">There are currently no active broker rules to display.</p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl shadow-lg border-2 border-blue-100 overflow-hidden">
-                  <div className="overflow-x-auto max-h-96">
-                    <table className="w-full">
-                      <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
-                        <tr>
-                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Rule Name</th>
-                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Time Parameter</th>
-                          <th className="px-3 py-3 text-center text-xs font-bold text-white uppercase">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {availableRules.filter(r => r.is_active).map((rule) => {
-                          // Find if this rule is applied to this client
-                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
-                          // Toggle is ON (blue) if client has this rule AND is_active is true
-                          const isApplied = clientRule && clientRule.is_active === true
-                          
-                          const requiresTimeParam = rule.requires_time_parameter
-                          const timeOptions = rule.available_time_parameters || []
-                          const currentTimeParam = clientRule?.time_parameter || ''
-                          
-                          return (
-                            <tr key={rule.id} className="bg-white hover:bg-blue-50 transition-all duration-200">
-                              <td className="px-3 py-2 text-xs text-gray-900 font-medium">{rule.rule_name}</td>
-                              <td className="px-3 py-2">
-                                {requiresTimeParam ? (
-                                  <select
-                                    value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
-                                    onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                    className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-400 transition-colors"
-                                  >
-                                    <option value="">Select time</option>
-                                    {timeOptions.map((time) => (
-                                      <option key={time} value={time}>{time}</option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <span className="text-xs text-gray-400">N/A</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2">
-                                <div className="flex justify-center items-center gap-2">
-                                  <button
-                                    onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
-                                    disabled={rulesLoading}
-                                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      isApplied 
-                                        ? 'bg-emerald-500 focus:ring-emerald-500' 
-                                        : 'bg-gray-300 focus:ring-gray-500'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-300 ${
-                                        isApplied ? 'translate-x-6' : 'translate-x-0.5'
-                                      }`}
-                                    />
-                                  </button>
-                                  <span className={`text-[10px] font-semibold uppercase ${
-                                    isApplied ? 'text-emerald-600' : 'text-gray-500'
-                                  }`}>
-                                    {isApplied ? 'Active' : 'Inactive'}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
       </div>

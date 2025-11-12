@@ -17,12 +17,21 @@ const ClientsPage = () => {
   const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  
+  // Track if component is mounted to prevent updates after unmount
+  const isMountedRef = useRef(true)
+  
   // Ensure IB list is prefetched when entering Clients module (navigation)
   useEffect(() => {
     try {
       refreshIBList?.()
     } catch (e) {
       console.warn('[ClientsPage] Failed to prefetch IB list:', e)
+    }
+    
+    return () => {
+      // Mark component as unmounted
+      isMountedRef.current = false
     }
   }, [])
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -3260,20 +3269,20 @@ const ClientsPage = () => {
                           onDragOver={(e) => isFilterable && handleColumnDragOver(e)}
                           onDrop={(e) => isFilterable && handleColumnDrop(e, col.baseKey)}
                           onDragEnd={handleColumnDragEnd}
-                          className={`px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
+                          className={`px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
                           ref={el => { if (el) { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el } }}
-                          style={{ width: columnWidths[col.key] || col.width + '%', minWidth: 50, overflow: 'visible', position: 'relative' }}
+                          style={{ width: columnWidths[col.key] || col.width + '%', minWidth: 44, overflow: 'visible', position: 'relative' }}
                           title={isFilterable ? `${col.label} - Drag to reorder` : col.label}
                         >
                           {/* Column Resize Handle */}
                           <div 
-                            className="absolute right-0 top-0 w-2 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20 group/resize"
+                            className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize hover:bg-yellow-400 active:bg-yellow-500 z-20 group/resize"
                             onMouseDown={(e) => handleResizeStart(e, col.key)}
                             onDoubleClick={() => handleAutoFit(col.key, col.baseKey)}
                             title="Drag to resize column"
                             draggable={false}
                           >
-                            <div className="absolute right-0 top-0 w-1.5 h-full bg-white/30 group-hover/resize:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
+                            <div className="absolute right-0 top-0 w-px h-full bg-white/30 group-hover/resize:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
                           </div>
                           
                           <div className="flex items-center gap-1 justify-between">
@@ -3327,7 +3336,7 @@ const ClientsPage = () => {
                                       setShowFilterDropdown(col.baseKey)
                                     }
                                   }}
-                                  className={`p-1.5 rounded-md transition-all ${filterCount > 0 ? 'bg-green-400 text-blue-900 hover:bg-green-300 shadow-md' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                  className={`p-1 rounded-md transition-all ${filterCount > 0 ? 'bg-green-400 text-blue-900 hover:bg-green-300 shadow-md' : 'bg-white/20 text-white hover:bg-white/30'}`}
                                   title="Filter column"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -3790,7 +3799,7 @@ const ClientsPage = () => {
                           
                           // Regular columns
                           return (
-                            <td key={col.key} className="px-3 py-2 text-sm text-gray-800" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 50 }}>
+                            <td key={col.key} className="px-2 py-1.5 text-[13px] text-gray-800" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 44 }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>

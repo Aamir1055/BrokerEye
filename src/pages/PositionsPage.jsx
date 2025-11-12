@@ -18,6 +18,8 @@ const PositionsPage = () => {
   const { filterByActiveGroup } = useGroups()
   const { filterByActiveIB } = useIB()
   
+  // Track if component is mounted to prevent updates after unmount
+  const isMountedRef = useRef(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [error, setError] = useState('')
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
@@ -37,7 +39,15 @@ const PositionsPage = () => {
   
   // Pagination and sorting for Positions view
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState('All')
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    try {
+      const saved = localStorage.getItem('positions_items_per_page')
+      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
+      return 100
+    } catch {
+      return 100
+    }
+  })
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   
@@ -51,7 +61,15 @@ const PositionsPage = () => {
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const [netItemsPerPage, setNetItemsPerPage] = useState('All') // numeric or 'All'
+  const [netItemsPerPage, setNetItemsPerPage] = useState(() => {
+    try {
+      const saved = localStorage.getItem('net_items_per_page')
+      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
+      return 100
+    } catch {
+      return 100
+    }
+  }) // numeric or 'All'
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
   // Include all position module columns + NET-specific aggregations (some will render '-')
   const [netVisibleColumns, setNetVisibleColumns] = useState({
@@ -68,6 +86,9 @@ const PositionsPage = () => {
     variantCount: false
   })
   const toggleNetColumn = (col) => setNetVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }))
+  // NET Position sorting
+  const [netSortColumn, setNetSortColumn] = useState(null)
+  const [netSortDirection, setNetSortDirection] = useState('asc')
   // Suggestion-based search for NET view
   const [netSearchQuery, setNetSearchQuery] = useState('')
   const [netShowSuggestions, setNetShowSuggestions] = useState(false)
@@ -99,6 +120,9 @@ const PositionsPage = () => {
     totalNetPL: true,
     totalLogins: true
   })
+  // Client NET sorting
+  const [clientNetSortColumn, setClientNetSortColumn] = useState(null)
+  const [clientNetSortDirection, setClientNetSortDirection] = useState('asc')
   // Client NET search
   const [clientNetSearchQuery, setClientNetSearchQuery] = useState('')
   const [clientNetShowSuggestions, setClientNetShowSuggestions] = useState(false)
@@ -403,6 +427,9 @@ const PositionsPage = () => {
     }
 
     return () => {
+      // Mark component as unmounted to prevent state updates
+      isMountedRef.current = false
+      
       // Clear any pending flash timeouts
       try {
         flashTimeouts.current.forEach((to) => clearTimeout(to))
@@ -664,22 +691,15 @@ const PositionsPage = () => {
     return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
   }
 
-  // Generate dynamic pagination options based on data count
+  // Generate pagination options; ensure common sizes always present for stable UI
   const generatePageSizeOptions = () => {
-    const options = ['All']
     const totalCount = cachedPositions.length
-    
-    // Generate options incrementing by 50, up to total count
-    for (let i = 50; i < totalCount; i += 50) {
-      options.push(i)
-    }
-    
-    // Always show total count as an option if it's not already included
-    if (totalCount > 0 && totalCount % 50 !== 0 && !options.includes(totalCount)) {
-      options.push(totalCount)
-    }
-    
-    return options
+    const base = [25, 50, 100, 200]
+    const dynamic = []
+    for (let i = 50; i < totalCount; i += 50) dynamic.push(i)
+    if (totalCount > 0) dynamic.push(totalCount)
+    const nums = Array.from(new Set([...base, ...dynamic])).filter(v => typeof v === 'number').sort((a, b) => a - b)
+    return [...nums, 'All']
   }
   
   const pageSizeOptions = generatePageSizeOptions()
@@ -746,33 +766,43 @@ const PositionsPage = () => {
     return sorted
   }
   
-  const searchedPositions = searchPositions(cachedPositions)
-  
-  // Apply group filter if active
-  let groupFilteredPositions = filterByActiveGroup(searchedPositions, 'login', 'positions')
-  
-  // Apply IB filter if active
-  let ibFilteredPositions = filterByActiveIB(groupFilteredPositions, 'login')
-  
-  // Apply column filters
-  Object.entries(columnFilters).forEach(([columnKey, values]) => {
-    if (columnKey.endsWith('_number')) {
-      // Number filter
-      const actualColumnKey = columnKey.replace('_number', '')
-      ibFilteredPositions = ibFilteredPositions.filter(position => {
-        const positionValue = position[actualColumnKey]
-        return matchesNumberFilter(positionValue, values)
-      })
-    } else if (values && values.length > 0) {
-      // Regular checkbox filter
-      ibFilteredPositions = ibFilteredPositions.filter(position => {
-        const positionValue = position[columnKey]
-        return values.includes(positionValue)
-      })
+  // Memoize filtered and sorted positions to prevent blocking on navigation
+  const { sortedPositions, ibFilteredPositions } = useMemo(() => {
+    // Return empty arrays if not authenticated to avoid unnecessary processing
+    if (!isAuthenticated) {
+      return { sortedPositions: [], ibFilteredPositions: [] }
     }
-  })
-  
-  const sortedPositions = sortPositions(ibFilteredPositions)
+    
+    const searchedPositions = searchPositions(cachedPositions)
+    
+    // Apply group filter if active
+    let groupFilteredPositions = filterByActiveGroup(searchedPositions, 'login', 'positions')
+    
+    // Apply IB filter if active
+    let ibFiltered = filterByActiveIB(groupFilteredPositions, 'login')
+    
+    // Apply column filters
+    Object.entries(columnFilters).forEach(([columnKey, values]) => {
+      if (columnKey.endsWith('_number')) {
+        // Number filter
+        const actualColumnKey = columnKey.replace('_number', '')
+        ibFiltered = ibFiltered.filter(position => {
+          const positionValue = position[actualColumnKey]
+          return matchesNumberFilter(positionValue, values)
+        })
+      } else if (values && values.length > 0) {
+        // Regular checkbox filter
+        ibFiltered = ibFiltered.filter(position => {
+          const positionValue = position[columnKey]
+          return values.includes(positionValue)
+        })
+      }
+    })
+    
+    const sorted = sortPositions(ibFiltered)
+    
+    return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
+  }, [cachedPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated])
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
@@ -880,13 +910,54 @@ const PositionsPage = () => {
   }
   const handleNetSearchKeyDown = (e) => { if (e.key === 'Enter') setNetShowSuggestions(false) }
 
+  // NET Position sorting handler
+  const handleNetSort = (columnKey) => {
+    if (netSortColumn === columnKey) {
+      setNetSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setNetSortColumn(columnKey)
+      setNetSortDirection('asc')
+    }
+  }
+
   const netFilteredPositions = useMemo(() => {
-    if (!netSearchQuery.trim()) return netPositionsData
-    const q = netSearchQuery.toLowerCase().trim()
-    return netPositionsData.filter(row =>
-      String(row.symbol || '').toLowerCase().includes(q) || String(row.netType || '').toLowerCase().includes(q)
-    )
-  }, [netSearchQuery, netPositionsData])
+    let filtered = netPositionsData
+    
+    // Apply search filter
+    if (netSearchQuery.trim()) {
+      const q = netSearchQuery.toLowerCase().trim()
+      filtered = filtered.filter(row =>
+        String(row.symbol || '').toLowerCase().includes(q) || String(row.netType || '').toLowerCase().includes(q)
+      )
+    }
+    
+    // Apply sorting
+    if (netSortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        const aVal = a[netSortColumn]
+        const bVal = b[netSortColumn]
+        
+        // Handle null/undefined
+        if (aVal == null && bVal == null) return 0
+        if (aVal == null) return 1
+        if (bVal == null) return -1
+        
+        // Numeric comparison
+        const aNum = Number(aVal)
+        const bNum = Number(bVal)
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return netSortDirection === 'asc' ? aNum - bNum : bNum - aNum
+        }
+        
+        // String comparison
+        const aStr = String(aVal).toLowerCase()
+        const bStr = String(bVal).toLowerCase()
+        return netSortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
+      })
+    }
+    
+    return filtered
+  }, [netSearchQuery, netPositionsData, netSortColumn, netSortDirection])
 
   // Pagination logic specific to NET module
   const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(netFilteredPositions.length / netItemsPerPage)
@@ -895,7 +966,12 @@ const PositionsPage = () => {
   const netDisplayedPositions = netFilteredPositions.slice(netStartIndex, netEndIndex)
   useEffect(() => { if (!isAuthenticated) return; setNetCurrentPage(1) }, [netItemsPerPage])
   const handleNetPageChange = (p) => { setNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const handleNetItemsPerPageChange = (v) => { setNetItemsPerPage(v === 'All' ? 'All' : parseInt(v)); setNetCurrentPage(1) }
+  const handleNetItemsPerPageChange = (v) => {
+    const next = v === 'All' ? 'All' : parseInt(v)
+    setNetItemsPerPage(next)
+    try { localStorage.setItem('net_items_per_page', String(next)) } catch {}
+    setNetCurrentPage(1)
+  }
 
   // Calculate Client NET positions (group first by login then by symbol)
   const clientNetPositionsData = useMemo(() => {
@@ -986,7 +1062,15 @@ const PositionsPage = () => {
 
   // Client NET pagination
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
-  const [clientNetItemsPerPage, setClientNetItemsPerPage] = useState('All')
+  const [clientNetItemsPerPage, setClientNetItemsPerPage] = useState(() => {
+    try {
+      const saved = localStorage.getItem('client_net_items_per_page')
+      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
+      return 100
+    } catch {
+      return 100
+    }
+  })
   // Client NET search suggestions and filtering
   const getClientNetSuggestions = () => {
     if (!clientNetSearchQuery.trim()) return []
@@ -1006,15 +1090,56 @@ const PositionsPage = () => {
   }
   const handleClientNetSearchKeyDown = (e) => { if (e.key === 'Enter') setClientNetShowSuggestions(false) }
 
+  // Client NET sorting handler
+  const handleClientNetSort = (columnKey) => {
+    if (clientNetSortColumn === columnKey) {
+      setClientNetSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setClientNetSortColumn(columnKey)
+      setClientNetSortDirection('asc')
+    }
+  }
+
   const clientNetFilteredPositions = useMemo(() => {
-    if (!clientNetSearchQuery.trim()) return clientNetPositionsData
-    const q = clientNetSearchQuery.toLowerCase().trim()
-    return clientNetPositionsData.filter(row =>
-      String(row.login || '').toLowerCase().includes(q) ||
-      String(row.symbol || '').toLowerCase().includes(q) ||
-      String(row.netType || '').toLowerCase().includes(q)
-    )
-  }, [clientNetSearchQuery, clientNetPositionsData])
+    let filtered = clientNetPositionsData
+    
+    // Apply search filter
+    if (clientNetSearchQuery.trim()) {
+      const q = clientNetSearchQuery.toLowerCase().trim()
+      filtered = filtered.filter(row =>
+        String(row.login || '').toLowerCase().includes(q) ||
+        String(row.symbol || '').toLowerCase().includes(q) ||
+        String(row.netType || '').toLowerCase().includes(q)
+      )
+    }
+    
+    // Apply sorting
+    if (clientNetSortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        const aVal = a[clientNetSortColumn]
+        const bVal = b[clientNetSortColumn]
+        
+        // Handle null/undefined
+        if (aVal == null && bVal == null) return 0
+        if (aVal == null) return 1
+        if (bVal == null) return -1
+        
+        // Numeric comparison
+        const aNum = Number(aVal)
+        const bNum = Number(bVal)
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return clientNetSortDirection === 'asc' ? aNum - bNum : bNum - aNum
+        }
+        
+        // String comparison
+        const aStr = String(aVal).toLowerCase()
+        const bStr = String(bVal).toLowerCase()
+        return clientNetSortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
+      })
+    }
+    
+    return filtered
+  }, [clientNetSearchQuery, clientNetPositionsData, clientNetSortColumn, clientNetSortDirection])
 
   const clientNetTotalPages = clientNetItemsPerPage === 'All' ? 1 : Math.ceil(clientNetFilteredPositions.length / clientNetItemsPerPage)
   const clientNetStartIndex = clientNetItemsPerPage === 'All' ? 0 : (clientNetCurrentPage - 1) * clientNetItemsPerPage
@@ -1022,7 +1147,12 @@ const PositionsPage = () => {
   const clientNetDisplayedPositions = clientNetFilteredPositions.slice(clientNetStartIndex, clientNetEndIndex)
   useEffect(() => { if (!isAuthenticated) return; setClientNetCurrentPage(1) }, [clientNetItemsPerPage])
   const handleClientNetPageChange = (p) => { setClientNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const handleClientNetItemsPerPageChange = (v) => { setClientNetItemsPerPage(v === 'All' ? 'All' : parseInt(v)); setClientNetCurrentPage(1) }
+  const handleClientNetItemsPerPageChange = (v) => {
+    const next = v === 'All' ? 'All' : parseInt(v)
+    setClientNetItemsPerPage(next)
+    try { localStorage.setItem('client_net_items_per_page', String(next)) } catch {}
+    setClientNetCurrentPage(1)
+  }
 
   // CSV helpers and export handlers
   const toCSV = (rows, headers) => {
@@ -1215,16 +1345,17 @@ const PositionsPage = () => {
   
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value)
+    try { localStorage.setItem('positions_items_per_page', String(value)) } catch {}
     setCurrentPage(1)
   }
 
-  // Helper function to render table header with filter
+  // Helper function to render table header with filter and single-click sorting
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
     const filterCount = getActiveFilterCount(columnKey)
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700/70 transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1"
@@ -1232,11 +1363,23 @@ const PositionsPage = () => {
           >
             <span>{label}</span>
             {sortColumn === actualSortKey ? (
-              <span className="text-blue-600">
-                {sortDirection === 'asc' ? '↑' : '↓'}
-              </span>
+              <svg
+                className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
             ) : (
-              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+              <svg
+                className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
             )}
           </div>
           
@@ -1249,14 +1392,14 @@ const PositionsPage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-yellow-400 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {filterCount}
                 </span>
               )}
@@ -1643,24 +1786,24 @@ const PositionsPage = () => {
 
           {/* Stats Summary */}
           <div className={`grid gap-2 sm:gap-3 mb-4 ${displayMode === 'both' ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Positions</p>
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Positions</p>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
-                <p className="text-lg font-semibold text-gray-900">{summaryStats.totalPositions}</p>
+                <p className="text-sm font-bold text-gray-900">{summaryStats.totalPositions}</p>
               )}
             </div>
             
             {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
             {(displayMode === 'value' || displayMode === 'both') && (
-              <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Total Floating Profit</p>
+              <div className={`bg-white rounded shadow-sm border ${summaryStats.totalFloatingProfit >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                <p className={`text-[10px] font-semibold ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>Total Floating Profit</p>
                 {isInitialPositionsLoading ? (
-                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mt-1" />
                 ) : (
-                  <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {summaryStats.totalFloatingProfit >= 0 ? '▲' : '▼'}
+                  <p className={`text-sm font-bold ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summaryStats.totalFloatingProfit >= 0 ? '▲ ' : '▼ '}
                     {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
                   </p>
                 )}
@@ -1669,33 +1812,33 @@ const PositionsPage = () => {
             
             {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode */}
             {(displayMode === 'percentage' || displayMode === 'both') && (
-              <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Total Floating Profit Percentage</p>
+              <div className={`bg-white rounded shadow-sm border ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                <p className={`text-[10px] font-semibold ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Floating Profit %</p>
                 {isInitialPositionsLoading ? (
-                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mt-1" />
                 ) : (
-                  <p className={`text-lg font-semibold flex items-center gap-1 ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲' : '▼'}
+                  <p className={`text-sm font-bold ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                    {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲ ' : '▼ '}
                     {Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%
                   </p>
                 )}
               </div>
             )}
             
-            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-12 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
-                <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueLogins}</p>
+                <p className="text-sm font-bold text-gray-900">{summaryStats.uniqueLogins}</p>
               )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Symbols</p>
+            <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+              <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Symbols</p>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-10 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-10 bg-gray-200 rounded animate-pulse mt-1" />
               ) : (
-                <p className="text-lg font-semibold text-gray-900">{summaryStats.uniqueSymbols}</p>
+                <p className="text-sm font-bold text-gray-900">{summaryStats.uniqueSymbols}</p>
               )}
             </div>
           </div>
@@ -1704,29 +1847,29 @@ const PositionsPage = () => {
           {showNetPositions ? (
             <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
               {/* NET Position Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                 {netCardsVisible.netSymbols && (
-                  <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-                    <p className="text-xs text-gray-500 mb-1">NET Symbols</p>
-                    <p className="text-lg font-semibold text-gray-900">{netFilteredPositions.length}</p>
+                  <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+                    <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">NET Symbols</p>
+                    <p className="text-sm font-bold text-gray-900">{netFilteredPositions.length}</p>
                   </div>
                 )}
                 {netCardsVisible.totalNetVolume && (
-                  <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
-                    <p className="text-lg font-semibold text-gray-900">{formatNumber(netFilteredPositions.reduce((s,p)=>s+p.netVolume,0),2)}</p>
+                  <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+                    <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total NET Volume</p>
+                    <p className="text-sm font-bold text-gray-900">{formatNumber(netFilteredPositions.reduce((s,p)=>s+p.netVolume,0),2)}</p>
                   </div>
                 )}
                 {netCardsVisible.totalNetPL && (
-                  <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
-                    <p className={`text-lg font-semibold flex items-center gap-1 ${netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'text-green-600':'text-red-600'}`}> {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'▲':'▼'} {formatNumber(Math.abs(netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)),2)}</p>
+                  <div className={`bg-white rounded shadow-sm border ${netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'border-green-200':'border-red-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'text-green-600':'text-red-600'} uppercase mb-0`}>Total NET P/L</p>
+                    <p className={`text-sm font-bold ${netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'text-green-600':'text-red-600'}`}>{netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)>=0?'▲ ':'▼ '}{formatNumber(Math.abs(netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)),2)}</p>
                   </div>
                 )}
                 {netCardsVisible.totalLogins && (
-                  <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-                    <p className="text-xs text-gray-500 mb-1">Total Logins</p>
-                    <p className="text-lg font-semibold text-gray-900">{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</p>
+                  <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+                    <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Logins</p>
+                    <p className="text-sm font-bold text-gray-900">{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</p>
                   </div>
                 )}
                 {/* Removed grouping toggle card per new layout */}
@@ -1770,14 +1913,14 @@ const PositionsPage = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       {/* Export first */}
-                      <button onClick={handleExportNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export NET positions to CSV">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                      <button onClick={handleExportNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export NET positions to CSV">
+                        <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                         Export CSV
                       </button>
                       {/* Columns selector next to Export */}
                       <div className="relative">
-                        <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Show/Hide NET columns">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide NET columns">
+                          <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                           Columns
                         </button>
                         {netShowColumnSelector && (
@@ -1794,8 +1937,8 @@ const PositionsPage = () => {
                       </div>
                       {/* Card Filter */}
                       <div className="relative">
-                        <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
+                          <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                           Card Filter
                         </button>
                         {netCardFilterOpen && (
@@ -1813,7 +1956,7 @@ const PositionsPage = () => {
                       {/* Compact Group Base Symbols toggle for NET */}
                       <button
                         onClick={() => setGroupByBaseSymbol(v => !v)}
-                        className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        className={`px-2 py-1.5 text-xs rounded-lg border inline-flex items-center gap-1.5 font-medium shadow-sm transition-all ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' : 'bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300'}`}
                         title="Toggle grouping by base symbol"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
@@ -1828,9 +1971,9 @@ const PositionsPage = () => {
                           onFocus={() => setNetShowSuggestions(true)}
                           onKeyDown={handleNetSearchKeyDown}
                           placeholder="Search symbol or NET type..."
-                          className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
+                          className="pl-9 pr-9 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-56 shadow-sm transition-all"
                         />
-                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         {netSearchQuery && (
                           <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1859,28 +2002,150 @@ const PositionsPage = () => {
                     </div>
                   ) : (
                     <table className="w-full divide-y divide-gray-200">
-                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                         <tr>
                           {netVisibleColumns.symbol && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('symbol')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Symbol</span>
+                                {netSortColumn === 'symbol' ? (
+                                  <svg
+                                    className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.netType && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('netType')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>NET Type</span>
+                                {netSortColumn === 'netType' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.netVolume && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('netVolume')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>NET Volume</span>
+                                {netSortColumn === 'netVolume' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.avgPrice && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('avgPrice')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Avg Price</span>
+                                {netSortColumn === 'avgPrice' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.totalProfit && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('totalProfit')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Total Profit</span>
+                                {netSortColumn === 'totalProfit' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.loginCount && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Logins</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('loginCount')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Logins</span>
+                                {netSortColumn === 'loginCount' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                           {netVisibleColumns.totalPositions && (
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>
+                            <th 
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleNetSort('totalPositions')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Positions</span>
+                                {netSortColumn === 'totalPositions' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${netSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
                           )}
                         </tr>
                       </thead>
@@ -1889,7 +2154,7 @@ const PositionsPage = () => {
                           <Fragment key={netPos.symbol || idx}>
                           <tr className="hover:bg-blue-50 transition-all duration-300">
                             {netVisibleColumns.symbol && (
-                              <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">
                                 {netPos.symbol}
                                 {groupByBaseSymbol && netPos.variantCount > 1 && (
                                   <span className="ml-2 text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
@@ -1897,26 +2162,26 @@ const PositionsPage = () => {
                               </td>
                             )}
                             {netVisibleColumns.netType && (
-                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{netPos.netType}</span>
                               </td>
                             )}
                             {netVisibleColumns.netVolume && (
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(netPos.netVolume, 2)}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(netPos.netVolume, 2)}</td>
                             )}
                             {netVisibleColumns.avgPrice && (
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(netPos.avgPrice, 5)}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(netPos.avgPrice, 5)}</td>
                             )}
                             {netVisibleColumns.totalProfit && (
-                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(netPos.totalProfit, 2)}</span>
                               </td>
                             )}
                             {netVisibleColumns.loginCount && (
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{netPos.loginCount}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{netPos.loginCount}</td>
                             )}
                             {netVisibleColumns.totalPositions && (
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                                 {netPos.totalPositions}
                                 {groupByBaseSymbol && netPos.variantCount > 1 && netVisibleColumns.symbol && (
                                   <button
@@ -1966,29 +2231,33 @@ const PositionsPage = () => {
           ) : showClientNet ? (
             <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
               {/* Client NET Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Client NET Rows</p>
-                  <p className="text-lg font-semibold text-gray-900">{clientNetFilteredPositions.length}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+                <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+                  <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Client NET Rows</p>
+                  <p className="text-sm font-bold text-gray-900">{clientNetFilteredPositions.length}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total NET Volume</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+                  <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total NET Volume</p>
+                  <p className="text-sm font-bold text-gray-900">
                     {formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total NET P/L</p>
-                  <p className={`text-lg font-semibold flex items-center gap-1 ${
+                <div className={`bg-white rounded shadow-sm border ${
+                  clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'border-green-200' : 'border-red-200'
+                } p-2`}>
+                  <p className={`text-[10px] font-semibold ${
+                    clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  } uppercase mb-0`}>Total NET P/L</p>
+                  <p className={`text-sm font-bold ${
                     clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲' : '▼'}
+                    {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲ ' : '▼ '}
                     {formatNumber(Math.abs(clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-                  <p className="text-xs text-gray-500 mb-1">Total Logins</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+                  <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Logins</p>
+                  <p className="text-sm font-bold text-gray-900">
                     {new Set(clientNetFilteredPositions.map(r=>r.login)).size}
                   </p>
                 </div>
@@ -2033,15 +2302,15 @@ const PositionsPage = () => {
                   </div>
                   {/* Right: actions */}
                   <div className="flex items-center gap-3">
-                    <button onClick={handleExportClientNetPositions} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Export Client NET to CSV">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                    <button onClick={handleExportClientNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export Client NET to CSV">
+                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                       Export CSV
                     </button>
                     
                     {/* Columns selector */}
                     <div className="relative">
-                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Show/Hide Client NET columns">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
+                        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                         Columns
                       </button>
                       {clientNetShowColumnSelector && (
@@ -2065,8 +2334,8 @@ const PositionsPage = () => {
                     </div>
                     {/* Card Filter */}
                     <div className="relative">
-                      <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 flex items-center gap-1 text-gray-700" title="Toggle summary cards">
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                      <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
+                        <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         Card Filter
                       </button>
                       {clientNetCardFilterOpen && (
@@ -2133,15 +2402,141 @@ const PositionsPage = () => {
                     </div>
                   ) : (
                     <table className="w-full divide-y divide-gray-200">
-                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                         <tr>
-                          {clientNetVisibleColumns.login && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Login</th>)}
-                          {clientNetVisibleColumns.symbol && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Symbol</th>)}
-                          {clientNetVisibleColumns.netType && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Type</th>)}
-                          {clientNetVisibleColumns.netVolume && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">NET Volume</th>)}
-                          {clientNetVisibleColumns.avgPrice && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Avg Price</th>)}
-                          {clientNetVisibleColumns.totalProfit && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Profit</th>)}
-                          {clientNetVisibleColumns.totalPositions && (<th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Positions</th>)}
+                          {clientNetVisibleColumns.login && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('login')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Login</span>
+                                {clientNetSortColumn === 'login' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.symbol && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('symbol')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Symbol</span>
+                                {clientNetSortColumn === 'symbol' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.netType && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('netType')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>NET Type</span>
+                                {clientNetSortColumn === 'netType' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.netVolume && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('netVolume')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>NET Volume</span>
+                                {clientNetSortColumn === 'netVolume' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.avgPrice && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('avgPrice')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Avg Price</span>
+                                {clientNetSortColumn === 'avgPrice' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.totalProfit && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('totalProfit')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Total Profit</span>
+                                {clientNetSortColumn === 'totalProfit' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
+                          {clientNetVisibleColumns.totalPositions && (
+                            <th 
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              onClick={() => handleClientNetSort('totalPositions')}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span>Positions</span>
+                                {clientNetSortColumn === 'totalPositions' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
+                              </div>
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
@@ -2150,22 +2545,22 @@ const PositionsPage = () => {
                           return (
                             <Fragment key={key}>
                               <tr className="hover:bg-blue-50 transition-all duration-300">
-                                {clientNetVisibleColumns.login && (<td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">{row.login}</td>)}
-                                {clientNetVisibleColumns.symbol && (<td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {clientNetVisibleColumns.login && (<td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">{row.login}</td>)}
+                                {clientNetVisibleColumns.symbol && (<td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">
                                   {row.symbol}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <span className="ml-2 text-[11px] text-gray-500">(+{row.variantCount - 1} variants)</span>
                                   )}
                                 </td>)}
-                                {clientNetVisibleColumns.netType && (<td className="px-3 py-2 text-sm whitespace-nowrap">
+                                {clientNetVisibleColumns.netType && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.netVolume && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.netVolume, 2)}</td>)}
-                                {clientNetVisibleColumns.avgPrice && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(row.avgPrice, 5)}</td>)}
-                                {clientNetVisibleColumns.totalProfit && (<td className="px-3 py-2 text-sm whitespace-nowrap">
+                                {clientNetVisibleColumns.netVolume && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(row.netVolume, 2)}</td>)}
+                                {clientNetVisibleColumns.avgPrice && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(row.avgPrice, 5)}</td>)}
+                                {clientNetVisibleColumns.totalProfit && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(row.totalProfit, 2)}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.totalPositions && (<td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                                   {row.totalPositions ?? '-'}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <button
@@ -2275,9 +2670,9 @@ const PositionsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="px-3 py-2 rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
@@ -2331,10 +2726,10 @@ const PositionsPage = () => {
               </div>
               <button
                 onClick={handleExportPositions}
-                className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                className="px-3 py-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
                 title="Export current positions to CSV"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                 Export CSV
               </button>
 
@@ -2342,9 +2737,9 @@ const PositionsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="px-3 py-2 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                   </svg>
                   Columns
@@ -2390,10 +2785,10 @@ const PositionsPage = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search login, symbol, position..."
-                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    className="pl-10 pr-10 py-2 text-sm border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64 shadow-sm transition-all"
                   />
                   <svg 
-                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -2431,7 +2826,7 @@ const PositionsPage = () => {
                 )}
               </div>
               
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
                 Showing {startIndex + 1} - {Math.min(endIndex, sortedPositions.length)} of {sortedPositions.length}
               </div>
             </div>
@@ -2451,7 +2846,7 @@ const PositionsPage = () => {
                 </div>
               ) : (
                 <table className="w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                  <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
                       {(() => {
                         const effectiveCols = getEffectiveVisibleColumns()
@@ -2459,17 +2854,19 @@ const PositionsPage = () => {
                           <>
                       {effectiveCols.time && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('timeUpdate')}
                         >
                           <div className="flex items-center gap-1">
-                            Updated
+                            <span>Updated</span>
                             {sortColumn === 'timeUpdate' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
@@ -2477,17 +2874,19 @@ const PositionsPage = () => {
                       {effectiveCols.login && renderHeaderCell('login', 'Login')}
                       {effectiveCols.position && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('position')}
                         >
                           <div className="flex items-center gap-1">
                             Position
                             {sortColumn === 'position' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
@@ -2496,144 +2895,268 @@ const PositionsPage = () => {
                       {effectiveCols.action && renderHeaderCell('action', 'Action')}
                       {effectiveCols.volume && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('volume')}
                         >
                           <div className="flex items-center gap-1">
                             Volume
                             {sortColumn === 'volume' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.volumePercentage && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('volume_percentage')}
                         >
                           <div className="flex items-center gap-1">
                             Volume %
                             {sortColumn === 'volume_percentage' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.priceOpen && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('priceOpen')}
                         >
                           <div className="flex items-center gap-1">
                             Open
                             {sortColumn === 'priceOpen' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.priceCurrent && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('priceCurrent')}
                         >
                           <div className="flex items-center gap-1">
                             Current
                             {sortColumn === 'priceCurrent' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.sl && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          S/L
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('priceSL')}
+                        >
+                          <div className="flex items-center gap-1">
+                            S/L
+                            {sortColumn === 'priceSL' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.tp && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          T/P
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('priceTP')}
+                        >
+                          <div className="flex items-center gap-1">
+                            T/P
+                            {sortColumn === 'priceTP' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.profit && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('profit')}
                         >
                           <div className="flex items-center gap-1">
                             Profit
                             {sortColumn === 'profit' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.profitPercentage && (
                         <th 
-                          className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                           onClick={() => handleSort('profit_percentage')}
                         >
                           <div className="flex items-center gap-1">
                             Profit %
                             {sortColumn === 'profit_percentage' ? (
-                              <span className="text-blue-600">
-                                {sortDirection === 'asc' ? '↑' : '↓'}
-                              </span>
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
                             ) : (
-                              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
                             )}
                           </div>
                         </th>
                       )}
                       {effectiveCols.storage && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Storage
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('storage')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Storage
+                            {sortColumn === 'storage' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.storagePercentage && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Storage %
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('storage_percentage')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Storage %
+                            {sortColumn === 'storage_percentage' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.appliedPercentage && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Applied %
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('applied_percentage')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Applied %
+                            {sortColumn === 'applied_percentage' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.reason && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Reason
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('reason')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Reason
+                            {sortColumn === 'reason' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.comment && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Comment
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('comment')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Comment
+                            {sortColumn === 'comment' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                       {effectiveCols.commission && (
-                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                          Commission
+                        <th 
+                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                          onClick={() => handleSort('commission')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Commission
+                            {sortColumn === 'commission' ? (
+                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                              </svg>
+                            )}
+                          </div>
                         </th>
                       )}
                           </>
@@ -2648,11 +3171,11 @@ const PositionsPage = () => {
                       return (
                         <tr key={p.position} className={`${rowClass} transition-all duration-300`}>
                           {effectiveCols.time && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatTime(p.timeUpdate || p.timeCreate)}</td>
                           )}
                           {effectiveCols.login && (
                             <td 
-                              className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                              className="px-2 py-1.5 text-[13px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setSelectedLogin(p.login)
@@ -2663,38 +3186,38 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.position && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.position}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.position}</td>
                           )}
                           {effectiveCols.symbol && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.symbol}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.symbol}</td>
                           )}
                           {effectiveCols.action && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{p.action}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.action}</td>
                           )}
                           {effectiveCols.volume && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.volume, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.volume, 2)}</td>
                           )}
                           {effectiveCols.volumePercentage && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                               {(p.volume_percentage != null && p.volume_percentage !== '') ? `${formatNumber(p.volume_percentage, 2)}%` : '-'}
                             </td>
                           )}
                           {effectiveCols.priceOpen && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceOpen, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceOpen, 5)}</td>
                           )}
                           {effectiveCols.priceCurrent && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                               {formatNumber(p.priceCurrent, 5)}
                             </td>
                           )}
                           {effectiveCols.sl && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceSL, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceSL, 5)}</td>
                           )}
                           {effectiveCols.tp && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.priceTP, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceTP, 5)}</td>
                           )}
                           {effectiveCols.profit && (
-                            <td className="px-3 py-2 text-sm whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
@@ -2703,7 +3226,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.profitPercentage && (
-                            <td className="px-3 py-2 text-sm whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                                 (p.profit_percentage || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
@@ -2712,20 +3235,20 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.storage, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.storage, 2)}</td>
                           )}
                           {effectiveCols.storagePercentage && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                               {(p.storage_percentage != null && p.storage_percentage !== '') ? `${formatNumber(p.storage_percentage, 2)}%` : '-'}
                             </td>
                           )}
                           {effectiveCols.appliedPercentage && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
                               {(p.applied_percentage != null && p.applied_percentage !== '') ? `${formatNumber(p.applied_percentage, 2)}%` : '-'}
                             </td>
                           )}
                           {effectiveCols.reason && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs rounded ${
                                 p.reason === 'DEALER' ? 'bg-blue-100 text-blue-800' :
                                 p.reason === 'EXPERT' ? 'bg-purple-100 text-purple-800' :
@@ -2736,12 +3259,12 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.comment && (
-                            <td className="px-3 py-2 text-sm text-gray-900 max-w-xs truncate" title={p.comment}>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 max-w-xs truncate" title={p.comment}>
                               {p.comment || '-'}
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(p.commission, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.commission, 2)}</td>
                           )}
                         </tr>
                       )

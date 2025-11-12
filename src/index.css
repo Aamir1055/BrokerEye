@@ -66,6 +66,8 @@
 @layer base {
   html {
     font-family: system-ui, sans-serif;
+    /* Global scale-down so 100% zoom feels like 90% */
+    font-size: 90%;
   }
   
   body {
