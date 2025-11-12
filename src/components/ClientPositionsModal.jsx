@@ -2506,7 +2506,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
             <div className="space-y-1">
-              {/* Positions face cards in Excel-like grid cells */}
+              {/* Positions + Deals Summary face cards in 2 rows of Excel-like cells */}
               {(() => {
                 const items = []
                 const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
@@ -2515,70 +2515,83 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 const bookPnL = lifetime + floating
 
                 if (fixedCardVisibility.pf_totalPositions) {
-                  items.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700' })
+                  items.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700', accent: 'border-blue-300' })
                 }
                 if (fixedCardVisibility.pf_totalVolume) {
                   const vol = positions.reduce((sum, p) => sum + (p.volume || 0), 0)
-                  items.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700' })
+                  items.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
                 }
                 if (fixedCardVisibility.pf_totalPL) {
-                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL) })
+                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_lifetimePnL) {
-                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime) })
+                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime), accent: lifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
                 }
                 if (fixedCardVisibility.pf_bookPnL) {
-                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL) })
+                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL), accent: bookPnL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_balance) {
-                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700' })
+                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700', accent: 'border-cyan-300' })
                 }
                 if (fixedCardVisibility.pf_credit) {
-                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), labelClass: 'text-violet-700' })
+                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), labelClass: 'text-violet-700', accent: 'border-violet-300' })
                 }
                 if (fixedCardVisibility.pf_equity) {
-                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700' })
+                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700', accent: 'border-green-300' })
                 }
+
+                // Append Deals Summary cells to items
+                const keys = dealStats ? Object.keys(dealStats) : []
+                const visibleKeys = keys.filter(k => dealStatVisibility[k])
+                const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
+                const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate']
+                const toRender = [
+                  ...preferredOrder.filter(k => baseKeys.includes(k)),
+                  ...baseKeys.filter(k => !preferredOrder.includes(k))
+                ]
+                const dealAccent = (k, v) => {
+                  if (k === 'totalCommission') return 'border-amber-400'
+                  if (k === 'totalDeals') return 'border-blue-300'
+                  if (k === 'totalPnL') return (Number(v || 0) >= 0) ? 'border-emerald-400' : 'border-red-400'
+                  if (k === 'totalStorage') return (Number(v || 0) >= 0) ? 'border-teal-400' : 'border-orange-400'
+                  if (k === 'totalVolume') return 'border-indigo-300'
+                  if (k === 'winRate') return (Number(v || 0) >= 50) ? 'border-green-400' : 'border-orange-400'
+                  return 'border-gray-200'
+                }
+                toRender.forEach((key) => {
+                  const styles = getDealStatStyle(key, dealStats?.[key])
+                  items.push({ label: toTitle(key), value: formatStatValue(key, dealStats?.[key]), labelClass: styles.label, valueClass: styles.value, accent: dealAccent(key, dealStats?.[key]) })
+                })
 
                 if (!items.length) return null
 
+                // Split into exactly two rows
+                const half = Math.ceil(items.length / 2)
+                const row1 = items.slice(0, half)
+                const row2 = items.slice(half)
+
                 return (
-                  <div className="ring-1 ring-gray-200 rounded-sm overflow-hidden bg-white grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 divide-x divide-y divide-gray-200 mb-2">
-                    {items.map((it, idx) => (
-                      <div key={`${it.label}-${idx}`} className="p-2">
-                        <p className={`text-[10px] sm:text-[11px] font-semibold ${it.labelClass}`}>{it.label}</p>
-                        <p className={`text-xs font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</p>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row1.length || 1}, minmax(0, 1fr))` }}>
+                      {row1.map((it, idx) => (
+                        <div key={`r1-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
+                          <p className={`text-[10px] sm:text-[11px] font-semibold ${it.labelClass}`}>{it.label}</p>
+                          <p className={`text-xs font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row2.length || 1}, minmax(0, 1fr))` }}>
+                      {row2.map((it, idx) => (
+                        <div key={`r2-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
+                          <p className={`text-[10px] sm:text-[11px] font-semibold ${it.labelClass}`}>{it.label}</p>
+                          <p className={`text-xs font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {dealStatsError && <p className="text-[11px] text-red-600">{dealStatsError}</p>}
                   </div>
                 )
               })()}
-
-              {/* Deals Summary in Excel-like grid cells */}
-              <div className="mt-1">
-                <div className="ring-1 ring-gray-200 rounded-sm overflow-hidden bg-white grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 divide-x divide-y divide-gray-200">
-                  {(() => {
-                    const keys = dealStats ? Object.keys(dealStats) : []
-                    const visibleKeys = keys.filter(k => dealStatVisibility[k])
-                    const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
-                    const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate']
-                    const toRender = [
-                      ...preferredOrder.filter(k => baseKeys.includes(k)),
-                      ...baseKeys.filter(k => !preferredOrder.includes(k))
-                    ]
-                    return toRender.map((key, idx) => {
-                      const styles = getDealStatStyle(key, dealStats?.[key])
-                      return (
-                        <div key={key} className="p-2">
-                          <p className={`text-[10px] sm:text-[11px] font-semibold ${styles.label}`}>{toTitle(key)}</p>
-                          <p className={`text-xs font-bold ${styles.value}`}>{formatStatValue(key, dealStats?.[key])}</p>
-                        </div>
-                      )
-                    })
-                  })()}
-                </div>
-                {dealStatsError && <p className="text-[11px] text-red-600 mt-1">{dealStatsError}</p>}
-              </div>
             </div>
           )}
 
