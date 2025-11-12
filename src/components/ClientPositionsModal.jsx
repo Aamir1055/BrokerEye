@@ -2413,30 +2413,63 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         {/* Summary Cards - Fixed at Bottom */}
         <div className="flex-shrink-0 p-3 bg-slate-50 border-t-2 border-blue-200">
           {activeTab === 'positions' && filteredPositions.length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
-                <p className="text-base font-bold text-blue-900">{filteredPositions.length}</p>
-              </div>
-              <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
-                <p className="text-base font-bold text-indigo-900">
-                  {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
-                </p>
-              </div>
-              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
-                filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                  ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-red-50 border-red-200'
-              }`}>
-                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+            <div className="space-y-2">
+              {/* First Row - Position Metrics */}
+              <div className="grid grid-cols-4 gap-2">
+                <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
+                  <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
+                  <p className="text-base font-bold text-blue-900">{filteredPositions.length}</p>
+                </div>
+                <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-2 hover:shadow-sm transition-shadow">
+                  <p className="text-[9px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
+                  <p className="text-base font-bold text-indigo-900">
+                    {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
+                  </p>
+                </div>
+                <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
                   filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                    ? 'text-emerald-600'
-                    : 'text-red-600'
-                }`}>Total P/L</p>
-                <p className={`text-base font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                  {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
-                </p>
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : 'bg-red-50 border-red-200'
+                }`}>
+                  <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                    filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
+                      ? 'text-emerald-600'
+                      : 'text-red-600'
+                  }`}>Total P/L</p>
+                  <p className={`text-base font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
+                    {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
+                  </p>
+                </div>
+                <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                  (clientData.pnl || 0) >= 0
+                    ? 'bg-teal-50 border-teal-200'
+                    : 'bg-orange-50 border-orange-200'
+                }`}>
+                  <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                    (clientData.pnl || 0) >= 0
+                      ? 'text-teal-600'
+                      : 'text-orange-600'
+                  }`}>Lifetime PnL</p>
+                  <p className={`text-base font-bold ${getProfitColor(clientData.pnl || 0)}`}>
+                    {formatCurrency(clientData.pnl || 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Second Row - Money Transaction Metrics */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-cyan-50 rounded-lg border border-cyan-200 p-2 hover:shadow-sm transition-shadow">
+                  <p className="text-[9px] font-semibold text-cyan-600 uppercase mb-0.5">Balance</p>
+                  <p className="text-base font-bold text-cyan-900">{formatCurrency(clientData.balance)}</p>
+                </div>
+                <div className="bg-green-50 rounded-lg border border-green-200 p-2 hover:shadow-sm transition-shadow">
+                  <p className="text-[9px] font-semibold text-green-600 uppercase mb-0.5">Equity</p>
+                  <p className="text-base font-bold text-green-900">{formatCurrency(clientData.equity)}</p>
+                </div>
+                <div className="bg-violet-50 rounded-lg border border-violet-200 p-2 hover:shadow-sm transition-shadow">
+                  <p className="text-[9px] font-semibold text-violet-600 uppercase mb-0.5">Credit</p>
+                  <p className="text-base font-bold text-violet-900">{formatCurrency(clientData.credit)}</p>
+                </div>
               </div>
             </div>
           )}
