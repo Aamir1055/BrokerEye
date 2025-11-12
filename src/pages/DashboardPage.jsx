@@ -664,6 +664,17 @@ const DashboardPage = () => {
                 }
                 gradient="from-purple-500 to-purple-600"
               />
+              <QuickActionCard
+                title="Graphical Analytics"
+                description="Charts and insights"
+                path="/analytics"
+                icon={
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3v18m-4-8l-4 4m8-4l4 4m4-12l-4 4" />
+                  </svg>
+                }
+                gradient="from-indigo-500 to-indigo-600"
+              />
             </div>
           </div>
 

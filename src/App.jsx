@@ -18,6 +18,7 @@ const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
 const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
 const IBCommissionsPage = lazy(() => import('./pages/IBCommissionsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
 
 // Main App Content Component
 const AppContent = () => {
@@ -50,6 +51,7 @@ const AppContent = () => {
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
         <Route path="/broker-rules" element={<BrokerRulePage />} />
         <Route path="/ib-commissions" element={<IBCommissionsPage />} />
+  <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<DashboardPage />} />
       </Routes>
