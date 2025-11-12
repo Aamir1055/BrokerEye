@@ -99,8 +99,8 @@ const ChartWidget = memo(({
   }, [data, type, height, loading, color])
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">{title}</h3>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
+      <h3 className="text-sm font-semibold text-gray-900 mb-2">{title}</h3>
       <div style={{ height }}>
         {chartContent}
       </div>

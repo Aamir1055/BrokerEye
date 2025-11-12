@@ -30,14 +30,14 @@ const StatCard = memo(({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-all duration-200 hover:scale-[1.01]">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-medium text-gray-500 mb-1">{title}</p>
           {loading ? (
             <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
           ) : (
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-xl font-bold text-gray-900">{value}</p>
           )}
           {change && !loading && (
             <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${changeColors[changeType]}`}>
@@ -46,7 +46,7 @@ const StatCard = memo(({
             </div>
           )}
         </div>
-        <div className={`w-12 h-12 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md flex-shrink-0`}>
+        <div className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-md flex-shrink-0`}>
           {icon}
         </div>
       </div>

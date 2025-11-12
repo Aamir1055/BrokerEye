@@ -8,9 +8,15 @@ const MiniDataTable = memo(({
   loading = false,
   emptyMessage = 'No data available'
 }) => {
+  // Heuristic to right-align numeric columns by header label
+  const rightAlignIndices = (headers || []).map((h) => {
+    const key = String(h).toLowerCase()
+    return /balance|p&l|profit|commission|volume|percent|equity|credit|deposit|withdrawal|amount|total/.test(key)
+  })
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+      <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
         {onViewAll && (
           <button
@@ -37,8 +43,8 @@ const MiniDataTable = memo(({
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 {headers.map((header, i) => (
-                  <th key={i} className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {header}
+                  <th key={i} className="px-3 py-2 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+                    <span className="truncate block">{header}</span>
                   </th>
                 ))}
               </tr>
@@ -47,7 +53,10 @@ const MiniDataTable = memo(({
               {rows.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 transition-colors">
                   {row.map((cell, j) => (
-                    <td key={j} className="px-4 py-3 text-sm text-gray-900">
+                    <td
+                      key={j}
+                      className={`px-3 py-1.5 text-[13px] text-gray-900 ${rightAlignIndices[j] ? 'text-right tabular-nums' : ''}`}
+                    >
                       {cell}
                     </td>
                   ))}

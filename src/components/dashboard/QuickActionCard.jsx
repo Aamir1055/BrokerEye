@@ -19,10 +19,10 @@ const QuickActionCard = memo(({
   return (
     <button
       onClick={handleClick}
-      className="group p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 text-left w-full hover:scale-[1.02]"
+      className="group p-3 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all duration-200 text-left w-full hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
     >
       <div className="flex items-start gap-3">
-        <div className={`w-12 h-12 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-200`}>
+        <div className={`w-12 h-12 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform duration-200`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
