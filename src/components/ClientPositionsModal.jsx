@@ -2318,17 +2318,17 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </p>
                 </div>
                 <div className={`rounded border p-1.5 hover:shadow-sm transition-shadow ${
-                  (clientData.pnl || 0) >= 0
+                  (clientData.lifetimePnL || 0) >= 0
                     ? 'bg-teal-50 border-teal-200'
                     : 'bg-orange-50 border-orange-200'
                 }`}>
                   <p className={`text-[8px] font-semibold uppercase mb-0.5 ${
-                    (clientData.pnl || 0) >= 0
+                    (clientData.lifetimePnL || 0) >= 0
                       ? 'text-teal-600'
                       : 'text-orange-600'
                   }`}>Lifetime PnL</p>
-                  <p className={`text-sm font-bold ${getProfitColor(clientData.pnl || 0)}`}>
-                    {formatCurrency(clientData.pnl || 0)}
+                  <p className={`text-sm font-bold ${getProfitColor(clientData.lifetimePnL || 0)}`}>
+                    {formatCurrency(clientData.lifetimePnL || 0)}
                   </p>
                 </div>
               </div>
