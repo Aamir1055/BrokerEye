@@ -55,26 +55,8 @@ const PositionsPage = () => {
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
   // Include all position module columns + NET-specific aggregations (some will render '-')
   const [netVisibleColumns, setNetVisibleColumns] = useState({
-    // Original position columns (mapped / placeholder if not meaningful)
-    position: false,
-    time: false,
-    login: false, // replaced by aggregated loginCount
-    action: false,
+    // NET-specific columns only
     symbol: true,
-    volume: false, // replaced by netVolume
-    volumePercentage: false,
-    priceOpen: false, // replaced by avgPrice
-    sl: false,
-    tp: false,
-    profit: false, // replaced by totalProfit
-    profitPercentage: false,
-    storage: false, // replaced by totalStorage
-    storagePercentage: false,
-    appliedPercentage: false,
-    reason: false,
-    comment: false,
-    commission: false, // replaced by totalCommission
-    // NET-specific columns
     netType: true,
     netVolume: true,
     avgPrice: true,
@@ -1141,6 +1123,77 @@ const PositionsPage = () => {
     downloadFile(`net_positions_${Date.now()}.csv`, csv)
   }
 
+  // NET table dynamic columns: order, labels, and cell renderers
+  const netColumnOrder = [
+    'symbol','netType','netVolume','avgPrice','totalProfit','totalStorage','totalCommission','loginCount','totalPositions','variantCount'
+  ]
+  const netColumnLabels = {
+    symbol: 'Symbol',
+    netType: 'NET Type',
+    netVolume: 'NET Volume',
+    avgPrice: 'Avg Price',
+    totalProfit: 'Total Profit',
+    totalStorage: 'Total Storage',
+    totalCommission: 'Total Commission',
+    loginCount: 'Logins',
+    totalPositions: 'Positions',
+    variantCount: 'Variant Count'
+  }
+  const renderNetCell = (key, netPos) => {
+    switch (key) {
+      case 'symbol':
+        return (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span className="text-sm font-medium text-gray-900">{netPos.symbol}</span>
+            {groupByBaseSymbol && netPos.variantCount > 1 && (
+              <>
+                <span className="text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
+                <button
+                  className="text-xs text-blue-600 hover:underline"
+                  onClick={() => {
+                    const next = new Set(expandedNetKeys)
+                    if (next.has(netPos.symbol)) next.delete(netPos.symbol); else next.add(netPos.symbol)
+                    setExpandedNetKeys(next)
+                  }}
+                >
+                  {expandedNetKeys.has(netPos.symbol) ? 'Hide variants' : 'Show variants'}
+                </button>
+              </>
+            )}
+          </div>
+        )
+      case 'netType':
+        return (
+          <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{netPos.netType}</span>
+        )
+      case 'netVolume':
+        return formatNumber(netPos.netVolume, 2)
+      case 'avgPrice':
+        return formatNumber(netPos.avgPrice, 5)
+      case 'totalProfit':
+      case 'profit': {
+        const val = key === 'profit' ? netPos.totalProfit : netPos.totalProfit
+        return (
+          <span className={`px-2 py-0.5 text-xs font-medium rounded ${val >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(val, 2)}</span>
+        )
+      }
+      case 'totalStorage':
+      case 'storage':
+        return formatNumber(netPos.totalStorage ?? '-', 2)
+      case 'totalCommission':
+      case 'commission':
+        return formatNumber(netPos.totalCommission ?? '-', 2)
+      case 'loginCount':
+        return netPos.loginCount
+      case 'totalPositions':
+        return netPos.totalPositions
+      case 'variantCount':
+        return netPos.variantCount
+      default:
+        return String(netPos[key] ?? '-')
+    }
+  }
+
   const handleExportClientNetPositions = () => {
     const headers = [
       { key: 'login', label: 'Login' },
@@ -1292,8 +1345,6 @@ const PositionsPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
-                    
-                    {/* Number Filter Dropdown - Opens to the right */}
                     {showNumberFilterDropdown === columnKey && (
                       <div 
                         className="absolute left-full top-0 ml-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-50"
@@ -1735,37 +1786,7 @@ const PositionsPage = () => {
                             {Object.keys(netVisibleColumns).map(k => (
                               <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
                                 <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                <span className="text-[11px] text-gray-700 capitalize">{
-                                  k==='netType'?'NET Type':
-                                  k==='netVolume'?'NET Volume':
-                                  k==='avgPrice'?'Avg Price':
-                                  k==='totalProfit'?'Total Profit':
-                                  k==='totalStorage'?'Total Storage':
-                                  k==='totalCommission'?'Total Commission':
-                                  k==='loginCount'?'Logins':
-                                  k==='totalPositions'?'Positions':
-                                  k==='variantCount'?'Variant Count':
-                                  k==='priceOpen'?'Price Open':
-                                  k==='priceCurrent'?'Price Current':
-                                  k==='appliedPercentage'?'Applied %':
-                                  k==='volumePercentage'?'Volume %':
-                                  k==='profitPercentage'?'Profit %':
-                                  k==='storagePercentage'?'Storage %':
-                                  k==='commission'?'Commission':
-                                  k==='position'?'Position':
-                                  k==='reason'?'Reason':
-                                  k==='comment'?'Comment':
-                                  k==='sl'?'S/L':
-                                  k==='tp'?'T/P':
-                                  k==='login'?'Login':
-                                  k==='time'?'Time':
-                                  k==='symbol'?'Symbol':
-                                  k==='volume'?'Volume':
-                                  k==='storage'?'Storage':
-                                  k==='profit'?'Profit':
-                                  k==='action'?'Action':
-                                  k==='totalLogins'?'Total Logins': k
-                                }</span>
+                                <span className="text-[11px] text-gray-700">{netColumnLabels[k] || k}</span>
                               </label>
                             ))}
                           </div>

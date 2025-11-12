@@ -252,6 +252,22 @@ const ClientsPage = () => {
   }
 
   const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
+  
+  // Column order state - load from localStorage or use default order
+  const getInitialColumnOrder = () => {
+    const saved = localStorage.getItem('clientsPageColumnOrder')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse saved column order:', e)
+      }
+    }
+    return null // Will use default order from allColumns
+  }
+  
+  const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
+  const [draggingColumn, setDraggingColumn] = useState(null)
 
   const allColumns = [
     { key: 'login', label: 'Login' },
@@ -391,13 +407,41 @@ const ClientsPage = () => {
 
   // Memoize visible columns list for performance
   const visibleColumnsList = useMemo(() => {
-    return dynamicColumns.filter(c => visibleColumns[c.key] === true)
-  }, [dynamicColumns, visibleColumns])
+    const visibleCols = dynamicColumns.filter(c => visibleColumns[c.key] === true)
+    
+    // Apply custom column order if it exists
+    if (columnOrder && Array.isArray(columnOrder)) {
+      const orderedCols = []
+      const colMap = new Map(visibleCols.map(col => [col.key, col]))
+      
+      // First, add columns in the saved order
+      columnOrder.forEach(key => {
+        if (colMap.has(key)) {
+          orderedCols.push(colMap.get(key))
+          colMap.delete(key)
+        }
+      })
+      
+      // Then add any remaining columns that weren't in the saved order
+      colMap.forEach(col => orderedCols.push(col))
+      
+      return orderedCols
+    }
+    
+    return visibleCols
+  }, [dynamicColumns, visibleColumns, columnOrder])
 
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('clientsPageVisibleColumns', JSON.stringify(visibleColumns))
   }, [visibleColumns])
+  
+  // Save column order to localStorage whenever it changes
+  useEffect(() => {
+    if (columnOrder) {
+      localStorage.setItem('clientsPageColumnOrder', JSON.stringify(columnOrder))
+    }
+  }, [columnOrder])
 
   // Save card visibility to localStorage whenever it changes
   useEffect(() => {
@@ -679,6 +723,62 @@ const ClientsPage = () => {
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
+  }
+  
+  // Column drag and drop handlers for reordering
+  const handleColumnDragStart = (e, columnKey) => {
+    setDraggingColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.currentTarget)
+  }
+
+  const handleColumnDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleColumnDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+    
+    if (!draggingColumn || draggingColumn === targetColumnKey) {
+      setDraggingColumn(null)
+      return
+    }
+
+    // Get current order from visibleColumnsList
+    const currentOrder = visibleColumnsList.map(col => col.key)
+    const draggedIndex = currentOrder.indexOf(draggingColumn)
+    const targetIndex = currentOrder.indexOf(targetColumnKey)
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggingColumn(null)
+      return
+    }
+
+    // Create new order array
+    const newOrder = [...currentOrder]
+    const [removed] = newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, removed)
+
+    setColumnOrder(newOrder)
+    setDraggingColumn(null)
+  }
+
+  const handleColumnDragEnd = () => {
+    setDraggingColumn(null)
+  }
+
+  // Reset column order to default
+  const resetColumnOrder = () => {
+    setColumnOrder(null)
+    localStorage.removeItem('clientsPageColumnOrder')
+  }
+
+  // Reset column visibility to defaults
+  const resetColumnVisibility = () => {
+    const defaultVisible = getInitialVisibleColumns()
+    setVisibleColumns(defaultVisible)
+    localStorage.removeItem('clientsPageVisibleColumns')
   }
 
   // Column filter helper functions - Memoized for performance
@@ -2756,7 +2856,13 @@ const ClientsPage = () => {
                   Columns
                 </button>
                 {showColumnSelector && (
-                  <div className="absolute right-0 top-full mt-2 bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 z-50 w-64 flex flex-col" style={{ maxHeight: '500px' }}>
+                  <div className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col" style={{ 
+                    top: '15%',
+                    right: '10px',
+                    width: '300px',
+                    maxHeight: '70vh',
+                    zIndex: 20000000
+                  }}>
                     <div className="px-3 py-2 border-b border-amber-200 flex items-center justify-between">
                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
                       <button
@@ -2768,6 +2874,32 @@ const ClientsPage = () => {
                         </svg>
                       </button>
                     </div>
+                    
+                    {/* Reset Buttons */}
+                    <div className="px-3 py-2 border-b border-amber-200 flex gap-2">
+                      <button
+                        onClick={resetColumnVisibility}
+                        className="flex-1 text-xs font-semibold text-amber-700 hover:text-amber-800 px-2 py-1.5 rounded-md hover:bg-amber-100 border border-amber-300 hover:border-amber-400 transition-all inline-flex items-center justify-center gap-1"
+                        title="Reset column visibility to defaults"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Reset Visibility
+                      </button>
+                      <button
+                        onClick={resetColumnOrder}
+                        className="flex-1 text-xs font-semibold text-amber-700 hover:text-amber-800 px-2 py-1.5 rounded-md hover:bg-amber-100 border border-amber-300 hover:border-amber-400 transition-all inline-flex items-center justify-center gap-1"
+                        title="Reset column order to default"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Reset Order
+                      </button>
+                    </div>
+                    
                     <div className="px-3 py-2 border-b border-amber-200">
                       <div className="relative">
                         <input
@@ -2884,6 +3016,27 @@ const ClientsPage = () => {
             overflow: 'hidden',
             minHeight: '250px'
           }}>
+            {/* Helper text for column reordering */}
+            <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs text-blue-700 font-medium">
+                  <span className="font-bold">Tip:</span> Drag column headers to reorder • Double-click resize handle to auto-fit
+                </p>
+              </div>
+              {columnOrder && (
+                <button
+                  onClick={resetColumnOrder}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                  title="Reset to default column order"
+                >
+                  Reset Order
+                </button>
+              )}
+            </div>
+            
             <div ref={scrollContainerRef} onScroll={handleScroll} className="overflow-y-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
               scrollbarColor: '#3b82f6 #e5e7eb',
@@ -2938,9 +3091,15 @@ const ClientsPage = () => {
                         return (
                         <th
                           key={col.key}
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all"
+                          draggable={isFilterable} // Only allow dragging base columns, not percentage display columns
+                          onDragStart={(e) => isFilterable && handleColumnDragStart(e, col.baseKey)}
+                          onDragOver={(e) => isFilterable && handleColumnDragOver(e)}
+                          onDrop={(e) => isFilterable && handleColumnDrop(e, col.baseKey)}
+                          onDragEnd={handleColumnDragEnd}
+                          className={`px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
                           ref={el => { if (el) { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el } }}
                           style={{ width: columnWidths[col.key] || col.width + '%', minWidth: 50, overflow: 'visible', position: 'relative' }}
+                          title={isFilterable ? `${col.label} - Drag to reorder` : col.label}
                         >
                           {/* Column Resize Handle */}
                           <div 
@@ -2948,6 +3107,7 @@ const ClientsPage = () => {
                             onMouseDown={(e) => handleResizeStart(e, col.key)}
                             onDoubleClick={() => handleAutoFit(col.key, col.baseKey)}
                             title="Drag to resize column"
+                            draggable={false}
                           >
                             <div className="absolute right-0 top-0 w-1.5 h-full bg-white/30 group-hover/resize:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
                           </div>
@@ -3019,15 +3179,17 @@ const ClientsPage = () => {
                                 {showFilterDropdown === col.baseKey && filterPosition && createPortal(
                                   <div 
                                     ref={filterPanelRef}
-                                    className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl w-64 h-[500px] flex flex-col text-[11px]"
+                                    className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl flex flex-col text-[11px]"
                                     onClick={(e) => e.stopPropagation()}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onWheel={(e) => e.stopPropagation()}
                                     onScroll={(e) => e.stopPropagation()}
                                     style={{
-                                      top: `${Math.min(filterPosition.top + 40, window.innerHeight * 0.2)}px`,
-                                      left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
-                                      right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
+                                      top: '10%',
+                                      right: '10px',
+                                      left: 'auto',
+                                      width: '280px',
+                                      maxHeight: '80vh',
                                       zIndex: 20000000
                                     }}>
                                     {/* Header */}

@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/v2/',
+  base: process.env.NODE_ENV === 'production' ? '/v2/' : '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -19,10 +19,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: process.env.NODE_ENV === 'production' ? 'auto' : null,
+      devOptions: {
+        enabled: false // Disable PWA in development
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       },
-      manifest: {
+      manifest: process.env.NODE_ENV === 'production' ? {
         name: 'Broker Eyes',
         short_name: 'BrokerEyes',
         description: 'Professional trading platform with advanced authentication',
@@ -44,7 +48,7 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
-      }
+      } : false
     })
   ],
   server: {

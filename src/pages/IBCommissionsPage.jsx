@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { createPortal } from 'react-dom'
 import { brokerAPI } from '../services/api'
 import EditPercentageModal from '../components/EditPercentageModal'
 import BulkSyncModal from '../components/BulkSyncModal'
@@ -37,25 +36,6 @@ const IBCommissionsPage = () => {
   // Sorting states - default to created_at desc as per API
   const [sortColumn, setSortColumn] = useState('created_at')
   const [sortDirection, setSortDirection] = useState('desc')
-  
-  // Removed column filter dropdown feature per request
-  // Re-adding Syncfusion-like filter menu (same UX as Clients)
-  const [columnFilters, setColumnFilters] = useState(() => {
-    // Load persisted filters
-    try {
-      const saved = localStorage.getItem('ibColumnFilters')
-      return saved ? JSON.parse(saved) : {}
-    } catch (e) {
-      return {}
-    }
-  }) // baseKey -> [values], baseKey_number -> { op/value(s) as string }, baseKey_text -> { op/value }
-  const [showFilterDropdown, setShowFilterDropdown] = useState(null) // columnKey | null
-  const [filterPosition, setFilterPosition] = useState(null)
-  const filterRefs = useRef({})
-  const filterPanelRef = useRef(null)
-  const [filterSearchQuery, setFilterSearchQuery] = useState({})
-
-  // Removed Number/Text custom filter modals and submenus per request
   
   // Column resizing states
   const [columnWidths, setColumnWidths] = useState(() => {
@@ -280,195 +260,8 @@ const IBCommissionsPage = () => {
     }
   }
 
-  // Helpers to parse number filter input like ">=10", "10-20", "<5", or plain number
-  const matchesNumberFilter = (value, filterStr) => {
-    if (filterStr == null || String(filterStr).trim() === '') return true
-    const v = parseFloat(value)
-    if (isNaN(v)) return false
-    const s = String(filterStr).trim()
-    // range: a-b
-    const rangeMatch = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*[-:]\s*(-?\d+(?:\.\d+)?)\s*$/)
-    if (rangeMatch) {
-      const min = parseFloat(rangeMatch[1])
-      const max = parseFloat(rangeMatch[2])
-      return v >= Math.min(min, max) && v <= Math.max(min, max)
-    }
-    // operators
-    const opMatch = s.match(/^\s*(<=|>=|<|>|=|!=)?\s*(-?\d+(?:\.\d+)?)\s*$/)
-    if (opMatch) {
-      const op = opMatch[1] || '='
-      const num = parseFloat(opMatch[2])
-      switch (op) {
-        case '!=': return v !== num
-        case '<': return v < num
-        case '<=': return v <= num
-        case '>': return v > num
-        case '>=': return v >= num
-        default: return v === num
-      }
-    }
-    // fallback: substring include on formatted value
-    return String(value).toLowerCase().includes(s.toLowerCase())
-  }
-
-  const matchesTextFilter = (value, filterObj) => {
-    if (!filterObj) return true
-    const valRaw = String(value ?? '')
-    const caseSensitive = !!filterObj.caseSensitive
-    const cmp = caseSensitive ? valRaw : valRaw.toLowerCase()
-    const needle = caseSensitive ? String(filterObj.expr || '') : String(filterObj.expr || '').toLowerCase()
-    const op = filterObj.op || 'contains'
-    switch (op) {
-      case 'equal':
-        return cmp === needle
-      case 'notEqual':
-        return cmp !== needle
-      case 'startsWith':
-        return cmp.startsWith(needle)
-      case 'endsWith':
-        return cmp.endsWith(needle)
-      case 'doesNotContain':
-        return !cmp.includes(needle)
-      case 'contains':
-      default:
-        return cmp.includes(needle)
-    }
-  }
-
-  const matchesDateFilter = (value, filterStr) => {
-    if (!filterStr || filterStr.trim() === '') return true
-    const s = filterStr.trim()
-    const dateVal = value ? new Date(value).getTime() : NaN
-    if (isNaN(dateVal)) return false
-    // range with 'to' or '-'
-    const toParts = s.split(/\s+to\s+|\s*-\s*/i)
-    if (toParts.length === 2) {
-      const start = Date.parse(toParts[0])
-      const end = Date.parse(toParts[1])
-      if (!isNaN(start) && !isNaN(end)) {
-        const min = Math.min(start, end)
-        const max = Math.max(start, end)
-        return dateVal >= min && dateVal <= max
-      }
-    }
-    // single date => same-day match
-    const single = Date.parse(s)
-    if (!isNaN(single)) {
-      const d = new Date(single)
-      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-      const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1
-      return dateVal >= dayStart && dateVal <= dayEnd
-    }
-    // fallback substring match on formatted
-    return formatDate(value).toLowerCase().includes(s.toLowerCase())
-  }
-
-  // Build Syncfusion-like filters
-  const isStringColumn = (key) => ['name','email','last_synced_at'].includes(key)
-
-  const getUniqueColumnValues = (key) => {
-    const vals = new Set()
-    commissions.forEach(r => {
-      const v = r?.[key]
-      if (v !== undefined) vals.add(String(v ?? ''))
-    })
-    const all = Array.from(vals)
-    const q = (filterSearchQuery[key] || '').toLowerCase()
-    return q ? all.filter(v => v.toLowerCase().includes(q)) : all
-  }
-
-  const toggleColumnFilter = (key, value) => {
-    setColumnFilters(prev => {
-      const arr = new Set(prev[key] || [])
-      if (arr.has(value)) arr.delete(value); else arr.add(value)
-      return { ...prev, [key]: Array.from(arr) }
-    })
-  }
-
-  const clearColumnFilter = (key) => {
-    setColumnFilters(prev => {
-      const n = { ...prev }
-      delete n[key]
-      delete n[`${key}_number`]
-      delete n[`${key}_text`]
-      return n
-    })
-  }
-
-  const isAllSelected = (key) => {
-    const all = getUniqueColumnValues(key)
-    const sel = columnFilters[key] || []
-    return all.length > 0 && sel.length >= all.length
-  }
-  const selectAllFilters = (key) => setColumnFilters(prev => ({ ...prev, [key]: getUniqueColumnValues(key) }))
-  const deselectAllFilters = (key) => setColumnFilters(prev => ({ ...prev, [key]: [] }))
-
-  const openFilterMenu = (key) => {
-    const el = filterRefs.current[key]
-    if (!el) {
-      setShowFilterDropdown(key)
-      return
-    }
-    const rect = el.getBoundingClientRect()
-    const isLastColumn = rect.right > window.innerWidth - 320
-    setFilterPosition({
-      top: rect.top + window.scrollY,
-      left: rect.left + window.scrollX,
-      right: rect.right + window.scrollX,
-      isLastColumn
-    })
-    setShowFilterDropdown(key)
-  }
-
-  useEffect(() => {
-    const onDown = (e) => {
-      if (!filterPanelRef.current) return
-      if (!filterPanelRef.current.contains(e.target)) setShowFilterDropdown(null)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [])
-
-  // Persist column filters
-  useEffect(() => {
-    try {
-      localStorage.setItem('ibColumnFilters', JSON.stringify(columnFilters))
-    } catch (e) {}
-  }, [columnFilters])
-
-  // Helper to count active filters for a column (value list + number + text)
-  const getFilterCount = (key) => {
-    let count = 0
-    if (Array.isArray(columnFilters[key]) && columnFilters[key].length > 0) count++
-    if (columnFilters[`${key}_number`]?.expr) count++
-    if (columnFilters[`${key}_text`]?.expr) count++
-    return count
-  }
-
-  // Apply column filters
-  const filteredCommissions = useMemo(() => {
-    if (!columnFilters || Object.keys(columnFilters).length === 0) return commissions
-    return commissions.filter(row => {
-      let ok = true
-      Object.entries(columnFilters).forEach(([k,v]) => {
-        if (!ok) return
-        if (k.endsWith('_number')) {
-          const base = k.replace('_number','')
-          ok = matchesNumberFilter(row[base], v?.expr || '')
-        } else if (k.endsWith('_text')) {
-          const base = k.replace('_text','')
-          ok = matchesTextFilter(row[base], v)
-        } else if (Array.isArray(v) && v.length > 0) {
-          ok = v.includes(String(row[k] ?? ''))
-        }
-      })
-      return ok
-    })
-  }, [commissions, columnFilters])
-
-  // Since sorting is now done by API, just use filteredCommissions directly
-  // Keep the variable name for backward compatibility with existing code
-  const sortedCommissions = filteredCommissions
+  // Since sorting is now done by API, use commissions directly
+  const sortedCommissions = commissions
 
   // Column resize handlers
   const handleResizeStart = (e, columnKey) => {
@@ -760,35 +553,13 @@ const IBCommissionsPage = () => {
                         ].map((col) => (
                           <th 
                             key={col.key}
-                            ref={el => { if (el) { headerRefs.current[col.key] = el; filterRefs.current[col.key] = el } }}
+                            ref={el => { if (el) headerRefs.current[col.key] = el }}
                             className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 border-r border-blue-500/50 relative group cursor-pointer hover:bg-blue-700 transition-colors"
                             style={{ width: col.width, textAlign: col.align }}
                             onClick={() => col.key !== 'action' && handleSort(col.key)}
                           >
                             <div className="flex items-center gap-1" style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}>
                               <span>{col.label}</span>
-                              {col.key !== 'action' && (
-                                <>
-                                  <button
-                                    className="ml-1 p-0.5 rounded hover:bg-white/10 text-white/90"
-                                    title="Filter"
-                                    onClick={(e) => { e.stopPropagation(); openFilterMenu(col.key) }}
-                                  >
-                                    {/* Heroicons outline funnel */}
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M6 9h12M9 14h6M11 19h2" />
-                                    </svg>
-                                  </button>
-                                  {getFilterCount(col.key) > 0 && (
-                                    <span
-                                      className="ml-0.5 inline-flex items-center justify-center px-1 h-4 min-w-[16px] rounded bg-amber-300 text-[10px] font-bold text-slate-900 shadow-sm"
-                                      title={`${getFilterCount(col.key)} active filter${getFilterCount(col.key) > 1 ? 's' : ''}`}
-                                    >
-                                      {getFilterCount(col.key)}
-                                    </span>
-                                  )}
-                                </>
-                              )}
                               {sortColumn === col.key && col.key !== 'action' && (
                                 <svg
                                   className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
@@ -813,81 +584,7 @@ const IBCommissionsPage = () => {
                           </th>
                         ))}
                       </tr>
-                      {/* Filter Panel (portal) */}
-                      {showFilterDropdown && filterPosition && createPortal(
-                        <div 
-                          ref={filterPanelRef}
-                          className="fixed bg-white/95 backdrop-blur border-2 border-blue-300 rounded-lg shadow-2xl w-64 h-[460px] flex flex-col text-[11px] text-slate-800"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            top: `${Math.min(filterPosition.top + 24, window.innerHeight - 480)}px`,
-                            left: filterPosition.isLastColumn ? 'auto' : `${filterPosition.right + 8}px`,
-                            right: filterPosition.isLastColumn ? `${window.innerWidth - filterPosition.left + 8}px` : 'auto',
-                            zIndex: 99999999
-                          }}
-                        >
-                          <div className="px-3 py-2 border-b border-blue-200 bg-blue-50 rounded-t-lg flex items-center justify-between">
-                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Filter Menu</span>
-                            <button className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 rounded" onClick={() => setShowFilterDropdown(null)}>
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                          </div>
-
-                          <div className="border-b border-blue-100 py-1 bg-slate-50">
-                            <button onClick={() => { clearColumnFilter(showFilterDropdown) }} className="w-full px-3 py-1.5 text-left font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                              Clear Filter
-                            </button>
-                          </div>
-
-                          <div className="border-b border-blue-100 py-1 bg-white">
-                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('asc'); setShowFilterDropdown(null) }} className="w-full px-3 py-1.5 text-left hover:bg-blue-50 flex items-center gap-2 text-[11px] text-slate-800 font-medium">
-                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
-                              Sort Smallest to Largest
-                            </button>
-                            <button onClick={() => { handleSort(showFilterDropdown); setSortDirection('desc'); setShowFilterDropdown(null) }} className="w-full px-3 py-1.5 text-left hover:bg-blue-50 flex items-center gap-2 text-[11px] text-slate-800 font-medium">
-                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/></svg>
-                              Sort Largest to Smallest
-                            </button>
-                          </div>
-
-                          {/* Number/Text filter submenus removed per request */}
-
-                          {/* Search box */}
-                          <div className="p-2 border-b border-blue-100 bg-white">
-                            <div className="relative">
-                              <input type="text" placeholder="Search values..." value={filterSearchQuery[showFilterDropdown] || ''} onChange={(e) => setFilterSearchQuery(prev => ({ ...prev, [showFilterDropdown]: e.target.value }))} className="w-full pl-8 pr-3 py-1 text-[11px] border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-300 text-slate-800 placeholder:text-slate-400" />
-                              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </div>
-                          </div>
-
-                          {/* Select all */}
-                          <div className="px-3 py-2 border-b border-blue-100 bg-blue-50">
-                            <label className="flex items-center gap-2">
-                              <input type="checkbox" checked={isAllSelected(showFilterDropdown)} onChange={(e) => e.target.checked ? selectAllFilters(showFilterDropdown) : deselectAllFilters(showFilterDropdown)} className="w-3.5 h-3.5 rounded border-slate-300" />
-                              <span className="text-xs font-bold text-blue-700 uppercase">Select All</span>
-                            </label>
-                          </div>
-
-                          {/* Values list */}
-                          <div className="overflow-y-auto" style={{ height: '280px' }}>
-                            <div className="p-2 space-y-1">
-                              {getUniqueColumnValues(showFilterDropdown).map(v => (
-                                <label key={v} className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded-md cursor-pointer">
-                                  <input type="checkbox" checked={(columnFilters[showFilterDropdown] || []).includes(v)} onChange={() => toggleColumnFilter(showFilterDropdown, v)} className="w-3.5 h-3.5 rounded border-slate-300" />
-                                  <span className="text-[11px] text-slate-800 truncate flex-1">{v || '(blank)'}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Footer */}
-                          <div className="px-2 py-1 border-t border-blue-100 bg-blue-50 rounded-b flex items-center justify-between">
-                            <button onClick={() => clearColumnFilter(showFilterDropdown)} className="px-2 py-1 text-[10px] text-blue-700 hover:bg-blue-100 rounded">Clear</button>
-                            <button onClick={() => setShowFilterDropdown(null)} className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded">OK</button>
-                          </div>
-                        </div>, document.body
-                      )}
+                      {/* Filter Panel removed */}
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {sortedCommissions.map((ib) => (
@@ -938,7 +635,6 @@ const IBCommissionsPage = () => {
                       ))}
                     </tbody>
                   </table>
-                  {/* Filter dropdowns removed */}
                 </div>
               )}
             </div>
@@ -1008,8 +704,6 @@ const IBCommissionsPage = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Selected IB IDs ({selectedIBs.length})
                   </label>
-
-        {/* Number/Text custom filter modals removed per request */}
                   <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
                     {selectedIBs.length > 0 ? (
                       <div className="flex flex-wrap gap-2">

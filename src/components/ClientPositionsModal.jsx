@@ -78,6 +78,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     sl: false,
     tp: false,
     profit: true,
+    storage: false,
     commission: false,
     comment: false
   })
@@ -114,6 +115,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     { key: 'sl', label: 'S/L' },
     { key: 'tp', label: 'T/P' },
     { key: 'profit', label: 'Profit' },
+    { key: 'storage', label: 'Storage' },
     { key: 'commission', label: 'Commission' },
     { key: 'comment', label: 'Comment' }
   ]
@@ -1581,6 +1583,18 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         )}
+                        {positionsVisibleColumns.storage && (
+                        <th 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          style={{ width: positionsColumnWidths['storage'] || 'auto', minWidth: '80px' }}
+                        >
+                          Storage
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
+                            onMouseDown={(e) => handlePositionsResizeStart(e, 'storage')}
+                          />
+                        </th>
+                        )}
                         {positionsVisibleColumns.commission && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
@@ -1660,6 +1674,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           {positionsVisibleColumns.profit && (
                           <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(position.profit)}`}>
                             {formatCurrency(position.profit)}
+                          </td>
+                          )}
+                          {positionsVisibleColumns.storage && (
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {typeof position.storage === 'number' ? formatCurrency(position.storage) : '-'}
                           </td>
                           )}
                           {positionsVisibleColumns.commission && (
