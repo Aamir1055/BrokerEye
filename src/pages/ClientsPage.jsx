@@ -1975,10 +1975,10 @@ const ClientsPage = () => {
       return formatted
     }
 
-    // PnL buckets: invert sign to match face card convention and format
+    // PnL buckets (table display should preserve sign)
     if (['dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value || 0)
-      const formatted = formatIndianNumber(Math.abs(num).toFixed(2))
+      const formatted = formatIndianNumber(num.toFixed(2))
       return formatted
     }
     
