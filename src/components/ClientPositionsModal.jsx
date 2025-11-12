@@ -2506,72 +2506,57 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
             <div className="space-y-1">
-              {/* Compact inline summary of Position face-card values (inline format, colored tokens) */}
+              {/* Positions face cards in Excel-like grid cells */}
               {(() => {
-                const tokenBase = 'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] sm:text-[11px] leading-tight';
                 const items = []
                 const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
                 const lifetime = Number(clientData?.lifetimePnL ?? clientData?.pnl ?? 0)
                 const floating = Number(clientData?.floating ?? totalPL)
                 const bookPnL = lifetime + floating
 
-                const plToken = (val) => ({
-                  container: `${tokenBase} ${val >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`,
-                  labelClass: `${val >= 0 ? 'text-emerald-700' : 'text-red-700'}`,
-                  valueClass: getProfitColor(val)
-                })
-                const pnLToken = (val, posClass, negClass) => ({
-                  container: `${tokenBase} ${val >= 0 ? posClass : negClass}`,
-                  labelClass: `${val >= 0 ? 'text-teal-700' : 'text-orange-700'}`,
-                  valueClass: getProfitColor(val)
-                })
-
                 if (fixedCardVisibility.pf_totalPositions) {
-                  items.push({ label: 'Positions', value: String(positions.length), container: `${tokenBase} bg-blue-50 border-blue-200`, labelClass: 'text-blue-700' })
+                  items.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700' })
                 }
                 if (fixedCardVisibility.pf_totalVolume) {
                   const vol = positions.reduce((sum, p) => sum + (p.volume || 0), 0)
-                  items.push({ label: 'Total Volume', value: vol.toFixed(2), container: `${tokenBase} bg-indigo-50 border-indigo-200`, labelClass: 'text-indigo-700' })
+                  items.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700' })
                 }
                 if (fixedCardVisibility.pf_totalPL) {
-                  const s = plToken(totalPL)
-                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL) })
                 }
                 if (fixedCardVisibility.pf_lifetimePnL) {
-                  const s = pnLToken(lifetime, 'bg-teal-50 border-teal-200', 'bg-orange-50 border-orange-200')
-                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime) })
                 }
                 if (fixedCardVisibility.pf_bookPnL) {
-                  const s = plToken(bookPnL)
-                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL) })
                 }
                 if (fixedCardVisibility.pf_balance) {
-                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), container: `${tokenBase} bg-cyan-50 border-cyan-200`, labelClass: 'text-cyan-700' })
+                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700' })
                 }
                 if (fixedCardVisibility.pf_credit) {
-                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), container: `${tokenBase} bg-violet-50 border-violet-200`, labelClass: 'text-violet-700' })
+                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), labelClass: 'text-violet-700' })
                 }
                 if (fixedCardVisibility.pf_equity) {
-                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), container: `${tokenBase} bg-green-50 border-green-200`, labelClass: 'text-green-700' })
+                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700' })
                 }
 
                 if (!items.length) return null
 
                 return (
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="ring-1 ring-gray-200 rounded-sm overflow-hidden bg-white grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 divide-x divide-y divide-gray-200 mb-2">
                     {items.map((it, idx) => (
-                      <span key={`${it.label}-${idx}`} className={it.container}>
-                        <span className={`font-semibold ${it.labelClass}`}>{it.label}:</span>
-                        <span className={`font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</span>
-                      </span>
+                      <div key={`${it.label}-${idx}`} className="p-2">
+                        <p className={`text-[10px] sm:text-[11px] font-semibold ${it.labelClass}`}>{it.label}</p>
+                        <p className={`text-xs font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</p>
+                      </div>
                     ))}
                   </div>
                 )
               })()}
 
-              {/* Deals Summary inline tokens (colored) */}
+              {/* Deals Summary in Excel-like grid cells */}
               <div className="mt-1">
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="ring-1 ring-gray-200 rounded-sm overflow-hidden bg-white grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 divide-x divide-y divide-gray-200">
                   {(() => {
                     const keys = dealStats ? Object.keys(dealStats) : []
                     const visibleKeys = keys.filter(k => dealStatVisibility[k])
@@ -2581,14 +2566,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       ...preferredOrder.filter(k => baseKeys.includes(k)),
                       ...baseKeys.filter(k => !preferredOrder.includes(k))
                     ]
-                    const tokenBase = 'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] sm:text-[11px] leading-tight';
                     return toRender.map((key, idx) => {
                       const styles = getDealStatStyle(key, dealStats?.[key])
                       return (
-                        <span key={key} className={`${tokenBase} ${styles.container}`}>
-                          <span className={`font-semibold ${styles.label}`}>{toTitle(key)}:</span>
-                          <span className={`font-bold ${styles.value}`}>{formatStatValue(key, dealStats?.[key])}</span>
-                        </span>
+                        <div key={key} className="p-2">
+                          <p className={`text-[10px] sm:text-[11px] font-semibold ${styles.label}`}>{toTitle(key)}</p>
+                          <p className={`text-xs font-bold ${styles.value}`}>{formatStatValue(key, dealStats?.[key])}</p>
+                        </div>
                       )
                     })
                   })()}
