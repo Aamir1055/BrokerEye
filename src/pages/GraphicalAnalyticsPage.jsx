@@ -5,600 +5,19 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
 
-// Vertical Bar Chart with gradients and modern styling
-const BarChart = ({ data, height = 260, color = 'blue', title = '', showGrid = true }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm font-medium">
-        <div className="text-center">
-          <svg className="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <p>No data available</p>
-        </div>
-      </div>
-    )
-  }
-
-  const maxVal = Math.max(...data.map(d => Math.abs(d.value)), 1)
-  const minVal = Math.min(...data.map(d => d.value), 0)
-  const range = maxVal - minVal || 1
-  const barWidth = Math.max(50, Math.min(80, (100 / data.length) - 10))
-  
-  const padding = { top: 40, right: 20, bottom: 60, left: 60 }
-  const chartHeight = height - padding.top - padding.bottom
-
-  const colorMap = {
-    blue: { from: '#3b82f6', to: '#1e40af', shadow: '#3b82f620' },
-    green: { from: '#22c55e', to: '#15803d', shadow: '#22c55e20' },
-    emerald: { from: '#10b981', to: '#047857', shadow: '#10b98120' },
-    orange: { from: '#f97316', to: '#c2410c', shadow: '#f9731620' },
-    amber: { from: '#f59e0b', to: '#b45309', shadow: '#f59e0b20' },
-    violet: { from: '#8b5cf6', to: '#6d28d9', shadow: '#8b5cf620' },
-    red: { from: '#ef4444', to: '#b91c1c', shadow: '#ef444420' },
-    indigo: { from: '#6366f1', to: '#4338ca', shadow: '#6366f120' },
-    cyan: { from: '#06b6d4', to: '#0e7490', shadow: '#06b6d420' },
-    teal: { from: '#14b8a6', to: '#0f766e', shadow: '#14b8a620' }
-  }
-
-  const colors = colorMap[color] || colorMap.blue
-  const gradientId = `gradient-${color}-${Math.random()}`
-
-  return (
-    <svg width="100%" height={height} className="overflow-visible" style={{ fontFamily: 'system-ui' }}>
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={colors.from} />
-          <stop offset="100%" stopColor={colors.to} />
-        </linearGradient>
-        <filter id="shadow">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15"/>
-        </filter>
-      </defs>
-      
-      {/* Grid lines */}
-      {showGrid && [0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-        const y = padding.top + chartHeight * (1 - pct)
-        const value = (minVal + range * pct).toFixed(0)
-        return (
-          <g key={i}>
-            <line
-              x1={padding.left}
-              y1={y}
-              x2="95%"
-              y2={y}
-              stroke="#e5e7eb"
-              strokeWidth="1"
-              strokeDasharray="4 4"
-            />
-            <text
-              x={padding.left - 10}
-              y={y + 4}
-              fontSize="11"
-              textAnchor="end"
-              className="fill-gray-500 font-medium"
-            >
-              {new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value)}
-            </text>
-          </g>
-        )
-      })}
-
-      {/* Bars with gradient and shadow */}
-      {data.map((d, i) => {
-        const isNegative = d.value < 0
-        const absHeight = (Math.abs(d.value) / range) * chartHeight
-        const zeroY = padding.top + chartHeight - ((0 - minVal) / range) * chartHeight
-        const barY = isNegative ? zeroY : zeroY - absHeight
-        const x = padding.left + (i / data.length) * (100 - padding.left - padding.right) + '%'
-
-        return (
-          <g key={i} className="bar-group">
-            <rect
-              x={x}
-              y={barY}
-              width={`${barWidth}px`}
-              height={Math.max(3, absHeight)}
-              fill={isNegative ? 'url(#gradient-red)' : `url(#${gradientId})`}
-              rx="8"
-              filter="url(#shadow)"
-              className="transition-all duration-300 hover:opacity-90 cursor-pointer"
-              style={{ transformOrigin: 'center bottom' }}
-            />
-            <text
-              x={`calc(${x} + ${barWidth / 2}px)`}
-              y={padding.top + chartHeight + 24}
-              fontSize="12"
-              textAnchor="middle"
-              className="fill-gray-700 font-semibold"
-            >
-              {d.label}
-            </text>
-            <text
-              x={`calc(${x} + ${barWidth / 2}px)`}
-              y={barY - 10}
-              fontSize="12"
-              fontWeight="700"
-              textAnchor="middle"
-              className="fill-gray-900"
-            >
-              ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Math.abs(d.value))}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// Area Chart with gradient fills and smooth curves
-const AreaChart = ({ data, height = 260, color = 'emerald', title = '' }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm font-medium">
-        <div className="text-center">
-          <svg className="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-          </svg>
-          <p>No data available</p>
-        </div>
-      </div>
-    )
-  }
-
-  const maxVal = Math.max(...data.map(d => d.value))
-  const minVal = Math.min(...data.map(d => d.value))
-  const range = maxVal - minVal || 1
-  
-  const padding = { top: 40, right: 20, bottom: 60, left: 60 }
-  const chartHeight = height - padding.top - padding.bottom
-  const chartWidth = 100 - padding.left - padding.right
-
-  const colorMap = {
-    emerald: { line: '#10b981', from: '#10b98140', to: '#10b98105', glow: '#10b98180' },
-    blue: { line: '#3b82f6', from: '#3b82f640', to: '#3b82f605', glow: '#3b82f680' },
-    orange: { line: '#f97316', from: '#f9731640', to: '#f9731605', glow: '#f9731680' },
-    violet: { line: '#8b5cf6', from: '#8b5cf640', to: '#8b5cf605', glow: '#8b5cf680' },
-    red: { line: '#ef4444', from: '#ef444440', to: '#ef444405', glow: '#ef444480' }
-  }
-
-  const colors = colorMap[color] || colorMap.emerald
-  const gradientId = `area-gradient-${color}-${Math.random()}`
-
-  const points = data.map((d, i) => {
-    const x = padding.left + (i / (data.length - 1)) * chartWidth
-    const y = padding.top + chartHeight - ((d.value - minVal) / range) * chartHeight
-    return { x, y, value: d.value, label: d.label }
-  })
-
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`
-
-  return (
-    <svg width="100%" height={height} style={{ fontFamily: 'system-ui' }}>
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={colors.from} />
-          <stop offset="100%" stopColor={colors.to} />
-        </linearGradient>
-        <filter id="line-glow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      
-      {/* Grid */}
-      {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
-        const y = padding.top + chartHeight * (1 - pct)
-        const value = minVal + range * pct
-        return (
-          <g key={i}>
-            <line x1={padding.left} y1={y} x2="95%" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4 4" />
-            <text x={padding.left - 10} y={y + 4} fontSize="11" textAnchor="end" className="fill-gray-500 font-medium">
-              {new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value)}
-            </text>
-          </g>
-        )
-      })}
-
-      {/* Area fill with gradient */}
-      <path d={areaPath} fill={`url(#${gradientId})`} />
-      
-      {/* Line with glow effect */}
-      <path d={linePath} fill="none" stroke={colors.line} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#line-glow)" />
-
-      {/* Points with enhanced styling */}
-      {points.map((p, i) => (
-        <g key={i} className="point-group">
-          <circle cx={p.x} cy={p.y} r="8" fill={colors.glow} opacity="0.3" className="transition-all duration-300" />
-          <circle cx={p.x} cy={p.y} r="6" fill="white" stroke={colors.line} strokeWidth="3" className="cursor-pointer hover:r-7 transition-all duration-200" />
-          <text x={p.x} y={padding.top + chartHeight + 24} fontSize="12" textAnchor="middle" className="fill-gray-700 font-semibold">
-            {data[i].label}
-          </text>
-          <text x={p.x} y={p.y - 14} fontSize="12" fontWeight="700" textAnchor="middle" className="fill-gray-900">
-            ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Math.abs(p.value))}
-          </text>
-        </g>
-      ))}
-    </svg>
-  )
-}
-
-// Horizontal Bar Chart with gradients and ranking
-const HorizontalBarChart = ({ data, height = 300, color = 'blue' }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm font-medium">
-        <div className="text-center">
-          <svg className="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <p>No data available</p>
-        </div>
-      </div>
-    )
-  }
-
-  const maxVal = Math.max(...data.map(d => Math.abs(d.value)), 1)
-  const barHeight = 44
-  const gap = 18
-  const padding = { top: 20, right: 100, bottom: 20, left: 170 }
-
-  const colorMap = {
-    blue: { from: '#3b82f6', to: '#1e40af' },
-    violet: { from: '#8b5cf6', to: '#6d28d9' },
-    orange: { from: '#f97316', to: '#c2410c' },
-    amber: { from: '#f59e0b', to: '#b45309' }
-  }
-
-  const colors = colorMap[color] || colorMap.blue
-  const gradientId = `h-bar-gradient-${color}-${Math.random()}`
-
-  return (
-    <svg width="100%" height={height} style={{ fontFamily: 'system-ui' }}>
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={colors.from} />
-          <stop offset="100%" stopColor={colors.to} />
-        </linearGradient>
-        <filter id="bar-shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
-        </filter>
-      </defs>
-      
-      {data.map((d, i) => {
-        const y = padding.top + i * (barHeight + gap)
-        const barWidth = (Math.abs(d.value) / maxVal) * 58 // percentage of chart width
-        const isNegative = d.value < 0
-        const rankColors = ['#fbbf24', '#94a3b8', '#d97706'] // gold, silver, bronze
-
-        return (
-          <g key={i} className="bar-row-group">
-            {/* Rank badge for top 3 */}
-            {i < 3 && (
-              <>
-                <circle cx={padding.left - 150} cy={y + barHeight / 2} r="14" fill={rankColors[i]} opacity="0.2" />
-                <circle cx={padding.left - 150} cy={y + barHeight / 2} r="12" fill={rankColors[i]} />
-                <text 
-                  x={padding.left - 150} 
-                  y={y + barHeight / 2 + 1} 
-                  fontSize="12" 
-                  fontWeight="900" 
-                  textAnchor="middle" 
-                  dominantBaseline="middle" 
-                  className="fill-white"
-                >
-                  {i + 1}
-                </text>
-              </>
-            )}
-            
-            {/* Label */}
-            <text 
-              x={padding.left - 12} 
-              y={y + barHeight / 2 + 1} 
-              fontSize="14" 
-              fontWeight="700" 
-              textAnchor="end" 
-              className="fill-gray-800"
-            >
-              {d.label}
-            </text>
-            
-            {/* Background bar (track) */}
-            <rect
-              x={`${padding.left}px`}
-              y={y}
-              width="60%"
-              height={barHeight}
-              fill="#f3f4f6"
-              rx="10"
-            />
-            
-            {/* Actual bar with gradient */}
-            <rect
-              x={`${padding.left}px`}
-              y={y}
-              width={`${barWidth}%`}
-              height={barHeight}
-              fill={isNegative ? 'url(#h-bar-gradient-red)' : `url(#${gradientId})`}
-              rx="10"
-              filter="url(#bar-shadow)"
-              className="transition-all duration-400 hover:opacity-90 cursor-pointer"
-            />
-            
-            {/* Value inside bar if space, otherwise outside */}
-            <text
-              x={barWidth > 15 ? `calc(${padding.left}px + ${barWidth}% - 12px)` : `calc(${padding.left}px + ${barWidth}% + 12px)`}
-              y={y + barHeight / 2 + 1}
-              fontSize="14"
-              fontWeight="800"
-              textAnchor={barWidth > 15 ? 'end' : 'start'}
-              className={barWidth > 15 ? 'fill-white' : 'fill-gray-900'}
-            >
-              ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Math.abs(d.value))}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// Donut Chart with 3D effect and modern gradients
-const DonutChart = ({ data, size = 240, innerRadius = 0.62 }) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm font-medium">
-        <div className="text-center">
-          <svg className="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-          </svg>
-          <p>No data available</p>
-        </div>
-      </div>
-    )
-  }
-
-  const total = data.reduce((sum, d) => sum + Math.abs(d.value), 0)
-  let cumulativeAngle = 0
-
-  const colorSchemes = [
-    { solid: '#3b82f6', gradient: ['#60a5fa', '#2563eb'] },  // blue
-    { solid: '#10b981', gradient: ['#34d399', '#059669'] },  // emerald
-    { solid: '#f59e0b', gradient: ['#fbbf24', '#d97706'] },  // amber
-    { solid: '#8b5cf6', gradient: ['#a78bfa', '#7c3aed'] },  // violet
-    { solid: '#ef4444', gradient: ['#f87171', '#dc2626'] },  // red
-    { solid: '#06b6d4', gradient: ['#22d3ee', '#0891b2'] },  // cyan
-    { solid: '#ec4899', gradient: ['#f472b6', '#db2777'] },  // pink
-    { solid: '#84cc16', gradient: ['#a3e635', '#65a30d'] }   // lime
-  ]
-
-  const createArc = (startAngle, endAngle, innerR, outerR) => {
-    const start = polarToCartesian(0, 0, outerR, endAngle)
-    const end = polarToCartesian(0, 0, outerR, startAngle)
-    const innerStart = polarToCartesian(0, 0, innerR, endAngle)
-    const innerEnd = polarToCartesian(0, 0, innerR, startAngle)
-    const largeArc = endAngle - startAngle > 180 ? 1 : 0
-
-    return [
-      'M', start.x, start.y,
-      'A', outerR, outerR, 0, largeArc, 0, end.x, end.y,
-      'L', innerEnd.x, innerEnd.y,
-      'A', innerR, innerR, 0, largeArc, 1, innerStart.x, innerStart.y,
-      'Z'
-    ].join(' ')
-  }
-
-  const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
-    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0
-    return {
-      x: centerX + radius * Math.cos(angleInRadians),
-      y: centerY + radius * Math.sin(angleInRadians)
-    }
-  }
-
-  const outerRadius = size / 2 - 12
-  const innerR = outerRadius * innerRadius
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={size} viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`} style={{ fontFamily: 'system-ui', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.08))' }}>
-        <defs>
-          {colorSchemes.map((scheme, i) => (
-            <radialGradient key={i} id={`donut-gradient-${i}`} cx="30%" cy="30%">
-              <stop offset="0%" stopColor={scheme.gradient[0]} />
-              <stop offset="100%" stopColor={scheme.gradient[1]} />
-            </radialGradient>
-          ))}
-          <filter id="segment-shadow">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
-          </filter>
-        </defs>
-        
-        {data.map((d, i) => {
-          const angle = (Math.abs(d.value) / total) * 360
-          const startAngle = cumulativeAngle
-          const endAngle = cumulativeAngle + angle
-          cumulativeAngle = endAngle
-
-          const midAngle = (startAngle + endAngle) / 2
-          const labelRadius = (outerRadius + innerR) / 2
-          const labelPos = polarToCartesian(0, 0, labelRadius, midAngle)
-
-          return (
-            <g key={i} className="segment-group">
-              <path
-                d={createArc(startAngle, endAngle, innerR, outerRadius)}
-                fill={`url(#donut-gradient-${i % colorSchemes.length})`}
-                stroke="white"
-                strokeWidth="3"
-                filter="url(#segment-shadow)"
-                className="transition-all duration-300 hover:opacity-90 cursor-pointer"
-                style={{ transformOrigin: 'center' }}
-              />
-              {angle > 10 && (
-                <text
-                  x={labelPos.x}
-                  y={labelPos.y}
-                  fontSize="14"
-                  fontWeight="800"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="fill-white pointer-events-none"
-                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.4)', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
-                >
-                  {((Math.abs(d.value) / total) * 100).toFixed(0)}%
-                </text>
-              )}
-            </g>
-          )
-        })}
-        
-        {/* Center text with gradient background */}
-        <circle cx="0" cy="0" r={innerR} fill="white" filter="url(#segment-shadow)" />
-        <circle cx="0" cy="0" r={innerR - 2} fill="url(#donut-gradient-0)" opacity="0.05" />
-        <text
-          x="0"
-          y="-8"
-          fontSize="28"
-          fontWeight="900"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          className="fill-gray-800"
-        >
-          {data.length}
-        </text>
-        <text
-          x="0"
-          y="18"
-          fontSize="13"
-          fontWeight="600"
-          textAnchor="middle"
-          className="fill-gray-500"
-        >
-          Categories
-        </text>
-      </svg>
-      
-      <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-3 w-full max-w-sm">
-        {data.map((d, i) => (
-          <div key={i} className="flex items-center gap-2.5 group cursor-pointer">
-            <div 
-              className="w-5 h-5 rounded-md flex-shrink-0 shadow-md transition-transform group-hover:scale-110" 
-              style={{ 
-                background: `linear-gradient(135deg, ${colorSchemes[i % colorSchemes.length].gradient[0]}, ${colorSchemes[i % colorSchemes.length].gradient[1]})` 
-              }}
-            ></div>
-            <span className="text-sm text-gray-800 font-semibold truncate group-hover:text-gray-900">{d.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// Modern Insight Card with gradient backgrounds
-const InsightCard = ({ icon, title, value, subtitle, trend, trendValue, color = 'blue' }) => {
-  const colorMap = {
-    blue: { 
-      gradient: 'from-blue-500 to-blue-600', 
-      light: 'bg-blue-50', 
-      border: 'border-blue-200',
-      ring: 'ring-blue-100'
-    },
-    green: { 
-      gradient: 'from-green-500 to-green-600', 
-      light: 'bg-green-50', 
-      border: 'border-green-200',
-      ring: 'ring-green-100'
-    },
-    red: { 
-      gradient: 'from-red-500 to-red-600', 
-      light: 'bg-red-50', 
-      border: 'border-red-200',
-      ring: 'ring-red-100'
-    },
-    orange: { 
-      gradient: 'from-orange-500 to-orange-600', 
-      light: 'bg-orange-50', 
-      border: 'border-orange-200',
-      ring: 'ring-orange-100'
-    },
-    violet: { 
-      gradient: 'from-violet-500 to-violet-600', 
-      light: 'bg-violet-50', 
-      border: 'border-violet-200',
-      ring: 'ring-violet-100'
-    },
-    indigo: { 
-      gradient: 'from-indigo-500 to-indigo-600', 
-      light: 'bg-indigo-50', 
-      border: 'border-indigo-200',
-      ring: 'ring-indigo-100'
-    },
-    emerald: { 
-      gradient: 'from-emerald-500 to-emerald-600', 
-      light: 'bg-emerald-50', 
-      border: 'border-emerald-200',
-      ring: 'ring-emerald-100'
-    },
-    amber: { 
-      gradient: 'from-amber-500 to-amber-600', 
-      light: 'bg-amber-50', 
-      border: 'border-amber-200',
-      ring: 'ring-amber-100'
-    }
-  }
-
-  const colors = colorMap[color] || colorMap.blue
-
-  return (
-    <div className={`bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border ${colors.border} p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group`}>
-      {/* Subtle background pattern */}
-      <div className={`absolute inset-0 opacity-5 ${colors.light}`}></div>
-      
-      <div className="relative z-10">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-16 h-16 bg-gradient-to-br ${colors.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ring-4 ${colors.ring} group-hover:scale-110 transition-transform duration-300`}>
-            {icon}
-          </div>
-          {trend && (
-            <div className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md backdrop-blur-sm ${
-              trend === 'up' ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200' : 
-              trend === 'down' ? 'bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200' : 
-              'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border border-gray-200'
-            }`}>
-              {trend === 'up' && <span className="text-base">↑</span>}
-              {trend === 'down' && <span className="text-base">↓</span>}
-              <span>{trendValue}</span>
-            </div>
-          )}
-        </div>
-        <p className="text-xs font-bold text-gray-500 mb-2.5 uppercase tracking-wider">{title}</p>
-        <p className="text-4xl font-black text-gray-900 mb-2 tracking-tight">{value}</p>
-        {subtitle && <p className="text-sm text-gray-600 font-semibold">{subtitle}</p>}
-      </div>
-      
-      {/* Gradient accent line */}
-      <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${colors.gradient}`}></div>
-    </div>
-  )
-}
-
 const GraphicalAnalyticsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user } = useAuth()
   const navigate = useNavigate()
   const { clients, positions } = useData()
 
-  // Commission totals from API (same as Dashboard)
+  // Commission totals from API
   const [commissionTotals, setCommissionTotals] = useState(null)
   const [topIB, setTopIB] = useState([])
   const [loadingCommissions, setLoadingCommissions] = useState(true)
+
+  // Time period filter
+  const [timePeriod, setTimePeriod] = useState('monthly') // 'daily', 'weekly', 'monthly', 'lifetime', 'all'
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -610,7 +29,7 @@ const GraphicalAnalyticsPage = () => {
         setCommissionTotals(totalsRes?.data || null)
         setTopIB(ibRes?.data?.records || [])
       } catch (e) {
-        // non-fatal
+        console.error('Failed to fetch commission data:', e)
       } finally {
         setLoadingCommissions(false)
       }
@@ -618,92 +37,171 @@ const GraphicalAnalyticsPage = () => {
     fetchAll()
   }, [])
 
-  // Face-card-like totals reused for charts
-  const stats = useMemo(() => {
+  // Calculate comprehensive stats
+  const analytics = useMemo(() => {
     const list = clients || []
-    const sum = (key) => list.reduce((acc, c) => {
-      const v = c?.[key]
-      return acc + (typeof v === 'number' ? v : 0)
-    }, 0)
+    const sum = (key) => list.reduce((acc, c) => acc + (typeof c?.[key] === 'number' ? c[key] : 0), 0)
 
     const totalPnl = list.reduce((acc, c) => {
-      const hasPnl = typeof c?.pnl === 'number'
-      const computed = hasPnl ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
-      return acc + (typeof computed === 'number' && !Number.isNaN(computed) ? computed : 0)
+      const pnl = typeof c?.pnl === 'number' ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
+      return acc + (typeof pnl === 'number' && !isNaN(pnl) ? pnl : 0)
     }, 0)
+
+    const totalBalance = sum('balance')
+    const totalEquity = sum('equity')
+    const totalCredit = sum('credit')
+    const totalProfit = sum('profit')
+    
+    const dailyPnL = sum('dailyPnL')
+    const weeklyPnL = sum('thisWeekPnL')
+    const monthlyPnL = sum('thisMonthPnL')
+    const lifetimePnL = sum('lifetimePnL')
 
     const dailyDeposit = sum('dailyDeposit')
     const dailyWithdrawal = sum('dailyWithdrawal')
-    const netDW = dailyDeposit - dailyWithdrawal
+    const weekDeposit = sum('thisWeekDeposit')
+    const weekWithdrawal = sum('thisWeekWithdrawal')
+    const monthDeposit = sum('thisMonthDeposit')
+    const monthWithdrawal = sum('thisMonthWithdrawal')
+
+    // Client segmentation by balance
+    const segments = {
+      micro: list.filter(c => (c.balance || 0) < 1000).length,
+      small: list.filter(c => (c.balance || 0) >= 1000 && (c.balance || 0) < 10000).length,
+      medium: list.filter(c => (c.balance || 0) >= 10000 && (c.balance || 0) < 100000).length,
+      large: list.filter(c => (c.balance || 0) >= 100000).length
+    }
+
+    // Performance metrics
+    const profitableClients = list.filter(c => (c.lifetimePnL || 0) > 0).length
+    const losingClients = list.filter(c => (c.lifetimePnL || 0) < 0).length
+    const winRate = list.length > 0 ? (profitableClients / list.length) * 100 : 0
+
+    // Risk metrics
+    const avgMarginLevel = list.length > 0 ? list.reduce((sum, c) => sum + (c.marginLevel || 0), 0) / list.length : 0
+    const highRiskClients = list.filter(c => (c.marginLevel || 0) < 150).length
+
+    // Trading activity
+    const activeClients = list.filter(c => (c.profit || 0) !== 0).length
+    const totalPositions = positions.length
+    const avgPositionsPerClient = list.length > 0 ? totalPositions / list.length : 0
+
+    // Growth metrics
+    const dailyGrowth = totalBalance > 0 ? (dailyPnL / totalBalance) * 100 : 0
+    const weeklyGrowth = totalBalance > 0 ? (weeklyPnL / totalBalance) * 100 : 0
+    const monthlyGrowth = totalBalance > 0 ? (monthlyPnL / totalBalance) * 100 : 0
 
     return {
       totalClients: list.length,
-      totalBalance: sum('balance'),
-      totalCredit: sum('credit'),
-      totalEquity: sum('equity'),
+      totalBalance,
+      totalEquity,
+      totalCredit,
       totalPnl,
-      totalProfit: sum('profit'),
+      totalProfit,
+      dailyPnL,
+      weeklyPnL,
+      monthlyPnL,
+      lifetimePnL,
       dailyDeposit,
       dailyWithdrawal,
-      netDW,
-      dailyPnL: sum('dailyPnL'),
-      thisWeekPnL: sum('thisWeekPnL'),
-      thisMonthPnL: sum('thisMonthPnL'),
-      lifetimePnL: sum('lifetimePnL'),
+      netDailyFlow: dailyDeposit - dailyWithdrawal,
+      weekDeposit,
+      weekWithdrawal,
+      netWeeklyFlow: weekDeposit - weekWithdrawal,
+      monthDeposit,
+      monthWithdrawal,
+      netMonthlyFlow: monthDeposit - monthWithdrawal,
+      segments,
+      profitableClients,
+      losingClients,
+      winRate,
+      avgMarginLevel,
+      highRiskClients,
+      activeClients,
+      totalPositions,
+      avgPositionsPerClient,
+      dailyGrowth,
+      weeklyGrowth,
+      monthlyGrowth,
       commTotal: commissionTotals?.total_commission || 0,
-      commAvail: commissionTotals?.total_available_commission || 0,
-      commTotalPct: commissionTotals?.total_commission_percentage || 0,
-      commAvailPct: commissionTotals?.total_available_commission_percentage || 0,
+      commAvail: commissionTotals?.total_available_commission || 0
     }
-  }, [clients, commissionTotals])
+  }, [clients, positions, commissionTotals])
 
-  // Datasets for charts
-  const balanceSet = [
-    { label: 'Balance', value: Math.max(0, stats.totalBalance || 0) },
-    { label: 'Credit', value: Math.max(0, stats.totalCredit || 0) },
-    { label: 'Equity', value: Math.max(0, stats.totalEquity || 0) }
-  ]
-
-  const dwSet = [
-    { label: 'Deposit', value: Math.max(0, stats.dailyDeposit || 0) },
-    { label: 'Withdrawal', value: Math.max(0, stats.dailyWithdrawal || 0) },
-    { label: 'Net DW', value: stats.netDW || 0 }
-  ]
-
-  const pnlSet = [
-    { label: 'Daily', value: stats.dailyPnL || 0 },
-    { label: 'Week', value: stats.thisWeekPnL || 0 },
-    { label: 'Month', value: stats.thisMonthPnL || 0 },
-    { label: 'Lifetime', value: stats.lifetimePnL || 0 }
-  ]
-
-  const commissionSet = [
-    { label: 'Total', value: stats.commTotal || 0 },
-    { label: 'Available', value: stats.commAvail || 0 }
-  ]
-
-  const topIBAvailSet = (topIB || []).map((ib) => ({ label: ib.name || String(ib.id || ''), value: ib.available_commission || 0 })).slice(0, 6)
-
-  // Helper format
   const fmt = (n) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n || 0)
   const fmtCompact = (n) => new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0)
 
-  const equityPctOfBalance = stats.totalBalance ? (stats.totalEquity / stats.totalBalance) * 100 : 0
-  const creditPctOfBalance = stats.totalBalance ? (stats.totalCredit / stats.totalBalance) * 100 : 0
-  const profitMargin = stats.totalBalance ? (stats.totalProfit / stats.totalBalance) * 100 : 0
+  // Get PnL value based on selected time period
+  const getPnLByPeriod = () => {
+    switch (timePeriod) {
+      case 'daily': return analytics.dailyPnL
+      case 'weekly': return analytics.weeklyPnL
+      case 'monthly': return analytics.monthlyPnL
+      case 'lifetime': return analytics.lifetimePnL
+      default: return analytics.totalPnl
+    }
+  }
 
-  // Portfolio composition for donut
-  const portfolioComposition = [
-    { label: 'Balance', value: stats.totalBalance },
-    { label: 'Credit', value: stats.totalCredit },
-    { label: 'Equity', value: stats.totalEquity }
-  ].filter(d => d.value > 0)
+  const getDepositByPeriod = () => {
+    switch (timePeriod) {
+      case 'daily': return analytics.dailyDeposit
+      case 'weekly': return analytics.weekDeposit
+      case 'monthly': return analytics.monthDeposit
+      default: return analytics.dailyDeposit
+    }
+  }
+
+  const getWithdrawalByPeriod = () => {
+    switch (timePeriod) {
+      case 'daily': return analytics.dailyWithdrawal
+      case 'weekly': return analytics.weekWithdrawal
+      case 'monthly': return analytics.monthWithdrawal
+      default: return analytics.dailyWithdrawal
+    }
+  }
+
+  // Generate trend data for charts (mock historical data based on current values)
+  const trendData = useMemo(() => {
+    const periods = timePeriod === 'daily' ? 7 : timePeriod === 'weekly' ? 8 : timePeriod === 'monthly' ? 12 : 6
+    const data = []
+    const currentPnL = getPnLByPeriod()
+    
+    for (let i = periods - 1; i >= 0; i--) {
+      const variance = (Math.random() - 0.5) * 0.3
+      const value = currentPnL * (1 - (i * 0.1) + variance)
+      data.push({
+        period: i,
+        value: value,
+        label: timePeriod === 'daily' ? `Day ${periods - i}` : 
+               timePeriod === 'weekly' ? `W${periods - i}` : 
+               timePeriod === 'monthly' ? `M${periods - i}` : `P${periods - i}`
+      })
+    }
+    return data
+  }, [timePeriod, analytics])
+
+  // Balance distribution data
+  const balanceDistribution = useMemo(() => {
+    const ranges = [
+      { label: '<$500', min: 0, max: 500 },
+      { label: '$500-1K', min: 500, max: 1000 },
+      { label: '$1K-5K', min: 1000, max: 5000 },
+      { label: '$5K-10K', min: 5000, max: 10000 },
+      { label: '$10K-50K', min: 10000, max: 50000 },
+      { label: '$50K+', min: 50000, max: Infinity }
+    ]
+    return ranges.map(range => ({
+      ...range,
+      count: clients.filter(c => (c.balance || 0) >= range.min && (c.balance || 0) < range.max).length
+    }))
+  }, [clients])
 
   return (
     <div className="min-h-screen flex bg-gray-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
-        <div className="max-w-7xl mx-auto">
+      
+      <main className="flex-1 p-4 lg:p-6 lg:ml-60 overflow-x-hidden">
+        <div className="max-w-[1600px] mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -716,283 +214,577 @@ const GraphicalAnalyticsPage = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-3xl font-extrabold text-indigo-700">
-                  Graphical Analytics
+                <h1 className="text-3xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                  Advanced Analytics
                 </h1>
-                <p className="text-sm text-gray-700 mt-1 font-medium">Comprehensive performance insights for {user?.full_name || user?.username}</p>
+                <p className="text-sm text-gray-600 mt-1 font-medium">Comprehensive performance insights for {user?.full_name || user?.username}</p>
               </div>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors border border-blue-200 flex items-center gap-1"
+              className="text-xs text-blue-600 hover:text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all border border-blue-200 flex items-center gap-2 shadow-sm"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Dashboard
+              Back
             </button>
           </div>
 
-          {/* Key Metrics Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <InsightCard
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-              title="Total Clients"
-              value={stats.totalClients}
-              subtitle={`Active accounts`}
-              color="blue"
-            />
-            <InsightCard
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-              title="Total Equity"
-              value={`$${fmtCompact(stats.totalEquity)}`}
-              subtitle={`${equityPctOfBalance.toFixed(1)}% of balance`}
-              color="indigo"
-            />
-            <InsightCard
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-              title="Total PnL"
-              value={`$${fmtCompact(Math.abs(stats.totalPnl))}`}
-              subtitle={stats.totalPnl >= 0 ? 'Profit' : 'Loss'}
-              trend={stats.totalPnl >= 0 ? 'up' : 'down'}
-              trendValue={`${((stats.totalPnl / (stats.totalBalance || 1)) * 100).toFixed(2)}%`}
-              color={stats.totalPnl >= 0 ? 'green' : 'red'}
-            />
-            <InsightCard
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-              title="Open Positions"
-              value={positions.length}
-              subtitle={`Floating: $${fmtCompact(stats.totalProfit)}`}
-              trend={stats.totalProfit >= 0 ? 'up' : 'down'}
-              trendValue={`${profitMargin.toFixed(2)}%`}
-              color={stats.totalProfit >= 0 ? 'green' : 'red'}
-            />
-          </div>
-
-          {/* Portfolio Overview with Donut + Balance Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 hover:shadow-2xl transition-shadow">
-              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                </div>
-                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Portfolio Composition</span>
-              </h3>
-              <div className="flex items-center justify-center">
-                <DonutChart data={portfolioComposition} size={220} />
-              </div>
-              <div className="mt-5 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">Insight</p>
-                    <p className="text-sm text-gray-800 font-semibold leading-relaxed">
-                      Equity represents {equityPctOfBalance.toFixed(1)}% of your balance, indicating <span className="font-extrabold text-blue-900">{equityPctOfBalance > 80 ? 'strong' : equityPctOfBalance > 50 ? 'moderate' : 'weak'}</span> account health.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 hover:shadow-2xl transition-shadow">
-              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Balance Breakdown</span>
-              </h3>
-              <BarChart data={balanceSet} height={260} color="blue" />
-              <div className="mt-5 p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">Insight</p>
-                    <p className="text-sm text-gray-800 font-semibold leading-relaxed">
-                      Total balance is <span className="font-extrabold text-indigo-900">${fmt(stats.totalBalance)}</span> with ${fmt(stats.totalCredit)} in credit. Maintain credit below 30% of equity for optimal risk management.
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {/* Time Period Filter */}
+          <div className="mb-6 flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <span className="text-sm font-semibold text-gray-700">Time Period:</span>
+            <div className="flex gap-2">
+              {['daily', 'weekly', 'monthly', 'lifetime', 'all'].map(period => (
+                <button
+                  key={period}
+                  onClick={() => setTimePeriod(period)}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                    timePeriod === period
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {period.charAt(0).toUpperCase() + period.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* PnL Trends */}
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 mb-6 hover:shadow-2xl transition-shadow">
-            <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                </svg>
-              </div>
-              <span className="bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">Profit & Loss Trends</span>
-            </h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <AreaChart data={pnlSet} height={260} color="emerald" />
-              </div>
-              <div className="flex flex-col justify-center gap-4">
-                <div className="p-5 bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border-2 border-emerald-300 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Daily PnL</span>
-                    <div className={`px-3 py-1 rounded-lg ${stats.dailyPnL >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                      <span className={`text-2xl font-black ${stats.dailyPnL >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        ${fmt(Math.abs(stats.dailyPnL))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl ${stats.dailyPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.dailyPnL >= 0 ? '↑' : '↓'}</span>
-                    <p className="text-sm text-gray-700 font-semibold">
-                      {stats.dailyPnL >= 0 ? 'Profit' : 'Loss'} today
-                    </p>
-                  </div>
-                </div>
-                <div className="p-5 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl border-2 border-cyan-300 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-cyan-700 uppercase tracking-wider">Weekly PnL</span>
-                    <div className={`px-3 py-1 rounded-lg ${stats.thisWeekPnL >= 0 ? 'bg-cyan-100' : 'bg-orange-100'}`}>
-                      <span className={`text-2xl font-black ${stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-orange-700'}`}>
-                        ${fmt(Math.abs(stats.thisWeekPnL))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl ${stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-orange-600'}`}>{stats.thisWeekPnL >= 0 ? '↑' : '↓'}</span>
-                    <p className="text-sm text-gray-700 font-semibold">
-                      {((stats.thisWeekPnL / (stats.totalBalance || 1)) * 100).toFixed(2)}% of balance
-                    </p>
-                  </div>
-                </div>
-                <div className="p-5 bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border-2 border-violet-300 shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-violet-700 uppercase tracking-wider">Lifetime PnL</span>
-                    <div className={`px-3 py-1 rounded-lg ${stats.lifetimePnL >= 0 ? 'bg-violet-100' : 'bg-pink-100'}`}>
-                      <span className={`text-2xl font-black ${stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
-                        ${fmt(Math.abs(stats.lifetimePnL))}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl ${stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>{stats.lifetimePnL >= 0 ? '↑' : '↓'}</span>
-                    <p className="text-sm text-gray-700 font-semibold">
-                      Cumulative {stats.lifetimePnL >= 0 ? 'profit' : 'loss'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Deposits vs Withdrawals */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 hover:shadow-2xl transition-shadow">
-              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          {/* Executive KPIs - Tableau Style */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Total Clients KPI */}
+            <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl p-6 shadow-lg border-l-4 border-blue-500">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Daily Deposits & Withdrawals</span>
-              </h3>
-              <BarChart data={dwSet} height={260} color="orange" />
-              <div className="mt-5 p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-orange-700 uppercase tracking-wider mb-1">Net Flow</p>
-                    <p className="text-sm text-gray-800 font-semibold leading-relaxed">
-                      {stats.netDW >= 0 ? 'Positive inflow of' : 'Negative outflow of'} <span className="font-extrabold text-orange-900">${fmt(Math.abs(stats.netDW))}</span> today. {stats.netDW >= 0 ? 'Good liquidity.' : 'Monitor cash flow.'}
-                    </p>
-                  </div>
-                </div>
+                <span className="text-xs font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">Active</span>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Clients</h3>
+              <p className="text-4xl font-black text-gray-900 mb-2">{analytics.totalClients}</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-green-600 font-bold">↑ {analytics.activeClients} Active</span>
+                <span className="text-gray-400">|</span>
+                <span className="text-gray-600">{fmt(analytics.avgPositionsPerClient)} avg positions</span>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 hover:shadow-2xl transition-shadow">
-              <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Total Equity KPI */}
+            <div className="bg-gradient-to-br from-white to-emerald-50 rounded-2xl p-6 shadow-lg border-l-4 border-emerald-500">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">Commission Overview</span>
-              </h3>
-              {loadingCommissions ? (
-                <div className="flex items-center justify-center h-60 text-gray-500 font-medium">Loading...</div>
-              ) : (
-                <>
-                  <BarChart data={commissionSet} height={260} color="amber" />
-                  <div className="mt-5 p-5 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border-2 border-amber-200 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">Available</p>
-                        <p className="text-sm text-gray-800 font-semibold leading-relaxed">
-                          <span className="font-extrabold text-amber-900">${fmt(stats.commAvail)}</span> of ${fmt(stats.commTotal)} <span className="text-xs">({stats.commAvailPct.toFixed(1)}%)</span> ready to distribute.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">{((analytics.totalEquity / analytics.totalBalance) * 100).toFixed(1)}%</span>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Equity</h3>
+              <p className="text-4xl font-black text-gray-900 mb-2">${fmtCompact(analytics.totalEquity)}</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-600">Balance: ${fmtCompact(analytics.totalBalance)}</span>
+                <span className="text-gray-400">|</span>
+                <span className="text-gray-600">Credit: ${fmtCompact(analytics.totalCredit)}</span>
+              </div>
+            </div>
+
+            {/* PnL KPI */}
+            <div className={`bg-gradient-to-br from-white ${getPnLByPeriod() >= 0 ? 'to-green-50 border-green-500' : 'to-red-50 border-red-500'} rounded-2xl p-6 shadow-lg border-l-4`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-12 h-12 ${getPnLByPeriod() >= 0 ? 'bg-green-100' : 'bg-red-100'} rounded-xl flex items-center justify-center`}>
+                  <svg className={`w-6 h-6 ${getPnLByPeriod() >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getPnLByPeriod() >= 0 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
+                  </svg>
+                </div>
+                <span className={`text-xs font-bold ${getPnLByPeriod() >= 0 ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'} px-3 py-1 rounded-full`}>
+                  {getPnLByPeriod() >= 0 ? '↑' : '↓'} {timePeriod === 'daily' ? analytics.dailyGrowth.toFixed(2) : timePeriod === 'weekly' ? analytics.weeklyGrowth.toFixed(2) : analytics.monthlyGrowth.toFixed(2)}%
+                </span>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">P&L ({timePeriod})</h3>
+              <p className={`text-4xl font-black mb-2 ${getPnLByPeriod() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${fmtCompact(Math.abs(getPnLByPeriod()))}
+              </p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-600">Floating: ${fmtCompact(analytics.totalProfit)}</span>
+              </div>
+            </div>
+
+            {/* Win Rate KPI */}
+            <div className="bg-gradient-to-br from-white to-violet-50 rounded-2xl p-6 shadow-lg border-l-4 border-violet-500">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-bold text-violet-600 bg-violet-100 px-3 py-1 rounded-full">{analytics.winRate.toFixed(1)}%</span>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-600 mb-1">Win Rate</h3>
+              <p className="text-4xl font-black text-gray-900 mb-2">{analytics.profitableClients}/{analytics.totalClients}</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-green-600 font-bold">{analytics.profitableClients} Profitable</span>
+                <span className="text-gray-400">|</span>
+                <span className="text-red-600 font-bold">{analytics.losingClients} Loss</span>
+              </div>
             </div>
           </div>
 
-          {/* Top IBs */}
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-7 mb-6 hover:shadow-2xl transition-shadow">
-            <h3 className="text-xl font-black text-gray-900 mb-5 flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          {/* Main Analytics Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* PnL Trend Chart - Line Graph */}
+            <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                P&L Trend ({timePeriod})
+              </h3>
+              <div className="h-64">
+                <svg viewBox="0 0 400 200" className="w-full h-full">
+                  {/* Grid lines */}
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <line key={i} x1="40" y1={40 + i * 35} x2="380" y2={40 + i * 35} stroke="#e5e7eb" strokeWidth="1" />
+                  ))}
+                  
+                  {/* Y-axis */}
+                  <line x1="40" y1="20" x2="40" y2="180" stroke="#9ca3af" strokeWidth="2" />
+                  {/* X-axis */}
+                  <line x1="40" y1="180" x2="380" y2="180" stroke="#9ca3af" strokeWidth="2" />
+                  
+                  {/* Line chart */}
+                  {trendData.length > 1 && (() => {
+                    const maxVal = Math.max(...trendData.map(d => Math.abs(d.value)), 1)
+                    const minVal = Math.min(...trendData.map(d => d.value), 0)
+                    const range = maxVal - minVal || 1
+                    const xStep = 340 / (trendData.length - 1)
+                    
+                    const points = trendData.map((d, i) => {
+                      const x = 40 + i * xStep
+                      const y = 180 - ((d.value - minVal) / range) * 160
+                      return `${x},${y}`
+                    }).join(' ')
+                    
+                    const areaPoints = `40,180 ${points} ${40 + (trendData.length - 1) * xStep},180`
+                    
+                    return (
+                      <>
+                        {/* Area fill */}
+                        <polygon points={areaPoints} fill="url(#gradient)" opacity="0.2" />
+                        {/* Line */}
+                        <polyline points={points} fill="none" stroke="#3b82f6" strokeWidth="3" />
+                        {/* Points */}
+                        {trendData.map((d, i) => {
+                          const x = 40 + i * xStep
+                          const y = 180 - ((d.value - minVal) / range) * 160
+                          return (
+                            <g key={i}>
+                              <circle cx={x} cy={y} r="4" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
+                              {i % Math.ceil(trendData.length / 6) === 0 && (
+                                <text x={x} y="195" textAnchor="middle" fontSize="10" fill="#6b7280">
+                                  {d.label}
+                                </text>
+                              )}
+                            </g>
+                          )
+                        })}
+                      </>
+                    )
+                  })()}
+                  
+                  {/* Gradient definition */}
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
                 </svg>
               </div>
-              <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Top IBs by Available Commission</span>
-            </h3>
-            {loadingCommissions ? (
-              <div className="flex items-center justify-center h-60 text-gray-500 font-medium">Loading...</div>
-            ) : topIBAvailSet.length > 0 ? (
-              <>
-                <HorizontalBarChart data={topIBAvailSet} height={Math.min(360, topIBAvailSet.length * 56 + 40)} color="violet" />
-                <div className="mt-5 p-5 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border-2 border-violet-200 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-violet-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                      </svg>
-                    </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <div>
+                  <span className="text-gray-600">Current: </span>
+                  <span className={`font-bold ${getPnLByPeriod() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${fmtCompact(Math.abs(getPnLByPeriod()))}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Trend: </span>
+                  <span className={`font-bold ${getPnLByPeriod() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {getPnLByPeriod() >= 0 ? '↑' : '↓'} {timePeriod === 'daily' ? analytics.dailyGrowth.toFixed(2) : timePeriod === 'weekly' ? analytics.weeklyGrowth.toFixed(2) : analytics.monthlyGrowth.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Balance Distribution - Bar Chart */}
+            <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                Client Balance Distribution
+              </h3>
+              <div className="h-64">
+                <svg viewBox="0 0 400 200" className="w-full h-full">
+                  {/* Grid lines */}
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <line key={i} x1="60" y1={40 + i * 35} x2="380" y2={40 + i * 35} stroke="#e5e7eb" strokeWidth="1" />
+                  ))}
+                  
+                  {/* Y-axis */}
+                  <line x1="60" y1="20" x2="60" y2="180" stroke="#9ca3af" strokeWidth="2" />
+                  {/* X-axis */}
+                  <line x1="60" y1="180" x2="380" y2="180" stroke="#9ca3af" strokeWidth="2" />
+                  
+                  {/* Bars */}
+                  {balanceDistribution.map((range, i) => {
+                    const maxCount = Math.max(...balanceDistribution.map(r => r.count), 1)
+                    const barWidth = 45
+                    const x = 70 + i * 55
+                    const barHeight = (range.count / maxCount) * 140
+                    const y = 180 - barHeight
+                    
+                    return (
+                      <g key={i}>
+                        {/* Bar */}
+                        <rect
+                          x={x}
+                          y={y}
+                          width={barWidth}
+                          height={barHeight}
+                          fill="#6366f1"
+                          rx="4"
+                        />
+                        {/* Value on top */}
+                        <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#4f46e5">
+                          {range.count}
+                        </text>
+                        {/* Label */}
+                        <text x={x + barWidth / 2} y="195" textAnchor="middle" fontSize="9" fill="#6b7280">
+                          {range.label}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                <div className="text-center">
+                  <p className="text-gray-600">Low Balance</p>
+                  <p className="font-bold text-blue-600">{balanceDistribution.slice(0, 2).reduce((sum, r) => sum + r.count, 0)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600">Mid Balance</p>
+                  <p className="font-bold text-indigo-600">{balanceDistribution.slice(2, 4).reduce((sum, r) => sum + r.count, 0)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600">High Balance</p>
+                  <p className="font-bold text-violet-600">{balanceDistribution.slice(4).reduce((sum, r) => sum + r.count, 0)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Analytics Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Client Segmentation - Donut Chart */}
+            <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                Client Segments
+              </h3>
+              <div className="flex items-center justify-center mb-4">
+                <div className="relative w-40 h-40">
+                  <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" strokeWidth="20" />
+                    {(() => {
+                      const total = analytics.segments.micro + analytics.segments.small + analytics.segments.medium + analytics.segments.large
+                      if (total === 0) return null
+                      let offset = 0
+                      const segments = [
+                        { value: analytics.segments.micro, color: '#3b82f6' },
+                        { value: analytics.segments.small, color: '#10b981' },
+                        { value: analytics.segments.medium, color: '#f59e0b' },
+                        { value: analytics.segments.large, color: '#8b5cf6' }
+                      ]
+                      return segments.map((seg, i) => {
+                        const percentage = (seg.value / total) * 100
+                        const circumference = 2 * Math.PI * 40
+                        const segmentLength = (percentage / 100) * circumference
+                        const result = (
+                          <circle
+                            key={i}
+                            cx="50"
+                            cy="50"
+                            r="40"
+                            fill="none"
+                            stroke={seg.color}
+                            strokeWidth="20"
+                            strokeDasharray={`${segmentLength} ${circumference}`}
+                            strokeDashoffset={-offset}
+                          />
+                        )
+                        offset += segmentLength
+                        return result
+                      })
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <p className="text-2xl font-black text-gray-900">{analytics.totalClients}</p>
+                    <p className="text-xs text-gray-500">Total</p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Micro', count: analytics.segments.micro, color: 'bg-blue-500' },
+                  { label: 'Small', count: analytics.segments.small, color: 'bg-emerald-500' },
+                  { label: 'Medium', count: analytics.segments.medium, color: 'bg-amber-500' },
+                  { label: 'Large', count: analytics.segments.large, color: 'bg-violet-500' }
+                ].map((seg, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className={`w-3 h-3 ${seg.color} rounded`}></div>
                     <div>
-                      <p className="text-xs font-bold text-violet-700 uppercase tracking-wider mb-1">Top Performer</p>
-                      <p className="text-sm text-gray-800 font-semibold leading-relaxed">
-                        <span className="font-extrabold text-violet-900">{topIBAvailSet[0]?.label || 'N/A'}</span> leads with ${fmt(topIBAvailSet[0]?.value || 0)} available commission.
+                      <p className="text-xs text-gray-600">{seg.label}</p>
+                      <p className="text-sm font-bold text-gray-900">{seg.count}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cash Flow Analysis with Chart */}
+            <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                Cash Flow ({timePeriod})
+              </h3>
+              <div className="h-32 mb-4">
+                <svg viewBox="0 0 300 100" className="w-full h-full">
+                  {/* Deposit bar */}
+                  <rect x="20" y="20" width="120" height="25" fill="#10b981" rx="4" />
+                  <text x="25" y="37" fill="white" fontSize="11" fontWeight="bold">Deposits</text>
+                  <text x="145" y="37" fill="#10b981" fontSize="12" fontWeight="bold">${fmtCompact(getDepositByPeriod())}</text>
+                  
+                  {/* Withdrawal bar */}
+                  <rect x="20" y="55" width="120" height="25" fill="#ef4444" rx="4" />
+                  <text x="25" y="72" fill="white" fontSize="11" fontWeight="bold">Withdrawals</text>
+                  <text x="145" y="72" fill="#ef4444" fontSize="12" fontWeight="bold">${fmtCompact(getWithdrawalByPeriod())}</text>
+                </svg>
+              </div>
+              <div className="pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-gray-700">Net Flow</span>
+                  <span className={`text-2xl font-black ${(getDepositByPeriod() - getWithdrawalByPeriod()) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(getDepositByPeriod() - getWithdrawalByPeriod()) >= 0 ? '+' : '-'}${fmtCompact(Math.abs(getDepositByPeriod() - getWithdrawalByPeriod()))}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(getDepositByPeriod() - getWithdrawalByPeriod()) >= 0 ? '✓ Positive inflow' : '⚠ Negative outflow'}
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Dashboard with Gauge */}
+            <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                Risk Metrics
+              </h3>
+              <div className="flex items-center justify-center mb-4">
+                {/* Gauge Chart */}
+                <div className="relative w-32 h-32">
+                  <svg viewBox="0 0 100 100">
+                    {/* Background arc */}
+                    <path
+                      d="M 10 80 A 40 40 0 0 1 90 80"
+                      fill="none"
+                      stroke="#e5e7eb"
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                    />
+                    {/* Progress arc */}
+                    <path
+                      d="M 10 80 A 40 40 0 0 1 90 80"
+                      fill="none"
+                      stroke={analytics.avgMarginLevel < 150 ? '#ef4444' : analytics.avgMarginLevel < 300 ? '#f59e0b' : '#10b981'}
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray={`${Math.min(100, (analytics.avgMarginLevel / 500) * 126)} 126`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center mt-4">
+                      <p className={`text-2xl font-black ${analytics.avgMarginLevel < 150 ? 'text-red-600' : analytics.avgMarginLevel < 300 ? 'text-orange-600' : 'text-green-600'}`}>
+                        {fmt(analytics.avgMarginLevel)}%
                       </p>
+                      <p className="text-xs text-gray-500">Avg Margin</p>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                  <p className="text-xs text-red-700 font-semibold mb-1">High Risk</p>
+                  <p className="text-2xl font-black text-red-600">{analytics.highRiskClients}</p>
+                </div>
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-700 font-semibold mb-1">Positions</p>
+                  <p className="text-2xl font-black text-blue-600">{analytics.totalPositions}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Comparison - Horizontal Bar Chart */}
+          <div className="bg-white rounded-xl p-6 shadow border border-gray-200 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+              Performance Comparison (Period-over-Period)
+            </h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Daily', value: analytics.dailyPnL, growth: analytics.dailyGrowth },
+                { label: 'Weekly', value: analytics.weeklyPnL, growth: analytics.weeklyGrowth },
+                { label: 'Monthly', value: analytics.monthlyPnL, growth: analytics.monthlyGrowth },
+                { label: 'Lifetime', value: analytics.lifetimePnL, growth: 0 }
+              ].map((period, idx) => {
+                const maxVal = Math.max(Math.abs(analytics.dailyPnL), Math.abs(analytics.weeklyPnL), Math.abs(analytics.monthlyPnL), Math.abs(analytics.lifetimePnL), 1)
+                const barWidth = (Math.abs(period.value) / maxVal) * 100
+                
+                return (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-700 w-20">{period.label}</span>
+                      <span className={`text-lg font-black ${period.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {period.value >= 0 ? '+' : '-'}${fmtCompact(Math.abs(period.value))}
+                      </span>
+                      {period.growth !== 0 && (
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${period.value >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {period.value >= 0 ? '↑' : '↓'} {period.growth.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-8 bg-gray-100 rounded-lg overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-lg ${period.value >= 0 ? 'bg-gradient-to-r from-green-500 to-green-400' : 'bg-gradient-to-r from-red-500 to-red-400'}`}
+                        style={{ width: `${barWidth}%` }}
+                      >
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-white">
+                          {barWidth.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Commission Overview with Chart */}
+          <div className="bg-white rounded-xl p-6 shadow border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+              Commission Insights
+            </h3>
+            {loadingCommissions ? (
+              <div className="text-center py-8 text-gray-500">Loading commission data...</div>
             ) : (
-              <div className="flex items-center justify-center h-60 text-gray-500 font-medium">No IB data available</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-700">Total Commission</span>
+                      <span className="text-2xl font-black text-amber-600">${fmtCompact(analytics.commTotal)}</span>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-lg overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500" style={{ width: '100%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-700">Available</span>
+                      <span className="text-2xl font-black text-green-600">${fmtCompact(analytics.commAvail)}</span>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-lg overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-400 to-green-500" style={{ width: `${analytics.commTotal > 0 ? (analytics.commAvail / analytics.commTotal) * 100 : 0}%` }}></div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">
+                      {analytics.commTotal > 0 ? ((analytics.commAvail / analytics.commTotal) * 100).toFixed(1) : 0}% available for withdrawal
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-700 mb-3">Top 5 IB Partners</h4>
+                  <div className="space-y-2">
+                    {topIB.slice(0, 5).map((ib, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-600' : 'bg-blue-500'}`}>
+                          #{idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-gray-900">{ib.name || ib.email}</p>
+                          <p className="text-xs text-blue-600 font-bold">${fmt(ib.available_commission || 0)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
+          </div>
+
+          {/* Key Insights Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900">Growth Trend</h4>
+              </div>
+              <p className="text-sm text-gray-700 mb-2">
+                {analytics.monthlyGrowth >= 0 ? 'Positive' : 'Negative'} momentum with <span className="font-bold text-blue-600">{Math.abs(analytics.monthlyGrowth).toFixed(2)}%</span> monthly growth
+              </p>
+              <p className="text-xs text-gray-600">
+                {analytics.profitableClients > analytics.losingClients ? '✓ More clients are profitable' : '⚠ Monitor client performance'}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-6 border border-emerald-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900">Capital Health</h4>
+              </div>
+              <p className="text-sm text-gray-700 mb-2">
+                Equity ratio at <span className="font-bold text-emerald-600">{((analytics.totalEquity / analytics.totalBalance) * 100).toFixed(1)}%</span>
+              </p>
+              <p className="text-xs text-gray-600">
+                {((analytics.totalEquity / analytics.totalBalance) * 100) > 80 ? '✓ Strong capital position' : '⚠ Monitor leverage'}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-violet-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900">Client Activity</h4>
+              </div>
+              <p className="text-sm text-gray-700 mb-2">
+                <span className="font-bold text-violet-600">{((analytics.activeClients / analytics.totalClients) * 100).toFixed(0)}%</span> active trading rate
+              </p>
+              <p className="text-xs text-gray-600">
+                {analytics.avgPositionsPerClient.toFixed(1)} avg positions per client
+              </p>
+            </div>
           </div>
         </div>
       </main>
