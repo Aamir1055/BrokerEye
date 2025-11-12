@@ -204,6 +204,29 @@ export const brokerAPI = {
     return response.data
   },
   
+  // Get aggregated deal stats for a client (POST as provided by backend)
+  getClientDealStats: async (login, from = 0, to = null) => {
+    try {
+      const payload = {}
+      if (from != null) payload.from = from
+      if (to != null) payload.to = to
+      const response = await api.post(`/api/broker/clients/${login}/deals/stats`, payload)
+      return response.data
+    } catch (err) {
+      // Fallback to GET if some installations expose it as GET
+      try {
+        const qs = []
+        if (from != null) qs.push(`from=${from}`)
+        if (to != null) qs.push(`to=${to}`)
+        const q = qs.length ? `?${qs.join('&')}` : ''
+        const response = await api.get(`/api/broker/clients/${login}/deals/stats${q}`)
+        return response.data
+      } catch (e) {
+        throw err
+      }
+    }
+  },
+  
   // Get all positions
   getPositions: async () => {
     const response = await api.get('/api/broker/positions')

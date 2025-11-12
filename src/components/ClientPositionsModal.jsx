@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
 import { formatTime } from '../utils/dateFormatter'
 
@@ -22,6 +23,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   
   // Client data state (for updated balance/credit/equity)
   const [clientData, setClientData] = useState(client)
+  // Pull live clients list so the modal reflects current Balance/Equity/Credit/PnL
+  const { clients: liveClients } = useData()
   
   // Funds management state
   const [operationType, setOperationType] = useState('deposit')
@@ -93,6 +96,50 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [dealsColumnWidths, setDealsColumnWidths] = useState({})
   const [resizingDealsColumn, setResizingDealsColumn] = useState(null)
 
+  // Deal stats (aggregated) for face cards
+  const [dealStats, setDealStats] = useState(null)
+  const [dealStatsLoading, setDealStatsLoading] = useState(false)
+  const [dealStatsError, setDealStatsError] = useState('')
+  const [showDealStatsFilter, setShowDealStatsFilter] = useState(false)
+  const dealStatsFilterRef = useRef(null)
+  // Default visibility for aggregated deal stats face cards
+  const defaultDealStatVisibility = {
+    totalDeals: true,
+    totalVolume: true,
+    totalPnL: true,
+    totalCommission: true,
+    totalStorage: true,
+    winRate: true
+  }
+  const [dealStatVisibility, setDealStatVisibility] = useState(() => {
+    try {
+      const saved = localStorage.getItem('positions_dealStats_visibility')
+      return saved ? { ...defaultDealStatVisibility, ...JSON.parse(saved) } : defaultDealStatVisibility
+    } catch {
+      return defaultDealStatVisibility
+    }
+  })
+
+  // Visibility for fixed position & money cards
+  const defaultFixedCardVisibility = {
+    pf_totalPositions: true,
+    pf_totalVolume: false,
+    pf_totalPL: true,
+    pf_lifetimePnL: true,
+    pf_bookPnL: true,
+    pf_balance: true,
+    pf_credit: true,
+    pf_equity: true
+  }
+  const [fixedCardVisibility, setFixedCardVisibility] = useState(() => {
+    try {
+      const saved = localStorage.getItem('positions_fixedCard_visibility')
+      return saved ? { ...defaultFixedCardVisibility, ...JSON.parse(saved) } : defaultFixedCardVisibility
+    } catch {
+      return defaultFixedCardVisibility
+    }
+  })
+
   // Build dynamic page-size options for Deals based on total rows
   const getDealsPageSizeOptions = (total) => {
     const base = [50, 100, 200]
@@ -133,6 +180,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }, [])
 
+  // Keep clientData in sync with the latest data from context (live WS updates)
+  useEffect(() => {
+    if (!liveClients || !client?.login) return
+    const updated = liveClients.find(c => c && c.login === client.login)
+    if (updated) setClientData(updated)
+  }, [liveClients, client?.login])
+
   // Toggle column visibility
   const togglePositionsColumn = (columnKey) => {
     setPositionsVisibleColumns(prev => {
@@ -166,13 +220,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       if (positionsColumnSelectorRef.current && !positionsColumnSelectorRef.current.contains(event.target)) {
         setShowPositionsColumnSelector(false)
       }
+      if (dealStatsFilterRef.current && !dealStatsFilterRef.current.contains(event.target)) {
+        setShowDealStatsFilter(false)
+      }
     }
     
-    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions || showPositionsColumnSelector) {
+    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions || showPositionsColumnSelector || showDealStatsFilter) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions, showPositionsColumnSelector])
+  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions, showPositionsColumnSelector, showDealStatsFilter])
+
+  // Persist visibilities
+  useEffect(() => {
+    try { localStorage.setItem('positions_fixedCard_visibility', JSON.stringify(fixedCardVisibility)) } catch {}
+  }, [fixedCardVisibility])
 
   // Update positions when allPositionsCache changes (WebSocket updates)
   useEffect(() => {
@@ -184,6 +246,106 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       calculateNetPositions(clientPositions)
     }
   }, [allPositionsCache, client.login])
+
+  // Fetch aggregated deal stats for the client
+  useEffect(() => {
+    let cancelled = false
+    const loadStats = async () => {
+      try {
+        setDealStatsLoading(true)
+        setDealStatsError('')
+        const res = await brokerAPI.getClientDealStats(client.login)
+        const data = res?.data || res
+        if (!cancelled) setDealStats(data || null)
+      } catch (err) {
+        if (!cancelled) {
+          setDealStats(null)
+          setDealStatsError('Failed to load deal stats')
+        }
+      } finally {
+        if (!cancelled) setDealStatsLoading(false)
+      }
+    }
+    if (client?.login) loadStats()
+    return () => { cancelled = true }
+  }, [client?.login])
+
+  // Persist deal stat visibility
+  useEffect(() => {
+    try { localStorage.setItem('positions_dealStats_visibility', JSON.stringify(dealStatVisibility)) } catch {}
+  }, [dealStatVisibility])
+
+  const toggleDealStatKey = (key) => {
+    setDealStatVisibility(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const toTitle = (key) => String(key)
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, s => s.toUpperCase())
+
+  const formatStatValue = (key, value) => {
+    const n = Number(value || 0)
+    if (['totalPnL','totalCommission','totalStorage'].includes(key)) return formatCurrency(n)
+    if (key === 'winRate') return `${n.toFixed(2)}%`
+    if (key.toLowerCase().includes('volume')) return n.toFixed(2)
+    if (Number.isInteger(value)) return `${n}`
+    return n.toFixed(2)
+  }
+  
+  // Styling for deal stats cards based on metric and value
+  const getDealStatStyle = (key, value) => {
+    const n = Number(value || 0)
+    switch (key) {
+      case 'totalPnL': {
+        const pos = n >= 0
+        return {
+          container: pos ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
+          label: pos ? 'text-emerald-600' : 'text-red-600',
+          value: getProfitColor(n)
+        }
+      }
+      case 'totalCommission':
+        return {
+          container: 'bg-amber-50 border-amber-200',
+          label: 'text-amber-600',
+          value: 'text-amber-900'
+        }
+      case 'totalStorage': {
+        const pos = n >= 0
+        return {
+          container: pos ? 'bg-teal-50 border-teal-200' : 'bg-orange-50 border-orange-200',
+          label: pos ? 'text-teal-600' : 'text-orange-600',
+          value: pos ? 'text-teal-900' : 'text-orange-900'
+        }
+      }
+      case 'winRate': {
+        const good = n >= 50
+        return {
+          container: good ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200',
+          label: good ? 'text-emerald-600' : 'text-orange-600',
+          value: good ? 'text-emerald-900' : 'text-orange-900'
+        }
+      }
+      case 'totalDeals':
+        return {
+          container: 'bg-blue-50 border-blue-200',
+          label: 'text-blue-600',
+          value: 'text-blue-900'
+        }
+      case 'totalVolume':
+        return {
+          container: 'bg-indigo-50 border-indigo-200',
+          label: 'text-indigo-600',
+          value: 'text-indigo-900'
+        }
+      default:
+        return {
+          container: 'bg-slate-50 border-slate-200',
+          label: 'text-slate-600',
+          value: 'text-slate-900'
+        }
+    }
+  }
   
   // Calculate NET positions by grouping by symbol
   const calculateNetPositions = (clientPositions) => {
@@ -1043,7 +1205,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         <div className="flex-shrink-0 flex items-center justify-between p-5 border-b-2 border-slate-200 bg-blue-600">
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
-              {client.name} - {client.login}
+              {(client?.name && String(client.name).trim().length > 0)
+                ? `${client.name} - ${client.login}`
+                : client.login}
             </h2>
             <div className="flex items-center gap-4 mt-2">
               <p className="text-xs text-blue-100">{client.email || 'No email'}</p>
@@ -1099,8 +1263,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
           </div>
 
-          {/* Pagination Controls for Positions Tab */}
-          {activeTab === 'positions' && filteredPositions.length > 0 && (
+          {/* Controls for Positions Tab */}
+          {activeTab === 'positions' && (
             <div className="flex items-center justify-between gap-1.5 py-2">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-600">Show:</span>
@@ -1155,7 +1319,57 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   )}
                 </div>
 
-                {positionsItemsPerPage !== 'All' && (
+                {/* Card Filter Button */}
+                <div className="relative" ref={dealStatsFilterRef}>
+                  <button
+                    onClick={() => setShowDealStatsFilter(v => !v)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 8h12M9 12h6M11 16h2"/></svg>
+                    Card Filter
+                  </button>
+                  {showDealStatsFilter && (
+                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 w-64 max-h-80 overflow-y-auto">
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Position Metrics</p>
+                      {[
+                        ['pf_totalPositions','Total Positions'],
+                        ['pf_totalVolume','Total Volume'],
+                        ['pf_totalPL','Total P/L'],
+                        ['pf_lifetimePnL','Lifetime PnL'],
+                        ['pf_bookPnL','Book PnL']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={fixedCardVisibility[key]} onChange={() => setFixedCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                      <div className="h-px bg-gray-200 my-2" />
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Money Metrics</p>
+                      {[
+                        ['pf_balance','Balance'],
+                        ['pf_credit','Credit'],
+                        ['pf_equity','Equity']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={fixedCardVisibility[key]} onChange={() => setFixedCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                      <div className="h-px bg-gray-200 my-2" />
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Deals Summary</p>
+                      {(dealStats ? Object.keys({ ...dealStats }) : Object.keys(defaultDealStatVisibility))
+                        .sort()
+                        .map(key => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={dealStatVisibility[key] ?? false} onChange={() => toggleDealStatKey(key)} />
+                          <span className="text-[12px] text-gray-700">{toTitle(key)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {filteredPositions.length > 0 && positionsItemsPerPage !== 'All' && (
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPositionsCurrentPage(prev => Math.max(1, prev - 1))}
@@ -2288,65 +2502,98 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Summary Cards - Fixed at Bottom */}
-        <div className="flex-shrink-0 p-2 bg-slate-50 border-t-2 border-blue-200">
-          {activeTab === 'positions' && filteredPositions.length > 0 && (
-            <div className="space-y-1.5">
-              {/* First Row - Position Metrics */}
-              <div className="grid grid-cols-4 gap-1.5">
-                <div className="bg-blue-50 rounded border border-blue-200 p-1.5 hover:shadow-sm transition-shadow">
-                  <p className="text-[8px] font-semibold text-blue-600 uppercase mb-0.5">Total Positions</p>
-                  <p className="text-sm font-bold text-blue-900">{filteredPositions.length}</p>
-                </div>
-                <div className="bg-indigo-50 rounded border border-indigo-200 p-1.5 hover:shadow-sm transition-shadow">
-                  <p className="text-[8px] font-semibold text-indigo-600 uppercase mb-0.5">Total Volume</p>
-                  <p className="text-sm font-bold text-indigo-900">
-                    {filteredPositions.reduce((sum, p) => sum + p.volume, 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className={`rounded border p-1.5 hover:shadow-sm transition-shadow ${
-                  filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                    ? 'bg-emerald-50 border-emerald-200'
-                    : 'bg-red-50 border-red-200'
-                }`}>
-                  <p className={`text-[8px] font-semibold uppercase mb-0.5 ${
-                    filteredPositions.reduce((sum, p) => sum + p.profit, 0) >= 0
-                      ? 'text-emerald-600'
-                      : 'text-red-600'
-                  }`}>Total P/L</p>
-                  <p className={`text-sm font-bold ${getProfitColor(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}`}>
-                    {formatCurrency(filteredPositions.reduce((sum, p) => sum + p.profit, 0))}
-                  </p>
-                </div>
-                <div className={`rounded border p-1.5 hover:shadow-sm transition-shadow ${
-                  (clientData.lifetimePnL || 0) >= 0
-                    ? 'bg-teal-50 border-teal-200'
-                    : 'bg-orange-50 border-orange-200'
-                }`}>
-                  <p className={`text-[8px] font-semibold uppercase mb-0.5 ${
-                    (clientData.lifetimePnL || 0) >= 0
-                      ? 'text-teal-600'
-                      : 'text-orange-600'
-                  }`}>Lifetime PnL</p>
-                  <p className={`text-sm font-bold ${getProfitColor(clientData.lifetimePnL || 0)}`}>
-                    {formatCurrency(clientData.lifetimePnL || 0)}
-                  </p>
-                </div>
-              </div>
+  <div className="flex-shrink-0 p-1.5 bg-slate-50 border-t-2 border-blue-200">
+          {/* Show face cards even if there are no open positions (missing values default to 0) */}
+          {activeTab === 'positions' && (
+            <div className="space-y-1">
+              {/* Compact inline summary of Position face-card values (inline format, colored tokens) */}
+              {(() => {
+                const tokenBase = 'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] sm:text-[11px] leading-tight';
+                const items = []
+                const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
+                const lifetime = Number(clientData?.lifetimePnL ?? clientData?.pnl ?? 0)
+                const floating = Number(clientData?.floating ?? totalPL)
+                const bookPnL = lifetime + floating
 
-              {/* Second Row - Money Transaction Metrics */}
-              <div className="grid grid-cols-3 gap-1.5">
-                <div className="bg-cyan-50 rounded border border-cyan-200 p-1.5 hover:shadow-sm transition-shadow">
-                  <p className="text-[8px] font-semibold text-cyan-600 uppercase mb-0.5">Balance</p>
-                  <p className="text-sm font-bold text-cyan-900">{formatCurrency(clientData.balance)}</p>
+                const plToken = (val) => ({
+                  container: `${tokenBase} ${val >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`,
+                  labelClass: `${val >= 0 ? 'text-emerald-700' : 'text-red-700'}`,
+                  valueClass: getProfitColor(val)
+                })
+                const pnLToken = (val, posClass, negClass) => ({
+                  container: `${tokenBase} ${val >= 0 ? posClass : negClass}`,
+                  labelClass: `${val >= 0 ? 'text-teal-700' : 'text-orange-700'}`,
+                  valueClass: getProfitColor(val)
+                })
+
+                if (fixedCardVisibility.pf_totalPositions) {
+                  items.push({ label: 'Positions', value: String(positions.length), container: `${tokenBase} bg-blue-50 border-blue-200`, labelClass: 'text-blue-700' })
+                }
+                if (fixedCardVisibility.pf_totalVolume) {
+                  const vol = positions.reduce((sum, p) => sum + (p.volume || 0), 0)
+                  items.push({ label: 'Total Volume', value: vol.toFixed(2), container: `${tokenBase} bg-indigo-50 border-indigo-200`, labelClass: 'text-indigo-700' })
+                }
+                if (fixedCardVisibility.pf_totalPL) {
+                  const s = plToken(totalPL)
+                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                }
+                if (fixedCardVisibility.pf_lifetimePnL) {
+                  const s = pnLToken(lifetime, 'bg-teal-50 border-teal-200', 'bg-orange-50 border-orange-200')
+                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                }
+                if (fixedCardVisibility.pf_bookPnL) {
+                  const s = plToken(bookPnL)
+                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), container: s.container, labelClass: s.labelClass, valueClass: s.valueClass })
+                }
+                if (fixedCardVisibility.pf_balance) {
+                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), container: `${tokenBase} bg-cyan-50 border-cyan-200`, labelClass: 'text-cyan-700' })
+                }
+                if (fixedCardVisibility.pf_credit) {
+                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), container: `${tokenBase} bg-violet-50 border-violet-200`, labelClass: 'text-violet-700' })
+                }
+                if (fixedCardVisibility.pf_equity) {
+                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), container: `${tokenBase} bg-green-50 border-green-200`, labelClass: 'text-green-700' })
+                }
+
+                if (!items.length) return null
+
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {items.map((it, idx) => (
+                      <span key={`${it.label}-${idx}`} className={it.container}>
+                        <span className={`font-semibold ${it.labelClass}`}>{it.label}:</span>
+                        <span className={`font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</span>
+                      </span>
+                    ))}
+                  </div>
+                )
+              })()}
+
+              {/* Deals Summary inline tokens (colored) */}
+              <div className="mt-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(() => {
+                    const keys = dealStats ? Object.keys(dealStats) : []
+                    const visibleKeys = keys.filter(k => dealStatVisibility[k])
+                    const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
+                    const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate']
+                    const toRender = [
+                      ...preferredOrder.filter(k => baseKeys.includes(k)),
+                      ...baseKeys.filter(k => !preferredOrder.includes(k))
+                    ]
+                    const tokenBase = 'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] sm:text-[11px] leading-tight';
+                    return toRender.map((key, idx) => {
+                      const styles = getDealStatStyle(key, dealStats?.[key])
+                      return (
+                        <span key={key} className={`${tokenBase} ${styles.container}`}>
+                          <span className={`font-semibold ${styles.label}`}>{toTitle(key)}:</span>
+                          <span className={`font-bold ${styles.value}`}>{formatStatValue(key, dealStats?.[key])}</span>
+                        </span>
+                      )
+                    })
+                  })()}
                 </div>
-                <div className="bg-green-50 rounded border border-green-200 p-1.5 hover:shadow-sm transition-shadow">
-                  <p className="text-[8px] font-semibold text-green-600 uppercase mb-0.5">Equity</p>
-                  <p className="text-sm font-bold text-green-900">{formatCurrency(clientData.equity)}</p>
-                </div>
-                <div className="bg-violet-50 rounded border border-violet-200 p-1.5 hover:shadow-sm transition-shadow">
-                  <p className="text-[8px] font-semibold text-violet-600 uppercase mb-0.5">Credit</p>
-                  <p className="text-sm font-bold text-violet-900">{formatCurrency(clientData.credit)}</p>
-                </div>
+                {dealStatsError && <p className="text-[11px] text-red-600 mt-1">{dealStatsError}</p>}
               </div>
             </div>
           )}

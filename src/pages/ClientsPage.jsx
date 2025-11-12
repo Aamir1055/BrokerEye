@@ -1802,8 +1802,8 @@ const ClientsPage = () => {
       48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber((stats.weekPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
       49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber((stats.monthPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
   50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' },
-  // Book PnL (Lifetime PnL - Floating Profit)
-  53: { id: 53, title: 'Book PnL', value: (stats.lifetimePnL || 0) - (stats.totalProfit || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalProfit || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalProfit || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+  // Book PnL (Lifetime PnL + Floating Profit)
+  53: { id: 53, title: 'Book PnL', value: (stats.lifetimePnL || 0) + (stats.totalProfit || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) + (stats.totalProfit || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700' },
   // Daily Deposit & Withdrawal % of total D/W
   54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyDepositSharePercent || 0).toFixed(2)}`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
   55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyWithdrawalSharePercent || 0).toFixed(2)}`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
@@ -1826,7 +1826,14 @@ const ClientsPage = () => {
   // This ensures face cards always show global sums over the filtered dataset, and still show
   // metrics even if their columns are hidden in the table.
   const faceCardTotals = useMemo(() => {
-    const list = filteredClients || []
+    // Determine if any filters are active (positions/credit/no-deposit, search, column filters, group, or IB)
+    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
+    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
+    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
+
+    // Use full clients list when no filters are active for snappier updates; otherwise use filtered list
+    // Also recompute on WebSocket ticks to keep face cards in sync with rapidly changing values
+    const list = (hasFilters ? (filteredClients || []) : (clients || []))
     const sum = (key) => list.reduce((acc, c) => {
       const v = c?.[key]
       return acc + (typeof v === 'number' ? v : 0)
@@ -1875,7 +1882,11 @@ const ClientsPage = () => {
       totalBalance: sum('balance'),
       totalCredit: sum('credit'),
       totalEquity: sum('equity'),
-      totalPnl: sum('pnl'), // Use PnL directly from backend
+      // PnL fallback: if backend pnl is missing for some clients, compute as credit - equity
+      totalPnl: list.reduce((acc, c) => {
+        const pnl = (typeof c?.pnl === 'number') ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
+        return acc + pnl
+      }, 0),
       totalProfit: sum('profit'),
       dailyDeposit: depositTotal,
       dailyWithdrawal: withdrawalTotal,
@@ -1932,7 +1943,24 @@ const ClientsPage = () => {
     }
 
     return totals
-  }, [filteredClients, commissionTotals])
+  }, [
+    // Core lists
+    filteredClients,
+    clients,
+    // Commission API-derived totals
+    commissionTotals,
+    // Recompute on live ticks to ensure snappy fluctuations
+    lastWsReceiveAt,
+    // Filter toggles and inputs that change which clients are included
+    filterByPositions,
+    filterByCredit,
+    filterNoDeposit,
+    searchQuery,
+    columnFilters,
+    activeGroupFilters,
+    selectedIB,
+    ibMT5Accounts
+  ])
 
   // Removed totals helpers (no longer needed)
 
