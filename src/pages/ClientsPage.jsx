@@ -99,6 +99,19 @@ const ClientsPage = () => {
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef(null)
   
+  // Face card color theme state
+  const [faceCardTheme, setFaceCardTheme] = useState(() => {
+    const saved = localStorage.getItem('clientsFaceCardTheme')
+    return saved || 'default' // default, subtle, vibrant
+  })
+  const [showThemeMenu, setShowThemeMenu] = useState(false)
+  const themeMenuRef = useRef(null)
+  
+  // Save theme to localStorage
+  useEffect(() => {
+    localStorage.setItem('clientsFaceCardTheme', faceCardTheme)
+  }, [faceCardTheme])
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(50)
@@ -707,6 +720,9 @@ const ClientsPage = () => {
       }
       if (cardFilterMenuRef.current && !cardFilterMenuRef.current.contains(event.target)) {
         setShowCardFilterMenu(false)
+      }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target)) {
+        setShowThemeMenu(false)
       }
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
         setShowExportMenu(false)
@@ -1632,6 +1648,85 @@ const ClientsPage = () => {
     return decimalPart ? `${result}.${decimalPart}` : result
   }
 
+  // Get face card configuration by ID
+  // Apply theme colors based on selected theme
+  const getThemedColors = (defaultBorder, defaultText, defaultValue) => {
+    if (faceCardTheme === 'subtle') {
+      // Subtle theme - 3-color system: Teal (increase), Rose (decrease), Slate (neutral)
+      // Softer, muted colors for a calm, professional look
+      const subtleMap = {
+        // Teal cards (deposits, profits, credits, positive metrics)
+        'border-emerald-200': 'border-teal-400', 'text-emerald-600': 'text-teal-400', 'text-emerald-700': 'text-teal-400',
+        'border-green-200': 'border-teal-400', 'text-green-600': 'text-teal-400', 'text-green-700': 'text-teal-400',
+        'border-teal-200': 'border-teal-400', 'text-teal-600': 'text-teal-400', 'text-teal-700': 'text-teal-400',
+        'border-lime-200': 'border-teal-400', 'text-lime-600': 'text-teal-400', 'text-lime-700': 'text-teal-400',
+        
+        // Rose cards (withdrawals, losses, negative metrics)
+        'border-red-200': 'border-rose-400', 'text-red-600': 'text-rose-400', 'text-red-700': 'text-rose-400',
+        'border-rose-200': 'border-rose-400', 'text-rose-600': 'text-rose-400', 'text-rose-700': 'text-rose-400',
+        'border-pink-200': 'border-rose-400', 'text-pink-600': 'text-rose-400', 'text-pink-700': 'text-rose-400',
+        'border-orange-200': 'border-rose-400', 'text-orange-600': 'text-rose-400', 'text-orange-700': 'text-rose-400',
+        'border-amber-200': 'border-rose-400', 'text-amber-600': 'text-rose-400', 'text-amber-700': 'text-rose-400',
+        
+        // Slate cards (totals, counts, neutral metrics)
+        'border-blue-200': 'border-blue-300', 'text-blue-600': 'text-blue-700', 'text-blue-700': 'text-blue-800',
+        'border-indigo-200': 'border-indigo-300', 'text-indigo-600': 'text-indigo-700', 'text-indigo-700': 'text-indigo-800',
+        'border-sky-200': 'border-sky-300', 'text-sky-600': 'text-sky-700', 'text-sky-700': 'text-sky-800',
+        'border-cyan-200': 'border-cyan-300', 'text-cyan-600': 'text-cyan-700', 'text-cyan-700': 'text-cyan-800',
+        'border-violet-200': 'border-violet-300', 'text-violet-600': 'text-violet-700', 'text-violet-700': 'text-violet-800',
+        'border-purple-200': 'border-purple-300', 'text-purple-600': 'text-purple-700', 'text-purple-700': 'text-purple-800',
+        'border-fuchsia-200': 'border-fuchsia-300', 'text-fuchsia-600': 'text-fuchsia-700', 'text-fuchsia-700': 'text-fuchsia-800',
+      }
+      
+      return {
+        borderColor: subtleMap[defaultBorder] || defaultBorder,
+        textColor: subtleMap[defaultText] || defaultText,
+        valueColor: subtleMap[defaultValue] || defaultValue
+      }
+    } else if (faceCardTheme === 'vibrant') {
+      // Vibrant theme - 3-color system: Green (increase), Red (decrease), Blue (neutral)
+      // Green for: deposits, profits, credits, rebates (positive metrics)
+      // Red for: withdrawals, losses, negative values
+      // Blue for: totals, counts, neutral metrics
+      
+      const vibrantMap = {
+        // Green cards (deposits, profits, credits, positive metrics)
+        'border-emerald-200': 'border-green-600', 'text-emerald-600': 'text-green-600', 'text-emerald-700': 'text-green-600',
+        'border-green-200': 'border-green-600', 'text-green-600': 'text-green-600', 'text-green-700': 'text-green-600',
+        'border-teal-200': 'border-green-600', 'text-teal-600': 'text-green-600', 'text-teal-700': 'text-green-600',
+        'border-lime-200': 'border-green-600', 'text-lime-600': 'text-green-600', 'text-lime-700': 'text-green-600',
+        
+        // Red cards (withdrawals, losses, negative metrics)
+        'border-red-200': 'border-red-600', 'text-red-600': 'text-red-600', 'text-red-700': 'text-red-600',
+        'border-rose-200': 'border-red-600', 'text-rose-600': 'text-red-600', 'text-rose-700': 'text-red-600',
+        'border-pink-200': 'border-red-600', 'text-pink-600': 'text-red-600', 'text-pink-700': 'text-red-600',
+        'border-orange-200': 'border-red-600', 'text-orange-600': 'text-red-600', 'text-orange-700': 'text-red-600',
+        'border-amber-200': 'border-red-600', 'text-amber-600': 'text-red-600', 'text-amber-700': 'text-red-600',
+        
+        // Blue cards (totals, counts, neutral metrics)
+        'border-blue-200': 'border-blue-400', 'text-blue-600': 'text-blue-700', 'text-blue-700': 'text-blue-800',
+        'border-indigo-200': 'border-indigo-400', 'text-indigo-600': 'text-indigo-700', 'text-indigo-700': 'text-indigo-800',
+        'border-sky-200': 'border-sky-400', 'text-sky-600': 'text-sky-700', 'text-sky-700': 'text-sky-800',
+        'border-cyan-200': 'border-cyan-400', 'text-cyan-600': 'text-cyan-700', 'text-cyan-700': 'text-cyan-800',
+        'border-violet-200': 'border-violet-400', 'text-violet-600': 'text-violet-700', 'text-violet-700': 'text-violet-800',
+        'border-purple-200': 'border-purple-400', 'text-purple-600': 'text-purple-700', 'text-purple-700': 'text-purple-800',
+        'border-fuchsia-200': 'border-fuchsia-400', 'text-fuchsia-600': 'text-fuchsia-700', 'text-fuchsia-700': 'text-fuchsia-800',
+      }
+      
+      return {
+        borderColor: vibrantMap[defaultBorder] || defaultBorder,
+        textColor: vibrantMap[defaultText] || defaultText,
+        valueColor: vibrantMap[defaultValue] || defaultValue
+      }
+    }
+    // Default theme - return original colors
+    return {
+      borderColor: defaultBorder,
+      textColor: defaultText,
+      valueColor: defaultValue
+    }
+  }
+  
   // Get face card configuration by ID (for draggable cards)
   const getFaceCardConfig = (cardId, stats) => {
     // Calculate Net DW (Deposit - Withdrawal)
@@ -2147,6 +2242,72 @@ const ClientsPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Card Theme Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowThemeMenu(!showThemeMenu)}
+                  className="text-purple-700 hover:text-purple-800 px-3 py-2 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  Card Theme
+                </button>
+                {showThemeMenu && (
+                  <div
+                    ref={themeMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-purple-50 rounded-lg shadow-xl border-2 border-purple-200 py-2 z-50 w-48"
+                  >
+                    <div className="px-3 py-2 border-b border-purple-200">
+                      <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Color Theme</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFaceCardTheme('default')
+                        setShowThemeMenu(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
+                        faceCardTheme === 'default' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-200 bg-white"></div>
+                        Default
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFaceCardTheme('subtle')
+                        setShowThemeMenu(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
+                        faceCardTheme === 'subtle' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full border-2 border-slate-300 bg-gray-50"></div>
+                        Subtle
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFaceCardTheme('vibrant')
+                        setShowThemeMenu(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
+                        faceCardTheme === 'vibrant' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-50"></div>
+                        Vibrant
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Groups Button */}
               <GroupSelector 
                 moduleName="clients" 
@@ -2271,6 +2432,9 @@ const ClientsPage = () => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
                   if (!card || !cardVisibility[cardId]) return null
                   
+                  // Apply themed colors
+                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  
                   // Simple cards (no icons)
                   if (card.simple) {
                     return (
@@ -2281,10 +2445,10 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
                       >
-                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${card.valueColor || 'text-gray-900'}`}>
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
                           {card.formattedValue != null ? card.formattedValue : card.value}
                         </p>
                       </div>
@@ -2339,10 +2503,10 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
                       >
-                        <p className={`text-[10px] font-semibold ${card.textColor} uppercase mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${card.valueColor}`}>
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
                           {card.isPositive ? '▲ ' : '▼ '}
                           {card.isPositive ? '' : '-'}
                           {card.formattedValue}
