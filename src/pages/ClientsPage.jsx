@@ -40,126 +40,7 @@ const ClientsPage = () => {
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
-  // Compute face card totals without memoization to avoid stale or drifting aggregates.
-  const faceCardTotals = (() => {
-    // Determine if any filters are active (positions/credit/no-deposit, search, column filters, group, or IB)
-    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
-    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
-    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
-
-    // Use full clients list when no filters are active; otherwise use filtered list
-    const list = (hasFilters ? (filteredClients || []) : (clients || []))
-
-    // Robust numeric sum helper
-    const sum = (key) => list.reduce((acc, c) => {
-      const v = c?.[key]
-      const n = typeof v === 'number' ? v : Number(String(v ?? '').toString().replace(/,/g, '').trim())
-      return acc + (Number.isFinite(n) ? n : 0)
-    }, 0)
-
-    // Bonus calculations
-    const dailyBonusIn = sum('dailyBonusIn')
-    const dailyBonusOut = sum('dailyBonusOut')
-    const weekBonusIn = sum('thisWeekBonusIn')
-    const weekBonusOut = sum('thisWeekBonusOut')
-    const monthBonusIn = sum('thisMonthBonusIn')
-    const monthBonusOut = sum('thisMonthBonusOut')
-    const lifetimeBonusIn = sum('lifetimeBonusIn')
-    const lifetimeBonusOut = sum('lifetimeBonusOut')
-
-    // Deposit/Withdrawal calculations
-    const weekDeposit = sum('thisWeekDeposit')
-    const weekWithdrawal = sum('thisWeekWithdrawal')
-    const monthDeposit = sum('thisMonthDeposit')
-    const monthWithdrawal = sum('thisMonthWithdrawal')
-    const lifetimeDeposit = sum('lifetimeDeposit')
-    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
-
-    // Credit IN/OUT calculations
-    const weekCreditIn = sum('thisWeekCreditIn')
-    const monthCreditIn = sum('thisMonthCreditIn')
-    const lifetimeCreditIn = sum('lifetimeCreditIn')
-    const weekCreditOut = sum('thisWeekCreditOut')
-    const monthCreditOut = sum('thisMonthCreditOut')
-    const lifetimeCreditOut = sum('lifetimeCreditOut')
-
-    // Previous Equity calculations
-    const weekPreviousEquity = sum('thisWeekPreviousEquity')
-    const monthPreviousEquity = sum('thisMonthPreviousEquity')
-    const previousEquity = sum('previousEquity')
-
-    // Derived totals
-    const depositTotal = sum('dailyDeposit')
-    const withdrawalTotal = sum('dailyWithdrawal')
-    const dwTotalAbs = Math.abs(Number(depositTotal) || 0) + Math.abs(Number(withdrawalTotal) || 0)
-    const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
-    const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
-
-    const totalPnl = list.reduce((acc, c) => {
-      const pnlField = Number(c?.pnl)
-      if (Number.isFinite(pnlField)) return acc + pnlField
-      const credit = Number(c?.credit)
-      const equity = Number(c?.equity)
-      const fallback = (Number.isFinite(credit) ? credit : 0) - (Number.isFinite(equity) ? equity : 0)
-      return acc + fallback
-    }, 0)
-
-    return {
-      totalClients: list.length,
-      totalBalance: sum('balance'),
-      totalCredit: sum('credit'),
-      totalEquity: sum('equity'),
-      totalPnl,
-      totalProfit: sum('profit'),
-      dailyDeposit: depositTotal,
-      dailyWithdrawal: withdrawalTotal,
-      dailyDepositSharePercent,
-      dailyWithdrawalSharePercent,
-      dailyDepositPercent: list.reduce((acc, c) => acc + (c?.dailyDeposit_percentage || 0), 0),
-      dailyWithdrawalPercent: list.reduce((acc, c) => acc + (c?.dailyWithdrawal_percentage || 0), 0),
-      dailyPnL: sum('dailyPnL'),
-      thisWeekPnL: sum('thisWeekPnL'),
-      thisMonthPnL: sum('thisMonthPnL'),
-      lifetimePnL: sum('lifetimePnL'),
-      // Commission metrics sourced from API on login and hourly refresh
-      totalCommission: commissionTotals?.total_commission || 0,
-      availableCommission: commissionTotals?.total_available_commission || 0,
-      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
-      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
-      blockedCommission: sum('blockedCommission'),
-      dailyBonusIn,
-      dailyBonusOut,
-      netDailyBonus: dailyBonusIn - dailyBonusOut,
-      weekBonusIn,
-      weekBonusOut,
-      netWeekBonus: weekBonusIn - weekBonusOut,
-      monthBonusIn,
-      monthBonusOut,
-      netMonthBonus: monthBonusIn - monthBonusOut,
-      lifetimeBonusIn,
-      lifetimeBonusOut,
-      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
-      weekDeposit,
-      weekWithdrawal,
-      netWeekDW: weekDeposit - weekWithdrawal,
-      monthDeposit,
-      monthWithdrawal,
-      netMonthDW: monthDeposit - monthWithdrawal,
-      lifetimeDeposit,
-      lifetimeWithdrawal,
-      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
-      weekCreditIn,
-      monthCreditIn,
-      lifetimeCreditIn,
-      weekCreditOut,
-      monthCreditOut,
-      lifetimeCreditOut,
-      netCredit: lifetimeCreditIn - lifetimeCreditOut,
-      weekPreviousEquity,
-      monthPreviousEquity,
-      previousEquity
-    }
-  })()
+  // faceCardTotals will be computed later in the file (after state and derived values are defined)
   const [customTextFilterColumn, setCustomTextFilterColumn] = useState(null)
   const [customTextFilterType, setCustomTextFilterType] = useState('contains')
   const [customTextFilterValue, setCustomTextFilterValue] = useState('')
@@ -1843,6 +1724,129 @@ const ClientsPage = () => {
   // This ensures face cards always show global sums over the filtered dataset, and still show
   // metrics even if their columns are hidden in the table.
   // (removed memoized faceCardTotals)
+  // Compute face card totals without memoization to avoid stale or drifting aggregates.
+  const faceCardTotals = (() => {
+    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
+    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
+    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
+
+    // Use full clients list when no filters are active; otherwise use filtered list
+    const list = (hasFilters ? (filteredClients || []) : (clients || []))
+
+    // Robust numeric sum helper
+    const sum = (key) => list.reduce((acc, c) => {
+      const v = c?.[key]
+      const n = typeof v === 'number' ? v : Number(String(v ?? '').toString().replace(/,/g, '').trim())
+      return acc + (Number.isFinite(n) ? n : 0)
+    }, 0)
+
+    // Bonus calculations
+    const dailyBonusIn = sum('dailyBonusIn')
+    const dailyBonusOut = sum('dailyBonusOut')
+    const weekBonusIn = sum('thisWeekBonusIn')
+    const weekBonusOut = sum('thisWeekBonusOut')
+    const monthBonusIn = sum('thisMonthBonusIn')
+    const monthBonusOut = sum('thisMonthBonusOut')
+    const lifetimeBonusIn = sum('lifetimeBonusIn')
+    const lifetimeBonusOut = sum('lifetimeBonusOut')
+
+    // Deposit/Withdrawal calculations
+    const weekDeposit = sum('thisWeekDeposit')
+    const weekWithdrawal = sum('thisWeekWithdrawal')
+    const monthDeposit = sum('thisMonthDeposit')
+    const monthWithdrawal = sum('thisMonthWithdrawal')
+    const lifetimeDeposit = sum('lifetimeDeposit')
+    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
+
+    // Credit IN/OUT calculations
+    const weekCreditIn = sum('thisWeekCreditIn')
+    const monthCreditIn = sum('thisMonthCreditIn')
+    const lifetimeCreditIn = sum('lifetimeCreditIn')
+    const weekCreditOut = sum('thisWeekCreditOut')
+    const monthCreditOut = sum('thisMonthCreditOut')
+    const lifetimeCreditOut = sum('lifetimeCreditOut')
+
+    // Previous Equity calculations
+    const weekPreviousEquity = sum('thisWeekPreviousEquity')
+    const monthPreviousEquity = sum('thisMonthPreviousEquity')
+    const previousEquity = sum('previousEquity')
+
+    // Derived totals
+    const depositTotal = sum('dailyDeposit')
+    const withdrawalTotal = sum('dailyWithdrawal')
+    const dwTotalAbs = Math.abs(Number(depositTotal) || 0) + Math.abs(Number(withdrawalTotal) || 0)
+    const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
+    const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
+
+    const totalPnl = list.reduce((acc, c) => {
+      const pnlField = Number(c?.pnl)
+      if (Number.isFinite(pnlField)) return acc + pnlField
+      const credit = Number(c?.credit)
+      const equity = Number(c?.equity)
+      const fallback = (Number.isFinite(credit) ? credit : 0) - (Number.isFinite(equity) ? equity : 0)
+      return acc + fallback
+    }, 0)
+
+    return {
+      totalClients: list.length,
+      totalBalance: sum('balance'),
+      totalCredit: sum('credit'),
+      totalEquity: sum('equity'),
+      totalPnl,
+      totalProfit: sum('profit'),
+      dailyDeposit: depositTotal,
+      dailyWithdrawal: withdrawalTotal,
+      dailyDepositSharePercent,
+      dailyWithdrawalSharePercent,
+      dailyDepositPercent: list.reduce((acc, c) => acc + (c?.dailyDeposit_percentage || 0), 0),
+      dailyWithdrawalPercent: list.reduce((acc, c) => acc + (c?.dailyWithdrawal_percentage || 0), 0),
+      dailyPnL: sum('dailyPnL'),
+      thisWeekPnL: sum('thisWeekPnL'),
+      thisMonthPnL: sum('thisMonthPnL'),
+      lifetimePnL: sum('lifetimePnL'),
+      // Commission metrics sourced from API on login and hourly refresh
+      totalCommission: commissionTotals?.total_commission || 0,
+      availableCommission: commissionTotals?.total_available_commission || 0,
+      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
+      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+      blockedCommission: sum('blockedCommission'),
+      // Bonus metrics
+      dailyBonusIn,
+      dailyBonusOut,
+      netDailyBonus: dailyBonusIn - dailyBonusOut,
+      weekBonusIn,
+      weekBonusOut,
+      netWeekBonus: weekBonusIn - weekBonusOut,
+      monthBonusIn,
+      monthBonusOut,
+      netMonthBonus: monthBonusIn - monthBonusOut,
+      lifetimeBonusIn,
+      lifetimeBonusOut,
+      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
+      // Deposit/Withdrawal metrics
+      weekDeposit,
+      weekWithdrawal,
+      netWeekDW: weekDeposit - weekWithdrawal,
+      monthDeposit,
+      monthWithdrawal,
+      netMonthDW: monthDeposit - monthWithdrawal,
+      lifetimeDeposit,
+      lifetimeWithdrawal,
+      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
+      // Credit IN/OUT metrics
+      weekCreditIn,
+      monthCreditIn,
+      lifetimeCreditIn,
+      weekCreditOut,
+      monthCreditOut,
+      lifetimeCreditOut,
+      netCredit: lifetimeCreditIn - lifetimeCreditOut,
+      // Previous Equity metrics
+      weekPreviousEquity,
+      monthPreviousEquity,
+      previousEquity
+    }
+  })()
 
   // Removed totals helpers (no longer needed)
 
