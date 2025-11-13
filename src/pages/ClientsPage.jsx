@@ -255,6 +255,15 @@ const ClientsPage = () => {
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   const [selectedClient, setSelectedClient] = useState(null)
   const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
+  const [draggedFaceCard, setDraggedFaceCard] = useState(null)
+  
+  // Default card visibility map for resetting
+  const defaultCardVisibility = (() => {
+    const map = {}
+    defaultFaceCardOrder.forEach(id => { map[id] = true })
+    return map
+  })()
 
   const allColumns = [
     { key: 'login', label: 'Login' },
