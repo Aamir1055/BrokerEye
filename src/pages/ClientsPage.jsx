@@ -40,129 +40,126 @@ const ClientsPage = () => {
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
-  const [selectedClient, setSelectedClient] = useState(null)
-  const [showGroupModal, setShowGroupModal] = useState(false)
-  const [editingGroup, setEditingGroup] = useState(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  // Removed verification states
-  const [systemTime, setSystemTime] = useState(Date.now())
-  const [appTime, setAppTime] = useState(null)
-  // Latency instrumentation state
-  const latencySamplesRef = useRef([])
-  const [latencyStats, setLatencyStats] = useState({ last: null, median: null, max: null })
-  const columnSelectorRef = useRef(null)
-  const filterMenuRef = useRef(null)
-  const displayMenuRef = useRef(null)
-  const hasInitialLoad = useRef(false)
-  
-  // Use cached data
-  const clients = cachedClients
-  const positions = cachedPositions
-  // Removed isLoading to prevent full-page loading spinner on refresh
-  
-  // Filter states
-  const [filterByPositions, setFilterByPositions] = useState(false)
-  const [filterByCredit, setFilterByCredit] = useState(false)
-  const [filterNoDeposit, setFilterNoDeposit] = useState(false)
-  // Display mode for values vs percentages
-  // 'value' | 'percentage' | 'both'
-  const [displayMode, setDisplayMode] = useState('value')
-  // Show face cards toggle - default is true (on)
-  const [showFaceCards, setShowFaceCards] = useState(true)
-  
-  // Face card drag and drop - extended with all new cards (15-53)
-  const defaultFaceCardOrder = [1, 2, 3, 4, 5, 6, 8, 9, 54, 55, 14, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53]
-  const [faceCardOrder, setFaceCardOrder] = useState(() => {
-    const saved = localStorage.getItem('clientsFaceCardOrder')
-    return saved ? JSON.parse(saved) : defaultFaceCardOrder
-  })
-  const [draggedFaceCard, setDraggedFaceCard] = useState(null)
-  
-  // Card visibility filter - Default all cards visible
-  const defaultCardVisibility = {
-    1: true, 2: true, 3: true, 4: true, 5: false, 6: true,
-    8: true, 9: true, 10: true, 11: true, 12: true, 13: true, 14: true,
-    15: true, 16: true, 17: true, 18: true, // Commission metrics
-    19: true, // Blocked Commission
-    20: true, 21: true, 22: true, // Daily Bonus IN/OUT/NET
-    23: true, 24: true, 25: true, // Weekly Bonus IN/OUT/NET
-    26: true, 27: true, 28: true, // Monthly Bonus IN/OUT/NET
-    29: true, 30: true, 31: true, // Lifetime Bonus IN/OUT/NET
-    32: true, 33: true, 34: true, // Weekly Deposit/Withdrawal/NET DW
-    35: true, 36: true, 37: true, // Monthly Deposit/Withdrawal/NET DW
-    38: true, 39: true, 40: true, // Lifetime Deposit/Withdrawal/NET DW
-    41: true, 42: true, 43: true, 44: true, // Weekly/Monthly/Lifetime Credit IN
-    45: true, 46: true, 47: true, // Weekly/Monthly/Lifetime Credit OUT
-    48: true, // NET Credit
-    49: true, 50: true, 51: true, // Weekly/Monthly Previous Equity
-  52: true, 53: true, 54: true, 55: true // SO Compensation/Book PnL + Daily D&W %
-  }
-  const [cardVisibility, setCardVisibility] = useState(() => {
-    const saved = localStorage.getItem('clientsCardVisibility')
-    // Merge saved state with defaults to ensure new cards are included
-    return saved ? { ...defaultCardVisibility, ...JSON.parse(saved) } : defaultCardVisibility
-  })
-  const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
-  const cardFilterMenuRef = useRef(null)
-  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
-  const [showExportMenu, setShowExportMenu] = useState(false)
-  const exportMenuRef = useRef(null)
-  
-  // Face card color theme state
-  const [faceCardTheme, setFaceCardTheme] = useState(() => {
-    const saved = localStorage.getItem('clientsFaceCardTheme')
-    return saved || 'default' // default, subtle, vibrant
-  })
-  const [showThemeMenu, setShowThemeMenu] = useState(false)
-  const themeMenuRef = useRef(null)
-  
-  // Save theme to localStorage
-  useEffect(() => {
-    localStorage.setItem('clientsFaceCardTheme', faceCardTheme)
-  }, [faceCardTheme])
-  
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(50)
-  
-  // Sorting states
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  // Compute face card totals without memoization to avoid stale or drifting aggregates.
+  const faceCardTotals = (() => {
+    // Determine if any filters are active (positions/credit/no-deposit, search, column filters, group, or IB)
+    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
+    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
+    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
 
-  // Search states
-  const [searchInput, setSearchInput] = useState('') // Immediate input value
-  const [searchQuery, setSearchQuery] = useState('') // Debounced search value
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const searchRef = useRef(null)
+    // Use full clients list when no filters are active; otherwise use filtered list
+    const list = (hasFilters ? (filteredClients || []) : (clients || []))
 
-  // Debounce search input (300ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchInput)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput])
-  
-  // Column filter states
-  const [columnFilters, setColumnFilters] = useState({})
-  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
-  const [filterPosition, setFilterPosition] = useState(null)
-  const filterRefs = useRef({})
-  const filterPanelRef = useRef(null)
-  const [filterSearchQuery, setFilterSearchQuery] = useState({})
-  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
-  const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
-  
-  // Custom filter modal states
-  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
-  const [customFilterColumn, setCustomFilterColumn] = useState(null)
-  const [customFilterType, setCustomFilterType] = useState('equal')
-  const [customFilterValue1, setCustomFilterValue1] = useState('')
-  const [customFilterValue2, setCustomFilterValue2] = useState('')
-  const [customFilterOperator, setCustomFilterOperator] = useState('AND')
+    // Robust numeric sum helper
+    const sum = (key) => list.reduce((acc, c) => {
+      const v = c?.[key]
+      const n = typeof v === 'number' ? v : Number(String(v ?? '').toString().replace(/,/g, '').trim())
+      return acc + (Number.isFinite(n) ? n : 0)
+    }, 0)
 
-  // Text filter modal states
-  const [showCustomTextFilterModal, setShowCustomTextFilterModal] = useState(false)
+    // Bonus calculations
+    const dailyBonusIn = sum('dailyBonusIn')
+    const dailyBonusOut = sum('dailyBonusOut')
+    const weekBonusIn = sum('thisWeekBonusIn')
+    const weekBonusOut = sum('thisWeekBonusOut')
+    const monthBonusIn = sum('thisMonthBonusIn')
+    const monthBonusOut = sum('thisMonthBonusOut')
+    const lifetimeBonusIn = sum('lifetimeBonusIn')
+    const lifetimeBonusOut = sum('lifetimeBonusOut')
+
+    // Deposit/Withdrawal calculations
+    const weekDeposit = sum('thisWeekDeposit')
+    const weekWithdrawal = sum('thisWeekWithdrawal')
+    const monthDeposit = sum('thisMonthDeposit')
+    const monthWithdrawal = sum('thisMonthWithdrawal')
+    const lifetimeDeposit = sum('lifetimeDeposit')
+    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
+
+    // Credit IN/OUT calculations
+    const weekCreditIn = sum('thisWeekCreditIn')
+    const monthCreditIn = sum('thisMonthCreditIn')
+    const lifetimeCreditIn = sum('lifetimeCreditIn')
+    const weekCreditOut = sum('thisWeekCreditOut')
+    const monthCreditOut = sum('thisMonthCreditOut')
+    const lifetimeCreditOut = sum('lifetimeCreditOut')
+
+    // Previous Equity calculations
+    const weekPreviousEquity = sum('thisWeekPreviousEquity')
+    const monthPreviousEquity = sum('thisMonthPreviousEquity')
+    const previousEquity = sum('previousEquity')
+
+    // Derived totals
+    const depositTotal = sum('dailyDeposit')
+    const withdrawalTotal = sum('dailyWithdrawal')
+    const dwTotalAbs = Math.abs(Number(depositTotal) || 0) + Math.abs(Number(withdrawalTotal) || 0)
+    const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
+    const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
+
+    const totalPnl = list.reduce((acc, c) => {
+      const pnlField = Number(c?.pnl)
+      if (Number.isFinite(pnlField)) return acc + pnlField
+      const credit = Number(c?.credit)
+      const equity = Number(c?.equity)
+      const fallback = (Number.isFinite(credit) ? credit : 0) - (Number.isFinite(equity) ? equity : 0)
+      return acc + fallback
+    }, 0)
+
+    return {
+      totalClients: list.length,
+      totalBalance: sum('balance'),
+      totalCredit: sum('credit'),
+      totalEquity: sum('equity'),
+      totalPnl,
+      totalProfit: sum('profit'),
+      dailyDeposit: depositTotal,
+      dailyWithdrawal: withdrawalTotal,
+      dailyDepositSharePercent,
+      dailyWithdrawalSharePercent,
+      dailyDepositPercent: list.reduce((acc, c) => acc + (c?.dailyDeposit_percentage || 0), 0),
+      dailyWithdrawalPercent: list.reduce((acc, c) => acc + (c?.dailyWithdrawal_percentage || 0), 0),
+      dailyPnL: sum('dailyPnL'),
+      thisWeekPnL: sum('thisWeekPnL'),
+      thisMonthPnL: sum('thisMonthPnL'),
+      lifetimePnL: sum('lifetimePnL'),
+      // Commission metrics sourced from API on login and hourly refresh
+      totalCommission: commissionTotals?.total_commission || 0,
+      availableCommission: commissionTotals?.total_available_commission || 0,
+      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
+      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+      blockedCommission: sum('blockedCommission'),
+      dailyBonusIn,
+      dailyBonusOut,
+      netDailyBonus: dailyBonusIn - dailyBonusOut,
+      weekBonusIn,
+      weekBonusOut,
+      netWeekBonus: weekBonusIn - weekBonusOut,
+      monthBonusIn,
+      monthBonusOut,
+      netMonthBonus: monthBonusIn - monthBonusOut,
+      lifetimeBonusIn,
+      lifetimeBonusOut,
+      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
+      weekDeposit,
+      weekWithdrawal,
+      netWeekDW: weekDeposit - weekWithdrawal,
+      monthDeposit,
+      monthWithdrawal,
+      netMonthDW: monthDeposit - monthWithdrawal,
+      lifetimeDeposit,
+      lifetimeWithdrawal,
+      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
+      weekCreditIn,
+      monthCreditIn,
+      lifetimeCreditIn,
+      weekCreditOut,
+      monthCreditOut,
+      lifetimeCreditOut,
+      netCredit: lifetimeCreditIn - lifetimeCreditOut,
+      weekPreviousEquity,
+      monthPreviousEquity,
+      previousEquity
+    }
+  })()
   const [customTextFilterColumn, setCustomTextFilterColumn] = useState(null)
   const [customTextFilterType, setCustomTextFilterType] = useState('contains')
   const [customTextFilterValue, setCustomTextFilterValue] = useState('')
@@ -1845,146 +1842,7 @@ const ClientsPage = () => {
   // Face cards derive from ALL filtered data (ignores pagination and column visibility).
   // This ensures face cards always show global sums over the filtered dataset, and still show
   // metrics even if their columns are hidden in the table.
-  const faceCardTotals = useMemo(() => {
-    // Determine if any filters are active (positions/credit/no-deposit, search, column filters, group, or IB)
-    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
-    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
-    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
-
-    // Use full clients list when no filters are active for snappier updates; otherwise use filtered list
-    // Also recompute on WebSocket ticks to keep face cards in sync with rapidly changing values
-    const list = (hasFilters ? (filteredClients || []) : (clients || []))
-    const sum = (key) => list.reduce((acc, c) => {
-      const v = c?.[key]
-      const n = Number(v)
-      return acc + (Number.isFinite(n) ? n : 0)
-    }, 0)
-
-    // Bonus calculations
-    const dailyBonusIn = sum('dailyBonusIn')
-    const dailyBonusOut = sum('dailyBonusOut')
-    const weekBonusIn = sum('thisWeekBonusIn')
-    const weekBonusOut = sum('thisWeekBonusOut')
-    const monthBonusIn = sum('thisMonthBonusIn')
-    const monthBonusOut = sum('thisMonthBonusOut')
-    const lifetimeBonusIn = sum('lifetimeBonusIn')
-    const lifetimeBonusOut = sum('lifetimeBonusOut')
-
-    // Deposit/Withdrawal calculations
-    const weekDeposit = sum('thisWeekDeposit')
-    const weekWithdrawal = sum('thisWeekWithdrawal')
-    const monthDeposit = sum('thisMonthDeposit')
-    const monthWithdrawal = sum('thisMonthWithdrawal')
-    const lifetimeDeposit = sum('lifetimeDeposit')
-    const lifetimeWithdrawal = sum('lifetimeWithdrawal')
-
-    // Credit IN/OUT calculations
-    const weekCreditIn = sum('thisWeekCreditIn')
-    const monthCreditIn = sum('thisMonthCreditIn')
-    const lifetimeCreditIn = sum('lifetimeCreditIn')
-    const weekCreditOut = sum('thisWeekCreditOut')
-    const monthCreditOut = sum('thisMonthCreditOut')
-    const lifetimeCreditOut = sum('lifetimeCreditOut')
-
-    // Previous Equity calculations
-    const weekPreviousEquity = sum('thisWeekPreviousEquity')
-    const monthPreviousEquity = sum('thisMonthPreviousEquity')
-    const previousEquity = sum('previousEquity')
-
-    // Derived totals
-  const depositTotal = sum('dailyDeposit')
-  const withdrawalTotal = sum('dailyWithdrawal')
-  const dwTotalAbs = Math.abs(Number(depositTotal) || 0) + Math.abs(Number(withdrawalTotal) || 0)
-    const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
-    const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
-
-    const totals = {
-      totalClients: list.length,
-      totalBalance: sum('balance'),
-      totalCredit: sum('credit'),
-      totalEquity: sum('equity'),
-      // PnL fallback: if backend pnl is missing for some clients, compute as credit - equity
-      totalPnl: list.reduce((acc, c) => {
-        const credit = Number(c?.credit)
-        const equity = Number(c?.equity)
-        const pnlField = Number(c?.pnl)
-        const pnl = Number.isFinite(pnlField) ? pnlField : ((Number.isFinite(credit) ? credit : 0) - (Number.isFinite(equity) ? equity : 0))
-        return acc + pnl
-      }, 0),
-      totalProfit: sum('profit'),
-      dailyDeposit: depositTotal,
-      dailyWithdrawal: withdrawalTotal,
-      // Share percentages of Deposits vs Withdrawals (of total daily D/W)
-      dailyDepositSharePercent,
-      dailyWithdrawalSharePercent,
-      dailyDepositPercent: list.reduce((acc, c) => acc + (c?.dailyDeposit_percentage || 0), 0),
-      dailyWithdrawalPercent: list.reduce((acc, c) => acc + (c?.dailyWithdrawal_percentage || 0), 0),
-      dailyPnL: sum('dailyPnL'),
-      thisWeekPnL: sum('thisWeekPnL'),
-      thisMonthPnL: sum('thisMonthPnL'),
-      lifetimePnL: sum('lifetimePnL'),
-      // Commission metrics from API (not computed from client fields)
-      totalCommission: commissionTotals?.total_commission || 0,
-      availableCommission: commissionTotals?.total_available_commission || 0,
-      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
-      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
-      blockedCommission: sum('blockedCommission'),
-      // Bonus metrics
-      dailyBonusIn,
-      dailyBonusOut,
-      netDailyBonus: dailyBonusIn - dailyBonusOut,
-      weekBonusIn,
-      weekBonusOut,
-      netWeekBonus: weekBonusIn - weekBonusOut,
-      monthBonusIn,
-      monthBonusOut,
-      netMonthBonus: monthBonusIn - monthBonusOut,
-      lifetimeBonusIn,
-      lifetimeBonusOut,
-      netLifetimeBonus: lifetimeBonusIn - lifetimeBonusOut,
-      // Deposit/Withdrawal metrics
-      weekDeposit,
-      weekWithdrawal,
-      netWeekDW: weekDeposit - weekWithdrawal,
-      monthDeposit,
-      monthWithdrawal,
-      netMonthDW: monthDeposit - monthWithdrawal,
-      lifetimeDeposit,
-      lifetimeWithdrawal,
-      netLifetimeDW: lifetimeDeposit - lifetimeWithdrawal,
-      // Credit IN/OUT metrics
-      weekCreditIn,
-      monthCreditIn,
-      lifetimeCreditIn,
-      weekCreditOut,
-      monthCreditOut,
-      lifetimeCreditOut,
-      netCredit: lifetimeCreditIn - lifetimeCreditOut,
-      // Previous Equity metrics
-      weekPreviousEquity,
-      monthPreviousEquity,
-      previousEquity
-    }
-
-    return totals
-  }, [
-    // Core lists
-    filteredClients,
-    clients,
-    // Commission API-derived totals
-    commissionTotals,
-    // Recompute on live ticks to ensure snappy fluctuations
-    lastWsReceiveAt,
-    // Filter toggles and inputs that change which clients are included
-    filterByPositions,
-    filterByCredit,
-    filterNoDeposit,
-    searchQuery,
-    columnFilters,
-    activeGroupFilters,
-    selectedIB,
-    ibMT5Accounts
-  ])
+  // (removed memoized faceCardTotals)
 
   // Removed totals helpers (no longer needed)
 
