@@ -96,6 +96,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [dealsColumnWidths, setDealsColumnWidths] = useState({})
   const [resizingDealsColumn, setResizingDealsColumn] = useState(null)
 
+  // Sorting states for positions
+  const [positionsSortColumn, setPositionsSortColumn] = useState(null)
+  const [positionsSortDirection, setPositionsSortDirection] = useState('asc')
+
+  // Sorting states for deals
+  const [dealsSortColumn, setDealsSortColumn] = useState(null)
+  const [dealsSortDirection, setDealsSortDirection] = useState('asc')
+
   // Deal stats (aggregated) for face cards
   const [dealStats, setDealStats] = useState(null)
   const [dealStatsLoading, setDealStatsLoading] = useState(false)
@@ -584,6 +592,50 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return `$${parseFloat(value || 0).toFixed(2)}`
   }
 
+  // Sorting handler for positions
+  const handlePositionsSort = (column) => {
+    if (positionsSortColumn === column) {
+      // Toggle direction if same column
+      setPositionsSortDirection(positionsSortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setPositionsSortColumn(column)
+      setPositionsSortDirection('asc')
+    }
+  }
+
+  // Sorting handler for deals
+  const handleDealsSort = (column) => {
+    if (dealsSortColumn === column) {
+      // Toggle direction if same column
+      setDealsSortDirection(dealsSortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setDealsSortColumn(column)
+      setDealsSortDirection('asc')
+    }
+  }
+
+  // Sort icon component
+  const SortIcon = ({ column, currentColumn, direction }) => {
+    if (column !== currentColumn) {
+      return (
+        <svg className="w-3 h-3 text-blue-200 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      )
+    }
+    return direction === 'asc' ? (
+      <svg className="w-3 h-3 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg className="w-3 h-3 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    )
+  }
+
   const formatDate = (timestamp) => {
     const date = new Date(timestamp * 1000)
     const day = String(date.getDate()).padStart(2, '0')
@@ -1001,6 +1053,80 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       }
     })
 
+    // Apply sorting
+    if (positionsSortColumn) {
+      filtered.sort((a, b) => {
+        let aValue, bValue
+        
+        switch (positionsSortColumn) {
+          case 'time':
+            aValue = a.timeCreate || 0
+            bValue = b.timeCreate || 0
+            break
+          case 'position':
+            aValue = a.position || 0
+            bValue = b.position || 0
+            break
+          case 'symbol':
+            aValue = (a.symbol || '').toLowerCase()
+            bValue = (b.symbol || '').toLowerCase()
+            break
+          case 'action':
+            aValue = getActionLabel(a.action)
+            bValue = getActionLabel(b.action)
+            break
+          case 'volume':
+            aValue = a.volume || 0
+            bValue = b.volume || 0
+            break
+          case 'priceOpen':
+            aValue = a.priceOpen || 0
+            bValue = b.priceOpen || 0
+            break
+          case 'priceCurrent':
+            aValue = a.priceCurrent || 0
+            bValue = b.priceCurrent || 0
+            break
+          case 'sl':
+            aValue = a.priceSL || 0
+            bValue = b.priceSL || 0
+            break
+          case 'tp':
+            aValue = a.priceTP || 0
+            bValue = b.priceTP || 0
+            break
+          case 'profit':
+            aValue = a.profit || 0
+            bValue = b.profit || 0
+            break
+          case 'storage':
+            aValue = a.storage || 0
+            bValue = b.storage || 0
+            break
+          case 'commission':
+            aValue = a.commission || 0
+            bValue = b.commission || 0
+            break
+          case 'comment':
+            aValue = (a.comment || '').toLowerCase()
+            bValue = (b.comment || '').toLowerCase()
+            break
+          default:
+            return 0
+        }
+
+        if (typeof aValue === 'string') {
+          return positionsSortDirection === 'asc' 
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue)
+        } else {
+          return positionsSortDirection === 'asc'
+            ? aValue - bValue
+            : bValue - aValue
+        }
+      })
+    }
+
     return filtered
   })()
 
@@ -1049,6 +1175,76 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         })
       }
     })
+
+    // Apply sorting
+    if (dealsSortColumn) {
+      filtered.sort((a, b) => {
+        let aValue, bValue
+        
+        switch (dealsSortColumn) {
+          case 'time':
+            aValue = a.time || 0
+            bValue = b.time || 0
+            break
+          case 'deal':
+            aValue = a.deal || 0
+            bValue = b.deal || 0
+            break
+          case 'position':
+            aValue = a.position || 0
+            bValue = b.position || 0
+            break
+          case 'symbol':
+            aValue = (a.symbol || '').toLowerCase()
+            bValue = (b.symbol || '').toLowerCase()
+            break
+          case 'action':
+            aValue = getDealActionLabel(a.action)
+            bValue = getDealActionLabel(b.action)
+            break
+          case 'entry':
+            aValue = getDealEntryLabel(a.entry)
+            bValue = getDealEntryLabel(b.entry)
+            break
+          case 'volume':
+            aValue = a.volume || 0
+            bValue = b.volume || 0
+            break
+          case 'price':
+            aValue = a.price || 0
+            bValue = b.price || 0
+            break
+          case 'profit':
+            aValue = a.profit || 0
+            bValue = b.profit || 0
+            break
+          case 'storage':
+            aValue = a.storage || 0
+            bValue = b.storage || 0
+            break
+          case 'commission':
+            aValue = a.commission || 0
+            bValue = b.commission || 0
+            break
+          case 'comment':
+            aValue = (a.comment || '').toLowerCase()
+            bValue = (b.comment || '').toLowerCase()
+            break
+          default:
+            return 0
+        }
+
+        if (typeof aValue === 'string') {
+          return dealsSortDirection === 'asc' 
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue)
+        } else {
+          return dealsSortDirection === 'asc'
+            ? aValue - bValue
+            : bValue - aValue
+        }
+      })
+    }
 
     return filtered
   })()
@@ -1527,11 +1723,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       <tr>
                         {positionsVisibleColumns.time && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['time'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('time')}
                         >
                           <div className="flex items-center gap-1.5">
                             Time
+                            <SortIcon column="time" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
                             <div className="relative" ref={el => filterRefs.current['time'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'time' ? null : 'time')}
@@ -1583,10 +1781,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.position && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['position'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('position')}
                         >
-                          Position
+                          <div className="flex items-center gap-1.5">
+                            Position
+                            <SortIcon column="position" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'position')}
@@ -1595,11 +1797,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.symbol && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('symbol')}
                         >
                           <div className="flex items-center gap-1.5">
                             Symbol
+                            <SortIcon column="symbol" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
                             <div className="relative" ref={el => filterRefs.current['symbol'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'symbol' ? null : 'symbol')}
@@ -1651,11 +1855,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.action && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['action'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('action')}
                         >
                           <div className="flex items-center gap-1.5">
                             Type
+                            <SortIcon column="action" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
                             <div className="relative" ref={el => filterRefs.current['type'] = el}>
                               <button
                                 onClick={() => setShowFilterDropdown(showFilterDropdown === 'type' ? null : 'type')}
@@ -1707,10 +1913,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.volume && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('volume')}
                         >
-                          Volume
+                          <div className="flex items-center gap-1.5">
+                            Volume
+                            <SortIcon column="volume" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'volume')}
@@ -1719,10 +1929,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.priceOpen && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['priceOpen'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('priceOpen')}
                         >
-                          Open Price
+                          <div className="flex items-center gap-1.5">
+                            Open Price
+                            <SortIcon column="priceOpen" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'priceOpen')}
@@ -1731,10 +1945,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.priceCurrent && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['priceCurrent'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('priceCurrent')}
                         >
-                          Current Price
+                          <div className="flex items-center gap-1.5">
+                            Current Price
+                            <SortIcon column="priceCurrent" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'priceCurrent')}
@@ -1743,10 +1961,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.sl && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['sl'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('sl')}
                         >
-                          S/L
+                          <div className="flex items-center gap-1.5">
+                            S/L
+                            <SortIcon column="sl" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'sl')}
@@ -1755,10 +1977,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.tp && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['tp'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('tp')}
                         >
-                          T/P
+                          <div className="flex items-center gap-1.5">
+                            T/P
+                            <SortIcon column="tp" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'tp')}
@@ -1767,10 +1993,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.profit && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('profit')}
                         >
-                          Profit
+                          <div className="flex items-center gap-1.5">
+                            Profit
+                            <SortIcon column="profit" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'profit')}
@@ -1779,10 +2009,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.storage && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['storage'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('storage')}
                         >
-                          Storage
+                          <div className="flex items-center gap-1.5">
+                            Storage
+                            <SortIcon column="storage" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'storage')}
@@ -1791,10 +2025,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.commission && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['commission'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('commission')}
                         >
-                          Commission
+                          <div className="flex items-center gap-1.5">
+                            Commission
+                            <SortIcon column="commission" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'commission')}
@@ -1803,10 +2041,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                         {positionsVisibleColumns.comment && (
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: positionsColumnWidths['comment'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handlePositionsSort('comment')}
                         >
-                          Comment
+                          <div className="flex items-center gap-1.5">
+                            Comment
+                            <SortIcon column="comment" currentColumn={positionsSortColumn} direction={positionsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handlePositionsResizeStart(e, 'comment')}
@@ -2193,11 +2435,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
                               <th 
-                                className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                                className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                                 style={{ width: dealsColumnWidths['time'] || 'auto', minWidth: '80px' }}
+                                onClick={() => handleDealsSort('time')}
                               >
                                 <div className="flex items-center gap-1.5">
                                   Time
+                                  <SortIcon column="time" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                                   <div className="relative" ref={el => dealsFilterRefs.current['time'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'time' ? null : 'time')}
@@ -2247,10 +2491,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['deal'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('deal')}
                         >
-                          Deal
+                          <div className="flex items-center gap-1.5">
+                            Deal
+                            <SortIcon column="deal" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'deal')}
@@ -2267,21 +2515,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['position'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('position')}
                         >
-                          Position
+                          <div className="flex items-center gap-1.5">
+                            Position
+                            <SortIcon column="position" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'position')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('symbol')}
                         >
                           <div className="flex items-center gap-1.5">
                             Symbol
+                            <SortIcon column="symbol" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                             <div className="relative" ref={el => dealsFilterRefs.current['symbol'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'symbol' ? null : 'symbol')}
@@ -2331,11 +2585,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['action'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('action')}
                         >
                           <div className="flex items-center gap-1.5">
                             Action
+                            <SortIcon column="action" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                             <div className="relative" ref={el => dealsFilterRefs.current['action'] = el}>
                               <button
                                 onClick={() => setShowDealsFilterDropdown(showDealsFilterDropdown === 'action' ? null : 'action')}
@@ -2385,60 +2641,84 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('volume')}
                         >
-                          Volume
+                          <div className="flex items-center gap-1.5">
+                            Volume
+                            <SortIcon column="volume" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'volume')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['price'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('price')}
                         >
-                          Price
+                          <div className="flex items-center gap-1.5">
+                            Price
+                            <SortIcon column="price" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'price')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['commission'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('commission')}
                         >
-                          Commission
+                          <div className="flex items-center gap-1.5">
+                            Commission
+                            <SortIcon column="commission" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'commission')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['storage'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('storage')}
                         >
-                          Storage
+                          <div className="flex items-center gap-1.5">
+                            Storage
+                            <SortIcon column="storage" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'storage')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('profit')}
                         >
-                          Profit
+                          <div className="flex items-center gap-1.5">
+                            Profit
+                            <SortIcon column="profit" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'profit')}
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['comment'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('comment')}
                         >
-                          Comment
+                          <div className="flex items-center gap-1.5">
+                            Comment
+                            <SortIcon column="comment" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'comment')}
