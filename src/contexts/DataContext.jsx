@@ -392,7 +392,8 @@ export const DataProvider = ({ children }) => {
     ]
     const diff = {}
     keys.forEach(k => {
-      diff[k] = (a?.[k] || 0) - (b?.[k] || 0)
+      // Use toNum to ensure numeric comparison even if stats contain string values
+      diff[k] = toNum(a?.[k]) - toNum(b?.[k])
     })
     return diff
   }, [])
@@ -543,7 +544,20 @@ export const DataProvider = ({ children }) => {
       lastClientStateRef.current.clear()
       data.forEach(client => {
         if (client?.login) {
-          const signature = `${client.balance || 0}_${client.credit || 0}_${client.equity || 0}_${client.dailyDeposit || 0}_${client.dailyWithdrawal || 0}_${client.dailyPnL || 0}_${client.lastUpdate || 0}`
+          const signature = [
+            toNum(client.balance),
+            toNum(client.credit),
+            toNum(client.equity),
+            toNum(client.pnl),
+            toNum(client.profit),
+            toNum(client.dailyDeposit),
+            toNum(client.dailyWithdrawal),
+            toNum(client.dailyPnL),
+            toNum(client.thisWeekPnL),
+            toNum(client.thisMonthPnL),
+            toNum(client.lifetimePnL),
+            toNum(client.lastUpdate)
+          ].join('_')
           lastClientStateRef.current.set(client.login, signature)
         }
       })
@@ -750,8 +764,12 @@ export const DataProvider = ({ children }) => {
               for (let i = 0; i < prev.length; i++) {
                 const a = prev[i]
                 const b = newClients[i]
-                // Compare stable identity + a few key fields that indicate change
-                if (!a || !b || a.login !== b.login || a.balance !== b.balance || a.equity !== b.equity || a.profit !== b.profit || a.lastUpdate !== b.lastUpdate) {
+                // Compare using robust numeric comparison to handle string/number type mismatches
+                if (!a || !b || a.login !== b.login || 
+                    toNum(a.balance) !== toNum(b.balance) || 
+                    toNum(a.equity) !== toNum(b.equity) || 
+                    toNum(a.profit) !== toNum(b.profit) || 
+                    toNum(a.lastUpdate) !== toNum(b.lastUpdate)) {
                   allSame = false
                   break
                 }
@@ -1096,7 +1114,20 @@ export const DataProvider = ({ children }) => {
             console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
             
             // Initialize signature tracking for new user
-            const signature = `${normalizedUser.balance || 0}_${normalizedUser.credit || 0}_${normalizedUser.equity || 0}_${normalizedUser.dailyDeposit || 0}_${normalizedUser.dailyWithdrawal || 0}_${normalizedUser.dailyPnL || 0}_${normalizedUser.lastUpdate || 0}`
+            const signature = [
+              toNum(normalizedUser.balance),
+              toNum(normalizedUser.credit),
+              toNum(normalizedUser.equity),
+              toNum(normalizedUser.pnl),
+              toNum(normalizedUser.profit),
+              toNum(normalizedUser.dailyDeposit),
+              toNum(normalizedUser.dailyWithdrawal),
+              toNum(normalizedUser.dailyPnL),
+              toNum(normalizedUser.thisWeekPnL),
+              toNum(normalizedUser.thisMonthPnL),
+              toNum(normalizedUser.lifetimePnL),
+              toNum(normalizedUser.lastUpdate)
+            ].join('_')
             lastClientStateRef.current.set(userLogin, signature)
             
             // Update stats incrementally for new user
