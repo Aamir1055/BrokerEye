@@ -254,6 +254,7 @@ const ClientsPage = () => {
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   const [selectedClient, setSelectedClient] = useState(null)
+  const [showGroupModal, setShowGroupModal] = useState(false)
 
   const allColumns = [
     { key: 'login', label: 'Login' },
