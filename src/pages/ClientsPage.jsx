@@ -253,6 +253,7 @@ const ClientsPage = () => {
   const [faceCardTheme, setFaceCardTheme] = useState('vibrant') // 'vibrant' | 'subtle'
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
+  const [selectedClient, setSelectedClient] = useState(null)
 
   const allColumns = [
     { key: 'login', label: 'Login' },
