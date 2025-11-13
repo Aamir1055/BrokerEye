@@ -15,6 +15,8 @@ import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
   const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
+  // Alias cached data to expected local names to avoid undefined references
+  const clients = cachedClients
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
@@ -168,6 +170,89 @@ const ClientsPage = () => {
   
   const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
   const [draggingColumn, setDraggingColumn] = useState(null)
+
+  // ----- Missing UI state and refs (initialized here to avoid TDZ/ReferenceErrors) -----
+  // Time and latency
+  const [systemTime, setSystemTime] = useState(Date.now())
+  const [appTime, setAppTime] = useState(null)
+  const [latencyStats, setLatencyStats] = useState({ last: null, median: null, max: null })
+  const latencySamplesRef = useRef([])
+
+  // Filtering, searching, sorting and pagination
+  const [filterByPositions, setFilterByPositions] = useState(false)
+  const [filterByCredit, setFilterByCredit] = useState(false)
+  const [filterNoDeposit, setFilterNoDeposit] = useState(false)
+  const [columnFilters, setColumnFilters] = useState({})
+  const [filterSearchQuery, setFilterSearchQuery] = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [itemsPerPage, setItemsPerPage] = useState('All')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  const [displayMode, setDisplayMode] = useState('both') // 'both' | 'percentage'
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Dropdowns, modals, and refs
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
+  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  const [showCustomTextFilterModal, setShowCustomTextFilterModal] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showThemeMenu, setShowThemeMenu] = useState(false)
+  const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
+  const filterRefs = useRef({})
+  const filterPanelRef = useRef(null)
+  const columnSelectorRef = useRef(null)
+  const filterMenuRef = useRef(null)
+  const displayMenuRef = useRef(null)
+  const searchRef = useRef(null)
+  const cardFilterMenuRef = useRef(null)
+  const themeMenuRef = useRef(null)
+  const exportMenuRef = useRef(null)
+
+  // Custom filter (number/text)
+  const [customFilterColumn, setCustomFilterColumn] = useState(null)
+  const [customFilterType, setCustomFilterType] = useState('equal')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
+  const [customFilterValue2, setCustomFilterValue2] = useState('')
+  const [customFilterOperator, setCustomFilterOperator] = useState('AND')
+  const [showCustomNumberFilter, setShowCustomNumberFilter] = useState(false)
+  const [showCustomTextFilter, setShowCustomTextFilter] = useState(false)
+
+  // Face cards: visibility, order, theme
+  const defaultFaceCardOrder = [
+    1,2,3,4,5,6,8,9,10,11,12,13,14,
+    15,16,17,18,19,
+    20,21,22,23,24,25,26,27,28,29,30,31,
+    32,33,34,35,36,37,38,39,40,
+    41,42,43,44,45,46,47,48,49,50,
+    53,54,55
+  ]
+  const getInitialFaceCardOrder = () => {
+    try {
+      const saved = localStorage.getItem('clientsFaceCardOrder')
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return defaultFaceCardOrder
+  }
+  const [faceCardOrder, setFaceCardOrder] = useState(getInitialFaceCardOrder)
+
+  const getInitialCardVisibility = () => {
+    try {
+      const saved = localStorage.getItem('clientsCardVisibility')
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    const map = {}
+    defaultFaceCardOrder.forEach(id => { map[id] = true })
+    return map
+  }
+  const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
+  const [faceCardTheme, setFaceCardTheme] = useState('vibrant') // 'vibrant' | 'subtle'
+  const [showFaceCards, setShowFaceCards] = useState(true)
+  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
 
   const allColumns = [
     { key: 'login', label: 'Login' },
