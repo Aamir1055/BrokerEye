@@ -1039,12 +1039,20 @@ const ClientsPage = () => {
     
     if (filterByCredit) {
       // Filter clients who have credit (positive or negative, but not zero)
-      filtered = filtered.filter(c => c && c.credit && c.credit !== 0)
+      filtered = filtered.filter(c => {
+        if (!c) return false
+        const credit = Number(c.credit)
+        return Number.isFinite(credit) && credit !== 0
+      })
     }
 
     if (filterNoDeposit) {
       // Filter clients whose Lifetime Deposit is zero
-      filtered = filtered.filter(c => c && (!c.lifetimeDeposit || c.lifetimeDeposit === 0))
+      filtered = filtered.filter(c => {
+        if (!c) return false
+        const lifeDep = Number(c.lifetimeDeposit)
+        return !(Number.isFinite(lifeDep) ? lifeDep !== 0 : false)
+      })
     }
 
     // Apply column filters
@@ -1116,7 +1124,7 @@ const ClientsPage = () => {
       // Check if it's a number (including balance, equity, profit, etc.)
       const aNum = Number(aVal)
       const bNum = Number(bVal)
-      if (!isNaN(aNum) && !isNaN(bNum) && typeof aVal !== 'string') {
+      if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
         return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
       }
       
@@ -1270,21 +1278,33 @@ const ClientsPage = () => {
   // Financial checksum (filtered) – detect value-only changes for worker recalculation
   const filteredClientsChecksum = useMemo(() => {
     if (!filteredClients || filteredClients.length === 0) return '0'
+    // Robust numeric coercion to prevent string concatenation and drift
+    const toNum = (v) => {
+      if (v == null || v === '') return 0
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+      if (typeof v === 'string') {
+        const n = Number(v.replace(/,/g, '').trim())
+        return Number.isFinite(n) ? n : 0
+      }
+      const n = Number(v)
+      return Number.isFinite(n) ? n : 0
+    }
+
     let sumBalance = 0, sumCredit = 0, sumEquity = 0, sumProfit = 0, sumPnl = 0,
       sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0
     for (let i = 0; i < filteredClients.length; i++) {
       const c = filteredClients[i]
       if (!c) continue
-      sumBalance += c.balance || 0
-      sumCredit += c.credit || 0
-      sumEquity += c.equity || 0
-      sumProfit += c.profit || 0
-  // Use raw pnl and bucket values directly (backend already provides correct sign)
-  sumPnl += c.pnl || 0
-  sumDaily += c.dailyPnL || 0
-  sumWeek += c.thisWeekPnL || 0
-  sumMonth += c.thisMonthPnL || 0
-  sumLife += c.lifetimePnL || 0
+      sumBalance += toNum(c.balance)
+      sumCredit += toNum(c.credit)
+      sumEquity += toNum(c.equity)
+      sumProfit += toNum(c.profit)
+      // Use raw pnl and bucket values directly (backend already provides correct sign)
+      sumPnl += toNum(c.pnl)
+      sumDaily += toNum(c.dailyPnL)
+      sumWeek += toNum(c.thisWeekPnL)
+      sumMonth += toNum(c.thisMonthPnL)
+      sumLife += toNum(c.lifetimePnL)
     }
     return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife]
       .map(v => Math.round(v * 100))
@@ -1836,7 +1856,8 @@ const ClientsPage = () => {
     const list = (hasFilters ? (filteredClients || []) : (clients || []))
     const sum = (key) => list.reduce((acc, c) => {
       const v = c?.[key]
-      return acc + (typeof v === 'number' ? v : 0)
+      const n = Number(v)
+      return acc + (Number.isFinite(n) ? n : 0)
     }, 0)
 
     // Bonus calculations
@@ -1871,9 +1892,9 @@ const ClientsPage = () => {
     const previousEquity = sum('previousEquity')
 
     // Derived totals
-    const depositTotal = sum('dailyDeposit')
-    const withdrawalTotal = sum('dailyWithdrawal')
-    const dwTotalAbs = Math.abs(depositTotal) + Math.abs(withdrawalTotal)
+  const depositTotal = sum('dailyDeposit')
+  const withdrawalTotal = sum('dailyWithdrawal')
+  const dwTotalAbs = Math.abs(Number(depositTotal) || 0) + Math.abs(Number(withdrawalTotal) || 0)
     const dailyDepositSharePercent = dwTotalAbs > 0 ? (Math.abs(depositTotal) / dwTotalAbs) * 100 : 0
     const dailyWithdrawalSharePercent = dwTotalAbs > 0 ? (Math.abs(withdrawalTotal) / dwTotalAbs) * 100 : 0
 
@@ -1884,7 +1905,10 @@ const ClientsPage = () => {
       totalEquity: sum('equity'),
       // PnL fallback: if backend pnl is missing for some clients, compute as credit - equity
       totalPnl: list.reduce((acc, c) => {
-        const pnl = (typeof c?.pnl === 'number') ? c.pnl : ((c?.credit || 0) - (c?.equity || 0))
+        const credit = Number(c?.credit)
+        const equity = Number(c?.equity)
+        const pnlField = Number(c?.pnl)
+        const pnl = Number.isFinite(pnlField) ? pnlField : ((Number.isFinite(credit) ? credit : 0) - (Number.isFinite(equity) ? equity : 0))
         return acc + pnl
       }, 0),
       totalProfit: sum('profit'),
