@@ -949,10 +949,20 @@ export const DataProvider = ({ children }) => {
             hasNewClients = true
             addedClientsCount++
           } else {
-            // Update existing - use cached original value for accurate delta
+            // Update existing - SELECTIVE MERGE: only update defined values, preserve existing for undefined
             const oldClient = originalValues.get(accountLogin)
-            updateStatsIncremental(oldClient, updatedAccount)
-            updated[index] = { ...updated[index], ...updatedAccount }
+            const existingClient = updated[index]
+            
+            // Merge: only overwrite fields that are explicitly defined in the update
+            const merged = { ...existingClient }
+            for (const key in updatedAccount) {
+              if (updatedAccount[key] !== undefined) {
+                merged[key] = updatedAccount[key]
+              }
+            }
+            
+            updateStatsIncremental(oldClient, merged)
+            updated[index] = merged
           }
         }
         return updated
@@ -982,8 +992,15 @@ export const DataProvider = ({ children }) => {
             updated.push(updatedAccount)
             accountIndexMap.set(accountLogin, newIndex)
           } else {
-            // Update existing - O(1) access
-            updated[index] = { ...updated[index], ...updatedAccount }
+            // Update existing - SELECTIVE MERGE: only update defined values
+            const existingAccount = updated[index]
+            const merged = { ...existingAccount }
+            for (const key in updatedAccount) {
+              if (updatedAccount[key] !== undefined) {
+                merged[key] = updatedAccount[key]
+              }
+            }
+            updated[index] = merged
           }
         }
         
@@ -1110,6 +1127,7 @@ export const DataProvider = ({ children }) => {
           const normalizedUser = normalizeUSCValues(updatedUser)
           
           let oldClient = null
+          let mergedClient = null
           
           setClients(prev => {
             // First, deduplicate the previous array to ensure clean state
@@ -1127,23 +1145,40 @@ export const DataProvider = ({ children }) => {
             if (index === -1) {
               // User not found, add as new
               oldClient = null
+              mergedClient = normalizedUser
               return [normalizedUser, ...dedupedPrev]
             }
-            // Update existing user - store old client for stats update
+            // Update existing user - SELECTIVE MERGE: only update defined values
             oldClient = dedupedPrev[index]
             const updated = [...dedupedPrev]
-            updated[index] = { ...updated[index], ...normalizedUser }
+            const existingUser = updated[index]
+            const merged = { ...existingUser }
+            for (const key in normalizedUser) {
+              if (normalizedUser[key] !== undefined) {
+                merged[key] = normalizedUser[key]
+              }
+            }
+            mergedClient = merged
+            updated[index] = merged
             return updated
           })
           
-          // Update stats incrementally based on the change
-          updateStatsIncremental(oldClient, normalizedUser)
+          // Update stats incrementally based on the change - use merged client, not raw update
+          updateStatsIncremental(oldClient, mergedClient)
           
           setAccounts(prev => {
             const index = prev.findIndex(c => c && c.login === userLogin)
             if (index === -1) return [normalizedUser, ...prev]
             const updated = [...prev]
-            updated[index] = { ...updated[index], ...normalizedUser }
+            // SELECTIVE MERGE: only update defined values
+            const existingAccount = updated[index]
+            const merged = { ...existingAccount }
+            for (const key in normalizedUser) {
+              if (normalizedUser[key] !== undefined) {
+                merged[key] = normalizedUser[key]
+              }
+            }
+            updated[index] = merged
             return updated
           })
         }
