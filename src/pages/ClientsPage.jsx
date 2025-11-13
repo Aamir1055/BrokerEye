@@ -1829,10 +1829,23 @@ const ClientsPage = () => {
     // Use full clients list when no filters are active; otherwise use filtered list
     const list = (hasFilters ? (filteredClients || []) : (clients || []))
 
-    // Robust numeric sum helper
+    // Enhanced robust numeric sum helper with deep value inspection
     const sum = (key) => list.reduce((acc, c) => {
-      const v = c?.[key]
-      const n = typeof v === 'number' ? v : Number(String(v ?? '').toString().replace(/,/g, '').trim())
+      if (!c || typeof c !== 'object') return acc
+      const v = c[key]
+      // Handle null/undefined explicitly
+      if (v == null) return acc
+      // If already a finite number, use directly
+      if (typeof v === 'number' && Number.isFinite(v)) return acc + v
+      // Attempt string coercion with comma removal
+      if (typeof v === 'string') {
+        const cleaned = v.replace(/,/g, '').trim()
+        if (cleaned === '' || cleaned === '-') return acc
+        const n = Number(cleaned)
+        return acc + (Number.isFinite(n) ? n : 0)
+      }
+      // Coerce other types
+      const n = Number(v)
       return acc + (Number.isFinite(n) ? n : 0)
     }, 0)
 
@@ -1950,13 +1963,17 @@ const ClientsPage = () => {
 
   const formatValue = (key, value, client = null) => {
     if (value === null || value === undefined || value === '') {
-      // Handle PNL calculation
+      // Handle PNL calculation fallback
       if (key === 'pnl' && client) {
-        const pnl = client.pnl != null ? client.pnl : ((client.credit || 0) - (client.equity || 0))
-        return pnl.toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 2 
-        })
+        const pnlVal = client.pnl
+        if (pnlVal != null && typeof pnlVal === 'number' && Number.isFinite(pnlVal)) {
+          return formatIndianNumber(pnlVal.toFixed(2))
+        }
+        // Fallback: credit - equity
+        const credit = Number(client.credit) || 0
+        const equity = Number(client.equity) || 0
+        const pnl = credit - equity
+        return formatIndianNumber(pnl.toFixed(2))
       }
       return '-'
     }
@@ -1974,15 +1991,27 @@ const ClientsPage = () => {
     if (['balance', 'credit', 'equity', 'margin', 'marginFree', 'profit', 'floating', 'pnl', 'assets', 'liabilities', 
          'blockedCommission', 'blockedProfit', 'storage', 'marginInitial', 'marginMaintenance', 
          'soEquity', 'soMargin'].includes(key)) {
-      // For PNL, calculate credit - equity
+      // For PNL, use existing field or fallback to credit - equity
       if (key === 'pnl' && client) {
-        const pnl = client.pnl != null ? client.pnl : ((client.credit || 0) - (client.equity || 0))
-        const formatted = formatIndianNumber(pnl.toFixed(2))
-        return formatted
+        const pnlVal = client.pnl
+        if (pnlVal != null && typeof pnlVal === 'number' && Number.isFinite(pnlVal)) {
+          return formatIndianNumber(pnlVal.toFixed(2))
+        }
+        // Fallback calculation
+        const credit = Number(client.credit) || 0
+        const equity = Number(client.equity) || 0
+        const pnl = credit - equity
+        return formatIndianNumber(pnl.toFixed(2))
       }
-      const num = parseFloat(value)
-      const formatted = formatIndianNumber(num.toFixed(2))
-      return formatted
+      // Ensure value is a clean number
+      let num = value
+      if (typeof value === 'string') {
+        num = Number(value.replace(/,/g, '').trim())
+      } else {
+        num = Number(value)
+      }
+      if (!Number.isFinite(num)) return '-'
+      return formatIndianNumber(num.toFixed(2))
     }
 
     // PnL buckets (table display should preserve sign)
