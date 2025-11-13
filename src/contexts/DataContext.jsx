@@ -63,6 +63,21 @@ export const useData = () => {
   return context
 }
 
+// Robust numeric parser shared across all data processing functions
+// Handles strings with commas, nulls, NaN, and various edge cases
+const toNum = (v) => {
+  if (v == null || v === '') return 0
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+  if (typeof v === 'string') {
+    const cleaned = v.replace(/,/g, '').trim()
+    if (cleaned === '' || cleaned === '-') return 0
+    const n = Number(cleaned)
+    return Number.isFinite(n) ? n : 0
+  }
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
 export const DataProvider = ({ children }) => {
   // Helper to schedule heavy state updates at low priority to avoid blocking navigation/route transitions
   const lowPriority = (cb) => startTransition(cb)
@@ -217,62 +232,76 @@ export const DataProvider = ({ children }) => {
       return client
     }
 
+    // Robust numeric parser: handles strings with commas, nulls, NaN
+    const toNum = (v) => {
+      if (v == null || v === '') return 0
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+      if (typeof v === 'string') {
+        const cleaned = v.replace(/,/g, '').trim()
+        if (cleaned === '' || cleaned === '-') return 0
+        const n = Number(cleaned)
+        return Number.isFinite(n) ? n : 0
+      }
+      const n = Number(v)
+      return Number.isFinite(n) ? n : 0
+    }
+
     // Start with explicit known monetary mappings (safe and stable)
     const normalized = {
       ...client,
       // Basic financial fields
-      balance: (client.balance || 0) / 100,
-      credit: (client.credit || 0) / 100,
-      equity: (client.equity || 0) / 100,
-      margin: (client.margin || 0) / 100,
-      marginFree: (client.marginFree || 0) / 100,
-      profit: (client.profit || 0) / 100,
-      floating: (client.floating || 0) / 100,
-      pnl: (client.pnl || 0) / 100,
-      assets: (client.assets || 0) / 100,
-      liabilities: (client.liabilities || 0) / 100,
-      blockedCommission: (client.blockedCommission || 0) / 100,
-      blockedProfit: (client.blockedProfit || 0) / 100,
-      storage: (client.storage || 0) / 100,
-      marginInitial: (client.marginInitial || 0) / 100,
-      marginMaintenance: (client.marginMaintenance || 0) / 100,
-      soEquity: (client.soEquity || 0) / 100,
-      soMargin: (client.soMargin || 0) / 100,
+      balance: toNum(client.balance) / 100,
+      credit: toNum(client.credit) / 100,
+      equity: toNum(client.equity) / 100,
+      margin: toNum(client.margin) / 100,
+      marginFree: toNum(client.marginFree) / 100,
+      profit: toNum(client.profit) / 100,
+      floating: toNum(client.floating) / 100,
+      pnl: toNum(client.pnl) / 100,
+      assets: toNum(client.assets) / 100,
+      liabilities: toNum(client.liabilities) / 100,
+      blockedCommission: toNum(client.blockedCommission) / 100,
+      blockedProfit: toNum(client.blockedProfit) / 100,
+      storage: toNum(client.storage) / 100,
+      marginInitial: toNum(client.marginInitial) / 100,
+      marginMaintenance: toNum(client.marginMaintenance) / 100,
+      soEquity: toNum(client.soEquity) / 100,
+      soMargin: toNum(client.soMargin) / 100,
       // Daily metrics
-      dailyDeposit: (client.dailyDeposit || 0) / 100,
-      dailyWithdrawal: (client.dailyWithdrawal || 0) / 100,
-      dailyPnL: (client.dailyPnL || 0) / 100,
+      dailyDeposit: toNum(client.dailyDeposit) / 100,
+      dailyWithdrawal: toNum(client.dailyWithdrawal) / 100,
+      dailyPnL: toNum(client.dailyPnL) / 100,
       // Weekly/Monthly/Lifetime PnL
-      thisWeekPnL: (client.thisWeekPnL || 0) / 100,
-      thisMonthPnL: (client.thisMonthPnL || 0) / 100,
-      lifetimePnL: (client.lifetimePnL || 0) / 100,
+      thisWeekPnL: toNum(client.thisWeekPnL) / 100,
+      thisMonthPnL: toNum(client.thisMonthPnL) / 100,
+      lifetimePnL: toNum(client.lifetimePnL) / 100,
       // Bonus fields
-      dailyBonusIn: (client.dailyBonusIn || 0) / 100,
-      dailyBonusOut: (client.dailyBonusOut || 0) / 100,
-      thisWeekBonusIn: (client.thisWeekBonusIn || 0) / 100,
-      thisWeekBonusOut: (client.thisWeekBonusOut || 0) / 100,
-      thisMonthBonusIn: (client.thisMonthBonusIn || 0) / 100,
-      thisMonthBonusOut: (client.thisMonthBonusOut || 0) / 100,
-      lifetimeBonusIn: (client.lifetimeBonusIn || 0) / 100,
-      lifetimeBonusOut: (client.lifetimeBonusOut || 0) / 100,
+      dailyBonusIn: toNum(client.dailyBonusIn) / 100,
+      dailyBonusOut: toNum(client.dailyBonusOut) / 100,
+      thisWeekBonusIn: toNum(client.thisWeekBonusIn) / 100,
+      thisWeekBonusOut: toNum(client.thisWeekBonusOut) / 100,
+      thisMonthBonusIn: toNum(client.thisMonthBonusIn) / 100,
+      thisMonthBonusOut: toNum(client.thisMonthBonusOut) / 100,
+      lifetimeBonusIn: toNum(client.lifetimeBonusIn) / 100,
+      lifetimeBonusOut: toNum(client.lifetimeBonusOut) / 100,
       // Weekly/Monthly/Lifetime Deposit/Withdrawal
-      thisWeekDeposit: (client.thisWeekDeposit || 0) / 100,
-      thisWeekWithdrawal: (client.thisWeekWithdrawal || 0) / 100,
-      thisMonthDeposit: (client.thisMonthDeposit || 0) / 100,
-      thisMonthWithdrawal: (client.thisMonthWithdrawal || 0) / 100,
-      lifetimeDeposit: (client.lifetimeDeposit || 0) / 100,
-      lifetimeWithdrawal: (client.lifetimeWithdrawal || 0) / 100,
+      thisWeekDeposit: toNum(client.thisWeekDeposit) / 100,
+      thisWeekWithdrawal: toNum(client.thisWeekWithdrawal) / 100,
+      thisMonthDeposit: toNum(client.thisMonthDeposit) / 100,
+      thisMonthWithdrawal: toNum(client.thisMonthWithdrawal) / 100,
+      lifetimeDeposit: toNum(client.lifetimeDeposit) / 100,
+      lifetimeWithdrawal: toNum(client.lifetimeWithdrawal) / 100,
       // Credit IN/OUT
-      thisWeekCreditIn: (client.thisWeekCreditIn || 0) / 100,
-      thisWeekCreditOut: (client.thisWeekCreditOut || 0) / 100,
-      thisMonthCreditIn: (client.thisMonthCreditIn || 0) / 100,
-      thisMonthCreditOut: (client.thisMonthCreditOut || 0) / 100,
-      lifetimeCreditIn: (client.lifetimeCreditIn || 0) / 100,
-      lifetimeCreditOut: (client.lifetimeCreditOut || 0) / 100,
+      thisWeekCreditIn: toNum(client.thisWeekCreditIn) / 100,
+      thisWeekCreditOut: toNum(client.thisWeekCreditOut) / 100,
+      thisMonthCreditIn: toNum(client.thisMonthCreditIn) / 100,
+      thisMonthCreditOut: toNum(client.thisMonthCreditOut) / 100,
+      lifetimeCreditIn: toNum(client.lifetimeCreditIn) / 100,
+      lifetimeCreditOut: toNum(client.lifetimeCreditOut) / 100,
       // Previous Equity
-      thisWeekPreviousEquity: (client.thisWeekPreviousEquity || 0) / 100,
-      thisMonthPreviousEquity: (client.thisMonthPreviousEquity || 0) / 100,
-      previousEquity: (client.previousEquity || 0) / 100,
+      thisWeekPreviousEquity: toNum(client.thisWeekPreviousEquity) / 100,
+      thisMonthPreviousEquity: toNum(client.thisMonthPreviousEquity) / 100,
+      previousEquity: toNum(client.previousEquity) / 100,
       // Note: login is NOT divided (it's an ID, not a currency value)
     }
 
@@ -298,10 +327,13 @@ export const DataProvider = ({ children }) => {
       if (explicitlyScaledKeys.has(key)) continue
       if (excludedNumericKeys.has(key)) continue
       const val = client[key]
-      if (typeof val === 'number') {
-        // Skip percentage fields, they are handled in UI (formatPercent)
-        if (/_percentage$/i.test(key)) continue
-        normalized[key] = val / 100
+      // Skip percentage fields, they are handled in UI (formatPercent)
+      if (/_percentage$/i.test(key)) continue
+      // Use robust numeric parsing for all values (not just numbers)
+      const num = toNum(val)
+      if (num !== 0 || val == null || val === 0) {
+        // Only scale if it's a legitimate numeric value (including 0)
+        normalized[key] = num / 100
       }
     }
 
@@ -333,20 +365,20 @@ export const DataProvider = ({ children }) => {
     }
     
     clientsArray.forEach(client => {
-      stats.totalBalance += (client.balance || 0)
-      stats.totalCredit += (client.credit || 0)
-      stats.totalEquity += (client.equity || 0)
-      stats.totalPnl += (client.pnl || 0)
-      stats.totalProfit += (client.profit || 0)
-  // API uses camelCase for deposit/withdrawal fields
-  stats.dailyDeposit += (client.dailyDeposit || 0)
-  stats.dailyWithdrawal += (client.dailyWithdrawal || 0)
-  // Use backend-provided PnL buckets directly (no sign inversion)
-  stats.dailyPnL += (client.dailyPnL || 0)
-  stats.thisWeekPnL += (client.thisWeekPnL || 0)
-  stats.thisMonthPnL += (client.thisMonthPnL || 0)
-  stats.lifetimePnL += (client.lifetimePnL || 0)
-      stats.totalDeposit += (client.dailyDeposit || 0)  // Sum all daily deposits
+      stats.totalBalance += toNum(client.balance)
+      stats.totalCredit += toNum(client.credit)
+      stats.totalEquity += toNum(client.equity)
+      stats.totalPnl += toNum(client.pnl)
+      stats.totalProfit += toNum(client.profit)
+      // API uses camelCase for deposit/withdrawal fields
+      stats.dailyDeposit += toNum(client.dailyDeposit)
+      stats.dailyWithdrawal += toNum(client.dailyWithdrawal)
+      // Use backend-provided PnL buckets directly (no sign inversion)
+      stats.dailyPnL += toNum(client.dailyPnL)
+      stats.thisWeekPnL += toNum(client.thisWeekPnL)
+      stats.thisMonthPnL += toNum(client.thisMonthPnL)
+      stats.lifetimePnL += toNum(client.lifetimePnL)
+      stats.totalDeposit += toNum(client.dailyDeposit)  // Sum all daily deposits
     })
     
     return stats
@@ -376,18 +408,18 @@ export const DataProvider = ({ children }) => {
     // Create a signature of the current state for key financial fields
     // Include all numeric fields that feed our totals so we don't skip updates that change them
     const currentSignature = [
-      newClient.balance || 0,
-      newClient.credit || 0,
-      newClient.equity || 0,
-      newClient.pnl || 0,
-      newClient.profit || 0,
-      newClient.dailyDeposit || 0,
-      newClient.dailyWithdrawal || 0,
-      newClient.dailyPnL || 0,
-      newClient.thisWeekPnL || 0,
-      newClient.thisMonthPnL || 0,
-      newClient.lifetimePnL || 0,
-      newClient.lastUpdate || 0
+      toNum(newClient.balance),
+      toNum(newClient.credit),
+      toNum(newClient.equity),
+      toNum(newClient.pnl),
+      toNum(newClient.profit),
+      toNum(newClient.dailyDeposit),
+      toNum(newClient.dailyWithdrawal),
+      toNum(newClient.dailyPnL),
+      toNum(newClient.thisWeekPnL),
+      toNum(newClient.thisMonthPnL),
+      toNum(newClient.lifetimePnL),
+      toNum(newClient.lastUpdate)
     ].join('_')
     
     // Skip if this is a duplicate update (same signature as last processed)
@@ -400,20 +432,20 @@ export const DataProvider = ({ children }) => {
     
     // Calculate delta (use lastState parsed values if available, otherwise use oldClient)
     const delta = {
-      totalBalance: (newClient?.balance || 0) - (oldClient?.balance || 0),
-      totalCredit: (newClient?.credit || 0) - (oldClient?.credit || 0),
-      totalEquity: (newClient?.equity || 0) - (oldClient?.equity || 0),
-      totalPnl: (newClient?.pnl || 0) - (oldClient?.pnl || 0),
-      totalProfit: (newClient?.profit || 0) - (oldClient?.profit || 0),
-  // API uses camelCase for deposit/withdrawal fields
-  dailyDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0)),
-  dailyWithdrawal: ((newClient?.dailyWithdrawal || 0) - (oldClient?.dailyWithdrawal || 0)),
-  // Use backend-provided PnL bucket deltas directly (no sign inversion)
-  dailyPnL: (newClient?.dailyPnL || 0) - (oldClient?.dailyPnL || 0),
-  thisWeekPnL: (newClient?.thisWeekPnL || 0) - (oldClient?.thisWeekPnL || 0),
-  thisMonthPnL: (newClient?.thisMonthPnL || 0) - (oldClient?.thisMonthPnL || 0),
-  lifetimePnL: (newClient?.lifetimePnL || 0) - (oldClient?.lifetimePnL || 0),
-      totalDeposit: ((newClient?.dailyDeposit || 0) - (oldClient?.dailyDeposit || 0))
+      totalBalance: toNum(newClient?.balance) - toNum(oldClient?.balance),
+      totalCredit: toNum(newClient?.credit) - toNum(oldClient?.credit),
+      totalEquity: toNum(newClient?.equity) - toNum(oldClient?.equity),
+      totalPnl: toNum(newClient?.pnl) - toNum(oldClient?.pnl),
+      totalProfit: toNum(newClient?.profit) - toNum(oldClient?.profit),
+      // API uses camelCase for deposit/withdrawal fields
+      dailyDeposit: toNum(newClient?.dailyDeposit) - toNum(oldClient?.dailyDeposit),
+      dailyWithdrawal: toNum(newClient?.dailyWithdrawal) - toNum(oldClient?.dailyWithdrawal),
+      // Use backend-provided PnL bucket deltas directly (no sign inversion)
+      dailyPnL: toNum(newClient?.dailyPnL) - toNum(oldClient?.dailyPnL),
+      thisWeekPnL: toNum(newClient?.thisWeekPnL) - toNum(oldClient?.thisWeekPnL),
+      thisMonthPnL: toNum(newClient?.thisMonthPnL) - toNum(oldClient?.thisMonthPnL),
+      lifetimePnL: toNum(newClient?.lifetimePnL) - toNum(oldClient?.lifetimePnL),
+      totalDeposit: toNum(newClient?.dailyDeposit) - toNum(oldClient?.dailyDeposit)
     }
     
     // Accumulate deltas in batch
@@ -744,18 +776,18 @@ export const DataProvider = ({ children }) => {
           newClients.forEach(c => {
             if (c?.login) {
               const sig = [
-                c.balance || 0,
-                c.credit || 0,
-                c.equity || 0,
-                c.pnl || 0,
-                c.profit || 0,
-                c.dailyDeposit || 0,
-                c.dailyWithdrawal || 0,
-                c.dailyPnL || 0,
-                c.thisWeekPnL || 0,
-                c.thisMonthPnL || 0,
-                c.lifetimePnL || 0,
-                c.lastUpdate || 0
+                toNum(c.balance),
+                toNum(c.credit),
+                toNum(c.equity),
+                toNum(c.pnl),
+                toNum(c.profit),
+                toNum(c.dailyDeposit),
+                toNum(c.dailyWithdrawal),
+                toNum(c.dailyPnL),
+                toNum(c.thisWeekPnL),
+                toNum(c.thisMonthPnL),
+                toNum(c.lifetimePnL),
+                toNum(c.lastUpdate)
               ].join('_')
               lastClientStateRef.current.set(c.login, sig)
             }
@@ -1478,18 +1510,18 @@ export const DataProvider = ({ children }) => {
       fresh.forEach(c => {
         if (c?.login) {
           const sig = [
-            c.balance || 0,
-            c.credit || 0,
-            c.equity || 0,
-            c.pnl || 0,
-            c.profit || 0,
-            c.dailyDeposit || 0,
-            c.dailyWithdrawal || 0,
-            c.dailyPnL || 0,
-            c.thisWeekPnL || 0,
-            c.thisMonthPnL || 0,
-            c.lifetimePnL || 0,
-            c.lastUpdate || 0
+            toNum(c.balance),
+            toNum(c.credit),
+            toNum(c.equity),
+            toNum(c.pnl),
+            toNum(c.profit),
+            toNum(c.dailyDeposit),
+            toNum(c.dailyWithdrawal),
+            toNum(c.dailyPnL),
+            toNum(c.thisWeekPnL),
+            toNum(c.thisMonthPnL),
+            toNum(c.lifetimePnL),
+            toNum(c.lastUpdate)
           ].join('_')
           lastClientStateRef.current.set(c.login, sig)
         }
