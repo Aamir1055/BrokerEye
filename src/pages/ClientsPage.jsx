@@ -186,7 +186,7 @@ const ClientsPage = () => {
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
-  const [itemsPerPage, setItemsPerPage] = useState('All')
+  const [itemsPerPage, setItemsPerPage] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
