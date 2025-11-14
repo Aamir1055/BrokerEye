@@ -967,6 +967,24 @@ export const DataProvider = ({ children }) => {
             const oldClient = originalValues.get(accountLogin)
             const existingClient = updated[index]
             
+            // Check if there are actual changes to prevent unnecessary object creation
+            let hasChanges = false
+            for (const key in updatedAccount) {
+              if (updatedAccount[key] !== undefined && updatedAccount[key] !== existingClient[key]) {
+                // Skip __isNormalized flag changes if both are truthy (no meaningful change)
+                if (key === '__isNormalized' && existingClient[key] && updatedAccount[key]) {
+                  continue
+                }
+                hasChanges = true
+                break
+              }
+            }
+            
+            // Only create new object if there are actual changes
+            if (!hasChanges) {
+              continue // Skip this update, no changes needed
+            }
+            
             // Merge: only overwrite fields that are explicitly defined in the update
             const merged = { ...existingClient }
             for (const key in updatedAccount) {
@@ -1008,6 +1026,25 @@ export const DataProvider = ({ children }) => {
           } else {
             // Update existing - SELECTIVE MERGE: only update defined values
             const existingAccount = updated[index]
+            
+            // Check if there are actual changes to prevent unnecessary object creation
+            let hasChanges = false
+            for (const key in updatedAccount) {
+              if (updatedAccount[key] !== undefined && updatedAccount[key] !== existingAccount[key]) {
+                // Skip __isNormalized flag changes if both are truthy
+                if (key === '__isNormalized' && existingAccount[key] && updatedAccount[key]) {
+                  continue
+                }
+                hasChanges = true
+                break
+              }
+            }
+            
+            // Only create new object if there are actual changes
+            if (!hasChanges) {
+              continue
+            }
+            
             const merged = { ...existingAccount }
             for (const key in updatedAccount) {
               if (updatedAccount[key] !== undefined) {
@@ -1179,6 +1216,24 @@ export const DataProvider = ({ children }) => {
             oldClient = dedupedPrev[index]
             const updated = [...dedupedPrev]
             const existingUser = updated[index]
+            
+            // Check if there are actual changes
+            let hasChanges = false
+            for (const key in normalizedUser) {
+              if (normalizedUser[key] !== undefined && normalizedUser[key] !== existingUser[key]) {
+                if (key === '__isNormalized' && existingUser[key] && normalizedUser[key]) {
+                  continue
+                }
+                hasChanges = true
+                break
+              }
+            }
+            
+            // Only update if there are actual changes
+            if (!hasChanges) {
+              return prev // No changes, return original array
+            }
+            
             const merged = { ...existingUser }
             for (const key in normalizedUser) {
               if (normalizedUser[key] !== undefined) {
@@ -1197,8 +1252,25 @@ export const DataProvider = ({ children }) => {
             const index = prev.findIndex(c => c && c.login === userLogin)
             if (index === -1) return [normalizedUser, ...prev]
             const updated = [...prev]
-            // SELECTIVE MERGE: only update defined values
             const existingAccount = updated[index]
+            
+            // Check if there are actual changes
+            let hasChanges = false
+            for (const key in normalizedUser) {
+              if (normalizedUser[key] !== undefined && normalizedUser[key] !== existingAccount[key]) {
+                if (key === '__isNormalized' && existingAccount[key] && normalizedUser[key]) {
+                  continue
+                }
+                hasChanges = true
+                break
+              }
+            }
+            
+            // Only update if there are actual changes
+            if (!hasChanges) {
+              return prev
+            }
+            
             const merged = { ...existingAccount }
             for (const key in normalizedUser) {
               if (normalizedUser[key] !== undefined) {
