@@ -3176,7 +3176,9 @@ const ClientsPage = () => {
                     type="text"
                     value={searchInput}
                     onChange={(e) => {
-                      setSearchInput(e.target.value)
+                      const value = e.target.value
+                      setSearchInput(value)
+                      setSearchQuery(value)
                       setShowSuggestions(true)
                       setCurrentPage(1)
                     }}
