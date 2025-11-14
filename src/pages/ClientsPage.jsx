@@ -3399,9 +3399,10 @@ const ClientsPage = () => {
                                     onWheel={(e) => e.stopPropagation()}
                                     onScroll={(e) => e.stopPropagation()}
                                     style={{
-                                      top: '10%',
-                                      right: '10px',
-                                      left: 'auto',
+                                      top: `${filterPosition.top + 40}px`,
+                                      left: filterPosition.isLastColumn 
+                                        ? `${filterPosition.right - 280}px` 
+                                        : `${filterPosition.left}px`,
                                       width: '280px',
                                       maxHeight: '80vh',
                                       zIndex: 20000000
