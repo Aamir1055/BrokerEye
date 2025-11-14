@@ -73,7 +73,11 @@ function filterClients(clients, filters) {
           const actual = key.replace('_text', '')
           if (!matchesTextFilter(c[actual], cfg)) { columnReject = true; break }
         } else if (Array.isArray(cfg) && cfg.length > 0) {
-          if (!cfg.includes(c[key])) { columnReject = true; break }
+          // Checkbox filter - use string comparison for consistent matching
+          const clientValue = c[key]
+          const strValue = String(clientValue)
+          const found = cfg.some(filterVal => String(filterVal) === strValue)
+          if (!found) { columnReject = true; break }
         }
       }
     }

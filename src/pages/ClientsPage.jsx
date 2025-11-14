@@ -1048,11 +1048,12 @@ const ClientsPage = () => {
           return matchesTextFilter(clientValue, values)
         })
       } else if (values && values.length > 0) {
-        // Regular checkbox filter
+        // Regular checkbox filter - use string comparison for consistent matching
         filtered = filtered.filter(client => {
           if (!client) return false
           const clientValue = client[columnKey]
-          return values.includes(clientValue)
+          const strValue = String(clientValue)
+          return values.some(filterVal => String(filterVal) === strValue)
         })
       }
     })
