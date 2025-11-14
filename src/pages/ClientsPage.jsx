@@ -1455,7 +1455,10 @@ const ClientsPage = () => {
 
   // Export to Excel (placed after filteredClients is defined)
   const handleExportToExcel = useCallback((exportType = 'table') => {
-    if (!filteredClients || filteredClients.length === 0) {
+    // Use full clients array for 'all' export, filtered for table export
+    const dataToExport = exportType === 'all' ? clients : filteredClients
+    
+    if (!dataToExport || dataToExport.length === 0) {
       alert('No data to export')
       return
     }
@@ -1467,7 +1470,7 @@ const ClientsPage = () => {
     
     // Prepare CSV content
     const headers = columnsToExport.map(col => col.label).join(',')
-    const rows = filteredClients.map(client => {
+    const rows = dataToExport.map(client => {
       return columnsToExport.map(col => {
         let value = client[col.key]
         
@@ -1509,7 +1512,7 @@ const ClientsPage = () => {
     
     // Close the export menu after export
     setShowExportMenu(false)
-  }, [filteredClients, visibleColumns, allColumns])
+  }, [clients, filteredClients, visibleColumns, allColumns])
 
   // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
   const handleAutoFit = useCallback((visKey, baseKey) => {

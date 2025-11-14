@@ -232,6 +232,14 @@ export const DataProvider = ({ children }) => {
       return client
     }
 
+    // CRITICAL: Check if already normalized to prevent double-scaling
+    // If balance/equity values are already small (< 1000), they're likely already normalized
+    // This prevents 100x reduction on every WebSocket update
+    if (client.__isNormalized || (client.balance != null && Math.abs(toNum(client.balance)) < 1000 && Math.abs(toNum(client.balance)) > 0)) {
+      // Data appears already normalized, return as-is with flag
+      return { ...client, __isNormalized: true }
+    }
+
     // Robust numeric parser: handles strings with commas, nulls, NaN
     const toNum = (v) => {
       if (v == null || v === '') return 0
@@ -249,6 +257,7 @@ export const DataProvider = ({ children }) => {
     // Start with explicit known monetary mappings (safe and stable)
     const normalized = {
       ...client,
+      __isNormalized: true,  // Mark as normalized to prevent re-processing
       // Basic financial fields
       balance: toNum(client.balance) / 100,
       credit: toNum(client.credit) / 100,
@@ -305,6 +314,11 @@ export const DataProvider = ({ children }) => {
       // Note: login is NOT divided (it's an ID, not a currency value)
     }
 
+    // Data integrity check: warn if values become suspiciously small
+    if (normalized.balance != null && Math.abs(normalized.balance) > 0 && Math.abs(normalized.balance) < 0.01) {
+      console.warn(`[DataContext] ⚠️ Suspiciously small balance detected for login ${client.login}: ${normalized.balance}. Possible double normalization!`)
+    }
+
     // Track keys we have explicitly normalized to avoid double-scaling
     const explicitlyScaledKeys = new Set([
       'balance','credit','equity','margin','marginFree','profit','floating','pnl','assets','liabilities',
@@ -319,23 +333,11 @@ export const DataProvider = ({ children }) => {
     // Exclusions: ids, timestamps, non-monetary integers, labels, and percentage keys (handled at display layer)
     const excludedNumericKeys = new Set([
       'login','clientID','leverage','marginLeverage','agent','soActivation','soTime','currencyDigits','rightsMask','language','mqid',
-      'registration','lastAccess','lastUpdate','accountLastUpdate','userLastUpdate','marginLevel','applied_percentage','soLevel'
+      'registration','lastAccess','lastUpdate','accountLastUpdate','userLastUpdate','marginLevel','applied_percentage','soLevel','__isNormalized'
     ])
 
-    // Generic fallback: divide any other numeric field by 100, except excluded or percentage-like keys
-    for (const key of Object.keys(client)) {
-      if (explicitlyScaledKeys.has(key)) continue
-      if (excludedNumericKeys.has(key)) continue
-      const val = client[key]
-      // Skip percentage fields, they are handled in UI (formatPercent)
-      if (/_percentage$/i.test(key)) continue
-      // Use robust numeric parsing for all values (not just numbers)
-      const num = toNum(val)
-      if (num !== 0 || val == null || val === 0) {
-        // Only scale if it's a legitimate numeric value (including 0)
-        normalized[key] = num / 100
-      }
-    }
+    // REMOVED: Generic fallback division to prevent accidental double-scaling
+    // Any fields not explicitly listed above will NOT be auto-scaled
 
     return normalized
   }
