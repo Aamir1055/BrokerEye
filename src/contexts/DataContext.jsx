@@ -233,11 +233,10 @@ export const DataProvider = ({ children }) => {
     }
 
     // CRITICAL: Check if already normalized to prevent double-scaling
-    // If balance/equity values are already small (< 1000), they're likely already normalized
-    // This prevents 100x reduction on every WebSocket update
-    if (client.__isNormalized || (client.balance != null && Math.abs(toNum(client.balance)) < 1000 && Math.abs(toNum(client.balance)) > 0)) {
-      // Data appears already normalized, return as-is with flag
-      return { ...client, __isNormalized: true }
+    // Only use the explicit flag, don't assume based on value size
+    if (client.__isNormalized === true) {
+      // Already normalized, return as-is
+      return client
     }
 
     // Robust numeric parser: handles strings with commas, nulls, NaN
@@ -312,11 +311,6 @@ export const DataProvider = ({ children }) => {
       thisMonthPreviousEquity: toNum(client.thisMonthPreviousEquity) / 100,
       previousEquity: toNum(client.previousEquity) / 100,
       // Note: login is NOT divided (it's an ID, not a currency value)
-    }
-
-    // Data integrity check: warn if values become suspiciously small
-    if (normalized.balance != null && Math.abs(normalized.balance) > 0 && Math.abs(normalized.balance) < 0.01) {
-      console.warn(`[DataContext] ⚠️ Suspiciously small balance detected for login ${client.login}: ${normalized.balance}. Possible double normalization!`)
     }
 
     // Track keys we have explicitly normalized to avoid double-scaling
