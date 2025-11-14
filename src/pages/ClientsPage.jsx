@@ -2761,16 +2761,6 @@ const ClientsPage = () => {
                   </div>
                 )}
                 
-                {/* Percentage Indicator Card - Start of Second Row */}
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2 flex items-center justify-center">
-                  <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
-                    By Percentage 
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </p>
-                </div>
-                
                 {/* Percentage Cards - Second Row */}
                 <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
                   <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit %</p>
@@ -2866,15 +2856,6 @@ const ClientsPage = () => {
                 )}
                 
                 {/* New Cards - Fourth Row (Percentage) */}
-                {/* Percentage Indicator Card - Start of Fourth Row */}
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2 flex items-center justify-center">
-                  <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
-                    By Percentage 
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </p>
-                </div>
                 <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
                   <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL %</p>
                   <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
