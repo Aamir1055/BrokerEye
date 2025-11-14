@@ -2710,44 +2710,56 @@ const ClientsPage = () => {
             {displayMode === 'both' && (
               <>
                 {/* Value Cards - First Row */}
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">{faceCardTotals.totalClients}</p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                  <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
-                  <p className="text-sm font-bold text-indigo-700">
-                    {faceCardTotals.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
-                  <p className="text-sm font-bold text-emerald-700">
-                    {faceCardTotals.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-                  <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
-                  <p className="text-sm font-bold text-sky-700">
-                    {faceCardTotals.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
-                  <p className={`text-sm font-bold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {faceCardTotals.totalPnl >= 0 ? '▲ ' : '▼ '}
-                    {faceCardTotals.totalPnl >= 0 ? '' : '-'}
-                    {Math.abs(faceCardTotals.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
-                  <p className={`text-sm font-bold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {faceCardTotals.totalProfit >= 0 ? '▲ ' : '▼ '}
-                    {faceCardTotals.totalProfit >= 0 ? '' : '-'}
-                    {Math.abs(faceCardTotals.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
+                {cardVisibility[1] && (
+                  <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+                    <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
+                    <p className="text-sm font-bold text-gray-900">{faceCardTotals.totalClients}</p>
+                  </div>
+                )}
+                {cardVisibility[2] && (
+                  <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+                    <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
+                    <p className="text-sm font-bold text-indigo-700">
+                      {faceCardTotals.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[3] && (
+                  <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
+                    <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
+                    <p className="text-sm font-bold text-emerald-700">
+                      {faceCardTotals.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[4] && (
+                  <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
+                    <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
+                    <p className="text-sm font-bold text-sky-700">
+                      {faceCardTotals.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[5] && (
+                  <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
+                    <p className={`text-sm font-bold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {faceCardTotals.totalPnl >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.totalPnl >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[6] && (
+                  <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
+                    <p className={`text-sm font-bold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                      {faceCardTotals.totalProfit >= 0 ? '▲ ' : '▼ '}
+                      {faceCardTotals.totalProfit >= 0 ? '' : '-'}
+                      {Math.abs(faceCardTotals.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
                 
                 {/* Percentage Indicator Card - Start of Second Row */}
                 <div className="bg-white rounded shadow-sm border border-blue-200 p-2 flex items-center justify-center">
@@ -2796,50 +2808,62 @@ const ClientsPage = () => {
                 </div>
                 
                 {/* New Cards - Third Row (Value) */}
-                <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-                  <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
-                  <p className="text-sm font-bold text-green-700">
-                    {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
-                  <p className="text-sm font-bold text-red-700">
-                    {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
+                {cardVisibility[8] && (
+                  <div className="bg-white rounded shadow-sm border border-green-200 p-2">
+                    <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
+                    <p className="text-sm font-bold text-green-700">
+                      {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[9] && (
+                  <div className="bg-white rounded shadow-sm border border-red-200 p-2">
+                    <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
+                    <p className="text-sm font-bold text-red-700">
+                      {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[10] && (
+                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL</p>
+                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                      {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
+                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[11] && (
+                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL</p>
+                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
+                      {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                      {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
+                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[12] && (
+                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL</p>
+                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
+                      {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                      {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
+                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {cardVisibility[13] && (
+                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
+                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL</p>
+                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
+                      {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
+                      {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
+                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
                 
                 {/* New Cards - Fourth Row (Percentage) */}
                 {/* Percentage Indicator Card - Start of Fourth Row */}
