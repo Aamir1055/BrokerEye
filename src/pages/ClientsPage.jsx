@@ -195,6 +195,7 @@ const ClientsPage = () => {
 
   // Dropdowns, modals, and refs
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [filterPosition, setFilterPosition] = useState(null)
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
