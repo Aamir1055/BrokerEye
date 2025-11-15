@@ -12,7 +12,11 @@ import { useIB } from '../contexts/IBContext'
 
 const Client2Page = () => {
   // Group context
-  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
+  
+  // Get active group for this module
+  const activeGroupName = getActiveGroupFilter('client2')
+  const activeGroup = groups.find(g => g.name === activeGroupName)
   
   // IB context
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
@@ -67,11 +71,16 @@ const Client2Page = () => {
   const [textFilterTemp, setTextFilterTemp] = useState({}) // Temporary storage for text filters being edited
   const [columnSortOrder, setColumnSortOrder] = useState({}) // Track sort order per column: 'asc', 'desc', or null
   const [filterPosition, setFilterPosition] = useState(null) // Track filter button position for portal
+  const [columnValues, setColumnValues] = useState({}) // Store unique values for each column
+  const [columnValuesLoading, setColumnValuesLoading] = useState({}) // Track loading state for column values
+  const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
+  const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [quickFilters, setQuickFilters] = useState({
     hasFloating: false,
     hasCredit: false,
     noDeposit: false
   })
+  
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState(() => {
     try {
@@ -93,10 +102,15 @@ const Client2Page = () => {
   const filterRefs = useRef({})
   const filterPanelRef = useRef(null)
   const headerRefs = useRef({})
-  const resizingRef = useRef({ active: false, columnKey: null, startX: 0, startWidth: 0 })
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+  const resizeRightStartWidth = useRef(0)
+  const resizeRAF = useRef(null)
+  const resizeRightNeighborKey = useRef(null)
+  const measureCanvasRef = useRef(null)
   const tableRef = useRef(null)
   const hScrollRef = useRef(null)
-  const [resizeGuideLeft, setResizeGuideLeft] = useState(null)
+  const [resizingColumn, setResizingColumn] = useState(null)
   
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -108,44 +122,48 @@ const Client2Page = () => {
         console.error('Failed to parse saved card visibility:', e)
       }
     }
-    // Default: show all available cards
+    // Default: show only essential cards
     return {
-      assets: true,
+      assets: false,
       balance: true,
-      blockedCommission: true,
-      blockedProfit: true,
-      commission: true,
+      blockedCommission: false,
+      blockedProfit: false,
+      commission: false,
       credit: true,
-      dailyBonusIn: true,
-      dailyBonusOut: true,
-      dailyCreditIn: true,
-      dailyCreditOut: true,
+      dailyBonusIn: false,
+      dailyBonusOut: false,
+      dailyCreditIn: false,
+      dailyCreditOut: false,
       dailyDeposit: true,
       dailyPnL: true,
-      dailySOCompensationIn: true,
-      dailySOCompensationOut: true,
+      dailySOCompensationIn: false,
+      dailySOCompensationOut: false,
       dailyWithdrawal: true,
       equity: true,
-      floating: true,
-      liabilities: true,
-      lifetimeBonusIn: true,
-      lifetimeBonusOut: true,
-      lifetimeCreditIn: true,
-      lifetimeCreditOut: true,
-      lifetimeDeposit: true,
+      floating: false,
+      liabilities: false,
+      lifetimeBonusIn: false,
+      lifetimeBonusOut: false,
+      lifetimeCreditIn: false,
+      lifetimeCreditOut: false,
+      lifetimeDeposit: false,
       lifetimePnL: true,
-      lifetimeSOCompensationIn: true,
-      lifetimeSOCompensationOut: true,
-      lifetimeWithdrawal: true,
-      margin: true,
-      marginFree: true,
-      marginInitial: true,
-      marginLevel: true,
-      marginMaintenance: true,
-      soEquity: true,
-      soLevel: true,
-      soMargin: true,
-      // Percent versions (default hidden)
+      lifetimeSOCompensationIn: false,
+      lifetimeSOCompensationOut: false,
+      lifetimeWithdrawal: false,
+      margin: false,
+      marginFree: false,
+      marginInitial: false,
+      marginLevel: false,
+      marginMaintenance: false,
+      soEquity: false,
+      soLevel: false,
+      soMargin: false,
+      pnl: false,
+      previousEquity: false,
+      profit: false,
+      storage: false,
+      // Percent versions (default hidden except P&L %)
       assetsPercent: false,
       balancePercent: false,
       blockedCommissionPercent: false,
@@ -181,28 +199,28 @@ const Client2Page = () => {
       soEquityPercent: false,
       soLevelPercent: false,
       soMarginPercent: false,
-      pnlPercent: false,
+      pnlPercent: true,
       previousEquityPercent: false,
       profitPercent: false,
       storagePercent: false,
-      thisMonthBonusIn: true,
-      thisMonthBonusOut: true,
-      thisMonthCreditIn: true,
-      thisMonthCreditOut: true,
-      thisMonthDeposit: true,
-      thisMonthPnL: true,
-      thisMonthSOCompensationIn: true,
-      thisMonthSOCompensationOut: true,
-      thisMonthWithdrawal: true,
-      thisWeekBonusIn: true,
-      thisWeekBonusOut: true,
-      thisWeekCreditIn: true,
-      thisWeekCreditOut: true,
-      thisWeekDeposit: true,
-      thisWeekPnL: true,
-      thisWeekSOCompensationIn: true,
-      thisWeekSOCompensationOut: true,
-      thisWeekWithdrawal: true,
+      thisMonthBonusIn: false,
+      thisMonthBonusOut: false,
+      thisMonthCreditIn: false,
+      thisMonthCreditOut: false,
+      thisMonthDeposit: false,
+      thisMonthPnL: false,
+      thisMonthSOCompensationIn: false,
+      thisMonthSOCompensationOut: false,
+      thisMonthWithdrawal: false,
+      thisWeekBonusIn: false,
+      thisWeekBonusOut: false,
+      thisWeekCreditIn: false,
+      thisWeekCreditOut: false,
+      thisWeekDeposit: false,
+      thisWeekPnL: false,
+      thisWeekSOCompensationIn: false,
+      thisWeekSOCompensationOut: false,
+      thisWeekWithdrawal: false,
       // Percent versions for week/month
       thisMonthBonusInPercent: false,
       thisMonthBonusOutPercent: false,
@@ -424,6 +442,20 @@ const Client2Page = () => {
         payload.accountRangeMax = parseInt(accountRangeMax.trim())
       }
       
+      // Add active group filter if present - use API filtering
+      if (activeGroup) {
+        if (activeGroup.range) {
+          // Range-based group
+          payload.accountRangeMin = activeGroup.range.from
+          payload.accountRangeMax = activeGroup.range.to
+          console.log('[Client2] Applying range group filter:', activeGroup.range)
+        } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+          // Manual selection group
+          payload.mt5Accounts = activeGroup.loginIds.map(id => Number(id))
+          console.log('[Client2] Applying manual group filter:', payload.mt5Accounts.length, 'accounts')
+        }
+      }
+      
       // Add sorting if present
       if (sortBy) {
         payload.sortBy = sortBy
@@ -530,7 +562,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive])
+  }, [currentPage, itemsPerPage, searchQuery, filters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup])
   
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
@@ -621,6 +653,19 @@ const Client2Page = () => {
               default:
                 return true
             }
+          }
+          
+          // Handle checkbox value filters (key ends with _checkbox)
+          if (filterKey.endsWith('_checkbox')) {
+            const columnKey = filterKey.replace('_checkbox', '')
+            const clientValue = client[columnKey]
+            const { values } = filterValue
+            
+            // If no values selected or all values selected, show all
+            if (!values || values.length === 0) return true
+            
+            // Check if client value is in selected values
+            return values.includes(clientValue)
           }
           
           // Handle regular checkbox filters
@@ -781,70 +826,120 @@ const Client2Page = () => {
     // Don't reset page - keep user on current page
   }
 
-  // Column resizing handlers
-  const onMouseMoveResizer = (e) => {
-    const { active, columnKey, startX, startWidth } = resizingRef.current
-    if (!active || !columnKey) return
-    const delta = e.clientX - startX
-    const minW = 80
-    const maxW = 600
-    let newWidth = Math.max(minW, Math.min(maxW, startWidth + delta))
-    setColumnWidths(prev => ({ ...prev, [columnKey]: newWidth }))
-
-    // Update vertical resize guide position relative to horizontal scroll container
-    try {
-      const th = headerRefs.current[columnKey]
-      const container = hScrollRef.current
-      if (th && container) {
-        const thRect = th.getBoundingClientRect()
-        const containerRect = container.getBoundingClientRect()
-        const left = (thRect.left - containerRect.left) + newWidth + container.scrollLeft
-        setResizeGuideLeft(left)
-      }
-    } catch {}
-  }
-
-  const onMouseUpResizer = () => {
-    resizingRef.current = { active: false, columnKey: null, startX: 0, startWidth: 0 }
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-    window.removeEventListener('mousemove', onMouseMoveResizer)
-    window.removeEventListener('mouseup', onMouseUpResizer)
-    setResizeGuideLeft(null)
-  }
-
-  const onMouseDownResizer = (e, columnKey) => {
-    e.stopPropagation()
+  // Column resize handlers with RAF for smooth performance (Excel-like)
+  const handleResizeStart = useCallback((e, columnKey) => {
     e.preventDefault()
-    const th = headerRefs.current[columnKey]
-    const startWidth = th ? th.offsetWidth : (columnWidths[columnKey] || 150)
-    resizingRef.current = { active: true, columnKey, startX: e.clientX, startWidth }
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-    window.addEventListener('mousemove', onMouseMoveResizer)
-    window.addEventListener('mouseup', onMouseUpResizer)
+    e.stopPropagation()
+    setResizingColumn(columnKey)
+    resizeStartX.current = e.clientX
+    // Measure the actual current width of the header cell for accurate resizing
+    const measured = headerRefs.current?.[columnKey]?.getBoundingClientRect()?.width
+    resizeStartWidth.current = (typeof measured === 'number' && measured > 0)
+      ? measured
+      : (columnWidths[columnKey] || 150) // Fallback to last set width or 150px
+
+    // Determine immediate right neighbor (Excel-like resize)
+    const currentEl = headerRefs.current?.[columnKey]
+    const nextEl = currentEl?.nextElementSibling || null
+    let neighborKey = null
+    if (nextEl) {
+      for (const k in headerRefs.current) {
+        if (headerRefs.current[k] === nextEl) { neighborKey = k; break }
+      }
+    }
+    resizeRightNeighborKey.current = neighborKey
+    if (neighborKey) {
+      const nMeasured = headerRefs.current?.[neighborKey]?.getBoundingClientRect()?.width
+      resizeRightStartWidth.current = (typeof nMeasured === 'number' && nMeasured > 0) ? nMeasured : (columnWidths[neighborKey] || 150)
+    } else {
+      resizeRightStartWidth.current = 0
+    }
+  }, [columnWidths])
+
+  const handleResizeMove = useCallback((e) => {
+    if (!resizingColumn) return
+    // Use requestAnimationFrame for smooth rendering
+    if (resizeRAF.current) {
+      cancelAnimationFrame(resizeRAF.current)
+    }
+    resizeRAF.current = requestAnimationFrame(() => {
+      const diff = e.clientX - resizeStartX.current
+      // Allow both directions with min width 50px
+      const leftWidth = Math.max(50, resizeStartWidth.current + diff)
+
+      // Adjust right neighbor inversely to keep total steady (Excel-like)
+      const rKey = resizeRightNeighborKey.current
+      if (rKey) {
+        const rightWidth = Math.max(50, resizeRightStartWidth.current - diff)
+        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth, [rKey]: rightWidth }))
+      } else {
+        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth }))
+      }
+    })
+  }, [resizingColumn])
+
+  const handleResizeEnd = useCallback(() => {
+    if (resizeRAF.current) {
+      cancelAnimationFrame(resizeRAF.current)
+      resizeRAF.current = null
+    }
+    setResizingColumn(null)
+  }, [])
+
+  useEffect(() => {
+    if (resizingColumn) {
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      document.addEventListener('mousemove', handleResizeMove)
+      document.addEventListener('mouseup', handleResizeEnd)
+      return () => {
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', handleResizeMove)
+        document.removeEventListener('mouseup', handleResizeEnd)
+      }
+    }
+  }, [resizingColumn, handleResizeMove, handleResizeEnd])
+
+  // Auto-fit like Excel on double click
+  const ensureCanvas = () => {
+    if (!measureCanvasRef.current) {
+      const c = document.createElement('canvas')
+      measureCanvasRef.current = c.getContext('2d')
+    }
+    return measureCanvasRef.current
   }
 
-  // Auto-fit column width to content (double-click on resizer like Excel)
-  const autoFitColumn = (columnKey) => {
-    const minW = 80
-    const maxW = 600
-    let newWidth = minW
+  const measureText = (text) => {
     try {
-      const th = headerRefs.current[columnKey]
-      if (th) {
-        newWidth = Math.max(newWidth, th.scrollWidth + 24)
-      }
-      const table = tableRef.current
-      if (table) {
-        const cells = table.querySelectorAll(`td[data-col="${columnKey}"]`)
-        cells.forEach((td) => {
-          newWidth = Math.max(newWidth, td.scrollWidth + 24)
-        })
-      }
-    } catch {}
-    newWidth = Math.max(minW, Math.min(maxW, newWidth))
-    setColumnWidths(prev => ({ ...prev, [columnKey]: newWidth }))
+      const ctx = ensureCanvas()
+      if (!ctx) return String(text || '').length * 8
+      // Match table cell font (Tailwind text-sm -> 14px)
+      ctx.font = '14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial'
+      return ctx.measureText(String(text ?? '')).width
+    } catch {
+      return String(text || '').length * 8
+    }
+  }
+
+  const handleAutoFit = (columnKey, baseKey) => {
+    try {
+      const headerText = visibleColumnsList.find(c => c.key === columnKey)?.label || ''
+      const headerWidth = measureText(headerText) + 60 // +60 for padding, icons, etc
+      
+      let maxCellWidth = headerWidth
+      const columnData = clients.map(row => row[baseKey || columnKey])
+      
+      columnData.forEach(val => {
+        const cellWidth = measureText(val) + 40 // +40 for padding
+        if (cellWidth > maxCellWidth) maxCellWidth = cellWidth
+      })
+      
+      const finalWidth = Math.max(50, Math.min(600, Math.ceil(maxCellWidth)))
+      setColumnWidths(prev => ({ ...prev, [columnKey]: finalWidth }))
+    } catch (err) {
+      console.error('[Client2Page] Auto-fit error:', err)
+    }
   }
   
   // Column filter functions
@@ -926,13 +1021,21 @@ const Client2Page = () => {
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
       const textFilterKey = `${columnKey}_text`
-      const { [columnKey]: _, [numberFilterKey]: __, [textFilterKey]: ___, ...rest } = prev
+      const checkboxFilterKey = `${columnKey}_checkbox`
+      const { [columnKey]: _, [numberFilterKey]: __, [textFilterKey]: ___, [checkboxFilterKey]: ____, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
+    // Reset selected values to all
+    if (columnValues[columnKey]) {
+      setSelectedColumnValues(prev => ({
+        ...prev,
+        [columnKey]: [...columnValues[columnKey]]
+      }))
+    }
     clearSort(columnKey)
     setShowFilterDropdown(null)
   }
@@ -949,7 +1052,11 @@ const Client2Page = () => {
     const textFilterKey = `${columnKey}_text`
     const hasTextFilter = columnFilters[textFilterKey] ? 1 : 0
     
-    return checkboxCount + hasNumberFilter + hasTextFilter
+    // Check for checkbox value filter
+    const checkboxFilterKey = `${columnKey}_checkbox`
+    const hasCheckboxFilter = columnFilters[checkboxFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter + hasTextFilter + hasCheckboxFilter
   }
   
   const isAllSelected = (columnKey) => {
@@ -1029,6 +1136,93 @@ const Client2Page = () => {
     setColumnFilters(prev => ({
       ...prev,
       [`${columnKey}_text`]: filterConfig
+    }))
+    
+    setShowFilterDropdown(null)
+  }
+
+  // Fetch unique column values from API for checkbox filter
+  const fetchColumnValues = async (columnKey) => {
+    // Don't fetch if already loading or already loaded
+    if (columnValuesLoading[columnKey] || columnValues[columnKey]) return
+    
+    setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
+    
+    try {
+      // Map the column key to the actual API field name
+      // Remove 'Percent' suffix if present
+      const apiFieldName = columnKey.replace(/Percent$/, '')
+      
+      const params = {
+        fields: apiFieldName,
+        page: 1,
+        limit: 10000 // Get all unique values
+      }
+      
+      const queryString = new URLSearchParams(params).toString()
+      const response = await brokerAPI.get(`/api/broker/clients/fields?${queryString}`)
+      
+      if (response.data.status === 'success') {
+        const clients = response.data.data.clients || []
+        // Extract unique values from the column using the API field name
+        const uniqueValues = [...new Set(clients.map(client => client[apiFieldName]).filter(v => v !== null && v !== undefined && v !== ''))]
+        // Sort alphabetically
+        uniqueValues.sort((a, b) => String(a).localeCompare(String(b)))
+        
+        setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
+        
+        // Initialize selected values (all selected by default)
+        setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...uniqueValues] }))
+      }
+    } catch (err) {
+      console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
+    } finally {
+      setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+    }
+  }
+
+  // Toggle individual value selection
+  const toggleColumnValue = (columnKey, value) => {
+    setSelectedColumnValues(prev => {
+      const currentSelected = prev[columnKey] || []
+      const isSelected = currentSelected.includes(value)
+      
+      if (isSelected) {
+        return { ...prev, [columnKey]: currentSelected.filter(v => v !== value) }
+      } else {
+        return { ...prev, [columnKey]: [...currentSelected, value] }
+      }
+    })
+  }
+
+  // Toggle select all for column
+  const toggleSelectAllColumnValues = (columnKey) => {
+    const allValues = columnValues[columnKey] || []
+    const currentSelected = selectedColumnValues[columnKey] || []
+    
+    if (currentSelected.length === allValues.length) {
+      // Deselect all
+      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+    } else {
+      // Select all
+      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...allValues] }))
+    }
+  }
+
+  // Apply checkbox filter
+  const applyCheckboxFilter = (columnKey) => {
+    const selected = selectedColumnValues[columnKey] || []
+    
+    if (selected.length === 0) {
+      // No values selected, clear filter
+      clearColumnFilter(columnKey)
+      return
+    }
+    
+    // Create a filter configuration for checkbox selection
+    setColumnFilters(prev => ({
+      ...prev,
+      [`${columnKey}_checkbox`]: { values: selected }
     }))
     
     setShowFilterDropdown(null)
@@ -1592,8 +1786,9 @@ const Client2Page = () => {
               
               {/* Groups Button */}
               <GroupSelector 
-                onCreateGroup={() => setShowGroupModal(true)}
-                onEditGroup={() => setShowGroupModal(true)}
+                onCreateClick={() => setShowGroupModal(true)}
+                onEditClick={() => setShowGroupModal(true)}
+                moduleName="client2"
               />
               
               {/* IB Filter Button */}
@@ -2581,6 +2776,12 @@ const Client2Page = () => {
                                           shouldOpenLeft
                                         })
                                         setShowFilterDropdown(col.key)
+                                        
+                                        // Fetch column values for text/non-numeric columns
+                                        const columnType = getColumnType(col.key)
+                                        if (columnType !== 'float' && columnType !== 'integer') {
+                                          fetchColumnValues(col.key)
+                                        }
                                       }
                                     }}
                                     className={`p-0.5 transition-opacity hover:opacity-70 ${filterCount > 0 ? 'text-green-400' : 'text-white/60'}`}
@@ -2799,14 +3000,19 @@ const Client2Page = () => {
 
                                         {/* Text/Integer Filter (Checkboxes) */}
                                         {!isNumeric && (() => {
-                                          // Initialize temp state for text filter if needed
-                                          if (!textFilterTemp[columnKey]) {
-                                            initTextFilterTemp(columnKey)
-                                          }
-                                          
-                                          const tempTextFilter = textFilterTemp[columnKey] || { operator: 'equal', value: '', caseSensitive: false }
-                                          const hasTextFilter = columnFilters[`${columnKey}_text`]
                                           const currentSort = columnSortOrder[columnKey]
+                                          const checkboxFilterKey = `${columnKey}_checkbox`
+                                          const hasCheckboxFilter = columnFilters[checkboxFilterKey]
+                                          
+                                          const allValues = columnValues[columnKey] || []
+                                          const loading = columnValuesLoading[columnKey]
+                                          const selected = selectedColumnValues[columnKey] || []
+                                          const searchQuery = columnValueSearch[columnKey] || ''
+                                          
+                                          // Filter values based on search
+                                          const filteredValues = searchQuery
+                                            ? allValues.filter(v => String(v).toLowerCase().includes(searchQuery.toLowerCase()))
+                                            : allValues
                                           
                                           return (
                                             <>
@@ -2832,7 +3038,7 @@ const Client2Page = () => {
                                                 </button>
                                               </div>
 
-                                              {/* Text Filter Operators */}
+                                              {/* Text Filters Section */}
                                               <div className="px-3 py-2 border-b border-gray-200">
                                                 <div className="relative">
                                                   <button
@@ -2844,7 +3050,7 @@ const Client2Page = () => {
                                                       }
                                                     }}
                                                     id={`text-filter-btn-${columnKey}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasTextFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
                                                   >
                                                     <span className="text-gray-700 font-medium">Text Filters</span>
                                                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2852,91 +3058,150 @@ const Client2Page = () => {
                                                     </svg>
                                                   </button>
                                                   
-                                                  {/* Text Filter Submenu */}
+                                                  {/* Keep existing text filter submenu for advanced filtering */}
                                                   <div
                                                     id={`text-filter-menu-${columnKey}`}
                                                     className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
                                                     onClick={(e) => e.stopPropagation()}
                                                   >
                                                     <div className="p-3 space-y-3">
-                                                      {/* Operator Dropdown */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">Condition</label>
-                                                        <select
-                                                          value={tempTextFilter.operator}
-                                                          onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                        >
-                                                          <option value="equal">Equal...</option>
-                                                          <option value="notEqual">Not Equal...</option>
-                                                          <option value="startsWith">Starts With...</option>
-                                                          <option value="endsWith">Ends With...</option>
-                                                          <option value="contains">Contains...</option>
-                                                          <option value="doesNotContain">Does Not Contain...</option>
-                                                        </select>
-                                                      </div>
-
-                                                      {/* Value Input */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">Value</label>
-                                                        <input
-                                                          type="text"
-                                                          placeholder="Enter text"
-                                                          value={tempTextFilter.value}
-                                                          onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                        />
-                                                      </div>
-
-                                                      {/* Case Sensitive Checkbox */}
-                                                      <div>
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                          <input
-                                                            type="checkbox"
-                                                            checked={tempTextFilter.caseSensitive}
-                                                            onChange={(e) => updateTextFilterTemp(columnKey, 'caseSensitive', e.target.checked)}
-                                                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                          />
-                                                          <span className="text-xs text-gray-700">Match Case</span>
-                                                        </label>
-                                                      </div>
-
-                                                      {/* Apply/Clear Buttons */}
-                                                      <div className="flex gap-2 pt-2 border-t border-gray-200">
-                                                        <button
-                                                          onClick={() => {
-                                                            applyTextFilter(columnKey)
-                                                            const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                            if (menu) menu.classList.add('hidden')
-                                                          }}
-                                                          className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                        >
-                                                          OK
-                                                        </button>
-                                                        <button
-                                                          onClick={() => {
-                                                            const textFilterKey = `${columnKey}_text`
-                                                            setColumnFilters(prev => {
-                                                              const { [textFilterKey]: _, ...rest } = prev
-                                                              return rest
-                                                            })
-                                                            const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                            if (menu) menu.classList.add('hidden')
-                                                          }}
-                                                          className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                        >
-                                                          Clear
-                                                        </button>
-                                                      </div>
+                                                      {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
+                                                      {(() => {
+                                                        const tempTextFilter = textFilterTemp[columnKey] || { operator: 'equal', value: '', caseSensitive: false }
+                                                        return (
+                                                          <>
+                                                            <div>
+                                                              <label className="block text-xs font-medium text-gray-700 mb-1">Condition</label>
+                                                              <select
+                                                                value={tempTextFilter.operator}
+                                                                onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                              >
+                                                                <option value="equal">Equal...</option>
+                                                                <option value="notEqual">Not Equal...</option>
+                                                                <option value="startsWith">Starts With...</option>
+                                                                <option value="endsWith">Ends With...</option>
+                                                                <option value="contains">Contains...</option>
+                                                                <option value="doesNotContain">Does Not Contain...</option>
+                                                              </select>
+                                                            </div>
+                                                            <div>
+                                                              <label className="block text-xs font-medium text-gray-700 mb-1">Value</label>
+                                                              <input
+                                                                type="text"
+                                                                placeholder="Enter text"
+                                                                value={tempTextFilter.value}
+                                                                onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                              />
+                                                            </div>
+                                                            <div>
+                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={tempTextFilter.caseSensitive}
+                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'caseSensitive', e.target.checked)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs text-gray-700">Match Case</span>
+                                                              </label>
+                                                            </div>
+                                                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                                                              <button
+                                                                onClick={() => {
+                                                                  applyTextFilter(columnKey)
+                                                                  const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                  if (menu) menu.classList.add('hidden')
+                                                                }}
+                                                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                              >
+                                                                OK
+                                                              </button>
+                                                              <button
+                                                                onClick={() => {
+                                                                  const textFilterKey = `${columnKey}_text`
+                                                                  setColumnFilters(prev => {
+                                                                    const { [textFilterKey]: _, ...rest } = prev
+                                                                    return rest
+                                                                  })
+                                                                  const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                  if (menu) menu.classList.add('hidden')
+                                                                }}
+                                                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                              >
+                                                                Clear
+                                                              </button>
+                                                            </div>
+                                                          </>
+                                                        )
+                                                      })()}
                                                     </div>
                                                   </div>
+                                                </div>
+                                              </div>
+
+                                              {/* Checkbox Value List */}
+                                              <div className="flex-1 overflow-hidden flex flex-col">
+                                                {/* Search Bar */}
+                                                <div className="px-3 py-2 border-b border-gray-200">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="Search values..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                  />
+                                                </div>
+
+                                                {/* Select All Checkbox */}
+                                                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                  <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={selected.length === allValues.length && allValues.length > 0}
+                                                      onChange={() => toggleSelectAllColumnValues(columnKey)}
+                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL</span>
+                                                  </label>
+                                                </div>
+
+                                                {/* Values List */}
+                                                <div className="flex-1 overflow-y-auto px-3 py-2">
+                                                  {loading ? (
+                                                    <div className="py-8 text-center">
+                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                    </div>
+                                                  ) : filteredValues.length > 0 ? (
+                                                    <div className="space-y-1">
+                                                      {filteredValues.map((value) => (
+                                                        <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={selected.includes(value)}
+                                                            onChange={() => toggleColumnValue(columnKey, value)}
+                                                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                          />
+                                                          <span className="text-xs text-gray-700">{value}</span>
+                                                        </label>
+                                                      ))}
+                                                    </div>
+                                                  ) : (
+                                                    <div className="py-8 text-xs text-gray-500 text-center">
+                                                      {searchQuery ? 'No matching values found' : 'No values available'}
+                                                    </div>
+                                                  )}
                                                 </div>
                                               </div>
 
                                               {/* OK/Clear Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
-                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  onClick={() => {
+                                                    applyCheckboxFilter(columnKey)
+                                                    setShowFilterDropdown(null)
+                                                  }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
@@ -2957,16 +3222,17 @@ const Client2Page = () => {
                                   })()}
                                 </div>
                               </div>
-                              {/* Column Resizer Handle */}
+                              {/* Column Resizer Handle - Excel-like */}
                               <div
-                                onMouseDown={(e) => onMouseDownResizer(e, col.key)}
-                                onDoubleClick={(e) => { e.stopPropagation(); autoFitColumn(col.key) }}
+                                onMouseDown={(e) => handleResizeStart(e, col.key)}
+                                onDoubleClick={(e) => { e.stopPropagation(); handleAutoFit(col.key, col.baseKey) }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute top-0 right-0 h-full w-2 cursor-col-resize select-none z-10"
+                                className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize select-none z-10 hover:bg-yellow-400 active:bg-yellow-500"
                                 style={{ userSelect: 'none' }}
-                                title="Drag to resize column"
+                                title="Drag to resize column • Double-click to auto-fit"
+                                draggable={false}
                               >
-                                <span className="block h-full w-px bg-gray-300 hover:bg-gray-500 ml-auto"></span>
+                                <div className="absolute right-0 top-0 w-px h-full bg-white/30 hover:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
                               </div>
                             </th>
                           )

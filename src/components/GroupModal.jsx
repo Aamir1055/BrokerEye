@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useGroups } from '../contexts/GroupContext'
+import api from '../services/api'
 
 const GroupModal = ({ 
   isOpen, 
@@ -21,6 +22,14 @@ const GroupModal = ({
   const [activeTab, setActiveTab] = useState('manual') // 'manual' or 'range'
   const [isEditMode, setIsEditMode] = useState(false)
   const [originalGroupName, setOriginalGroupName] = useState('')
+  
+  // API state for My Login tab
+  const [apiLogins, setApiLogins] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalLogins, setTotalLogins] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const limit = 50
 
   // Initialize form when editing
   useEffect(() => {
@@ -56,8 +65,47 @@ const GroupModal = ({
       setActiveTab('manual')
       setIsEditMode(false)
       setOriginalGroupName('')
+      setApiLogins([])
+      setCurrentPage(1)
+      setTotalPages(1)
+      setTotalLogins(0)
     }
   }, [isOpen])
+  
+  // Fetch logins from API for My Login tab
+  useEffect(() => {
+    const fetchLogins = async () => {
+      if (!isOpen || activeTab !== 'manual') return
+      
+      setLoading(true)
+      try {
+        const params = {
+          fields: 'login,name,email',
+          page: currentPage,
+          limit: limit
+        }
+        if (searchQuery.trim()) {
+          params.search = searchQuery.trim()
+        }
+
+        const queryString = new URLSearchParams(params).toString()
+        const response = await api.get(`/api/broker/clients/fields?${queryString}`)
+
+        if (response.data.status === 'success') {
+          setApiLogins(response.data.data.clients || [])
+          setTotalPages(response.data.data.totalPages || 1)
+          setTotalLogins(response.data.data.total || 0)
+        }
+      } catch (err) {
+        console.error('[GroupModal] Error fetching logins:', err)
+        setFormError('Failed to load logins from server')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLogins()
+  }, [isOpen, activeTab, currentPage, searchQuery])
 
   // Update selected logins based on range whenever rangeStart or rangeEnd changes
   useEffect(() => {
@@ -91,30 +139,12 @@ const GroupModal = ({
   if (!isOpen) return null
 
   const getFilteredItems = () => {
-    // Get unique logins only (groups are for logins, not individual items)
-    const uniqueLoginMap = new Map()
-    
-    availableItems.forEach(item => {
-      const login = String(item[loginField] || '')
-      if (!uniqueLoginMap.has(login)) {
-        uniqueLoginMap.set(login, item)
-      }
-    })
-    
-    const uniqueItems = Array.from(uniqueLoginMap.values())
-    
-    if (!searchQuery.trim()) {
-      return uniqueItems.slice(0, 50)
+    // Use API data for My Login tab
+    if (activeTab === 'manual') {
+      return apiLogins
     }
-
-    const query = searchQuery.toLowerCase().trim()
-    return uniqueItems.filter(item => {
-      const login = String(item[loginField] || '').toLowerCase()
-      const display = String(item[displayField] || '').toLowerCase()
-      const secondary = secondaryField ? String(item[secondaryField] || '').toLowerCase() : ''
-      
-      return login.includes(query) || display.includes(query) || secondary.includes(query)
-    }).slice(0, 50)
+    // For range tab, no items needed
+    return []
   }
 
   const toggleLoginSelection = (login) => {
@@ -270,8 +300,11 @@ const GroupModal = ({
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by login, name..."
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setCurrentPage(1) // Reset to page 1 when searching
+                  }}
+                  placeholder="Search by login, name, email..."
                   className="w-full px-2.5 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
                 />
                 
@@ -279,15 +312,20 @@ const GroupModal = ({
                 <div className="bg-white rounded-md border border-gray-200">
                   <div className="px-2.5 py-1.5 bg-blue-50 border-b border-blue-200 sticky top-0">
                     <p className="text-xs font-semibold text-blue-700">
-                      Showing {filteredItems.length} items
+                      {loading ? 'Loading...' : `Showing ${filteredItems.length} items on this page`}
                     </p>
                   </div>
-                  <div>
-                {filteredItems.length > 0 ? (
+                  <div className="max-h-64 overflow-y-auto">
+                    {loading ? (
+                      <div className="px-2.5 py-8 text-center">
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <p className="text-xs text-gray-500 mt-2">Loading logins...</p>
+                      </div>
+                    ) : filteredItems.length > 0 ? (
                       filteredItems.map((item) => {
-                        const login = String(item[loginField])
-                        const display = item[displayField]
-                        const secondary = secondaryField ? item[secondaryField] : null
+                        const login = String(item.login || item[loginField])
+                        const display = item.name || item[displayField]
+                        const email = item.email
                         
                         return (
                           <label key={login} className="flex items-center px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
@@ -297,17 +335,17 @@ const GroupModal = ({
                               onChange={() => toggleLoginSelection(login)}
                               className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <span className="ml-2 text-xs text-gray-700">
+                            <span className="ml-2 text-xs text-gray-700 flex-1">
                               <span className="font-medium">{login}</span>
-                              {display !== login && ` - ${display}`}
-                              {secondary && ` (${secondary})`}
+                              {display && display !== login && ` - ${display}`}
+                              {email && <span className="text-gray-500"> ({email})</span>}
                             </span>
                           </label>
                         )
                       })
                     ) : (
-                      <div className="px-2.5 py-3 text-xs text-gray-500 text-center">
-                        No items found
+                      <div className="px-2.5 py-8 text-xs text-gray-500 text-center">
+                        {searchQuery ? 'No logins found matching your search' : 'No logins available'}
                       </div>
                     )}
                   </div>
