@@ -428,6 +428,12 @@ export const brokerAPI = {
   getIBMT5Accounts: async (email) => {
     const response = await api.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
     return response.data
+  },
+
+  // Search clients with advanced filtering, pagination, and sorting
+  searchClients: async (payload) => {
+    const response = await api.post('/api/broker/clients/search', payload)
+    return response.data
   }
 }
 
