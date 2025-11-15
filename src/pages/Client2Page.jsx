@@ -2185,7 +2185,7 @@ const Client2Page = () => {
                     return (
                       <div key={visKey} className="bg-white rounded-lg shadow-sm border-2 border-pink-200 p-2 hover:shadow-md transition-shadow">
                         <div className="text-[10px] font-medium text-pink-600 mb-1">{label} %</div>
-                        <div className="text-sm font-bold text-pink-700">{formatPercentageValue((totalsPercent?.[key]) || 0)}</div>
+                        <div className="text-sm font-bold text-pink-700">{formatIndianNumber(((totalsPercent?.[key]) || 0).toFixed(2))}</div>
                       </div>
                     )
                   })
