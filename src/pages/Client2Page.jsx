@@ -3,9 +3,20 @@ import { createPortal } from 'react-dom'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
+import GroupSelector from '../components/GroupSelector'
+import GroupModal from '../components/GroupModal'
+import IBSelector from '../components/IBSelector'
 import { brokerAPI } from '../services/api'
+import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 
 const Client2Page = () => {
+  // Group context
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  
+  // IB context
+  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -31,12 +42,15 @@ const Client2Page = () => {
   // Sorting state
   const [sortBy, setSortBy] = useState('')
   const [sortOrder, setSortOrder] = useState('asc')
+  const [animationKey, setAnimationKey] = useState(0)
+  const [initialLoad, setInitialLoad] = useState(true)
   
   // UI state
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showAccountFilterModal, setShowAccountFilterModal] = useState(false)
   const [showClientDetailModal, setShowClientDetailModal] = useState(false)
+  const [showGroupModal, setShowGroupModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -45,6 +59,7 @@ const Client2Page = () => {
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSorting, setIsSorting] = useState(false)
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
@@ -57,12 +72,28 @@ const Client2Page = () => {
     hasCredit: false,
     noDeposit: false
   })
+  // Column resizing state
+  const [columnWidths, setColumnWidths] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('client2ColumnWidths')) || {}
+    } catch (e) {
+      return {}
+    }
+  })
+
+  // useEffect to save columnWidths to localStorage
+  useEffect(() => {
+    localStorage.setItem('client2ColumnWidths', JSON.stringify(columnWidths))
+  }, [columnWidths])
+
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
   const cardFilterMenuRef = useRef(null)
   const exportMenuRef = useRef(null)
   const filterRefs = useRef({})
   const filterPanelRef = useRef(null)
+  const headerRefs = useRef({})
+  const resizingRef = useRef({ active: false, columnKey: null, startX: 0, startWidth: 0 })
   
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -74,74 +105,131 @@ const Client2Page = () => {
         console.error('Failed to parse saved card visibility:', e)
       }
     }
-    // Default: all cards visible
+    // Default: show all available cards
     return {
-      totalClients: true,
-      totalBalance: true,
-      totalCredit: true,
-      totalEquity: true,
-      pnl: true,
-      floatingProfit: true,
       assets: true,
-      liabilities: true,
+      balance: true,
+      blockedCommission: true,
       blockedProfit: true,
-      storage: true,
-      marginInitial: true,
-      marginMaintenance: true,
-      previousEquity: true,
-      // Daily fields
-      dailyDeposit: true,
-      dailyWithdrawal: true,
-      dailyPnL: true,
-      dailyNetDW: true,
+      commission: true,
+      credit: true,
       dailyBonusIn: true,
       dailyBonusOut: true,
       dailyCreditIn: true,
       dailyCreditOut: true,
+      dailyDeposit: true,
+      dailyPnL: true,
       dailySOCompensationIn: true,
       dailySOCompensationOut: true,
-      // This Week fields
-      thisWeekPnL: true,
-      thisWeekDeposit: true,
-      thisWeekWithdrawal: true,
-      thisWeekBonusIn: true,
-      thisWeekBonusOut: true,
-      thisWeekCreditIn: true,
-      thisWeekCreditOut: true,
-      thisWeekSOCompensationIn: true,
-      thisWeekSOCompensationOut: true,
-      thisWeekPreviousEquity: true,
-      // This Month fields
-      thisMonthPnL: true,
-      thisMonthDeposit: true,
-      thisMonthWithdrawal: true,
-      thisMonthBonusIn: true,
-      thisMonthBonusOut: true,
-      thisMonthCreditIn: true,
-      thisMonthCreditOut: true,
-      thisMonthSOCompensationIn: true,
-      thisMonthSOCompensationOut: true,
-      thisMonthPreviousEquity: true,
-      // Lifetime fields
-      lifetimePnL: true,
-      lifetimeDeposit: true,
-      lifetimeWithdrawal: true,
+      dailyWithdrawal: true,
+      equity: true,
+      floating: true,
+      liabilities: true,
       lifetimeBonusIn: true,
       lifetimeBonusOut: true,
       lifetimeCreditIn: true,
       lifetimeCreditOut: true,
+      lifetimeDeposit: true,
+      lifetimePnL: true,
       lifetimeSOCompensationIn: true,
       lifetimeSOCompensationOut: true,
-      // Margin fields
-      totalMargin: true,
+      lifetimeWithdrawal: true,
+      margin: true,
       marginFree: true,
-      // Commission fields
-      commission: true,
-      blockedCommission: true
+      marginInitial: true,
+      marginLevel: true,
+      marginMaintenance: true,
+      soEquity: true,
+      soLevel: true,
+      soMargin: true,
+      // Percent versions (default hidden)
+      assetsPercent: false,
+      balancePercent: false,
+      blockedCommissionPercent: false,
+      blockedProfitPercent: false,
+      commissionPercent: false,
+      creditPercent: false,
+      dailyBonusInPercent: false,
+      dailyBonusOutPercent: false,
+      dailyCreditInPercent: false,
+      dailyCreditOutPercent: false,
+      dailyDepositPercent: false,
+      dailyPnLPercent: false,
+      dailySOCompensationInPercent: false,
+      dailySOCompensationOutPercent: false,
+      dailyWithdrawalPercent: false,
+      equityPercent: false,
+      floatingPercent: false,
+      liabilitiesPercent: false,
+      lifetimeBonusInPercent: false,
+      lifetimeBonusOutPercent: false,
+      lifetimeCreditInPercent: false,
+      lifetimeCreditOutPercent: false,
+      lifetimeDepositPercent: false,
+      lifetimePnLPercent: false,
+      lifetimeSOCompensationInPercent: false,
+      lifetimeSOCompensationOutPercent: false,
+      lifetimeWithdrawalPercent: false,
+      marginPercent: false,
+      marginFreePercent: false,
+      marginInitialPercent: false,
+      marginLevelPercent: false,
+      marginMaintenancePercent: false,
+      soEquityPercent: false,
+      soLevelPercent: false,
+      soMarginPercent: false,
+      pnlPercent: false,
+      previousEquityPercent: false,
+      profitPercent: false,
+      storagePercent: false,
+      thisMonthBonusIn: true,
+      thisMonthBonusOut: true,
+      thisMonthCreditIn: true,
+      thisMonthCreditOut: true,
+      thisMonthDeposit: true,
+      thisMonthPnL: true,
+      thisMonthSOCompensationIn: true,
+      thisMonthSOCompensationOut: true,
+      thisMonthWithdrawal: true,
+      thisWeekBonusIn: true,
+      thisWeekBonusOut: true,
+      thisWeekCreditIn: true,
+      thisWeekCreditOut: true,
+      thisWeekDeposit: true,
+      thisWeekPnL: true,
+      thisWeekSOCompensationIn: true,
+      thisWeekSOCompensationOut: true,
+      thisWeekWithdrawal: true,
+      // Percent versions for week/month
+      thisMonthBonusInPercent: false,
+      thisMonthBonusOutPercent: false,
+      thisMonthCreditInPercent: false,
+      thisMonthCreditOutPercent: false,
+      thisMonthDepositPercent: false,
+      thisMonthPnLPercent: false,
+      thisMonthSOCompensationInPercent: false,
+      thisMonthSOCompensationOutPercent: false,
+      thisMonthWithdrawalPercent: false,
+      thisWeekBonusInPercent: false,
+      thisWeekBonusOutPercent: false,
+      thisWeekCreditInPercent: false,
+      thisWeekCreditOutPercent: false,
+      thisWeekDepositPercent: false,
+      thisWeekPnLPercent: false,
+      thisWeekSOCompensationInPercent: false,
+      thisWeekSOCompensationOutPercent: false,
+      thisWeekWithdrawalPercent: false
     }
   }
   
   const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
+  // Global percentage view disabled; use per-field % cards instead
+  const showPercentage = false
+
+  // If any % face card is enabled, send percentage=true in the request
+  const percentModeActive = useMemo(() => {
+    return Object.entries(cardVisibility || {}).some(([key, value]) => key.endsWith('Percent') && value !== false)
+  }, [cardVisibility])
   
   // Filter modal state
   const [newFilterField, setNewFilterField] = useState('balance')
@@ -281,6 +369,15 @@ const Client2Page = () => {
   useEffect(() => {
     localStorage.setItem('client2PageVisibleColumns', JSON.stringify(visibleColumns))
   }, [visibleColumns])
+
+  // Persist column widths
+  useEffect(() => {
+    try {
+      localStorage.setItem('client2ColumnWidths', JSON.stringify(columnWidths))
+    } catch (e) {
+      // ignore
+    }
+  }, [columnWidths])
   
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
@@ -329,28 +426,93 @@ const Client2Page = () => {
         payload.sortBy = sortBy
         payload.sortOrder = sortOrder
       }
-      
-      console.log('[Client2] Sending request:', payload)
-      const response = await brokerAPI.searchClients(payload)
-      console.log('[Client2] Response:', response)
-      
-      // Handle response - API returns data directly in response.data
-      if (response && response.data) {
-        const data = response.data
-        setClients(data.clients || [])
-        setTotalClients(data.total || data.clients?.length || 0)
-        setTotalPages(data.pages || 1)
-        setTotals(data.totals || {})
-        setError('') // Clear any previous errors
-      } else if (response.status === 0 && response.data) {
-        // Fallback for wrapped response format
-        setClients(response.data.clients || [])
-        setTotalClients(response.data.total || 0)
-        setTotalPages(response.data.pages || 1)
-        setTotals(response.data.totals || {})
-        setError('') // Clear any previous errors
+
+      // Determine whether any normal and/or percent face cards are enabled
+      const anyNormal = Object.entries(cardVisibility || {}).some(([key, value]) => !key.endsWith('Percent') && value !== false)
+      const anyPercent = percentModeActive
+
+      // Build payloads
+      const payloadNormal = { ...payload, percentage: false }
+      const payloadPercent = { ...payload, percentage: true }
+
+      // Fetch based on selection: both → fetch both; otherwise fetch one
+      if (anyNormal && anyPercent) {
+        console.log('[Client2] Sending dual requests:', { normal: payloadNormal, percent: payloadPercent })
+        const [respNormal, respPercent] = await Promise.all([
+          brokerAPI.searchClients(payloadNormal),
+          brokerAPI.searchClients(payloadPercent)
+        ])
+
+        // Normal
+        if (respNormal && respNormal.data) {
+          const dataN = respNormal.data
+          setClients(dataN.clients || [])
+          setTotalClients(dataN.total || dataN.clients?.length || 0)
+          setTotalPages(dataN.pages || 1)
+          setTotals(dataN.totals || {})
+          setError('')
+        } else if (respNormal?.status === 0 && respNormal.data) {
+          setClients(respNormal.data.clients || [])
+          setTotalClients(respNormal.data.total || 0)
+          setTotalPages(respNormal.data.pages || 1)
+          setTotals(respNormal.data.totals || {})
+          setError('')
+        } else {
+          setError(respNormal?.message || 'Failed to fetch normal data')
+        }
+
+        // Percent
+        if (respPercent && respPercent.data) {
+          const dataP = respPercent.data
+          setTotalsPercent(dataP.totals || {})
+        } else if (respPercent?.status === 0 && respPercent.data) {
+          setTotalsPercent(respPercent.data.totals || {})
+        } else {
+          // Do not override previous error; just log
+          console.warn('[Client2] Failed to fetch percent data', respPercent)
+        }
+      } else if (anyPercent) {
+        console.log('[Client2] Sending percent request:', payloadPercent)
+        const response = await brokerAPI.searchClients(payloadPercent)
+        if (response && response.data) {
+          const data = response.data
+          setClients(data.clients || [])
+          setTotalClients(data.total || data.clients?.length || 0)
+          setTotalPages(data.pages || 1)
+          setTotals({})
+          setTotalsPercent(data.totals || {})
+          setError('')
+        } else if (response?.status === 0 && response.data) {
+          setClients(response.data.clients || [])
+          setTotalClients(response.data.total || 0)
+          setTotalPages(response.data.pages || 1)
+          setTotals({})
+          setTotalsPercent(response.data.totals || {})
+          setError('')
+        } else {
+          setError(response?.message || 'Failed to fetch percent data')
+        }
       } else {
-        setError(response.message || 'Failed to fetch clients')
+        console.log('[Client2] Sending normal request:', payloadNormal)
+        const response = await brokerAPI.searchClients(payloadNormal)
+        if (response && response.data) {
+          const data = response.data
+          setClients(data.clients || [])
+          setTotalClients(data.total || data.clients?.length || 0)
+          setTotalPages(data.pages || 1)
+          setTotals(data.totals || {})
+          setTotalsPercent({})
+          setError('')
+        } else if (response?.status === 0 && response.data) {
+          setClients(response.data.clients || [])
+          setTotalClients(response.data.total || 0)
+          setTotalPages(response.data.pages || 1)
+          setTotals(response.data.totals || {})
+          setTotalsPercent({})
+          setError('')
+        } else {
+          setError(response?.message || 'Failed to fetch clients')
+        }
       }
     } catch (err) {
       console.error('[Client2] Error fetching clients:', err)
@@ -361,8 +523,16 @@ const Client2Page = () => {
       if (!silent) {
         setLoading(false)
       }
+      // Mark initial load complete and always reset sorting state
+      setInitialLoad(false)
+      setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, mt5Accounts, accountRangeMin, accountRangeMax])
+  }, [currentPage, itemsPerPage, searchQuery, filters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive])
+  
+  // Refetch when any percent face card visibility toggles
+  useEffect(() => {
+    fetchClients(false)
+  }, [percentModeActive, fetchClients])
   
   // Client-side filtering and sorting
   const sortedClients = useMemo(() => {
@@ -504,6 +674,11 @@ const Client2Page = () => {
       })
     }
     
+    // Apply IB filter (only when an IB with accounts is selected)
+    if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+      filtered = filterByActiveIB(filtered, 'login')
+    }
+    
     // Apply column-specific sorting (from filter menu)
     const sortColumnKey = Object.keys(columnSortOrder)[0]
     if (sortColumnKey && columnSortOrder[sortColumnKey]) {
@@ -562,12 +737,14 @@ const Client2Page = () => {
     }
     
     return filtered
-  }, [clients, sortBy, sortOrder, columnFilters, columnSortOrder, quickFilters])
+  }, [clients, sortBy, sortOrder, columnFilters, columnSortOrder, quickFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
   
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
     fetchClients()
   }, [fetchClients])
+  
+  // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
   
   // Auto-refresh every 1 second (silent update)
   useEffect(() => {
@@ -586,6 +763,12 @@ const Client2Page = () => {
   
   // Handle sort
   const handleSort = (columnKey) => {
+    // Set sorting loading state
+    setIsSorting(true)
+    
+    // Increment animation key to force re-render and re-trigger animations
+    setAnimationKey(prev => prev + 1)
+    
     if (sortBy === columnKey) {
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
@@ -593,6 +776,37 @@ const Client2Page = () => {
       setSortOrder('asc')
     }
     // Don't reset page - keep user on current page
+  }
+
+  // Column resizing handlers
+  const onMouseMoveResizer = (e) => {
+    const { active, columnKey, startX, startWidth } = resizingRef.current
+    if (!active || !columnKey) return
+    const delta = e.clientX - startX
+    const minW = 80
+    const maxW = 600
+    let newWidth = Math.max(minW, Math.min(maxW, startWidth + delta))
+    setColumnWidths(prev => ({ ...prev, [columnKey]: newWidth }))
+  }
+
+  const onMouseUpResizer = () => {
+    resizingRef.current = { active: false, columnKey: null, startX: 0, startWidth: 0 }
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    window.removeEventListener('mousemove', onMouseMoveResizer)
+    window.removeEventListener('mouseup', onMouseUpResizer)
+  }
+
+  const onMouseDownResizer = (e, columnKey) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const th = headerRefs.current[columnKey]
+    const startWidth = th ? th.offsetWidth : (columnWidths[columnKey] || 150)
+    resizingRef.current = { active: true, columnKey, startX: e.clientX, startWidth }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMouseMoveResizer)
+    window.addEventListener('mouseup', onMouseUpResizer)
   }
   
   // Column filter functions
@@ -1045,6 +1259,16 @@ const Client2Page = () => {
     return decimalPart ? `${result}.${decimalPart}` : result
   }
   
+  // Percentage mode: just append a percent sign to the normal formatted number
+  const formatPercentageValue = (value) => {
+    if (value == null || value === '') return ''
+    const num = Number(value) || 0
+    return `${formatIndianNumber(num.toFixed(2))} %`
+  }
+  
+  // Percent totals (server response when percentage:true)
+  const [totalsPercent, setTotalsPercent] = useState({})
+
   // Save card visibility to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('client2CardVisibility', JSON.stringify(cardVisibility))
@@ -1234,95 +1458,108 @@ const Client2Page = () => {
                       />
                       
                       <div className="space-y-1">
-                        {Object.entries({
-                          totalClients: 'Total Clients',
-                          totalBalance: 'Total Balance',
-                          totalCredit: 'Total Credit',
-                          totalEquity: 'Total Equity',
-                          pnl: 'P&L',
-                          floatingProfit: 'Floating Profit',
-                          assets: 'Assets',
-                          liabilities: 'Liabilities',
-                          blockedProfit: 'Blocked Profit',
-                          storage: 'Storage',
-                          marginInitial: 'Margin Initial',
-                          marginMaintenance: 'Margin Maintenance',
-                          previousEquity: 'Previous Equity',
-                          // Daily
-                          dailyDeposit: 'Daily Deposit',
-                          dailyWithdrawal: 'Daily Withdrawal',
-                          dailyPnL: 'Daily P&L',
-                          dailyNetDW: 'Daily Net D/W',
-                          dailyBonusIn: 'Daily Bonus In',
-                          dailyBonusOut: 'Daily Bonus Out',
-                          dailyCreditIn: 'Daily Credit In',
-                          dailyCreditOut: 'Daily Credit Out',
-                          dailySOCompensationIn: 'Daily SO Compensation In',
-                          dailySOCompensationOut: 'Daily SO Compensation Out',
-                          // This Week
-                          thisWeekPnL: 'This Week P&L',
-                          thisWeekDeposit: 'This Week Deposit',
-                          thisWeekWithdrawal: 'This Week Withdrawal',
-                          thisWeekBonusIn: 'This Week Bonus In',
-                          thisWeekBonusOut: 'This Week Bonus Out',
-                          thisWeekCreditIn: 'This Week Credit In',
-                          thisWeekCreditOut: 'This Week Credit Out',
-                          thisWeekSOCompensationIn: 'This Week SO Compensation In',
-                          thisWeekSOCompensationOut: 'This Week SO Compensation Out',
-                          thisWeekPreviousEquity: 'This Week Previous Equity',
-                          // This Month
-                          thisMonthPnL: 'This Month P&L',
-                          thisMonthDeposit: 'This Month Deposit',
-                          thisMonthWithdrawal: 'This Month Withdrawal',
-                          thisMonthBonusIn: 'This Month Bonus In',
-                          thisMonthBonusOut: 'This Month Bonus Out',
-                          thisMonthCreditIn: 'This Month Credit In',
-                          thisMonthCreditOut: 'This Month Credit Out',
-                          thisMonthSOCompensationIn: 'This Month SO Compensation In',
-                          thisMonthSOCompensationOut: 'This Month SO Compensation Out',
-                          thisMonthPreviousEquity: 'This Month Previous Equity',
-                          // Lifetime
-                          lifetimePnL: 'Lifetime P&L',
-                          lifetimeDeposit: 'Lifetime Deposit',
-                          lifetimeWithdrawal: 'Lifetime Withdrawal',
-                          lifetimeBonusIn: 'Lifetime Bonus In',
-                          lifetimeBonusOut: 'Lifetime Bonus Out',
-                          lifetimeCreditIn: 'Lifetime Credit In',
-                          lifetimeCreditOut: 'Lifetime Credit Out',
-                          lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
-                          lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
-                          // Margin
-                          totalMargin: 'Total Margin',
-                          marginFree: 'Margin Free',
-                          // Commission
-                          commission: 'Commission',
-                          blockedCommission: 'Blocked Commission'
-                        })
-                          .filter(([key, label]) =>
-                            cardFilterSearchQuery === '' ||
-                            label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
-                          )
-                          .map(([key, label]) => (
-                            <label key={key} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                              <input
-                                type="checkbox"
-                                checked={cardVisibility[key] !== false}
-                                onChange={(e) => {
-                                  setCardVisibility(prev => ({
-                                    ...prev,
-                                    [key]: e.target.checked
-                                  }))
-                                }}
-                                className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
-                              />
-                              <span className="text-sm text-gray-700">{label}</span>
-                            </label>
-                          ))}
+                        {(() => {
+                          const baseLabels = {
+                            assets: 'Assets',
+                            balance: 'Balance',
+                            blockedCommission: 'Blocked Commission',
+                            blockedProfit: 'Blocked Profit',
+                            commission: 'Commission',
+                            credit: 'Credit',
+                            dailyBonusIn: 'Daily Bonus In',
+                            dailyBonusOut: 'Daily Bonus Out',
+                            dailyCreditIn: 'Daily Credit In',
+                            dailyCreditOut: 'Daily Credit Out',
+                            dailyDeposit: 'Daily Deposit',
+                            dailyPnL: 'Daily P&L',
+                            dailySOCompensationIn: 'Daily SO Compensation In',
+                            dailySOCompensationOut: 'Daily SO Compensation Out',
+                            dailyWithdrawal: 'Daily Withdrawal',
+                            equity: 'Equity',
+                            floating: 'Floating',
+                            liabilities: 'Liabilities',
+                            lifetimeBonusIn: 'Lifetime Bonus In',
+                            lifetimeBonusOut: 'Lifetime Bonus Out',
+                            lifetimeCreditIn: 'Lifetime Credit In',
+                            lifetimeCreditOut: 'Lifetime Credit Out',
+                            lifetimeDeposit: 'Lifetime Deposit',
+                            lifetimePnL: 'Lifetime P&L',
+                            lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
+                            lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
+                            lifetimeWithdrawal: 'Lifetime Withdrawal',
+                            margin: 'Margin',
+                            marginFree: 'Margin Free',
+                            marginInitial: 'Margin Initial',
+                            marginLevel: 'Margin Level',
+                            marginMaintenance: 'Margin Maintenance',
+                            soEquity: 'SO Equity',
+                            soLevel: 'SO Level',
+                            soMargin: 'SO Margin',
+                            pnl: 'P&L',
+                            previousEquity: 'Previous Equity',
+                            profit: 'Profit',
+                            storage: 'Storage',
+                            thisMonthBonusIn: 'This Month Bonus In',
+                            thisMonthBonusOut: 'This Month Bonus Out',
+                            thisMonthCreditIn: 'This Month Credit In',
+                            thisMonthCreditOut: 'This Month Credit Out',
+                            thisMonthDeposit: 'This Month Deposit',
+                            thisMonthPnL: 'This Month P&L',
+                            thisMonthSOCompensationIn: 'This Month SO Compensation In',
+                            thisMonthSOCompensationOut: 'This Month SO Compensation Out',
+                            thisMonthWithdrawal: 'This Month Withdrawal',
+                            thisWeekBonusIn: 'This Week Bonus In',
+                            thisWeekBonusOut: 'This Week Bonus Out',
+                            thisWeekCreditIn: 'This Week Credit In',
+                            thisWeekCreditOut: 'This Week Credit Out',
+                            thisWeekDeposit: 'This Week Deposit',
+                            thisWeekPnL: 'This Week P&L',
+                            thisWeekSOCompensationIn: 'This Week SO Compensation In',
+                            thisWeekSOCompensationOut: 'This Week SO Compensation Out',
+                            thisWeekWithdrawal: 'This Week Withdrawal'
+                          }
+                          // Build interleaved list: Normal then Percent version
+                          const items = []
+                          Object.entries(baseLabels).forEach(([key, label]) => {
+                            items.push([key, label])
+                            items.push([`${key}Percent`, `${label} %`])
+                          })
+                          return items
+                            .filter(([key, label]) =>
+                              cardFilterSearchQuery === '' ||
+                              label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                            )
+                            .map(([key, label]) => (
+                              <label key={key} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                                <input
+                                  type="checkbox"
+                                  checked={cardVisibility[key] !== false}
+                                  onChange={(e) => {
+                                    setCardVisibility(prev => ({
+                                      ...prev,
+                                      [key]: e.target.checked
+                                    }))
+                                  }}
+                                  className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                                />
+                                <span className="text-sm text-gray-700">{label}</span>
+                              </label>
+                            ))
+                        })()}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+              
+              {/* Groups Button */}
+              <GroupSelector 
+                onCreateGroup={() => setShowGroupModal(true)}
+                onEditGroup={() => setShowGroupModal(true)}
+              />
+              
+              {/* IB Filter Button */}
+              <IBSelector />
               
               {/* Cards Toggle Button */}
               <button
@@ -1399,483 +1636,560 @@ const Client2Page = () => {
           </div>
 
           {/* Face Cards Section */}
-          {showFaceCards && totals && Object.keys(totals).length > 0 && (
+          {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
             <div className="mb-3">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xs font-semibold text-gray-700">Summary Statistics</h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {/* Total Clients Card */}
-                {cardVisibility.totalClients !== false && (
+                {/* Assets */}
+                {cardVisibility.assets !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-blue-600 mb-1">Total Clients</div>
-                    <div className="text-sm font-bold text-blue-700">{totalClients.toLocaleString()}</div>
+                    <div className="text-[10px] font-medium text-blue-600 mb-1">Assets</div>
+                    <div className="text-sm font-bold text-blue-700">{formatIndianNumber(((totals?.assets) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Total Balance Card */}
-                {cardVisibility.totalBalance !== false && (
+                {/* Balance */}
+                {cardVisibility.balance !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-indigo-600 mb-1">Total Balance</div>
-                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber((totals.balance || 0).toFixed(2))}</div>
+                    <div className="text-[10px] font-medium text-indigo-600 mb-1">Balance</div>
+                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.balance) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Total Credit Card */}
-                {cardVisibility.totalCredit !== false && (
+                {/* Blocked Commission */}
+                {cardVisibility.blockedCommission !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-gray-600 mb-1">Blocked Commission</div>
+                    <div className="text-sm font-bold text-gray-700">{formatIndianNumber(((totals?.blockedCommission) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Blocked Profit */}
+                {cardVisibility.blockedProfit !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-orange-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-orange-600 mb-1">Blocked Profit</div>
+                    <div className={`text-sm font-bold ${((totals?.blockedProfit) || 0) >= 0 ? 'text-orange-700' : 'text-red-700'}`}>{formatIndianNumber(((totals?.blockedProfit) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Commission */}
+                {cardVisibility.commission !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-amber-600 mb-1">Commission</div>
+                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.commission) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Credit */}
+                {cardVisibility.credit !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Total Credit</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber((totals.credit || 0).toFixed(2))}</div>
+                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Credit</div>
+                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.credit) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Total Equity Card */}
-                {cardVisibility.totalEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-sky-600 mb-1">Total Equity</div>
-                    <div className="text-sm font-bold text-sky-700">{formatIndianNumber((totals.equity || 0).toFixed(2))}</div>
+                {/* Daily Bonus In */}
+                {cardVisibility.dailyBonusIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Daily Bonus In</div>
+                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.dailyBonusIn) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* PNL Card */}
-                {cardVisibility.pnl !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.pnl || 0) >= 0 ? 'border-green-200' : 'border-red-200'}`}>
-                    <div className={`text-[10px] font-medium mb-1 ${(totals.pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>PNL</div>
-                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.pnl || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {(totals.pnl || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.pnl || 0).toFixed(2))}
-                    </div>
+                {/* Daily Bonus Out */}
+                {cardVisibility.dailyBonusOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-rose-600 mb-1">Daily Bonus Out</div>
+                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.dailyBonusOut) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Floating Profit Card */}
-                {cardVisibility.floatingProfit !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.profit || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
-                    <div className={`text-[10px] font-medium mb-1 ${(totals.profit || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>Floating Profit</div>
-                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.profit || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
-                      {(totals.profit || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.profit || 0).toFixed(2))}
-                    </div>
+                {/* Daily Credit In */}
+                {cardVisibility.dailyCreditIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-teal-600 mb-1">Daily Credit In</div>
+                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.dailyCreditIn) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Daily Deposit Card */}
+                {/* Daily Credit Out */}
+                {cardVisibility.dailyCreditOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-amber-600 mb-1">Daily Credit Out</div>
+                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.dailyCreditOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Daily Deposit */}
                 {cardVisibility.dailyDeposit !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
                     <div className="text-[10px] font-medium text-green-600 mb-1">Daily Deposit</div>
-                    <div className="text-sm font-bold text-green-700">{formatIndianNumber((totals.dailyDeposit || 0).toFixed(2))}</div>
+                    <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.dailyDeposit) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Daily Withdrawal Card */}
-                {cardVisibility.dailyWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-red-600 mb-1">Daily Withdrawal</div>
-                    <div className="text-sm font-bold text-red-700">{formatIndianNumber((totals.dailyWithdrawal || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily PnL Card */}
+                {/* Daily PnL */}
                 {cardVisibility.dailyPnL !== false && (
                   <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.dailyPnL || 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'}`}>
                     <div className={`text-[10px] font-medium mb-1 ${(totals.dailyPnL || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>Daily PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.dailyPnL || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {(totals.dailyPnL || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.dailyPnL || 0).toFixed(2))}
+                      {formatIndianNumber(((totals?.dailyPnL) || 0).toFixed(2))}
                     </div>
                   </div>
                 )}
 
-                {/* This Week PnL Card */}
-                {cardVisibility.thisWeekPnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisWeekPnL || 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'}`}>
-                    <div className={`text-[10px] font-medium mb-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>This Week PnL</div>
-                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
-                      {(totals.thisWeekPnL || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.thisWeekPnL || 0).toFixed(2))}
+                {/* Daily SO Compensation In */}
+                {cardVisibility.dailySOCompensationIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-lime-600 mb-1">Daily SO Compensation In</div>
+                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.dailySOCompensationIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Daily SO Compensation Out */}
+                {cardVisibility.dailySOCompensationOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-yellow-600 mb-1">Daily SO Compensation Out</div>
+                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.dailySOCompensationOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Daily Withdrawal */}
+                {cardVisibility.dailyWithdrawal !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-red-600 mb-1">Daily Withdrawal</div>
+                    <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.dailyWithdrawal) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Equity */}
+                {cardVisibility.equity !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-sky-600 mb-1">Equity</div>
+                    <div className="text-sm font-bold text-sky-700">{formatIndianNumber(((totals?.equity) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Floating */}
+                {cardVisibility.floating !== false && (
+                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.floating || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                    <div className={`text-[10px] font-medium mb-1 ${(totals.floating || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>Floating</div>
+                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.floating || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
+                      {(totals.floating || 0) >= 0 ? '▲' : '▼'}
+                      {formatIndianNumber(((totals?.floating) || 0).toFixed(2))}
                     </div>
                   </div>
                 )}
 
-                {/* This Month PnL Card */}
-                {cardVisibility.thisMonthPnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisMonthPnL || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
-                    <div className={`text-[10px] font-medium mb-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>This Month PnL</div>
-                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
-                      {(totals.thisMonthPnL || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.thisMonthPnL || 0).toFixed(2))}
-                    </div>
+                {/* Liabilities */}
+                {cardVisibility.liabilities !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-red-600 mb-1">Liabilities</div>
+                    <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.liabilities) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Lifetime PnL Card */}
+                {/* Lifetime Bonus In */}
+                {cardVisibility.lifetimeBonusIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Lifetime Bonus In</div>
+                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.lifetimeBonusIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Lifetime Bonus Out */}
+                {cardVisibility.lifetimeBonusOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-rose-600 mb-1">Lifetime Bonus Out</div>
+                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.lifetimeBonusOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Lifetime Credit In */}
+                {cardVisibility.lifetimeCreditIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-teal-600 mb-1">Lifetime Credit In</div>
+                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.lifetimeCreditIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Lifetime Credit Out */}
+                {cardVisibility.lifetimeCreditOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-amber-600 mb-1">Lifetime Credit Out</div>
+                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.lifetimeCreditOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Lifetime Deposit */}
+                {cardVisibility.lifetimeDeposit !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-green-600 mb-1">Lifetime Deposit</div>
+                    <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.lifetimeDeposit) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Lifetime PnL */}
                 {cardVisibility.lifetimePnL !== false && (
                   <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.lifetimePnL || 0) >= 0 ? 'border-violet-200' : 'border-pink-200'}`}>
                     <div className={`text-[10px] font-medium mb-1 ${(totals.lifetimePnL || 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>Lifetime PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.lifetimePnL || 0) >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
                       {(totals.lifetimePnL || 0) >= 0 ? '▲' : '▼'}
-                      {formatIndianNumber((totals.lifetimePnL || 0).toFixed(2))}
+                      {formatIndianNumber(((totals?.lifetimePnL) || 0).toFixed(2))}
                     </div>
                   </div>
                 )}
 
-                {/* Daily Net D/W Card */}
-                {cardVisibility.dailyNetDW !== false && (() => {
-                  const netDW = (totals.dailyDeposit || 0) - (totals.dailyWithdrawal || 0)
-                  return (
-                    <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${netDW >= 0 ? 'border-green-200' : 'border-red-200'}`}>
-                      <div className={`text-[10px] font-medium mb-1 ${netDW >= 0 ? 'text-green-600' : 'text-red-600'}`}>Daily Net D/W</div>
-                      <div className={`text-sm font-bold flex items-center gap-1 ${netDW >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        {netDW >= 0 ? '▲' : '▼'}
-                        {formatIndianNumber(netDW.toFixed(2))}
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Total Margin Card */}
-                {cardVisibility.totalMargin !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-purple-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-purple-600 mb-1">Total Margin</div>
-                    <div className="text-sm font-bold text-purple-700">{formatIndianNumber((totals.margin || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Total Margin Free Card */}
-                {cardVisibility.marginFree !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-fuchsia-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-fuchsia-600 mb-1">Margin Free</div>
-                    <div className="text-sm font-bold text-fuchsia-700">{formatIndianNumber((totals.marginFree || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Commission Card */}
-                {cardVisibility.commission !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">Commission</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber((totals.commission || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Blocked Commission Card */}
-                {cardVisibility.blockedCommission !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-gray-600 mb-1">Blocked Commission</div>
-                    <div className="text-sm font-bold text-gray-700">{formatIndianNumber((totals.blockedCommission || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Deposit Card */}
-                {cardVisibility.lifetimeDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-green-600 mb-1">Lifetime Deposit</div>
-                    <div className="text-sm font-bold text-green-700">{formatIndianNumber((totals.lifetimeDeposit || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Withdrawal Card */}
-                {cardVisibility.lifetimeWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-red-600 mb-1">Lifetime Withdrawal</div>
-                    <div className="text-sm font-bold text-red-700">{formatIndianNumber((totals.lifetimeWithdrawal || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Assets Card */}
-                {cardVisibility.assets !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-blue-600 mb-1">Assets</div>
-                    <div className="text-sm font-bold text-blue-700">{formatIndianNumber((totals.assets || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Liabilities Card */}
-                {cardVisibility.liabilities !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-red-600 mb-1">Liabilities</div>
-                    <div className="text-sm font-bold text-red-700">{formatIndianNumber((totals.liabilities || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Blocked Profit Card */}
-                {cardVisibility.blockedProfit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-orange-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-orange-600 mb-1">Blocked Profit</div>
-                    <div className={`text-sm font-bold ${(totals.blockedProfit || 0) >= 0 ? 'text-orange-700' : 'text-red-700'}`}>{formatIndianNumber((totals.blockedProfit || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Storage Card */}
-                {cardVisibility.storage !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-gray-600 mb-1">Storage</div>
-                    <div className={`text-sm font-bold ${(totals.storage || 0) >= 0 ? 'text-gray-700' : 'text-red-700'}`}>{formatIndianNumber((totals.storage || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Margin Initial Card */}
-                {cardVisibility.marginInitial !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-indigo-600 mb-1">Margin Initial</div>
-                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber((totals.marginInitial || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Margin Maintenance Card */}
-                {cardVisibility.marginMaintenance !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-violet-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-violet-600 mb-1">Margin Maintenance</div>
-                    <div className="text-sm font-bold text-violet-700">{formatIndianNumber((totals.marginMaintenance || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Previous Equity Card */}
-                {cardVisibility.previousEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-cyan-600 mb-1">Previous Equity</div>
-                    <div className="text-sm font-bold text-cyan-700">{formatIndianNumber((totals.previousEquity || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Bonus In Card */}
-                {cardVisibility.dailyBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Daily Bonus In</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber((totals.dailyBonusIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Bonus Out Card */}
-                {cardVisibility.dailyBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-rose-600 mb-1">Daily Bonus Out</div>
-                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber((totals.dailyBonusOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Credit In Card */}
-                {cardVisibility.dailyCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-teal-600 mb-1">Daily Credit In</div>
-                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber((totals.dailyCreditIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Credit Out Card */}
-                {cardVisibility.dailyCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">Daily Credit Out</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber((totals.dailyCreditOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily SO Compensation In Card */}
-                {cardVisibility.dailySOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-lime-600 mb-1">Daily SO Compensation In</div>
-                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber((totals.dailySOCompensationIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily SO Compensation Out Card */}
-                {cardVisibility.dailySOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-yellow-600 mb-1">Daily SO Compensation Out</div>
-                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber((totals.dailySOCompensationOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Deposit Card */}
-                {cardVisibility.thisWeekDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-green-600 mb-1">This Week Deposit</div>
-                    <div className="text-sm font-bold text-green-700">{formatIndianNumber((totals.thisWeekDeposit || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Withdrawal Card */}
-                {cardVisibility.thisWeekWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-red-600 mb-1">This Week Withdrawal</div>
-                    <div className="text-sm font-bold text-red-700">{formatIndianNumber((totals.thisWeekWithdrawal || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Bonus In Card */}
-                {cardVisibility.thisWeekBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">This Week Bonus In</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber((totals.thisWeekBonusIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Bonus Out Card */}
-                {cardVisibility.thisWeekBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-rose-600 mb-1">This Week Bonus Out</div>
-                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber((totals.thisWeekBonusOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Credit In Card */}
-                {cardVisibility.thisWeekCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-teal-600 mb-1">This Week Credit In</div>
-                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber((totals.thisWeekCreditIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Credit Out Card */}
-                {cardVisibility.thisWeekCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">This Week Credit Out</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber((totals.thisWeekCreditOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week SO Compensation In Card */}
-                {cardVisibility.thisWeekSOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-lime-600 mb-1">This Week SO Compensation In</div>
-                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber((totals.thisWeekSOCompensationIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week SO Compensation Out Card */}
-                {cardVisibility.thisWeekSOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-yellow-600 mb-1">This Week SO Compensation Out</div>
-                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber((totals.thisWeekSOCompensationOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Week Previous Equity Card */}
-                {cardVisibility.thisWeekPreviousEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-cyan-600 mb-1">This Week Previous Equity</div>
-                    <div className="text-sm font-bold text-cyan-700">{formatIndianNumber((totals.thisWeekPreviousEquity || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Deposit Card */}
-                {cardVisibility.thisMonthDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-green-600 mb-1">This Month Deposit</div>
-                    <div className="text-sm font-bold text-green-700">{formatIndianNumber((totals.thisMonthDeposit || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Withdrawal Card */}
-                {cardVisibility.thisMonthWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-red-600 mb-1">This Month Withdrawal</div>
-                    <div className="text-sm font-bold text-red-700">{formatIndianNumber((totals.thisMonthWithdrawal || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Bonus In Card */}
-                {cardVisibility.thisMonthBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">This Month Bonus In</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber((totals.thisMonthBonusIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Bonus Out Card */}
-                {cardVisibility.thisMonthBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-rose-600 mb-1">This Month Bonus Out</div>
-                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber((totals.thisMonthBonusOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Credit In Card */}
-                {cardVisibility.thisMonthCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-teal-600 mb-1">This Month Credit In</div>
-                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber((totals.thisMonthCreditIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Credit Out Card */}
-                {cardVisibility.thisMonthCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">This Month Credit Out</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber((totals.thisMonthCreditOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month SO Compensation In Card */}
-                {cardVisibility.thisMonthSOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-lime-600 mb-1">This Month SO Compensation In</div>
-                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber((totals.thisMonthSOCompensationIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month SO Compensation Out Card */}
-                {cardVisibility.thisMonthSOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-yellow-600 mb-1">This Month SO Compensation Out</div>
-                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber((totals.thisMonthSOCompensationOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* This Month Previous Equity Card */}
-                {cardVisibility.thisMonthPreviousEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-cyan-600 mb-1">This Month Previous Equity</div>
-                    <div className="text-sm font-bold text-cyan-700">{formatIndianNumber((totals.thisMonthPreviousEquity || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Bonus In Card */}
-                {cardVisibility.lifetimeBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Lifetime Bonus In</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber((totals.lifetimeBonusIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Bonus Out Card */}
-                {cardVisibility.lifetimeBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-rose-600 mb-1">Lifetime Bonus Out</div>
-                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber((totals.lifetimeBonusOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Credit In Card */}
-                {cardVisibility.lifetimeCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-teal-600 mb-1">Lifetime Credit In</div>
-                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber((totals.lifetimeCreditIn || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime Credit Out Card */}
-                {cardVisibility.lifetimeCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">Lifetime Credit Out</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber((totals.lifetimeCreditOut || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Lifetime SO Compensation In Card */}
+                {/* Lifetime SO Compensation In */}
                 {cardVisibility.lifetimeSOCompensationIn !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
                     <div className="text-[10px] font-medium text-lime-600 mb-1">Lifetime SO Compensation In</div>
-                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber((totals.lifetimeSOCompensationIn || 0).toFixed(2))}</div>
+                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.lifetimeSOCompensationIn) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* Lifetime SO Compensation Out Card */}
+                {/* Lifetime SO Compensation Out */}
                 {cardVisibility.lifetimeSOCompensationOut !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
                     <div className="text-[10px] font-medium text-yellow-600 mb-1">Lifetime SO Compensation Out</div>
-                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber((totals.lifetimeSOCompensationOut || 0).toFixed(2))}</div>
+                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.lifetimeSOCompensationOut) || 0).toFixed(2))}</div>
                   </div>
                 )}
+
+                {/* Lifetime Withdrawal */}
+                {cardVisibility.lifetimeWithdrawal !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-red-600 mb-1">Lifetime Withdrawal</div>
+                    <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.lifetimeWithdrawal) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Margin */}
+                {cardVisibility.margin !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-purple-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-purple-600 mb-1">Margin</div>
+                    <div className="text-sm font-bold text-purple-700">{formatIndianNumber(((totals?.margin) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Margin Free */}
+                {cardVisibility.marginFree !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-fuchsia-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-fuchsia-600 mb-1">Margin Free</div>
+                    <div className="text-sm font-bold text-fuchsia-700">{formatIndianNumber(((totals?.marginFree) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Margin Initial */}
+                {cardVisibility.marginInitial !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-indigo-600 mb-1">Margin Initial</div>
+                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.marginInitial) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Margin Level */}
+                {cardVisibility.marginLevel !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-purple-300 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-purple-600 mb-1">Margin Level</div>
+                    <div className="text-sm font-bold text-purple-700">{formatPercentageValue((totals?.marginLevel) || 0)}</div>
+                  </div>
+                )}
+
+                {/* Margin Maintenance */}
+                {cardVisibility.marginMaintenance !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-violet-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-violet-600 mb-1">Margin Maintenance</div>
+                    <div className="text-sm font-bold text-violet-700">{formatIndianNumber(((totals?.marginMaintenance) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* SO Equity */}
+                {cardVisibility.soEquity !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-indigo-600 mb-1">SO Equity</div>
+                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.soEquity) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* SO Level */}
+                {cardVisibility.soLevel !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-blue-600 mb-1">SO Level</div>
+                    <div className="text-sm font-bold text-blue-700">{formatIndianNumber(((totals?.soLevel) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* SO Margin */}
+                {cardVisibility.soMargin !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-sky-600 mb-1">SO Margin</div>
+                    <div className="text-sm font-bold text-sky-700">{formatIndianNumber(((totals?.soMargin) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+                {/* PnL */}
+                {cardVisibility.pnl !== false && (
+                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.pnl || 0) >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+                    <div className={`text-[10px] font-medium mb-1 ${(totals.pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>PnL</div>
+                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.pnl || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {(totals.pnl || 0) >= 0 ? '▲' : '▼'}
+                      {formatIndianNumber(((totals?.pnl) || 0).toFixed(2))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Previous Equity */}
+                {cardVisibility.previousEquity !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-cyan-600 mb-1">Previous Equity</div>
+                    <div className="text-sm font-bold text-cyan-700">{formatIndianNumber(((totals?.previousEquity) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Profit */}
+                {cardVisibility.profit !== false && (
+                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.profit || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                    <div className={`text-[10px] font-medium mb-1 ${(totals.profit || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>Profit</div>
+                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.profit || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
+                      {(totals.profit || 0) >= 0 ? '▲' : '▼'}
+                      {formatIndianNumber(((totals?.profit) || 0).toFixed(2))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Storage */}
+                {cardVisibility.storage !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-gray-600 mb-1">Storage</div>
+                    <div className={`text-sm font-bold ${((totals?.storage) || 0) >= 0 ? 'text-gray-700' : 'text-red-700'}`}>{formatIndianNumber(((totals?.storage) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Bonus In */}
+                {cardVisibility.thisMonthBonusIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-emerald-600 mb-1">This Month Bonus In</div>
+                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.thisMonthBonusIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Bonus Out */}
+                {cardVisibility.thisMonthBonusOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-rose-600 mb-1">This Month Bonus Out</div>
+                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.thisMonthBonusOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Credit In */}
+                {cardVisibility.thisMonthCreditIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-teal-600 mb-1">This Month Credit In</div>
+                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.thisMonthCreditIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Credit Out */}
+                {cardVisibility.thisMonthCreditOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-amber-600 mb-1">This Month Credit Out</div>
+                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.thisMonthCreditOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Deposit */}
+                {cardVisibility.thisMonthDeposit !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-green-600 mb-1">This Month Deposit</div>
+                    <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.thisMonthDeposit) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month PnL */}
+                {cardVisibility.thisMonthPnL !== false && (
+                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisMonthPnL || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                    <div className={`text-[10px] font-medium mb-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>This Month PnL</div>
+                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
+                      {(totals.thisMonthPnL || 0) >= 0 ? '▲' : '▼'}
+                      {formatIndianNumber(((totals?.thisMonthPnL) || 0).toFixed(2))}
+                    </div>
+                  </div>
+                )}
+
+                {/* This Month SO Compensation In */}
+                {cardVisibility.thisMonthSOCompensationIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-lime-600 mb-1">This Month SO Compensation In</div>
+                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.thisMonthSOCompensationIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month SO Compensation Out */}
+                {cardVisibility.thisMonthSOCompensationOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-yellow-600 mb-1">This Month SO Compensation Out</div>
+                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.thisMonthSOCompensationOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Month Withdrawal */}
+                {cardVisibility.thisMonthWithdrawal !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-red-600 mb-1">This Month Withdrawal</div>
+                    <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.thisMonthWithdrawal) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Bonus In */}
+                {cardVisibility.thisWeekBonusIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-emerald-600 mb-1">This Week Bonus In</div>
+                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.thisWeekBonusIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Bonus Out */}
+                {cardVisibility.thisWeekBonusOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-rose-600 mb-1">This Week Bonus Out</div>
+                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.thisWeekBonusOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Credit In */}
+                {cardVisibility.thisWeekCreditIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-teal-600 mb-1">This Week Credit In</div>
+                    <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.thisWeekCreditIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Credit Out */}
+                {cardVisibility.thisWeekCreditOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-amber-600 mb-1">This Week Credit Out</div>
+                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.thisWeekCreditOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Deposit */}
+                {cardVisibility.thisWeekDeposit !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-green-600 mb-1">This Week Deposit</div>
+                    <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.thisWeekDeposit) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week PnL */}
+                {cardVisibility.thisWeekPnL !== false && (
+                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisWeekPnL || 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'}`}>
+                    <div className={`text-[10px] font-medium mb-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>This Week PnL</div>
+                    <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
+                      {(totals.thisWeekPnL || 0) >= 0 ? '▲' : '▼'}
+                      {formatIndianNumber(((totals?.thisWeekPnL) || 0).toFixed(2))}
+                    </div>
+                  </div>
+                )}
+
+                {/* This Week SO Compensation In */}
+                {cardVisibility.thisWeekSOCompensationIn !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-lime-600 mb-1">This Week SO Compensation In</div>
+                    <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.thisWeekSOCompensationIn) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week SO Compensation Out */}
+                {cardVisibility.thisWeekSOCompensationOut !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-yellow-600 mb-1">This Week SO Compensation Out</div>
+                    <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.thisWeekSOCompensationOut) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* This Week Withdrawal */}
+                {cardVisibility.thisWeekWithdrawal !== false && (
+                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                    <div className="text-[10px] font-medium text-red-600 mb-1">This Week Withdrawal</div>
+                    <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.thisWeekWithdrawal) || 0).toFixed(2))}</div>
+                  </div>
+                )}
+
+                {/* Percent versions for all fields (toggle individually in Card Filter) */}
+                {(() => {
+                  const baseLabels = {
+                    assets: 'Assets',
+                    balance: 'Balance',
+                    blockedCommission: 'Blocked Commission',
+                    blockedProfit: 'Blocked Profit',
+                    commission: 'Commission',
+                    credit: 'Credit',
+                    dailyBonusIn: 'Daily Bonus In',
+                    dailyBonusOut: 'Daily Bonus Out',
+                    dailyCreditIn: 'Daily Credit In',
+                    dailyCreditOut: 'Daily Credit Out',
+                    dailyDeposit: 'Daily Deposit',
+                    dailyPnL: 'Daily P&L',
+                    dailySOCompensationIn: 'Daily SO Compensation In',
+                    dailySOCompensationOut: 'Daily SO Compensation Out',
+                    dailyWithdrawal: 'Daily Withdrawal',
+                    equity: 'Equity',
+                    floating: 'Floating',
+                    liabilities: 'Liabilities',
+                    lifetimeBonusIn: 'Lifetime Bonus In',
+                    lifetimeBonusOut: 'Lifetime Bonus Out',
+                    lifetimeCreditIn: 'Lifetime Credit In',
+                    lifetimeCreditOut: 'Lifetime Credit Out',
+                    lifetimeDeposit: 'Lifetime Deposit',
+                    lifetimePnL: 'Lifetime P&L',
+                    lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
+                    lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
+                    lifetimeWithdrawal: 'Lifetime Withdrawal',
+                    margin: 'Margin',
+                    marginFree: 'Margin Free',
+                    marginInitial: 'Margin Initial',
+                    marginLevel: 'Margin Level',
+                    marginMaintenance: 'Margin Maintenance',
+                    soEquity: 'SO Equity',
+                    soLevel: 'SO Level',
+                    soMargin: 'SO Margin',
+                    pnl: 'P&L',
+                    previousEquity: 'Previous Equity',
+                    profit: 'Profit',
+                    storage: 'Storage',
+                    thisMonthBonusIn: 'This Month Bonus In',
+                    thisMonthBonusOut: 'This Month Bonus Out',
+                    thisMonthCreditIn: 'This Month Credit In',
+                    thisMonthCreditOut: 'This Month Credit Out',
+                    thisMonthDeposit: 'This Month Deposit',
+                    thisMonthPnL: 'This Month P&L',
+                    thisMonthSOCompensationIn: 'This Month SO Compensation In',
+                    thisMonthSOCompensationOut: 'This Month SO Compensation Out',
+                    thisMonthWithdrawal: 'This Month Withdrawal',
+                    thisWeekBonusIn: 'This Week Bonus In',
+                    thisWeekBonusOut: 'This Week Bonus Out',
+                    thisWeekCreditIn: 'This Week Credit In',
+                    thisWeekCreditOut: 'This Week Credit Out',
+                    thisWeekDeposit: 'This Week Deposit',
+                    thisWeekPnL: 'This Week P&L',
+                    thisWeekSOCompensationIn: 'This Week SO Compensation In',
+                    thisWeekSOCompensationOut: 'This Week SO Compensation Out',
+                    thisWeekWithdrawal: 'This Week Withdrawal'
+                  }
+                  return Object.entries(baseLabels).map(([key, label]) => {
+                    const visKey = `${key}Percent`
+                    if (cardVisibility[visKey] === false) return null
+                    return (
+                      <div key={visKey} className="bg-white rounded-lg shadow-sm border-2 border-pink-200 p-2 hover:shadow-md transition-shadow">
+                        <div className="text-[10px] font-medium text-pink-600 mb-1">{label} %</div>
+                        <div className="text-sm font-bold text-pink-700">{formatPercentageValue((totalsPercent?.[key]) || 0)}</div>
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             </div>
           )}
@@ -1953,24 +2267,47 @@ const Client2Page = () => {
               </div>
 
               {/* Search Bar */}
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search login, name, email..."
-                  className="pl-3 pr-10 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm w-64"
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Search login, name, email..."
+                    className="w-64 pl-3 pr-3 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+                
+                {/* Search Button */}
                 <button
                   onClick={handleSearch}
-                  className="absolute right-1 p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-xs font-medium"
                   title="Search"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
+                  <span>Search</span>
                 </button>
+                
+                {/* Clear Button - Only show when there's text */}
+                {searchInput && (
+                  <button
+                    onClick={() => {
+                      setSearchInput('')
+                      setSearchQuery('')
+                      setCurrentPage(1)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-sm text-xs font-medium"
+                    title="Clear search"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Clear</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -2058,11 +2395,11 @@ const Client2Page = () => {
             </div>
           )}
           
-          {/* Loading Spinner */}
-          {loading && <LoadingSpinner />}
+          {/* Initial Loading Spinner */}
+          {initialLoad && loading && <LoadingSpinner />}
           
-          {/* Table */}
-          {!loading && clients.length > 0 && (
+          {/* Table - Show when data is loaded, or during sort (with shimmer) */}
+          {(!initialLoad && (clients.length > 0 || isSorting)) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
               {/* Table Container with Vertical Scroll */}
               <div className="overflow-y-auto flex-1" style={{ 
@@ -2084,6 +2421,35 @@ const Client2Page = () => {
                   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
                     background: #6b7280;
                   }
+                  
+                  /* Staggered fade-in animation for lazy loading */
+                  @keyframes fadeIn {
+                    from {
+                      opacity: 0;
+                      transform: translateY(10px);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0);
+                    }
+                  }
+                  
+                  /* Shimmer effect for loading skeleton */
+                  @keyframes shimmer {
+                    0% {
+                      background-position: -1000px 0;
+                    }
+                    100% {
+                      background-position: 1000px 0;
+                    }
+                  }
+                  
+                  .skeleton-shimmer {
+                    background: linear-gradient(90deg, #f0f0f0 0%, #f8f8f8 20%, #f0f0f0 40%, #f0f0f0 100%);
+                    background-size: 1000px 100%;
+                    animation: shimmer 1.5s ease-in-out infinite;
+                    border-radius: 4px;
+                  }
                 `}</style>
                 {/* Horizontal Scroll for Table */}
                 <div className="overflow-x-auto">
@@ -2095,13 +2461,13 @@ const Client2Page = () => {
                           return (
                             <th
                               key={col.key}
-                              className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider"
+                              ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
+                              className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700 transition-colors select-none relative"
+                              onClick={() => handleSort(col.key)}
+                              style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
                             >
                               <div className="flex items-center gap-2 justify-between">
-                                <div 
-                                  className="flex items-center gap-2 cursor-pointer hover:opacity-80"
-                                  onClick={() => handleSort(col.key)}
-                                >
+                                <div className="flex items-center gap-2">
                                   <span>{col.label}</span>
                                   {sortBy === col.key && (
                                     <span className="text-white">
@@ -2110,7 +2476,7 @@ const Client2Page = () => {
                                   )}
                                 </div>
                                 
-                                {/* Filter Button */}
+                                {/* Filter Icon - Just icon, no box */}
                                 <div className="relative" ref={el => {
                                   if (!filterRefs.current) filterRefs.current = {}
                                   filterRefs.current[col.key] = el
@@ -2144,7 +2510,7 @@ const Client2Page = () => {
                                         setShowFilterDropdown(col.key)
                                       }
                                     }}
-                                    className={`p-1 rounded-md transition-all ${filterCount > 0 ? 'bg-green-400 text-blue-900 hover:bg-green-300' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                                    className={`p-0.5 transition-opacity hover:opacity-70 ${filterCount > 0 ? 'text-green-400' : 'text-white/60'}`}
                                     title="Filter column"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
@@ -2339,59 +2705,6 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
-                                              {/* Search */}
-                                              <div className="px-3 py-2 border-b border-gray-200">
-                                                <input
-                                                  type="text"
-                                                  placeholder="Search values..."
-                                                  value={filterSearchQuery[columnKey] || ''}
-                                                  onChange={(e) => setFilterSearchQuery(prev => ({
-                                                    ...prev,
-                                                    [columnKey]: e.target.value
-                                                  }))}
-                                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                              </div>
-
-                                              {/* Select/Deselect All */}
-                                              <div className="px-3 py-2 border-b border-gray-200">
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={isAllSelected(columnKey)}
-                                                    onChange={(e) => {
-                                                      if (e.target.checked) {
-                                                        selectAllFilters(columnKey)
-                                                      } else {
-                                                        deselectAllFilters(columnKey)
-                                                      }
-                                                    }}
-                                                    className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                  />
-                                                  <span className="text-xs font-semibold text-gray-700">SELECT ALL</span>
-                                                </label>
-                                              </div>
-
-                                              {/* Values List */}
-                                              <div className="overflow-y-auto flex-1 px-2 py-2 max-h-60">
-                                                {getUniqueColumnValues(columnKey).map(value => (
-                                                  <label
-                                                    key={value}
-                                                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer text-xs"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={(columnFilters[columnKey] || []).includes(value)}
-                                                      onChange={() => toggleColumnFilter(columnKey, value)}
-                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-gray-700">{formatValue(columnKey, value)}</span>
-                                                  </label>
-                                                ))}
-                                              </div>
-
                                               {/* OK/Clear Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
@@ -2547,59 +2860,6 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
-                                              {/* Search */}
-                                              <div className="px-3 py-2 border-b border-gray-200">
-                                                <input
-                                                  type="text"
-                                                  placeholder="Search values..."
-                                                  value={filterSearchQuery[columnKey] || ''}
-                                                  onChange={(e) => setFilterSearchQuery(prev => ({
-                                                    ...prev,
-                                                    [columnKey]: e.target.value
-                                                  }))}
-                                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                />
-                                              </div>
-
-                                              {/* Select/Deselect All */}
-                                              <div className="px-3 py-2 border-b border-gray-200">
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={isAllSelected(columnKey)}
-                                                    onChange={(e) => {
-                                                      if (e.target.checked) {
-                                                        selectAllFilters(columnKey)
-                                                      } else {
-                                                        deselectAllFilters(columnKey)
-                                                      }
-                                                    }}
-                                                    className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                  />
-                                                  <span className="text-xs font-semibold text-gray-700">SELECT ALL</span>
-                                                </label>
-                                              </div>
-
-                                              {/* Values List */}
-                                              <div className="overflow-y-auto flex-1 px-2 py-2 max-h-60">
-                                                {getUniqueColumnValues(columnKey).map(value => (
-                                                  <label
-                                                    key={value}
-                                                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 rounded cursor-pointer text-xs"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={(columnFilters[columnKey] || []).includes(value)}
-                                                      onChange={() => toggleColumnFilter(columnKey, value)}
-                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-gray-700">{formatValue(columnKey, value)}</span>
-                                                  </label>
-                                                ))}
-                                              </div>
-
                                               {/* OK/Clear Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
@@ -2624,55 +2884,91 @@ const Client2Page = () => {
                                   })()}
                                 </div>
                               </div>
+                              {/* Column Resizer Handle */}
+                              <div
+                                onMouseDown={(e) => onMouseDownResizer(e, col.key)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-0 right-0 h-full w-2 cursor-col-resize select-none z-10"
+                                style={{ userSelect: 'none' }}
+                                title="Drag to resize column"
+                              >
+                                <span className="block h-full w-px bg-white/30 hover:bg-white/60 ml-auto"></span>
+                              </div>
                             </th>
                           )
                         })}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {sortedClients.map((client, idx) => (
-                        <tr 
-                          key={client.login || idx} 
-                          onClick={() => handleViewClientDetails(client)}
-                          className="hover:bg-blue-50 cursor-pointer transition-colors"
-                        >
-                          {visibleColumnsList.map(col => {
-                            // Special handling for login column - make it blue
-                            if (col.key === 'login') {
+                    <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
+                      {(loading || isSorting) ? (
+                        // Progressive loading skeleton with staggered animation
+                        Array.from({ length: 10 }).map((_, idx) => (
+                          <tr 
+                            key={`skeleton-${animationKey}-${idx}`} 
+                            style={{
+                              opacity: 0,
+                              animation: `fadeIn 0.3s ease-in forwards ${idx * 50}ms`
+                            }}
+                          >
+                            {visibleColumnsList.map(col => (
+                              <td key={col.key} className="px-6 py-4 whitespace-nowrap" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
+                                <div className="h-4 skeleton-shimmer w-full"></div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        // Actual data rows with staggered fade-in
+                        sortedClients.map((client, idx) => (
+                          <tr 
+                            key={`${client.login}-${animationKey}-${idx}`} 
+                            onClick={() => handleViewClientDetails(client)}
+                            className="hover:bg-blue-50 cursor-pointer transition-colors"
+                            style={{
+                              opacity: 0,
+                              animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
+                            }}
+                          >
+                            {visibleColumnsList.map(col => {
+                              // Special handling for login column - make it blue
+                              if (col.key === 'login') {
+                                return (
+                                  <td 
+                                    key={col.key} 
+                                    className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
+                                    style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleViewClientDetails(client)
+                                    }}
+                                    title="Click to view client details"
+                                  >
+                                    {formatValue(col.key, client[col.key])}
+                                  </td>
+                                )
+                              }
+                              
+                              // Regular columns
                               return (
                                 <td 
                                   key={col.key} 
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleViewClientDetails(client)
-                                  }}
-                                  title="Click to view client details"
+                                  className={`px-6 py-4 whitespace-nowrap text-sm ${getValueColorClass(col.key, client[col.key]) || 'text-gray-900'}`}
+                                  style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
                                 >
                                   {formatValue(col.key, client[col.key])}
                                 </td>
                               )
-                            }
-                            
-                            // Regular columns
-                            return (
-                              <td 
-                                key={col.key} 
-                                className={`px-6 py-4 whitespace-nowrap text-sm ${getValueColorClass(col.key, client[col.key]) || 'text-gray-900'}`}
-                              >
-                                {formatValue(col.key, client[col.key])}
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      ))}
+                            })}
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                     {/* Totals Footer */}
                     {totals && Object.keys(totals).length > 0 && (
                       <tfoot className="bg-gray-100 font-semibold sticky bottom-0">
                         <tr>
                           {visibleColumnsList.map(col => (
-                            <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
                               {col.key === 'login' ? 'Total:' : formatValue(col.key, totals[col.key])}
                             </td>
                           ))}
@@ -2723,7 +3019,7 @@ const Client2Page = () => {
           )}
           
           {/* No Results */}
-          {!loading && clients.length === 0 && (
+          {!loading && !initialLoad && clients.length === 0 && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
               <p className="text-gray-600">No clients found</p>
             </div>
@@ -2905,10 +3201,23 @@ const Client2Page = () => {
           }}
         />
       )}
+      
+      {/* Group Modal */}
+      <GroupModal
+        isOpen={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+        availableItems={clients}
+        loginField="login"
+        displayField="name"
+        secondaryField="group"
+      />
     </div>
   )
 }
 
 export default Client2Page
+
+
+
 
 
