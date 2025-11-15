@@ -2574,345 +2574,188 @@ const ClientsPage = () => {
             )}
             {displayMode === 'percentage' && (
               <>
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                  <p className="text-sm font-bold text-gray-900">{filteredClients.length}</p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit %</p>
-                  <p className="text-sm font-bold text-emerald-700">
-                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'credit_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                  <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance %</p>
-                  <p className="text-sm font-bold text-indigo-700">
-                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'balance_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-                  <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity %</p>
-                  <p className="text-sm font-bold text-sky-700">
-                    {filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'equity_percentage'), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                {(() => {
-                  const pnlPctSum = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'pnl_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${pnlPctSum >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${pnlPctSum >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL %</p>
-                      <p className={`text-sm font-bold ${pnlPctSum >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pnlPctSum >= 0 ? '▲ ' : '▼ '}
-                        {pnlPctSum >= 0 ? '' : '-'}
-                        {Math.abs(pnlPctSum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                {(() => {
-                  const profitPctSum = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'profit_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${profitPctSum >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${profitPctSum >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Floating Profit %</p>
-                      <p className={`text-sm font-bold ${profitPctSum >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                        {profitPctSum >= 0 ? '▲ ' : '▼ '}
-                        {profitPctSum >= 0 ? '' : '-'}
-                        {Math.abs(profitPctSum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-                  <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
-                  <p className="text-sm font-bold text-green-700">
-                    {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-                  <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
-                  <p className="text-sm font-bold text-red-700">
-                    {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                {(() => {
-                  const dPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'dailyPnL_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${dPct >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${dPct >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL %</p>
-                      <p className={`text-sm font-bold ${dPct >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {dPct >= 0 ? '▲ ' : '▼ '}
-                        {dPct >= 0 ? '' : '-'}
-                        {Math.abs(dPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                {(() => {
-                  const wPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'thisWeekPnL_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${wPct >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${wPct >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL %</p>
-                      <p className={`text-sm font-bold ${wPct >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
-                        {wPct >= 0 ? '▲ ' : '▼ '}
-                        {wPct >= 0 ? '' : '-'}
-                        {Math.abs(wPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                {(() => {
-                  const mPct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'thisMonthPnL_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${mPct >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${mPct >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL %</p>
-                      <p className={`text-sm font-bold ${mPct >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                        {mPct >= 0 ? '▲ ' : '▼ '}
-                        {mPct >= 0 ? '' : '-'}
-                        {Math.abs(mPct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                {(() => {
-                  const lifePct = filteredClients.reduce((sum, c) => sum + getScaledPercent(c, 'lifetimePnL_percentage'), 0)
-                  return (
-                    <div className={`bg-white rounded shadow-sm border ${lifePct >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                      <p className={`text-[10px] font-semibold ${lifePct >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL %</p>
-                      <p className={`text-sm font-bold ${lifePct >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
-                        {lifePct >= 0 ? '▲ ' : '▼ '}
-                        {lifePct >= 0 ? '' : '-'}
-                        {Math.abs(lifePct).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )
-                })()}
-                
-                {/* Commission Percentage Cards - Only visible in percentage mode if enabled in card filter */}
-                {cardVisibility[17] && (
-                  <div className="bg-white rounded shadow-sm border border-amber-300 p-2">
-                    <p className="text-[10px] font-semibold text-amber-700 uppercase mb-0">Total Commission %</p>
-                    <p className="text-sm font-bold text-amber-800">
-                      {faceCardTotals.totalCommissionPercent >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.totalCommissionPercent >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.totalCommissionPercent).toFixed(2)}%
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[18] && (
-                  <div className="bg-white rounded shadow-sm border border-lime-300 p-2">
-                    <p className="text-[10px] font-semibold text-lime-700 uppercase mb-0">Available Commission %</p>
-                    <p className="text-sm font-bold text-lime-800">
-                      {faceCardTotals.availableCommissionPercent >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.availableCommissionPercent >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.availableCommissionPercent).toFixed(2)}%
-                    </p>
-                  </div>
-                )}
+                {faceCardOrder.map((cardId) => {
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  if (!card || !cardVisibility[cardId]) return null
+                  
+                  // Apply themed colors
+                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  
+                  // Simple cards (no icons)
+                  if (card.simple) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
+                          {card.formattedValue != null ? card.formattedValue : card.value}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with icon (PNL, Floating Profit)
+                  if (card.withIcon) {
+                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
+                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
+                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              {card.id === 5 && card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                              )}
+                              {card.id === 5 && !card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                              )}
+                              {card.id === 6 && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                              )}
+                            </svg>
+                          </div>
+                        </div>
+                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with arrow (PnL cards)
+                  if (card.withArrow) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  return null
+                })}
               </>
             )}
             {displayMode === 'both' && (
               <>
-                {/* Value Cards - First Row */}
-                {cardVisibility[1] && (
-                  <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-                    <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-                    <p className="text-sm font-bold text-gray-900">{faceCardTotals.totalClients}</p>
-                  </div>
-                )}
-                {cardVisibility[2] && (
-                  <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                    <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance</p>
-                    <p className="text-sm font-bold text-indigo-700">
-                      {faceCardTotals.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[3] && (
-                  <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-                    <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit</p>
-                    <p className="text-sm font-bold text-emerald-700">
-                      {faceCardTotals.totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[4] && (
-                  <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-                    <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity</p>
-                    <p className="text-sm font-bold text-sky-700">
-                      {faceCardTotals.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[5] && (
-                  <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalPnl >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL</p>
-                    <p className={`text-sm font-bold ${faceCardTotals.totalPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {faceCardTotals.totalPnl >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.totalPnl >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.totalPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[6] && (
-                  <div className={`bg-white rounded shadow-sm border ${faceCardTotals.totalProfit >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit</p>
-                    <p className={`text-sm font-bold ${faceCardTotals.totalProfit >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                      {faceCardTotals.totalProfit >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.totalProfit >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                
-                {/* Percentage Cards - Second Row */}
-                <div className="bg-white rounded shadow-sm border border-emerald-200 p-2">
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase mb-0">Total Credit %</p>
-                  <p className="text-sm font-bold text-emerald-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.credit_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                  <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Balance %</p>
-                  <p className="text-sm font-bold text-indigo-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.balance_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-sky-200 p-2">
-                  <p className="text-[10px] font-semibold text-sky-600 uppercase mb-0">Total Equity %</p>
-                  <p className="text-sm font-bold text-sky-700">
-                    {filteredClients.reduce((sum, c) => sum + (c.equity_percentage || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>PNL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.pnl_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Total Floating Profit %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.profit_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                
-                {/* New Cards - Third Row (Value) */}
-                {cardVisibility[8] && (
-                  <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-                    <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Daily Deposit</p>
-                    <p className="text-sm font-bold text-green-700">
-                      {faceCardTotals.dailyDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[9] && (
-                  <div className="bg-white rounded shadow-sm border border-red-200 p-2">
-                    <p className="text-[10px] font-semibold text-red-600 uppercase mb-0">Daily Withdrawal</p>
-                    <p className="text-sm font-bold text-red-700">
-                      {faceCardTotals.dailyWithdrawal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[10] && (
-                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL</p>
-                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                      {filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0) >= 0 ? '' : '-'}
-                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[11] && (
-                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL</p>
-                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
-                      {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                      {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0) >= 0 ? '' : '-'}
-                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[12] && (
-                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL</p>
-                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                      {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                      {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0) >= 0 ? '' : '-'}
-                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[13] && (
-                  <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                    <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL</p>
-                    <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
-                      {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                      {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0) >= 0 ? '' : '-'}
-                      {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                )}
-                
-                {/* New Cards - Fourth Row (Percentage) */}
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'} uppercase mb-0`}>Daily PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.dailyPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'} uppercase mb-0`}>This Week PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisWeekPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>This Month PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.thisMonthPnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'border-violet-200' : 'border-pink-200'} p-2`}>
-                  <p className={`text-[10px] font-semibold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'} uppercase mb-0`}>Lifetime PnL %</p>
-                  <p className={`text-sm font-bold ${filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '▲ ' : '▼ '}
-                    {filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0) >= 0 ? '' : '-'}
-                    {Math.abs(filteredClients.reduce((sum, c) => sum + (c.lifetimePnL_percentage || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-                
-                {/* Commission Percentage Cards - Only visible in both mode if enabled in card filter */}
-                {cardVisibility[17] && (
-                  <div className="bg-white rounded shadow-sm border border-amber-300 p-2">
-                    <p className="text-[10px] font-semibold text-amber-700 uppercase mb-0">Total Commission %</p>
-                    <p className="text-sm font-bold text-amber-800">
-                      {faceCardTotals.totalCommissionPercent >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.totalCommissionPercent >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.totalCommissionPercent).toFixed(2)}%
-                    </p>
-                  </div>
-                )}
-                {cardVisibility[18] && (
-                  <div className="bg-white rounded shadow-sm border border-lime-300 p-2">
-                    <p className="text-[10px] font-semibold text-lime-700 uppercase mb-0">Available Commission %</p>
-                    <p className="text-sm font-bold text-lime-800">
-                      {faceCardTotals.availableCommissionPercent >= 0 ? '▲ ' : '▼ '}
-                      {faceCardTotals.availableCommissionPercent >= 0 ? '' : '-'}
-                      {Math.abs(faceCardTotals.availableCommissionPercent).toFixed(2)}%
-                    </p>
-                  </div>
-                )}
+                {faceCardOrder.map((cardId) => {
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  if (!card || !cardVisibility[cardId]) return null
+                  
+                  // Apply themed colors
+                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  
+                  // Simple cards (no icons)
+                  if (card.simple) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
+                          {card.formattedValue != null ? card.formattedValue : card.value}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with icon (PNL, Floating Profit)
+                  if (card.withIcon) {
+                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
+                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
+                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              {card.id === 5 && card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                              )}
+                              {card.id === 5 && !card.isPositive && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                              )}
+                              {card.id === 6 && (
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                              )}
+                            </svg>
+                          </div>
+                        </div>
+                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  // Cards with arrow (PnL cards)
+                  if (card.withArrow) {
+                    return (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                      >
+                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
+                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
+                          {card.isPositive ? '▲ ' : '▼ '}
+                          {card.isPositive ? '' : '-'}
+                          {card.formattedValue}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  return null
+                })}
               </>
             )}
           </div>
