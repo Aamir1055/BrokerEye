@@ -94,6 +94,9 @@ const Client2Page = () => {
   const filterPanelRef = useRef(null)
   const headerRefs = useRef({})
   const resizingRef = useRef({ active: false, columnKey: null, startX: 0, startWidth: 0 })
+  const tableRef = useRef(null)
+  const hScrollRef = useRef(null)
+  const [resizeGuideLeft, setResizeGuideLeft] = useState(null)
   
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -787,6 +790,18 @@ const Client2Page = () => {
     const maxW = 600
     let newWidth = Math.max(minW, Math.min(maxW, startWidth + delta))
     setColumnWidths(prev => ({ ...prev, [columnKey]: newWidth }))
+
+    // Update vertical resize guide position relative to horizontal scroll container
+    try {
+      const th = headerRefs.current[columnKey]
+      const container = hScrollRef.current
+      if (th && container) {
+        const thRect = th.getBoundingClientRect()
+        const containerRect = container.getBoundingClientRect()
+        const left = (thRect.left - containerRect.left) + newWidth + container.scrollLeft
+        setResizeGuideLeft(left)
+      }
+    } catch {}
   }
 
   const onMouseUpResizer = () => {
@@ -795,6 +810,7 @@ const Client2Page = () => {
     document.body.style.userSelect = ''
     window.removeEventListener('mousemove', onMouseMoveResizer)
     window.removeEventListener('mouseup', onMouseUpResizer)
+    setResizeGuideLeft(null)
   }
 
   const onMouseDownResizer = (e, columnKey) => {
@@ -807,6 +823,28 @@ const Client2Page = () => {
     document.body.style.userSelect = 'none'
     window.addEventListener('mousemove', onMouseMoveResizer)
     window.addEventListener('mouseup', onMouseUpResizer)
+  }
+
+  // Auto-fit column width to content (double-click on resizer like Excel)
+  const autoFitColumn = (columnKey) => {
+    const minW = 80
+    const maxW = 600
+    let newWidth = minW
+    try {
+      const th = headerRefs.current[columnKey]
+      if (th) {
+        newWidth = Math.max(newWidth, th.scrollWidth + 24)
+      }
+      const table = tableRef.current
+      if (table) {
+        const cells = table.querySelectorAll(`td[data-col="${columnKey}"]`)
+        cells.forEach((td) => {
+          newWidth = Math.max(newWidth, td.scrollWidth + 24)
+        })
+      }
+    } catch {}
+    newWidth = Math.max(minW, Math.min(maxW, newWidth))
+    setColumnWidths(prev => ({ ...prev, [columnKey]: newWidth }))
   }
   
   // Column filter functions
@@ -2398,8 +2436,8 @@ const Client2Page = () => {
           {/* Initial Loading Spinner */}
           {initialLoad && loading && <LoadingSpinner />}
           
-          {/* Table - Show when data is loaded, or during sort (with shimmer) */}
-          {(!initialLoad && (clients.length > 0 || isSorting)) && (
+          {/* Table - Keep rows visible during sorting; no shimmer on sort */}
+          {(!initialLoad && clients.length > 0) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
               {/* Table Container with Vertical Scroll */}
               <div className="overflow-y-auto flex-1" style={{ 
@@ -2450,10 +2488,37 @@ const Client2Page = () => {
                     animation: shimmer 1.5s ease-in-out infinite;
                     border-radius: 4px;
                   }
+
+                  /* Header sorting loading bar */
+                  @keyframes headerSlide {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                  }
+                  .header-loading-track {
+                    position: absolute;
+                    left: 0; right: 0; bottom: 0; height: 2px;
+                    overflow: hidden;
+                    background: transparent;
+                  }
+                  .header-loading-bar {
+                    width: 30%; height: 100%;
+                    background: #22c55e; /* tailwind green-500 */
+                    border-radius: 2px;
+                    animation: headerSlide 0.9s linear infinite;
+                  }
                 `}</style>
                 {/* Horizontal Scroll for Table */}
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                <div className="overflow-x-auto relative" ref={hScrollRef}>
+                  {/* Resize guide overlay */}
+                  {resizeGuideLeft != null && (
+                    <div className="absolute top-0 bottom-0 w-[2px] bg-blue-500/90 shadow-sm pointer-events-none" style={{ left: `${resizeGuideLeft}px` }} />
+                  )}
+                  <table ref={tableRef} className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      {visibleColumnsList.map(col => (
+                        <col key={`col-${col.key}`} style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined }} />
+                      ))}
+                    </colgroup>
                     <thead className="bg-blue-600 sticky top-0 z-10">
                       <tr>
                         {visibleColumnsList.map(col => {
@@ -2462,7 +2527,7 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700 transition-colors select-none relative"
+                              className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-colors select-none relative"
                               onClick={() => handleSort(col.key)}
                               style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
                             >
@@ -2475,6 +2540,14 @@ const Client2Page = () => {
                                     </span>
                                   )}
                                 </div>
+                                {/* Header sorting loader - show only for active sorted column while isSorting */}
+                                {isSorting && sortBy === col.key && (
+                                  <div className="relative w-8 h-4 flex items-center justify-center" aria-label="Sorting">
+                                    <div className="header-loading-track">
+                                      <div className="header-loading-bar" />
+                                    </div>
+                                  </div>
+                                )}
                                 
                                 {/* Filter Icon - Just icon, no box */}
                                 <div className="relative" ref={el => {
@@ -2887,12 +2960,13 @@ const Client2Page = () => {
                               {/* Column Resizer Handle */}
                               <div
                                 onMouseDown={(e) => onMouseDownResizer(e, col.key)}
+                                onDoubleClick={(e) => { e.stopPropagation(); autoFitColumn(col.key) }}
                                 onClick={(e) => e.stopPropagation()}
                                 className="absolute top-0 right-0 h-full w-2 cursor-col-resize select-none z-10"
                                 style={{ userSelect: 'none' }}
                                 title="Drag to resize column"
                               >
-                                <span className="block h-full w-px bg-white/30 hover:bg-white/60 ml-auto"></span>
+                                <span className="block h-full w-px bg-gray-300 hover:bg-gray-500 ml-auto"></span>
                               </div>
                             </th>
                           )
@@ -2900,7 +2974,7 @@ const Client2Page = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
-                      {(loading || isSorting) ? (
+                      {loading && !isSorting ? (
                         // Progressive loading skeleton with staggered animation
                         Array.from({ length: 10 }).map((_, idx) => (
                           <tr 
@@ -2911,7 +2985,7 @@ const Client2Page = () => {
                             }}
                           >
                             {visibleColumnsList.map(col => (
-                              <td key={col.key} className="px-6 py-4 whitespace-nowrap" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
+                              <td key={col.key} data-col={col.key} className="px-6 py-4 whitespace-nowrap" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
                                 <div className="h-4 skeleton-shimmer w-full"></div>
                               </td>
                             ))}
@@ -2953,6 +3027,7 @@ const Client2Page = () => {
                                 <td 
                                   key={col.key} 
                                   className={`px-6 py-4 whitespace-nowrap text-sm ${getValueColorClass(col.key, client[col.key]) || 'text-gray-900'}`}
+                                  data-col={col.key}
                                   style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
                                 >
                                   {formatValue(col.key, client[col.key])}
