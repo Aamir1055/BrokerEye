@@ -448,6 +448,20 @@ const ClientPercentagePage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown])
 
+  // Close column selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showColumnSelector && columnSelectorRef.current) {
+        if (!columnSelectorRef.current.contains(event.target)) {
+          setShowColumnSelector(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showColumnSelector])
+
   // Helper function to render table header with filter
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
     const filterCount = getActiveFilterCount(columnKey)
