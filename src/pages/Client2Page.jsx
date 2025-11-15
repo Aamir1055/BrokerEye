@@ -2068,7 +2068,7 @@ const Client2Page = () => {
               <div className="overflow-y-auto flex-1" style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
-                maxHeight: showFaceCards ? 'calc(100vh - 350px)' : 'calc(100vh - 200px)'
+                maxHeight: showFaceCards ? 'calc(100vh - 280px)' : 'calc(100vh - 150px)'
               }}>
                 <style>{`
                   .overflow-y-auto::-webkit-scrollbar {
