@@ -337,10 +337,10 @@ const IBCommissionsPage = () => {
         {/* Face Cards - 4 Metrics */}
         <div className="px-6 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
-            {/* Total Commission Card */}
+            {/* Total Rebate Card */}
             <div className="bg-white rounded shadow-sm border border-blue-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">
-                Total Commission
+                Total Rebate
               </p>
               <p className="text-sm font-bold text-blue-700">
                 {totalsLoading ? (
@@ -351,10 +351,10 @@ const IBCommissionsPage = () => {
               </p>
             </div>
 
-            {/* Total Available Commission Card */}
+            {/* Total Available Rebate Card */}
             <div className="bg-white rounded shadow-sm border border-green-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">
-                Available Commission
+                Available Rebate
               </p>
               <p className="text-sm font-bold text-green-700">
                 {totalsLoading ? (
@@ -365,10 +365,10 @@ const IBCommissionsPage = () => {
               </p>
             </div>
 
-            {/* Disbursed Commission Card (Total - Available) */}
+            {/* Disbursed Rebate Card (Total - Available) */}
             <div className="bg-white rounded shadow-sm border border-red-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">
-                Disbursed Commission
+                Disbursed Rebate
               </p>
               <p className="text-sm font-bold text-red-700">
                 {totalsLoading ? (
@@ -379,10 +379,10 @@ const IBCommissionsPage = () => {
               </p>
             </div>
 
-            {/* Total Commission Percentage Card */}
+            {/* Total Rebate Percentage Card */}
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider mb-1">
-                Total Commission %
+                Total Rebate %
               </p>
               <p className="text-sm font-bold text-purple-700">
                 {totalsLoading ? (
@@ -393,10 +393,10 @@ const IBCommissionsPage = () => {
               </p>
             </div>
 
-            {/* Total Available Commission Percentage Card */}
+            {/* Total Available Rebate Percentage Card */}
             <div className="bg-white rounded shadow-sm border border-orange-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1">
-                Available Commission %
+                Available Rebate %
               </p>
               <p className="text-sm font-bold text-orange-700">
                 {totalsLoading ? (
@@ -546,8 +546,8 @@ const IBCommissionsPage = () => {
                           { key: 'name', label: 'Name', align: 'left', width: columnWidths.name || 200 },
                           { key: 'email', label: 'Email', align: 'left', width: columnWidths.email || 250 },
                           { key: 'percentage', label: 'Percentage', align: 'left', width: columnWidths.percentage || 120 },
-                          { key: 'total_commission', label: 'Total Commission', align: 'right', width: columnWidths.total_commission || 150 },
-                          { key: 'available_commission', label: 'Available Commission', align: 'right', width: columnWidths.available_commission || 180 },
+                          { key: 'total_commission', label: 'Total Rebate', align: 'right', width: columnWidths.total_commission || 150 },
+                          { key: 'available_commission', label: 'Available Rebate', align: 'right', width: columnWidths.available_commission || 180 },
                           { key: 'last_synced_at', label: 'Last Synced', align: 'left', width: columnWidths.last_synced_at || 160 },
                           { key: 'action', label: 'Action', align: 'center', width: columnWidths.action || 180 }
                         ].map((col) => (

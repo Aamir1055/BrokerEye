@@ -225,6 +225,10 @@ const PositionsPage = () => {
     return effective
   }
 
+  // Define string columns that should not show number filters
+  const stringColumns = ['login', 'symbol', 'action', 'reason', 'comment']
+  const isStringColumn = (key) => stringColumns.includes(key)
+
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
@@ -243,16 +247,39 @@ const PositionsPage = () => {
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
+    const isTimeColumn = columnKey === 'timeUpdate'
+    const originalTimestamps = new Map() // Store original timestamps for sorting
+    
     cachedPositions.forEach(position => {
-      const value = position[columnKey]
-      if (value !== null && value !== undefined && value !== '') {
+      let value = position[columnKey]
+      
+      // Format timeUpdate (epoch) to dd/mm/yyyy hh:mm:ss for display in filter
+      if (isTimeColumn && value) {
+        const formatted = formatTime(value)
+        // Only add if formatting was successful (not '-')
+        if (formatted && formatted !== '-') {
+          originalTimestamps.set(formatted, value) // Map formatted -> original timestamp
+          value = formatted
+        }
+      }
+      
+      if (value !== null && value !== undefined && value !== '' && value !== '-') {
         values.add(value)
       }
     })
+    
     const sortedValues = Array.from(values).sort((a, b) => {
+      // For time column, sort by original timestamp (chronological order)
+      if (isTimeColumn && originalTimestamps.has(a) && originalTimestamps.has(b)) {
+        return originalTimestamps.get(b) - originalTimestamps.get(a) // Newest first
+      }
+      
+      // For numeric values
       if (typeof a === 'number' && typeof b === 'number') {
         return a - b
       }
+      
+      // For string values
       return String(a).localeCompare(String(b))
     })
     
@@ -332,10 +359,12 @@ const PositionsPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
+    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    
     const filterConfig = {
       type: customFilterType,
-      value1: parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      value1: isTextFilter ? customFilterValue1 : parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? (isTextFilter ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
       operator: customFilterOperator
     }
 
@@ -355,14 +384,34 @@ const PositionsPage = () => {
     setCustomFilterType('equal')
   }
 
-  // Check if value matches number filter
+  // Check if value matches number or text filter
   const matchesNumberFilter = (value, filterConfig) => {
     if (!filterConfig) return true
     
+    const { type, value1, value2 } = filterConfig
+
+    // Handle text filters
+    if (['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
+      const strValue = String(value || '').toLowerCase()
+      const searchValue = String(value1 || '').toLowerCase()
+      
+      switch (type) {
+        case 'startsWith':
+          return strValue.startsWith(searchValue)
+        case 'endsWith':
+          return strValue.endsWith(searchValue)
+        case 'contains':
+          return strValue.includes(searchValue)
+        case 'doesNotContain':
+          return !strValue.includes(searchValue)
+        default:
+          return true
+      }
+    }
+
+    // Handle number filters
     const numValue = parseFloat(value)
     if (isNaN(numValue)) return false
-
-    const { type, value1, value2 } = filterConfig
 
     switch (type) {
       case 'equal':
@@ -793,7 +842,16 @@ const PositionsPage = () => {
       } else if (values && values.length > 0) {
         // Regular checkbox filter
         ibFiltered = ibFiltered.filter(position => {
-          const positionValue = position[columnKey]
+          let positionValue = position[columnKey]
+          
+          // For timeUpdate, format to match displayed format in filter
+          if (columnKey === 'timeUpdate' && positionValue) {
+            const formatted = formatTime(positionValue)
+            if (formatted && formatted !== '-') {
+              positionValue = formatted
+            }
+          }
+          
           return values.includes(positionValue)
         })
       }
@@ -1409,7 +1467,17 @@ const PositionsPage = () => {
               <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
                 style={{
                   top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
-                  left: `${filterRefs.current[columnKey]?.getBoundingClientRect().left}px`
+                  left: (() => {
+                    const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
+                    if (!rect) return '0px'
+                    // Check if dropdown would go off-screen on the right
+                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
+                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    // If would overflow, align to the right edge of the button
+                    return wouldOverflow 
+                      ? `${rect.right - dropdownWidth}px`
+                      : `${rect.left}px`
+                  })()
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1431,18 +1499,34 @@ const PositionsPage = () => {
                   </div>
                 </div>
 
+                {/* Quick Clear Filter (top like Syncfusion) */}
+                <div className="border-b border-slate-200 py-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear Filter
+                  </button>
+                </div>
+
                 {/* Sort Options */}
-                <div className="border-b border-gray-200">
+                <div className="border-b border-slate-200 py-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5"
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
-                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                     </svg>
                     Sort Smallest to Largest
                   </button>
@@ -1452,50 +1536,43 @@ const PositionsPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100"
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
-                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                     </svg>
                     Sort Largest to Smallest
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      clearColumnFilter(columnKey)
-                    }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100 text-gray-600"
-                  >
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Clear Filter
-                  </button>
                 </div>
 
-                {/* Number Filters */}
-                <div className="border-b border-gray-200">
-                  <div className="px-2 py-1 relative group">
+                {/* Number Filters (only for numeric columns) */}
+                {!isStringColumn(columnKey) && (
+                <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                  <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
                       }}
-                      className="w-full flex items-center justify-between px-2 py-1 text-[10px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                     {showNumberFilterDropdown === columnKey && (
                       <div 
-                        className="absolute left-full top-0 ml-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-50"
+                        className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                        style={{
+                          left: 'calc(100% + 8px)',
+                          zIndex: 10000000
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-[10px] text-gray-600 py-0.5">
+                        <div className="text-[11px] text-slate-700 py-1">
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1506,7 +1583,7 @@ const PositionsPage = () => {
                             Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-3 py-2 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1517,7 +1594,7 @@ const PositionsPage = () => {
                             Not Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1528,7 +1605,7 @@ const PositionsPage = () => {
                             Less Than...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1539,7 +1616,7 @@ const PositionsPage = () => {
                             Less Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1550,7 +1627,7 @@ const PositionsPage = () => {
                             Greater Than...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1561,7 +1638,7 @@ const PositionsPage = () => {
                             Greater Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1572,7 +1649,7 @@ const PositionsPage = () => {
                             Between...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1587,13 +1664,50 @@ const PositionsPage = () => {
                     )}
                   </div>
                 </div>
+                )}
+
+                {/* Text Filters (only for string columns) */}
+                {isStringColumn(columnKey) && (
+                  <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                    <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      >
+                        <span>Text Filters</span>
+                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {showNumberFilterDropdown === columnKey && (
+                        <div 
+                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="text-[11px] text-slate-700 py-1">
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Equal...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('notEqual'); setShowCustomFilterModal(true) }}>Not Equal...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('startsWith'); setShowCustomFilterModal(true) }}>Starts With...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('endsWith'); setShowCustomFilterModal(true) }}>Ends With...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('contains'); setShowCustomFilterModal(true) }}>Contains...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('doesNotContain'); setShowCustomFilterModal(true) }}>Does Not Contain...</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Search Box */}
-                <div className="p-1 border-b border-gray-200">
+                <div className="p-2 border-b border-slate-200">
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search values..."
                       value={filterSearchQuery[columnKey] || ''}
                       onChange={(e) => {
                         e.stopPropagation()
@@ -1603,17 +1717,17 @@ const PositionsPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
-                    <svg className="absolute right-1.5 top-1.5 w-2.5 h-2.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
                 </div>
 
                 {/* Select All / Deselect All */}
-                <div className="px-2 py-1 border-b border-gray-200 bg-gray-50">
-                  <label className="flex items-center gap-1.5 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                <div className="px-3 py-1.5 border-b border-slate-200 bg-slate-50">
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={isAllSelected(columnKey)}
@@ -1626,24 +1740,24 @@ const PositionsPage = () => {
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                     />
-                    <span className="text-[10px] font-medium text-gray-700">Select All</span>
+                    <span className="text-[11px] font-medium text-slate-700">Select All</span>
                   </label>
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-32 overflow-y-auto">
-                  <div className="p-1 space-y-0.5">
+                <div className="max-h-40 overflow-y-auto">
+                  <div className="p-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
-                      <div className="px-2 py-2 text-center text-[10px] text-gray-500">
+                      <div className="px-3 py-2 text-center text-[11px] text-slate-500">
                         No items found
                       </div>
                     ) : (
                       getUniqueColumnValues(columnKey).map(value => (
                         <label 
                           key={value} 
-                          className="flex items-center gap-1.5 hover:bg-gray-50 p-0.5 rounded cursor-pointer"
+                          className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded cursor-pointer transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
@@ -1654,9 +1768,9 @@ const PositionsPage = () => {
                               toggleColumnFilter(columnKey, value)
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
-                          <span className="text-[9px] text-gray-700 truncate">
+                          <span className="text-[11px] text-slate-700 truncate">
                             {value}
                           </span>
                         </label>
@@ -1666,13 +1780,13 @@ const PositionsPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b flex items-center justify-end gap-1.5">
+                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="px-2 py-1 text-[10px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    className="px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
                     Clear
                   </button>
@@ -1681,7 +1795,7 @@ const PositionsPage = () => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                    className="px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
                     OK
                   </button>
@@ -2852,313 +2966,25 @@ const PositionsPage = () => {
                         const effectiveCols = getEffectiveVisibleColumns()
                         return (
                           <>
-                      {effectiveCols.time && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('timeUpdate')}
-                        >
-                          <div className="flex items-center gap-1">
-                            <span>Updated</span>
-                            {sortColumn === 'timeUpdate' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
+                      {effectiveCols.time && renderHeaderCell('timeUpdate', 'Updated', 'timeUpdate')}
                       {effectiveCols.login && renderHeaderCell('login', 'Login')}
-                      {effectiveCols.position && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('position')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Position
-                            {sortColumn === 'position' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
+                      {effectiveCols.position && renderHeaderCell('position', 'Position')}
                       {effectiveCols.symbol && renderHeaderCell('symbol', 'Symbol')}
                       {effectiveCols.action && renderHeaderCell('action', 'Action')}
-                      {effectiveCols.volume && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('volume')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Volume
-                            {sortColumn === 'volume' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.volumePercentage && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('volume_percentage')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Volume %
-                            {sortColumn === 'volume_percentage' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.priceOpen && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('priceOpen')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Open
-                            {sortColumn === 'priceOpen' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.priceCurrent && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('priceCurrent')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Current
-                            {sortColumn === 'priceCurrent' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.sl && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('priceSL')}
-                        >
-                          <div className="flex items-center gap-1">
-                            S/L
-                            {sortColumn === 'priceSL' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.tp && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('priceTP')}
-                        >
-                          <div className="flex items-center gap-1">
-                            T/P
-                            {sortColumn === 'priceTP' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.profit && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('profit')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Profit
-                            {sortColumn === 'profit' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.profitPercentage && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('profit_percentage')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Profit %
-                            {sortColumn === 'profit_percentage' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.storage && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('storage')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Storage
-                            {sortColumn === 'storage' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.storagePercentage && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('storage_percentage')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Storage %
-                            {sortColumn === 'storage_percentage' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.appliedPercentage && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('applied_percentage')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Applied %
-                            {sortColumn === 'applied_percentage' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.reason && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('reason')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Reason
-                            {sortColumn === 'reason' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.comment && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('comment')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Comment
-                            {sortColumn === 'comment' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
-                      {effectiveCols.commission && (
-                        <th 
-                          className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
-                          onClick={() => handleSort('commission')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Commission
-                            {sortColumn === 'commission' ? (
-                              <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                              </svg>
-                            )}
-                          </div>
-                        </th>
-                      )}
+                      {effectiveCols.volume && renderHeaderCell('volume', 'Volume')}
+                      {effectiveCols.volumePercentage && renderHeaderCell('volume_percentage', 'Volume %')}
+                      {effectiveCols.priceOpen && renderHeaderCell('priceOpen', 'Open')}
+                      {effectiveCols.priceCurrent && renderHeaderCell('priceCurrent', 'Current')}
+                      {effectiveCols.sl && renderHeaderCell('priceSL', 'S/L')}
+                      {effectiveCols.tp && renderHeaderCell('priceTP', 'T/P')}
+                      {effectiveCols.profit && renderHeaderCell('profit', 'Profit')}
+                      {effectiveCols.profitPercentage && renderHeaderCell('profit_percentage', 'Profit %')}
+                      {effectiveCols.storage && renderHeaderCell('storage', 'Storage')}
+                      {effectiveCols.storagePercentage && renderHeaderCell('storage_percentage', 'Storage %')}
+                      {effectiveCols.appliedPercentage && renderHeaderCell('applied_percentage', 'Applied %')}
+                      {effectiveCols.reason && renderHeaderCell('reason', 'Reason')}
+                      {effectiveCols.comment && renderHeaderCell('comment', 'Comment')}
+                      {effectiveCols.commission && renderHeaderCell('commission', 'Commission')}
                           </>
                         )
                       })()}
@@ -3342,13 +3168,17 @@ const PositionsPage = () => {
                   <option value="greaterThan">Greater Than</option>
                   <option value="greaterThanOrEqual">Greater Than Or Equal</option>
                   <option value="between">Between</option>
+                  <option value="startsWith">Starts With</option>
+                  <option value="endsWith">Ends With</option>
+                  <option value="contains">Contains</option>
+                  <option value="doesNotContain">Does Not Contain</option>
                 </select>
               </div>
 
               {/* Value Input */}
               <div>
                 <input
-                  type="number"
+                  type={['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
                   placeholder="Enter the value"

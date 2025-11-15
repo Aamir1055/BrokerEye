@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import websocketService from '../services/websocket'
 import { useData } from '../contexts/DataContext'
 
@@ -9,6 +9,23 @@ const WebSocketIndicator = () => {
   const [showPerf, setShowPerf] = useState(false)
   const [perf, setPerf] = useState(null)
   const { latestMeasuredLagMs } = useData() || {}
+  const indicatorRef = useRef(null)
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (indicatorRef.current && !indicatorRef.current.contains(event.target)) {
+        setShowDebug(false)
+      }
+    }
+
+    if (showDebug) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showDebug])
 
   useEffect(() => {
     // Subscribe to connection state changes
@@ -71,7 +88,7 @@ const WebSocketIndicator = () => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={indicatorRef}>
       {/* Status Indicator */}
       <button
         onClick={() => setShowDebug(!showDebug)}
@@ -95,7 +112,11 @@ const WebSocketIndicator = () => {
 
       {/* Debug Panel */}
       {showDebug && debugInfo && (
-        <div className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 w-80" style={{ zIndex: 99999999 }}>
+        <div 
+          className="absolute top-full right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-3 w-80" 
+          style={{ zIndex: 99999999 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
             <h3 className="text-xs font-semibold text-gray-900">WebSocket Debug Info</h3>
             <button

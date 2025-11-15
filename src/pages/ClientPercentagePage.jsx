@@ -454,16 +454,16 @@ const ClientPercentagePage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+      <th className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700 transition-colors select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
-            className="flex items-center gap-1 cursor-pointer flex-1"
+            className="flex items-center gap-1 cursor-pointer flex-1 text-white"
             onClick={() => {
               setSortColumn(actualSortKey)
               setSortDirection(prev => sortColumn === actualSortKey && prev === 'asc' ? 'desc' : 'asc')
             }}
           >
-            <span>{label}</span>
+            <span className="text-white">{label}</span>
             {getSortIcon(actualSortKey)}
           </div>
           
@@ -476,14 +476,14 @@ const ClientPercentagePage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-yellow-400 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {filterCount}
                 </span>
               )}
@@ -493,7 +493,17 @@ const ClientPercentagePage = () => {
               <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-44" 
                 style={{
                   top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
-                  left: `${filterRefs.current[columnKey]?.getBoundingClientRect().left}px`
+                  left: (() => {
+                    const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
+                    if (!rect) return '0px'
+                    // Check if dropdown would go off-screen on the right
+                    const dropdownWidth = 176 // 44 * 4 (w-44 in pixels)
+                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    // If would overflow, align to the right edge of the button
+                    return wouldOverflow 
+                      ? `${rect.right - dropdownWidth}px`
+                      : `${rect.left}px`
+                  })()
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -523,7 +533,7 @@ const ClientPercentagePage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-1.5 py-1 text-left text-[9px] hover:bg-gray-50 flex items-center gap-1"
+                    className="w-full px-1.5 py-1 text-left text-[9px] text-gray-700 hover:bg-gray-50 flex items-center gap-1"
                   >
                     <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -536,7 +546,7 @@ const ClientPercentagePage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-1.5 py-1 text-left text-[9px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100"
+                    className="w-full px-1.5 py-1 text-left text-[9px] text-gray-700 hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100"
                   >
                     <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
@@ -548,9 +558,9 @@ const ClientPercentagePage = () => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="w-full px-1.5 py-1 text-left text-[9px] hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100 text-gray-600"
+                    className="w-full px-1.5 py-1 text-left text-[9px] text-gray-700 hover:bg-gray-50 flex items-center gap-1 border-t border-gray-100"
                   >
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     Clear Filter
@@ -579,9 +589,9 @@ const ClientPercentagePage = () => {
                         className="absolute left-full top-0 ml-1 w-36 bg-white border border-gray-300 rounded shadow-lg z-50"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-[9px] text-gray-600">
+                        <div className="text-[9px]">
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -592,7 +602,7 @@ const ClientPercentagePage = () => {
                             Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer"
+                            className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -603,7 +613,7 @@ const ClientPercentagePage = () => {
                             Not Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -614,7 +624,7 @@ const ClientPercentagePage = () => {
                             Less Than...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -625,7 +635,7 @@ const ClientPercentagePage = () => {
                             Less Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -636,7 +646,7 @@ const ClientPercentagePage = () => {
                             Greater Than...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -647,7 +657,7 @@ const ClientPercentagePage = () => {
                             Greater Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -658,7 +668,7 @@ const ClientPercentagePage = () => {
                             Between...
                           </div>
                           <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer"
+                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -783,18 +793,18 @@ const ClientPercentagePage = () => {
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
       return (
-        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 text-white transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
         </svg>
       )
     }
     return sortDirection === 'asc' ? (
-      <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-3 h-3 text-white transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     ) : (
-      <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      <svg className="w-3 h-3 text-white rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     )
   }
@@ -848,21 +858,21 @@ const ClientPercentagePage = () => {
 
           {/* Stats Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Clients</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
+              <p className="text-sm font-bold text-gray-900">{stats.total}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Custom Percentages</p>
-              <p className="text-2xl font-semibold text-green-600">{stats.total_custom}</p>
+            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
+              <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Custom Percentages</p>
+              <p className="text-sm font-bold text-green-600">{stats.total_custom}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Using Default</p>
-              <p className="text-2xl font-semibold text-purple-600">{stats.total_default}</p>
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Using Default</p>
+              <p className="text-sm font-bold text-purple-600">{stats.total_default}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Default Percentage</p>
-              <p className="text-2xl font-semibold text-orange-600">{stats.default_percentage}%</p>
+            <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
+              <p className="text-[10px] font-semibold text-orange-600 uppercase mb-0">Default Percentage</p>
+              <p className="text-sm font-bold text-orange-600">{stats.default_percentage}%</p>
             </div>
           </div>
 
@@ -926,7 +936,7 @@ const ClientPercentagePage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg border border-blue-700 hover:border-blue-800 transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -1033,23 +1043,23 @@ const ClientPercentagePage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
               <div className="overflow-y-auto flex-1">
                 <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <thead className="bg-blue-600 sticky top-0 shadow-md">
                   <tr>
                     {visibleColumns.login && renderHeaderCell('client_login', 'Client Login', 'client_login')}
                     {visibleColumns.percentage && renderHeaderCell('percentage', 'Percentage')}
                     {visibleColumns.type && renderHeaderCell('is_custom', 'Type', 'is_custom')}
                     {visibleColumns.comment && (
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
                         Comment
                       </th>
                     )}
                     {visibleColumns.updatedAt && (
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
                         Last Updated
                       </th>
                     )}
                     {visibleColumns.actions && (
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
                         Actions
                       </th>
                     )}

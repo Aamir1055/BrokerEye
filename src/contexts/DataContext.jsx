@@ -279,10 +279,15 @@ export const DataProvider = ({ children }) => {
       dailyDeposit: toNum(client.dailyDeposit) / 100,
       dailyWithdrawal: toNum(client.dailyWithdrawal) / 100,
       dailyPnL: toNum(client.dailyPnL) / 100,
+      // Map backend percentage field to frontend expected field name
+      dailyPnL_percentage: toNum(client.dailyPnLPercentage || client.dailyPnL_percentage),
       // Weekly/Monthly/Lifetime PnL
       thisWeekPnL: toNum(client.thisWeekPnL) / 100,
+      thisWeekPnL_percentage: toNum(client.thisWeekPnLPercentage || client.thisWeekPnL_percentage),
       thisMonthPnL: toNum(client.thisMonthPnL) / 100,
+      thisMonthPnL_percentage: toNum(client.thisMonthPnLPercentage || client.thisMonthPnL_percentage),
       lifetimePnL: toNum(client.lifetimePnL) / 100,
+      lifetimePnL_percentage: toNum(client.lifetimePnLPercentage || client.lifetimePnL_percentage),
       // Bonus fields
       dailyBonusIn: toNum(client.dailyBonusIn) / 100,
       dailyBonusOut: toNum(client.dailyBonusOut) / 100,
@@ -327,7 +332,10 @@ export const DataProvider = ({ children }) => {
     // Exclusions: ids, timestamps, non-monetary integers, labels, and percentage keys (handled at display layer)
     const excludedNumericKeys = new Set([
       'login','clientID','leverage','marginLeverage','agent','soActivation','soTime','currencyDigits','rightsMask','language','mqid',
-      'registration','lastAccess','lastUpdate','accountLastUpdate','userLastUpdate','marginLevel','applied_percentage','soLevel','__isNormalized'
+      'registration','lastAccess','lastUpdate','accountLastUpdate','userLastUpdate','marginLevel','applied_percentage','soLevel','__isNormalized',
+      // Percentage fields (already percentages, not currency)
+      'dailyPnL_percentage','dailyPnLPercentage','thisWeekPnL_percentage','thisWeekPnLPercentage',
+      'thisMonthPnL_percentage','thisMonthPnLPercentage','lifetimePnL_percentage','lifetimePnLPercentage'
     ])
 
     // REMOVED: Generic fallback division to prevent accidental double-scaling

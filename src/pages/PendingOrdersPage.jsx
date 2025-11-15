@@ -87,6 +87,10 @@ const PendingOrdersPage = () => {
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
+  // Define string columns that should show text filters instead of number filters
+  const stringColumns = ['login', 'symbol', 'type', 'state']
+  const isStringColumn = (key) => stringColumns.includes(key)
+
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
@@ -490,7 +494,7 @@ const PendingOrdersPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700/70 transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1"
@@ -498,11 +502,23 @@ const PendingOrdersPage = () => {
           >
             <span>{label}</span>
             {sortColumn === actualSortKey ? (
-              <span className="text-blue-600">
-                {sortDirection === 'asc' ? '↑' : '↓'}
-              </span>
+              <svg
+                className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
             ) : (
-              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+              <svg
+                className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
             )}
           </div>
           
@@ -515,46 +531,355 @@ const PendingOrdersPage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-yellow-400 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {filterCount}
                 </span>
               )}
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
-                <div className="p-2 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-                  <span className="text-xs font-semibold text-gray-700">Filter by {label}</span>
-                  {filterCount > 0 && (
+              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
+                style={{
+                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  left: (() => {
+                    const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
+                    if (!rect) return '0px'
+                    // Check if dropdown would go off-screen on the right
+                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
+                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    // If would overflow, align to the right edge of the button
+                    return wouldOverflow 
+                      ? `${rect.right - dropdownWidth}px`
+                      : `${rect.left}px`
+                  })()
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
                     <button
-                      onClick={() => clearColumnFilter(columnKey)}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(null)
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      Clear
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="p-2 space-y-1">
-                  {getUniqueColumnValues(columnKey).map(value => (
-                    <label key={value} className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(columnFilters[columnKey] || []).includes(value)}
-                        onChange={() => toggleColumnFilter(columnKey, value)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 truncate">
-                        {value}
-                      </span>
-                    </label>
-                  ))}
+
+                {/* Quick Clear Filter */}
+                <div className="border-b border-slate-200 py-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear Filter
+                  </button>
+                </div>
+
+                {/* Sort Options */}
+                <div className="border-b border-slate-200 py-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey)
+                      setSortDirection('asc')
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Sort Smallest to Largest
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey)
+                      setSortDirection('desc')
+                    }}
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Sort Largest to Smallest
+                  </button>
+                </div>
+
+                {/* Number Filters (only for numeric columns) */}
+                {!isStringColumn(columnKey) && (
+                <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                  <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                    >
+                      <span>Number Filters</span>
+                      <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    {showNumberFilterDropdown === columnKey && (
+                      <div 
+                        className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                        style={{
+                          left: 'calc(100% + 8px)',
+                          zIndex: 10000000
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="text-[11px] text-slate-700 py-1">
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('equal')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('notEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Not Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('lessThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Less Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThan')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('greaterThanOrEqual')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Greater Than Or Equal...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('between')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Between...
+                          </div>
+                          <div 
+                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCustomFilterColumn(columnKey)
+                              setCustomFilterType('equal')
+                              setShowCustomFilterModal(true)
+                            }}
+                          >
+                            Custom Filter...
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                )}
+
+                {/* Text Filters (only for string columns) */}
+                {isStringColumn(columnKey) && (
+                  <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                    <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      >
+                        <span>Text Filters</span>
+                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {showNumberFilterDropdown === columnKey && (
+                        <div 
+                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="text-[11px] text-slate-700 py-1">
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Equal...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('notEqual'); setShowCustomFilterModal(true) }}>Not Equal...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('startsWith'); setShowCustomFilterModal(true) }}>Starts With...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('endsWith'); setShowCustomFilterModal(true) }}>Ends With...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('contains'); setShowCustomFilterModal(true) }}>Contains...</div>
+                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('doesNotContain'); setShowCustomFilterModal(true) }}>Does Not Contain...</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Search Box */}
+                <div className="p-2 border-b border-slate-200">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search values..."
+                      value={filterSearchQuery[columnKey] || ''}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        setFilterSearchQuery(prev => ({
+                          ...prev,
+                          [columnKey]: e.target.value
+                        }))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                    />
+                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Select All / Deselect All */}
+                <div className="px-3 py-1.5 border-b border-slate-200 bg-slate-50">
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected(columnKey)}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        if (e.target.checked) {
+                          selectAllFilters(columnKey)
+                        } else {
+                          deselectAllFilters(columnKey)
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                    />
+                    <span className="text-[11px] font-medium text-slate-700">Select All</span>
+                  </label>
+                </div>
+
+                {/* Filter List */}
+                <div className="max-h-40 overflow-y-auto">
+                  <div className="p-2 space-y-1">
+                    {getUniqueColumnValues(columnKey).length === 0 ? (
+                      <div className="px-3 py-2 text-center text-[11px] text-slate-500">
+                        No items found
+                      </div>
+                    ) : (
+                      getUniqueColumnValues(columnKey).map(value => (
+                        <label 
+                          key={value} 
+                          className="flex items-center gap-2 hover:bg-slate-50 px-2 py-1 rounded cursor-pointer transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={(columnFilters[columnKey] || []).includes(value)}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              toggleColumnFilter(columnKey, value)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                          />
+                          <span className="text-[11px] text-slate-700 truncate">
+                            {value}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearColumnFilter(columnKey)
+                    }}
+                    className="px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(null)
+                    }}
+                    className="px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                  >
+                    OK
+                  </button>
                 </div>
               </div>
             )}
@@ -617,17 +942,17 @@ const PendingOrdersPage = () => {
 
           {/* Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 relative z-0">
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Pending Orders</p>
-              <p className="text-lg font-semibold text-gray-900">{cachedOrders.length}</p>
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Pending Orders</p>
+              <p className="text-sm font-bold text-gray-900">{cachedOrders.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(cachedOrders.map(o=>o.login)).size}</p>
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(cachedOrders.map(o=>o.login)).size}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Symbols</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(cachedOrders.map(o=>o.symbol)).size}</p>
+            <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
+              <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Symbols</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(cachedOrders.map(o=>o.symbol)).size}</p>
             </div>
           </div>
 
@@ -691,9 +1016,9 @@ const PendingOrdersPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="px-3 py-2 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                   </svg>
                   Columns
@@ -739,10 +1064,10 @@ const PendingOrdersPage = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search login, symbol, order..."
-                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    className="pl-10 pr-10 py-2 text-sm border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64 shadow-sm transition-all"
                   />
                   <svg 
-                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -798,103 +1123,19 @@ const PendingOrdersPage = () => {
                 </div>
               ) : (
                 <table className="w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                  <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
                       {renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
                       {renderHeaderCell('login', 'Login')}
                       {renderHeaderCell('order', 'Order')}
                       {renderHeaderCell('symbol', 'Symbol')}
                       {renderHeaderCell('type', 'Type')}
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('state')}
-                      >
-                        <div className="flex items-center gap-1">
-                          State
-                          {sortColumn === 'state' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('volume')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Volume
-                          {sortColumn === 'volume' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('priceOrder')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Price
-                          {sortColumn === 'priceOrder' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('priceTrigger')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Trigger
-                          {sortColumn === 'priceTrigger' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('sl')}
-                      >
-                        <div className="flex items-center gap-1">
-                          SL
-                          {sortColumn === 'sl' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
-                      <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
-                        onClick={() => handleSort('tp')}
-                      >
-                        <div className="flex items-center gap-1">
-                          TP
-                          {sortColumn === 'tp' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
-                          )}
-                        </div>
-                      </th>
+                      {renderHeaderCell('state', 'State')}
+                      {renderHeaderCell('volume', 'Volume')}
+                      {renderHeaderCell('priceOrder', 'Price')}
+                      {renderHeaderCell('priceTrigger', 'Trigger')}
+                      {renderHeaderCell('priceSL', 'SL', 'sl')}
+                      {renderHeaderCell('priceTP', 'TP', 'tp')}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
@@ -906,9 +1147,9 @@ const PendingOrdersPage = () => {
                       const tpDelta = flash?.tpDelta
                       return (
                         <tr key={id ?? index} className={`hover:bg-blue-50 transition-colors`}>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
                           <td 
-                            className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                            className="px-2 py-1.5 text-[13px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
                             onClick={(e) => {
                               e.stopPropagation()
                               setSelectedLogin(o.login)
@@ -917,12 +1158,12 @@ const PendingOrdersPage = () => {
                           >
                             {o.login}
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{id}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{o.symbol}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 2)}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{id}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 2)}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 5)}
                               {priceDelta !== undefined && priceDelta !== 0 ? (
@@ -932,8 +1173,8 @@ const PendingOrdersPage = () => {
                               ) : null}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 5)}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 5)}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 5)}
                               {slDelta !== undefined && slDelta !== 0 ? (
@@ -943,7 +1184,7 @@ const PendingOrdersPage = () => {
                               ) : null}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 5)}
                               {tpDelta !== undefined && tpDelta !== 0 ? (
@@ -986,6 +1227,127 @@ const PendingOrdersPage = () => {
         secondaryField="order"
         editGroup={editingGroup}
       />
+
+      {/* Custom Filter Modal */}
+      {showCustomFilterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
+                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
+              </div>
+
+              {/* Filter Type Dropdown */}
+              <div>
+                <select
+                  value={customFilterType}
+                  onChange={(e) => setCustomFilterType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                >
+                  <option value="equal">Equal</option>
+                  <option value="notEqual">Not Equal</option>
+                  <option value="lessThan">Less Than</option>
+                  <option value="lessThanOrEqual">Less Than Or Equal</option>
+                  <option value="greaterThan">Greater Than</option>
+                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
+                  <option value="between">Between</option>
+                  <option value="startsWith">Starts With</option>
+                  <option value="endsWith">Ends With</option>
+                  <option value="contains">Contains</option>
+                  <option value="doesNotContain">Does Not Contain</option>
+                </select>
+              </div>
+
+              {/* Value Input */}
+              <div>
+                <input
+                  type={['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
+                  value={customFilterValue1}
+                  onChange={(e) => setCustomFilterValue1(e.target.value)}
+                  placeholder="Enter the value"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                />
+              </div>
+
+              {/* Second Value for Between */}
+              {customFilterType === 'between' && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'AND'}
+                        onChange={() => setCustomFilterOperator('AND')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">AND</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={customFilterOperator === 'OR'}
+                        onChange={() => setCustomFilterOperator('OR')}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">OR</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <input
+                      type="number"
+                      value={customFilterValue2}
+                      onChange={(e) => setCustomFilterValue2(e.target.value)}
+                      placeholder="Enter the value"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowCustomFilterModal(false)
+                  setCustomFilterValue1('')
+                  setCustomFilterValue2('')
+                }}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyCustomNumberFilter}
+                disabled={!customFilterValue1}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Client Positions Modal */}
       {selectedLogin && (

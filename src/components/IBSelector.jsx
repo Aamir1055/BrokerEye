@@ -1,10 +1,27 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useIB } from '../contexts/IBContext'
 
 const IBSelector = () => {
   const { selectedIB, ibList, ibMT5Accounts, isLoading, selectIB, clearIBSelection, refreshIBList } = useIB()
   const [showDropdown, setShowDropdown] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const dropdownRef = useRef(null)
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showDropdown])
 
   // Filter IB list based on search query
   const filteredIBList = useMemo(() => {
@@ -31,7 +48,7 @@ const IBSelector = () => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => {
           const willShow = !showDropdown

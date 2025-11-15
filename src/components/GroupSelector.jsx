@@ -1,11 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGroups } from '../contexts/GroupContext'
 
 const GroupSelector = ({ onCreateClick, onEditClick, moduleName }) => {
   const { groups, getActiveGroupFilter, setActiveGroupFilter, deleteGroup } = useGroups()
   const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef(null)
 
   const activeGroupFilter = getActiveGroupFilter(moduleName)
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showDropdown])
 
   const handleEdit = (group, e) => {
     e.stopPropagation()
@@ -26,7 +43,7 @@ const GroupSelector = ({ onCreateClick, onEditClick, moduleName }) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="text-slate-700 hover:text-slate-900 px-3 py-2 rounded-md hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"

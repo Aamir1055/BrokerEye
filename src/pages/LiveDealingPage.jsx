@@ -170,6 +170,11 @@ const LiveDealingPage = () => {
         value = deal.rawData?.[columnKey]
       }
       
+      // Format time column to show readable date format in filter
+      if (columnKey === 'time' && value) {
+        value = formatTime(value)
+      }
+      
       if (value !== null && value !== undefined && value !== '') {
         values.add(value)
       }
@@ -728,8 +733,9 @@ const LiveDealingPage = () => {
     if (!sortColumn) return dealsToSort
 
     return [...dealsToSort].sort((a, b) => {
-      let aVal = a[sortColumn]
-      let bVal = b[sortColumn]
+      // Check top-level first, then rawData
+      let aVal = a[sortColumn] !== undefined ? a[sortColumn] : a.rawData?.[sortColumn]
+      let bVal = b[sortColumn] !== undefined ? b[sortColumn] : b.rawData?.[sortColumn]
 
       // Handle time sorting
       if (sortColumn === 'time') {
@@ -738,9 +744,16 @@ const LiveDealingPage = () => {
         return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
       }
 
-      // Handle numeric values
+      // Handle numeric values (including profit, commission, storage, etc.)
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+      }
+      
+      // Try to parse as numbers if they look numeric
+      const aNum = parseFloat(aVal)
+      const bNum = parseFloat(bVal)
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
       }
 
       // Handle string values
@@ -819,7 +832,11 @@ const LiveDealingPage = () => {
     } else if (values && values.length > 0) {
       // Regular checkbox filter
       ibFilteredDeals = ibFilteredDeals.filter(deal => {
-        const dealValue = deal[columnKey] || deal.rawData?.[columnKey]
+        let dealValue = deal[columnKey] || deal.rawData?.[columnKey]
+        // For time column, format to match displayed format in filter
+        if (columnKey === 'time' && dealValue) {
+          dealValue = formatTime(dealValue)
+        }
         return values.includes(dealValue)
       })
     }
@@ -895,13 +912,13 @@ const LiveDealingPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700 transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
-            className="flex items-center gap-1 cursor-pointer flex-1"
+            className="flex items-center gap-1 cursor-pointer flex-1 text-white"
             onClick={() => handleSort(actualSortKey)}
           >
-            <span>{label}</span>
+            <span className="text-white">{label}</span>
             {getSortIcon(actualSortKey)}
           </div>
           
@@ -914,14 +931,14 @@ const LiveDealingPage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-yellow-400 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {filterCount}
                 </span>
               )}
@@ -931,7 +948,17 @@ const LiveDealingPage = () => {
               <div className="fixed bg-white border border-gray-300 rounded-lg shadow-2xl z-[9999] w-48" 
                 style={{
                   top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
-                  left: `${filterRefs.current[columnKey]?.getBoundingClientRect().left}px`
+                  left: (() => {
+                    const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
+                    if (!rect) return '0px'
+                    // Check if dropdown would go off-screen on the right
+                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
+                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    // If would overflow, align to the right edge of the button
+                    return wouldOverflow 
+                      ? `${rect.right - dropdownWidth}px`
+                      : `${rect.left}px`
+                  })()
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1245,11 +1272,23 @@ const LiveDealingPage = () => {
 
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
-      return <span className="text-gray-400 ml-1">⇅</span>
+      return (
+        <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      )
     }
     return sortDirection === 'asc' 
-      ? <span className="text-blue-600 ml-1">↑</span>
-      : <span className="text-blue-600 ml-1">↓</span>
+      ? (
+        <svg className="w-3 h-3 text-white transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      )
+      : (
+        <svg className="w-3 h-3 text-white transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      )
   }
 
   return (
@@ -1292,13 +1331,13 @@ const LiveDealingPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-xs font-medium text-gray-700 hover:text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-50 border border-gray-200 hover:border-blue-400 transition-colors inline-flex items-center gap-1.5 bg-white shadow-sm"
+                  className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg border border-blue-700 hover:border-blue-800 transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   Filter
-                  <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-semibold rounded-full">
+                  <span className="ml-0.5 px-2 py-0.5 bg-white text-blue-600 text-[10px] font-bold rounded-full">
                     {timeFilter === '24h' ? '24h' : timeFilter === '7d' ? '7d' : 'Custom'}
                   </span>
                 </button>
@@ -1387,7 +1426,7 @@ const LiveDealingPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
+                  className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg border border-blue-700 hover:border-blue-800 transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -1426,19 +1465,19 @@ const LiveDealingPage = () => {
           </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 mb-4">
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">
                 {timeFilter === '24h' ? 'Deals (24h)' : timeFilter === '7d' ? 'Deals (7d)' : 'Filtered Deals'}
               </p>
-              <p className="text-lg font-semibold text-gray-900">{searchedDeals.length}</p>
+              <p className="text-sm font-bold text-gray-900">{searchedDeals.length}</p>
               {searchQuery && (
-                <p className="text-xs text-gray-400 mt-1">of {deals.length} total</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">of {deals.length} total</p>
               )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Connection Status</p>
-              <p className={`text-lg font-semibold ${
+            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
+              <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Connection Status</p>
+              <p className={`text-sm font-bold ${
                 connectionState === 'connected' ? 'text-green-600' :
                 connectionState === 'connecting' ? 'text-yellow-600' :
                 'text-red-600'
@@ -1448,13 +1487,13 @@ const LiveDealingPage = () => {
                  'Disconnected'}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
+              <p className="text-sm font-bold text-gray-900">
                 {new Set(searchedDeals.map(d => d.login)).size}
               </p>
               {searchQuery && (
-                <p className="text-xs text-gray-400 mt-1">of {new Set(deals.map(d => d.login)).size} total</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">of {new Set(deals.map(d => d.login)).size} total</p>
               )}
             </div>
           </div>
@@ -1696,109 +1735,45 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
               <div className="overflow-y-auto flex-1">
                 <table className="min-w-full divide-y divide-gray-200 text-xs">
-                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                   <tr>
-                    {visibleColumns.time && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Time
-                      </th>
-                    )}
-                    {visibleColumns.deal && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Deal
-                      </th>
-                    )}
+                    {visibleColumns.time && renderHeaderCell('time', 'Time')}
+                    {visibleColumns.deal && renderHeaderCell('deal', 'Deal')}
                     {visibleColumns.login && renderHeaderCell('login', 'Login')}
                     {visibleColumns.action && renderHeaderCell('action', 'Action')}
                     {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
-                    {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        {displayMode === 'percentage' ? 'Volume %' : 'Volume'}
-                      </th>
-                    )}
-                    {visibleColumns.volumePercentage && (displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Volume %
-                      </th>
-                    )}
-                    {visibleColumns.price && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Price
-                      </th>
-                    )}
-                    {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        {displayMode === 'percentage' ? 'Profit %' : 'Profit'}
-                      </th>
-                    )}
-                    {visibleColumns.profitPercentage && (displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Profit %
-                      </th>
-                    )}
-                    {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        {displayMode === 'percentage' ? 'Commission %' : 'Commission'}
-                      </th>
-                    )}
-                    {visibleColumns.commissionPercentage && (displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Commission %
-                      </th>
-                    )}
-                    {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        {displayMode === 'percentage' ? 'Storage %' : 'Storage'}
-                      </th>
-                    )}
-                    {visibleColumns.storagePercentage && (displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Storage %
-                      </th>
-                    )}
-                    {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Applied %
-                      </th>
-                    )}
-                    {visibleColumns.entry && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Entry
-                      </th>
-                    )}
-                    {visibleColumns.order && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Order
-                      </th>
-                    )}
-                    {visibleColumns.position && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Position
-                      </th>
-                    )}
-                    {visibleColumns.reason && (
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-700 uppercase tracking-wider">
-                        Reason
-                      </th>
-                    )}
+                    {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volume', displayMode === 'percentage' ? 'Volume %' : 'Volume')}
+                    {visibleColumns.volumePercentage && (displayMode === 'both') && renderHeaderCell('volumePercentage', 'Volume %')}
+                    {visibleColumns.price && renderHeaderCell('price', 'Price')}
+                    {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profit', displayMode === 'percentage' ? 'Profit %' : 'Profit')}
+                    {visibleColumns.profitPercentage && (displayMode === 'both') && renderHeaderCell('profitPercentage', 'Profit %')}
+                    {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commission', displayMode === 'percentage' ? 'Commission %' : 'Commission')}
+                    {visibleColumns.commissionPercentage && (displayMode === 'both') && renderHeaderCell('commissionPercentage', 'Commission %')}
+                    {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storage', displayMode === 'percentage' ? 'Storage %' : 'Storage')}
+                    {visibleColumns.storagePercentage && (displayMode === 'both') && renderHeaderCell('storagePercentage', 'Storage %')}
+                    {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('appliedPercentage', 'Applied %')}
+                    {visibleColumns.entry && renderHeaderCell('entry', 'Entry')}
+                    {visibleColumns.order && renderHeaderCell('order', 'Order')}
+                    {visibleColumns.position && renderHeaderCell('position', 'Position')}
+                    {visibleColumns.reason && renderHeaderCell('reason', 'Reason')}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y-2 divide-gray-200">
                   {displayedDeals.map((deal, index) => (
                     <tr key={deal.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {visibleColumns.time && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {formatTime(deal.time)}
                         </td>
                       )}
                       {visibleColumns.deal && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] font-medium text-gray-900">
                           {deal.rawData?.deal || deal.id}
                         </td>
                       )}
                       {visibleColumns.login && (
                         <td 
-                          className="px-2 py-1.5 whitespace-nowrap text-xs font-medium text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                          className="px-3 py-2.5 whitespace-nowrap text-[14px] font-medium text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
                           onClick={(e) => {
                             e.stopPropagation()
                             setSelectedLogin(deal.login)
@@ -1809,7 +1784,7 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.action && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px]">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                             deal.rawData?.action === 'BUY' 
                               ? 'bg-green-100 text-green-800' 
@@ -1820,12 +1795,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.symbol && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-900 font-medium">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-900 font-medium">
                           {deal.rawData?.symbol || '-'}
                         </td>
                       )}
                       {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.volume_percentage != null
                                 ? Number(deal.rawData.volume_percentage).toFixed(2)
@@ -1834,17 +1809,17 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.volumePercentage && (displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.volume_percentage != null ? Number(deal.rawData.volume_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.price && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.price?.toFixed(5) || '-'}
                         </td>
                       )}
                       {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className={`px-2 py-1.5 whitespace-nowrap text-xs font-medium ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[14px] font-medium ${
                           (deal.rawData?.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {displayMode === 'percentage'
@@ -1855,14 +1830,14 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.profitPercentage && (displayMode === 'both') && (
-                        <td className={`px-2 py-1.5 whitespace-nowrap text-xs ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[14px] ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {deal.rawData?.profit_percentage != null ? Number(deal.rawData.profit_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.commission_percentage != null
                                 ? Number(deal.rawData.commission_percentage).toFixed(2)
@@ -1871,12 +1846,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.commissionPercentage && (displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.commission_percentage != null ? Number(deal.rawData.commission_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.storage_percentage != null
                                 ? Number(deal.rawData.storage_percentage).toFixed(2)
@@ -1885,34 +1860,34 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.storagePercentage && (displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.storage_percentage != null ? Number(deal.rawData.storage_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
                             {deal.rawData?.applied_percentage != null ? Number(deal.rawData.applied_percentage).toFixed(1) : '0.0'}
                           </span>
                         </td>
                       )}
                       {visibleColumns.entry && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.entry || 0}
                         </td>
                       )}
                       {visibleColumns.order && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.order || '-'}
                         </td>
                       )}
                       {visibleColumns.position && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
                           {deal.rawData?.position || '-'}
                         </td>
                       )}
                       {visibleColumns.reason && (
-                        <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-600">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-600">
                           {deal.rawData?.reason || '-'}
                         </td>
                       )}
