@@ -1152,28 +1152,36 @@ const Client2Page = () => {
       // Map the column key to the actual API field name
       // Remove 'Percent' suffix if present
       const apiFieldName = columnKey.replace(/Percent$/, '')
-      
-      const params = {
-        fields: apiFieldName,
-        page: 1,
-        limit: 10000 // Get all unique values
+
+      // Helper to perform a request and extract uniques for a given fields list
+      const requestAndExtract = async (fieldsParam) => {
+        const qs = new URLSearchParams({ fields: fieldsParam, page: 1, limit: 1000 }).toString()
+        const res = await brokerAPI.get(`/api/broker/clients/fields?${qs}`)
+        if (res?.data?.status !== 'success') return []
+        const rows = res.data?.data?.clients || []
+        const set = new Set()
+        for (const row of rows) {
+          const val = row?.[apiFieldName]
+          if (val !== null && val !== undefined && val !== '') set.add(val)
+        }
+        return Array.from(set)
       }
-      
-      const queryString = new URLSearchParams(params).toString()
-      const response = await brokerAPI.get(`/api/broker/clients/fields?${queryString}`)
-      
-      if (response.data.status === 'success') {
-        const clients = response.data.data.clients || []
-        // Extract unique values from the column using the API field name
-        const uniqueValues = [...new Set(clients.map(client => client[apiFieldName]).filter(v => v !== null && v !== undefined && v !== ''))]
-        // Sort alphabetically
-        uniqueValues.sort((a, b) => String(a).localeCompare(String(b)))
-        
-        setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-        
-        // Initialize selected values (all selected by default)
-        setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...uniqueValues] }))
+
+      // 1) Try with the single field first
+      let uniqueValues = await requestAndExtract(apiFieldName)
+
+      // 2) Fallback: ask for a broader common field set (covers most string columns)
+      if (!uniqueValues || uniqueValues.length === 0) {
+        const broadFields = [
+          'login','name','lastName','middleName','email','phone','group','country','city','state','zipCode','address','company','comment','currency'
+        ].join(',')
+        uniqueValues = await requestAndExtract(broadFields)
       }
+
+      // Sort alphabetically and persist
+      uniqueValues.sort((a, b) => String(a).localeCompare(String(b)))
+      setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
+      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...uniqueValues] }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -2704,10 +2712,6 @@ const Client2Page = () => {
                 `}</style>
                 {/* Horizontal Scroll for Table */}
                 <div className="overflow-x-auto relative" ref={hScrollRef}>
-                  {/* Resize guide overlay */}
-                  {resizeGuideLeft != null && (
-                    <div className="absolute top-0 bottom-0 w-[2px] bg-blue-500/90 shadow-sm pointer-events-none" style={{ left: `${resizeGuideLeft}px` }} />
-                  )}
                   <table ref={tableRef} className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
                       {visibleColumnsList.map(col => (
