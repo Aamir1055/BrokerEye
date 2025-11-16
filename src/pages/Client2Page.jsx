@@ -443,8 +443,24 @@ const Client2Page = () => {
       }
       
       // Add filters if present
+      const combinedFilters = []
       if (filters && filters.length > 0) {
-        payload.filters = filters
+        combinedFilters.push(...filters)
+      }
+
+      // Map column header filters to API filters (checkbox values -> IN operator)
+      if (columnFilters && Object.keys(columnFilters).length > 0) {
+        Object.entries(columnFilters).forEach(([key, cfg]) => {
+          if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
+            const field = key.replace('_checkbox', '')
+            combinedFilters.push({ field, operator: 'in', value: cfg.values })
+          }
+          // Future: number/text header filters can be mapped here if needed
+        })
+      }
+
+      if (combinedFilters.length > 0) {
+        payload.filters = combinedFilters
       }
       
       // Add MT5 accounts filter if present
@@ -580,7 +596,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup])
+  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup])
   
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
@@ -613,132 +629,7 @@ const Client2Page = () => {
       })
     }
     
-    // Apply column filters
-    if (Object.keys(columnFilters).length > 0) {
-      filtered = filtered.filter(client => {
-        return Object.entries(columnFilters).every(([filterKey, filterValue]) => {
-          // Handle number filters (key ends with _number)
-          if (filterKey.endsWith('_number')) {
-            const columnKey = filterKey.replace('_number', '')
-            const clientValue = parseFloat(client[columnKey])
-            
-            if (isNaN(clientValue)) return false
-            
-            const { operator, value1, value2 } = filterValue
-            
-            switch (operator) {
-              case 'equal':
-                return clientValue === value1
-              case 'not_equal':
-                return clientValue !== value1
-              case 'greater_than':
-                return clientValue > value1
-              case 'greater_than_equal':
-                return clientValue >= value1
-              case 'less_than':
-                return clientValue < value1
-              case 'less_than_equal':
-                return clientValue <= value1
-              case 'between':
-                return clientValue >= value1 && clientValue <= value2
-              default:
-                return true
-            }
-          }
-          
-          // Handle text filters (key ends with _text)
-          if (filterKey.endsWith('_text')) {
-            const columnKey = filterKey.replace('_text', '')
-            const clientValue = String(client[columnKey] || '')
-            const { operator, value, caseSensitive } = filterValue
-            
-            const compareValue = caseSensitive ? clientValue : clientValue.toLowerCase()
-            const searchValue = caseSensitive ? value : value.toLowerCase()
-            
-            switch (operator) {
-              case 'equal':
-                return compareValue === searchValue
-              case 'notEqual':
-                return compareValue !== searchValue
-              case 'contains':
-                return compareValue.includes(searchValue)
-              case 'doesNotContain':
-                return !compareValue.includes(searchValue)
-              case 'startsWith':
-                return compareValue.startsWith(searchValue)
-              case 'endsWith':
-                return compareValue.endsWith(searchValue)
-              default:
-                return true
-            }
-          }
-          
-          // Handle checkbox value filters (key ends with _checkbox)
-          if (filterKey.endsWith('_checkbox')) {
-            const columnKey = filterKey.replace('_checkbox', '')
-            const clientValue = client[columnKey]
-            const { values } = filterValue
-            
-            // If no values selected or all values selected, show all
-            if (!values || values.length === 0) return true
-            
-            // Check if client value is in selected values
-            return values.includes(clientValue)
-          }
-          
-          // Handle regular checkbox filters
-          if (!filterValue || filterValue.length === 0) return true
-          
-          const clientValue = client[filterKey]
-          
-          // Special handling for specific columns
-          // For "floating" - check if client has positions (floating > 0)
-          if (filterKey === 'floating') {
-            return filterValue.some(val => {
-              const floatingValue = parseFloat(client.floating) || 0
-              if (floatingValue > 0) {
-                // Client has floating - match with actual value or any "has floating" option
-                return val === clientValue || floatingValue > 0
-              } else {
-                // Client has no floating - only match exact value (0 or null)
-                return val === clientValue
-              }
-            })
-          }
-          
-          // For "credit" - check if client has credit (credit > 0)
-          if (filterKey === 'credit') {
-            return filterValue.some(val => {
-              const creditValue = parseFloat(client.credit) || 0
-              if (creditValue > 0) {
-                // Client has credit - match with actual value or any "has credit" option
-                return val === clientValue || creditValue > 0
-              } else {
-                // Client has no credit - only match exact value (0 or null)
-                return val === clientValue
-              }
-            })
-          }
-          
-          // For "lifetimeDeposit" - check if client has no deposit (lifetimeDeposit === 0)
-          if (filterKey === 'lifetimeDeposit') {
-            return filterValue.some(val => {
-              const depositValue = parseFloat(client.lifetimeDeposit) || 0
-              if (depositValue === 0) {
-                // Client has no deposit - match with 0 or "no deposit" option
-                return val === clientValue || val === 0
-              } else {
-                // Client has deposit - match with actual value
-                return val === clientValue
-              }
-            })
-          }
-          
-          // Default: match exact value
-          return filterValue.includes(clientValue)
-        })
-      })
-    }
+    // Column header filters are applied on the server (API-only). Skip client-side filtering here.
     
     // Apply IB filter (only when an IB with accounts is selected)
     if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
@@ -1196,10 +1087,11 @@ const Client2Page = () => {
         uniqueValues = await requestAndExtract(broadFields)
       }
 
-      // Sort alphabetically and persist
+  // Sort alphabetically and persist
       uniqueValues.sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...uniqueValues] }))
+  // Do NOT pre-select all values. Start with none selected; user will choose and click OK.
+  setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -1252,6 +1144,9 @@ const Client2Page = () => {
     }))
     
     setShowFilterDropdown(null)
+    // Immediately refetch via API with new header filters and reset to first page
+    setCurrentPage(1)
+    fetchClients(false)
   }
   
   const applySortToColumn = (columnKey, direction) => {
