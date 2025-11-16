@@ -625,11 +625,11 @@ const Client2Page = () => {
         const unionClients = Array.from(clientMap.values())
         // Slice for current page
         const total = unionClients.length
-        const start = (currentPage - 1) * (itemsPerPage || 100)
-        const end = start + (itemsPerPage || 100)
+        const start = (currentPage - 1) * (itemsPerPage || 50)
+        const end = start + (itemsPerPage || 50)
         setClients(unionClients.slice(start, end))
         setTotalClients(total)
-        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 100))))
+        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 50))))
         setTotals(mergedTotals)
         setError('')
 
@@ -1592,9 +1592,6 @@ const Client2Page = () => {
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">Client 2</h1>
-                <p className="text-xs font-medium text-gray-600 mt-1">
-                  Advanced search with {totalClients.toLocaleString()} clients
-                </p>
               </div>
             </div>
             
@@ -1667,17 +1664,37 @@ const Client2Page = () => {
               
               {/* Card Filter Button (Pink Theme) */}
               <div className="relative" ref={cardFilterMenuRef}>
-                <button
-                  onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg border-2 border-pink-300 text-pink-700 hover:bg-pink-50 transition-colors font-medium text-sm"
-                  title="Toggle Card Visibility"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Card Filter
-                </button>
-                {/* Percentage Toggle moved next to Card Filter (as a sibling) */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
+                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg border-2 border-pink-300 text-pink-700 hover:bg-pink-50 transition-colors font-medium text-sm"
+                    title="Toggle Card Visibility"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Card Filter
+                  </button>
+                  
+                  {/* Percentage Toggle - Now outside the menu */}
+                  <div className="flex items-center gap-2 bg-white border-2 border-pink-300 rounded-lg px-2 h-9">
+                    <span className="text-xs font-medium text-pink-700">%</span>
+                    <button
+                      onClick={() => setCardFilterPercentMode(v => !v)}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
+                        cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
+                      }`}
+                      title="Toggle percentage cards"
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-xs font-medium text-pink-700">Mode</span>
+                  </div>
+                </div>
                 
                 {showCardFilterMenu && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-50 max-h-96 overflow-y-auto" style={{
@@ -1700,24 +1717,6 @@ const Client2Page = () => {
                       }
                     `}</style>
                     <div className="p-3">
-                      {/* Percentage Toggle inside Card Filter menu */}
-                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                        <span className="text-xs font-semibold text-gray-700">Percentage Mode</span>
-                        <button
-                          onClick={() => setCardFilterPercentMode(v => !v)}
-                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
-                            cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
-                          }`}
-                          title="Toggle percentage cards"
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                      
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-xs font-semibold text-gray-700">Show/Hide Cards</div>
                         <button
@@ -2002,9 +2001,11 @@ const Client2Page = () => {
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
             <div className="mb-3">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-semibold text-gray-700">Summary Statistics</h2>
+                <h2 className="text-xs font-semibold text-gray-700">Summary Statistics {cardFilterPercentMode ? '(Percentage Mode)' : ''}</h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+                {/* Show regular cards when NOT in percentage mode */}
+                {!cardFilterPercentMode && (<>
                 {/* Assets */}
                 {cardVisibility.assets !== false && (
                   <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
@@ -2481,8 +2482,11 @@ const Client2Page = () => {
                   </div>
                 )}
 
-                {/* Percent versions for all fields (toggle individually in Card Filter) */}
-                {(() => {
+                {/* End of regular cards - close the fragment */}
+                </>)}
+
+                {/* Show percentage cards when IN percentage mode */}
+                {cardFilterPercentMode && (() => {
                   const baseLabels = {
                     assets: 'Assets',
                     balance: 'Balance',
@@ -2905,6 +2909,10 @@ const Client2Page = () => {
                                         const columnType = getColumnType(col.key)
                                         if (columnType !== 'float' && columnType !== 'integer') {
                                           fetchColumnValues(col.key)
+                                          // Ensure selectedColumnValues for this column starts empty
+                                          if (!selectedColumnValues[col.key]) {
+                                            setSelectedColumnValues(prev => ({ ...prev, [col.key]: [] }))
+                                          }
                                         }
                                       }
                                     }}
