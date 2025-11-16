@@ -1859,7 +1859,7 @@ const Client2Page = () => {
                           // Build items based on toggle: only non-percent OR only percent
                           const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                           const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
-                          const items = (cardFilterPercentMode ? percentItems : baseItems)
+                          return (cardFilterPercentMode ? percentItems : baseItems)
                             .filter(([key, label]) =>
                               cardFilterSearchQuery === '' ||
                               label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
