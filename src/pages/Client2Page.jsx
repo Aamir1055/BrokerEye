@@ -462,7 +462,15 @@ const Client2Page = () => {
           // Text filters first (record fields)
           if (key.endsWith('_text') && cfg) {
             const field = key.replace('_text', '')
-            const op = cfg.operator
+            const opMap = {
+              equal: 'equal',
+              notEqual: 'not_equal',
+              contains: 'contains',
+              doesNotContain: 'not_contains',
+              startsWith: 'starts_with',
+              endsWith: 'ends_with'
+            }
+            const op = opMap[cfg.operator] || cfg.operator
             const val = cfg.value
             if (val != null && String(val).length > 0) {
               combinedFilters.push({ field, operator: op, value: String(val).trim() })
