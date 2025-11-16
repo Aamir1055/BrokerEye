@@ -136,6 +136,7 @@ const Client2Page = () => {
   const measureCanvasRef = useRef(null)
   const tableRef = useRef(null)
   const hScrollRef = useRef(null)
+  const stickyScrollRef = useRef(null)
   const tableContainerRef = useRef(null)
   const [resizingColumn, setResizingColumn] = useState(null)
   const [tableHeight, setTableHeight] = useState('calc(100vh - 280px)')
@@ -372,6 +373,34 @@ const Client2Page = () => {
       clearTimeout(timeout)
     }
   }, [showFaceCards, filters.length])
+  
+  // Sync horizontal scrollbars
+  useEffect(() => {
+    const mainScroll = hScrollRef.current
+    const stickyScroll = stickyScrollRef.current
+    
+    if (!mainScroll || !stickyScroll) return
+    
+    const handleMainScroll = () => {
+      if (stickyScroll && mainScroll) {
+        stickyScroll.scrollLeft = mainScroll.scrollLeft
+      }
+    }
+    
+    const handleStickyScroll = () => {
+      if (mainScroll && stickyScroll) {
+        mainScroll.scrollLeft = stickyScroll.scrollLeft
+      }
+    }
+    
+    mainScroll.addEventListener('scroll', handleMainScroll)
+    stickyScroll.addEventListener('scroll', handleStickyScroll)
+    
+    return () => {
+      mainScroll.removeEventListener('scroll', handleMainScroll)
+      stickyScroll.removeEventListener('scroll', handleStickyScroll)
+    }
+  }, [clients.length, visibleColumnsList.length])
   
   // All available columns
   const allColumns = [
@@ -3100,10 +3129,11 @@ const Client2Page = () => {
                     animation: headerSlide 0.9s linear infinite;
                   }
                 `}</style>
-                {/* Horizontal Scroll for Table */}
-                <div className="overflow-x-auto relative" ref={hScrollRef} style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#9ca3af #f3f4f6'
+                
+                {/* Horizontal Scroll for Table - Always Visible */}
+                <div className="overflow-x-auto relative table-scroll-container" ref={hScrollRef} style={{
+                  scrollbarWidth: 'auto',
+                  scrollbarColor: '#6b7280 #e5e7eb'
                 }}>
                   <table ref={tableRef} className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
@@ -3740,6 +3770,23 @@ const Client2Page = () => {
                     )}
                   </table>
                 </div>
+              </div>
+              
+              {/* Sticky Horizontal Scrollbar at Bottom - Always Visible */}
+              <div 
+                ref={stickyScrollRef}
+                className="sticky bottom-0 overflow-x-auto bg-gray-100 border-t-2 border-gray-300"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#6b7280 #e5e7eb',
+                  height: '20px',
+                  zIndex: 10
+                }}
+              >
+                <div style={{ 
+                  width: tableRef.current?.scrollWidth || '2000px',
+                  height: '1px'
+                }}></div>
               </div>
             </div>
           )}
