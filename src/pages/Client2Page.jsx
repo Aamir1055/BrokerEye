@@ -448,12 +448,16 @@ const Client2Page = () => {
         combinedFilters.push(...filters)
       }
 
-      // Map column header filters to API filters (checkbox values -> IN operator)
+      // Map column header filters to API filters
+      // Checkbox values: expand into multiple 'equal' filters for the same field
       if (columnFilters && Object.keys(columnFilters).length > 0) {
         Object.entries(columnFilters).forEach(([key, cfg]) => {
           if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
             const field = key.replace('_checkbox', '')
-            combinedFilters.push({ field, operator: 'in', value: cfg.values })
+            // Expand into OR-like semantics by sending multiple equal filters for the same field
+            cfg.values.forEach((val) => {
+              combinedFilters.push({ field, operator: 'equal', value: val })
+            })
           }
           // Future: number/text header filters can be mapped here if needed
         })
