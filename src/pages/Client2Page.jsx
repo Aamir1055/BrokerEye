@@ -1700,6 +1700,24 @@ const Client2Page = () => {
                       }
                     `}</style>
                     <div className="p-3">
+                      {/* Percentage Toggle inside Card Filter menu */}
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+                        <span className="text-xs font-semibold text-gray-700">Percentage Mode</span>
+                        <button
+                          onClick={() => setCardFilterPercentMode(v => !v)}
+                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
+                            cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
+                          }`}
+                          title="Toggle percentage cards"
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-xs font-semibold text-gray-700">Show/Hide Cards</div>
                         <button
@@ -1894,23 +1912,6 @@ const Client2Page = () => {
                     </div>
                   </div>
                 )}
-              </div>
-              {/* Percentage Toggle next to Card Filter button */}
-              <div className="flex items-center gap-2 select-none">
-                <span className="text-[11px] text-gray-700">Percentage</span>
-                <button
-                  onClick={() => setCardFilterPercentMode(v => !v)}
-                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
-                    cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
-                  }`}
-                  title="Toggle percentage cards in Card Filter"
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
               </div>
               
               {/* Groups Button */}
@@ -2630,15 +2631,31 @@ const Client2Page = () => {
 
               {/* Search Bar */}
               <div className="flex items-center gap-2">
-                <div className="relative flex-1">
+                <div className="relative">
                   <input
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="Search login, name, email..."
-                    className="w-64 pl-3 pr-3 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                    className="w-64 pl-3 pr-8 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
                   />
+                  {/* Inline Clear X Icon */}
+                  {searchInput && (
+                    <button
+                      onClick={() => {
+                        setSearchInput('')
+                        setSearchQuery('')
+                        setCurrentPage(1)
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Clear search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 
                 {/* Search Button */}
@@ -2652,24 +2669,6 @@ const Client2Page = () => {
                   </svg>
                   <span>Search</span>
                 </button>
-                
-                {/* Clear Button - Only show when there's text */}
-                {searchInput && (
-                  <button
-                    onClick={() => {
-                      setSearchInput('')
-                      setSearchQuery('')
-                      setCurrentPage(1)
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-sm text-xs font-medium"
-                    title="Clear search"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span>Clear</span>
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -3352,12 +3351,12 @@ const Client2Page = () => {
                                 onMouseDown={(e) => handleResizeStart(e, col.key)}
                                 onDoubleClick={(e) => { e.stopPropagation(); handleAutoFit(col.key, col.baseKey) }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize select-none z-20 hover:bg-yellow-400/60 active:bg-yellow-500/70"
-                                style={{ userSelect: 'none' }}
-                                title="Drag to resize column • Double-click to auto-fit"
+                                className="absolute top-0 right-0 h-full w-3 cursor-col-resize select-none z-30 hover:bg-blue-500/30 active:bg-blue-600/50 transition-colors"
+                                style={{ userSelect: 'none', touchAction: 'none' }}
+                                title="Drag to resize • Double-click to auto-fit"
                                 draggable={false}
                               >
-                                <div className="absolute right-0 top-0 w-[2px] h-full bg-white/40 group-hover:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
+                                <div className="absolute right-0 top-0 w-[3px] h-full bg-gray-300 hover:bg-blue-500 active:bg-blue-600 transition-colors"></div>
                               </div>
                             </th>
                           )
