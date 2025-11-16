@@ -426,15 +426,10 @@ const Client2Page = () => {
       }
       setError('')
       
-      // Build request payload - start with empty object for initial load
-      const payload = {}
-      
-      // Only add parameters if they have meaningful values
-      if (currentPage > 1) {
-        payload.page = currentPage
-      }
-      if (itemsPerPage !== 100) {
-        payload.limit = itemsPerPage
+      // Build request payload - always include page/limit as per API contract
+      const payload = {
+        page: Number(currentPage) || 1,
+        limit: Number(itemsPerPage) || 100
       }
       
       // Add search query if present
@@ -572,10 +567,14 @@ const Client2Page = () => {
           return multiOrValues.map((val) => {
             const f = Array.isArray(base.filters) ? [...base.filters] : []
             f.push({ field: multiOrField, operator: 'equal', value: val })
-            return { ...base, filters: f, percentage: percentageFlag }
+            const p = { ...base, filters: f }
+            if (percentageFlag) p.percentage = true
+            return p
           })
         }
-        return [{ ...base, percentage: percentageFlag }]
+        const p = { ...base }
+        if (percentageFlag) p.percentage = true
+        return [p]
       }
 
       const payloadNormalVariants = buildPayloadVariants(payload, false)
@@ -584,7 +583,9 @@ const Client2Page = () => {
       // Fetch based on selection: both → fetch both; otherwise fetch one
       if (anyNormal && anyPercent) {
         // Normal variants
-        const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
+  // Debug: log outgoing payload(s)
+  try { console.debug('[Client2] search payload (normal):', payloadNormalVariants) } catch {}
+  const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         // Merge clients (union by login) and sum totals
         const clientMap = new Map()
         let mergedTotals = {}
@@ -613,7 +614,8 @@ const Client2Page = () => {
         setError('')
 
         // Percent variants (sum totals only)
-        const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
+  try { console.debug('[Client2] search payload (percent):', payloadPercentVariants) } catch {}
+  const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         let mergedPercentTotals = {}
         percentResponses.forEach((resp) => {
           const t = (resp?.data || resp)?.totals || {}
@@ -624,7 +626,8 @@ const Client2Page = () => {
         setTotalsPercent(mergedPercentTotals)
       } else if (anyPercent) {
         // Percent only
-        const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
+  try { console.debug('[Client2] search payload (percent only):', payloadPercentVariants) } catch {}
+  const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         // Use first response's clients for table (percent mode only shows percent dataset)
         const first = percentResponses[0]
         const data = first?.data || first
@@ -644,7 +647,8 @@ const Client2Page = () => {
         setError('')
       } else {
         // Normal only
-        const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
+  try { console.debug('[Client2] search payload (normal only):', payloadNormalVariants) } catch {}
+  const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         const clientMap = new Map()
         let mergedTotals = {}
         normalResponses.forEach((resp) => {
