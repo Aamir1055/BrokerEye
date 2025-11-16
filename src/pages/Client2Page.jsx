@@ -374,34 +374,6 @@ const Client2Page = () => {
     }
   }, [showFaceCards, filters.length])
   
-  // Sync horizontal scrollbars
-  useEffect(() => {
-    const mainScroll = hScrollRef.current
-    const stickyScroll = stickyScrollRef.current
-    
-    if (!mainScroll || !stickyScroll) return
-    
-    const handleMainScroll = () => {
-      if (stickyScroll && mainScroll) {
-        stickyScroll.scrollLeft = mainScroll.scrollLeft
-      }
-    }
-    
-    const handleStickyScroll = () => {
-      if (mainScroll && stickyScroll) {
-        mainScroll.scrollLeft = stickyScroll.scrollLeft
-      }
-    }
-    
-    mainScroll.addEventListener('scroll', handleMainScroll)
-    stickyScroll.addEventListener('scroll', handleStickyScroll)
-    
-    return () => {
-      mainScroll.removeEventListener('scroll', handleMainScroll)
-      stickyScroll.removeEventListener('scroll', handleStickyScroll)
-    }
-  }, [clients.length, visibleColumnsList.length])
-  
   // All available columns
   const allColumns = [
     { key: 'login', label: 'Login', type: 'integer' },
@@ -548,6 +520,108 @@ const Client2Page = () => {
     { key: 'lifetimeSOCompensationOut_percentage', label: 'Lifetime SO Compensation Out %', type: 'float' }
   ]
   
+  // Get visible columns list (moved here before being used in useEffect dependencies)
+  const visibleColumnsList = useMemo(() => {
+    const visible = allColumns.filter(c => visibleColumns[c.key] === true)
+    
+    // Apply column ordering if exists
+    if (columnOrder && Array.isArray(columnOrder)) {
+      const ordered = []
+      // First add columns in the specified order
+      columnOrder.forEach(key => {
+        const col = visible.find(c => c.key === key)
+        if (col) ordered.push(col)
+      })
+      // Then add any remaining visible columns that aren't in the order (new columns)
+      visible.forEach(col => {
+        if (!ordered.find(c => c.key === col.key)) {
+          ordered.push(col)
+        }
+      })
+      return ordered
+    }
+    
+    return visible
+  }, [allColumns, visibleColumns, columnOrder])
+  
+  // Sync horizontal scrollbars
+  useEffect(() => {
+    const mainScroll = hScrollRef.current
+    const stickyScroll = stickyScrollRef.current
+    
+    if (!mainScroll || !stickyScroll) return
+    
+    const handleMainScroll = () => {
+      if (stickyScroll && mainScroll) {
+        stickyScroll.scrollLeft = mainScroll.scrollLeft
+      }
+    }
+    
+    const handleStickyScroll = () => {
+      if (mainScroll && stickyScroll) {
+        mainScroll.scrollLeft = stickyScroll.scrollLeft
+      }
+    }
+    
+    mainScroll.addEventListener('scroll', handleMainScroll)
+    stickyScroll.addEventListener('scroll', handleStickyScroll)
+    
+    return () => {
+      mainScroll.removeEventListener('scroll', handleMainScroll)
+      stickyScroll.removeEventListener('scroll', handleStickyScroll)
+    }
+  }, [clients.length, visibleColumnsList.length])
+  
+  // Get smart default width for a column based on its type and key
+  const getDefaultColumnWidth = useCallback((col) => {
+    // Check if we have a saved width
+    if (columnWidths[col.key]) {
+      return columnWidths[col.key]
+    }
+    
+    // Smart defaults based on column key and type
+    const key = col.key.toLowerCase()
+    
+    // Very narrow columns
+    if (key === 'login' || key === 'id') return 130
+    if (key === 'leverage') return 110
+    
+    // Email needs more space
+    if (key === 'email') return 240
+    
+    // Phone numbers - need more space for international format
+    if (key === 'phone') return 170
+    
+    // Names
+    if (key === 'name' || key === 'lastname' || key === 'middlename') return 160
+    
+    // Long text fields
+    if (key === 'address' || key === 'comment') return 280
+    
+    // Country, city, state, company
+    if (key === 'country' || key === 'city' || key === 'state' || key === 'company') return 150
+    
+    // Group
+    if (key === 'group') return 170
+    
+    // Date/datetime columns - need more space for full timestamp
+    if (col.type === 'date' || key.includes('registration') || key.includes('access') || key.includes('update') || key.includes('date') || key.includes('time')) return 200
+    
+    // Percentage columns
+    if (key.includes('percentage') || key.includes('_percentage')) return 140
+    
+    // Float/number columns - medium width
+    if (col.type === 'float' || col.type === 'integer') return 150
+    
+    // Default for text
+    return 160
+  }, [columnWidths])
+  
+  // Calculate total table width based on all visible columns
+  const totalTableWidth = useMemo(() => {
+    return visibleColumnsList.reduce((sum, col) => sum + getDefaultColumnWidth(col), 0)
+  }, [visibleColumnsList, columnWidths, getDefaultColumnWidth])
+  
   // Filter operators by type
   const numberOperators = [
     { value: 'equal', label: 'Equal to (=)' },
@@ -588,30 +662,6 @@ const Client2Page = () => {
         return numberOperators
     }
   }
-  
-  // Get visible columns list
-  const visibleColumnsList = useMemo(() => {
-    const visible = allColumns.filter(c => visibleColumns[c.key] === true)
-    
-    // Apply column ordering if exists
-    if (columnOrder && Array.isArray(columnOrder)) {
-      const ordered = []
-      // First add columns in the specified order
-      columnOrder.forEach(key => {
-        const col = visible.find(c => c.key === key)
-        if (col) ordered.push(col)
-      })
-      // Then add any remaining visible columns that aren't in the order (new columns)
-      visible.forEach(col => {
-        if (!ordered.find(c => c.key === col.key)) {
-          ordered.push(col)
-        }
-      })
-      return ordered
-    }
-    
-    return visible
-  }, [allColumns, visibleColumns, columnOrder])
   
   // Save visible columns to localStorage
   useEffect(() => {
@@ -1052,7 +1102,7 @@ const Client2Page = () => {
     // Don't reset page - keep user on current page
   }
 
-  // Column resize handlers with RAF for smooth performance (Excel-like)
+  // Column resize handlers - expands/contracts table width instead of stealing from neighbor
   const handleResizeStart = useCallback((e, columnKey) => {
     e.preventDefault()
     e.stopPropagation()
@@ -1062,28 +1112,29 @@ const Client2Page = () => {
     const measured = headerRefs.current?.[columnKey]?.getBoundingClientRect()?.width
     resizeStartWidth.current = (typeof measured === 'number' && measured > 0)
       ? measured
-      : (columnWidths[columnKey] || 150) // Fallback to last set width or 150px
-
-    // Determine immediate right neighbor (Excel-like resize)
-    const currentEl = headerRefs.current?.[columnKey]
-    const nextEl = currentEl?.nextElementSibling || null
-    let neighborKey = null
-    if (nextEl) {
-      for (const k in headerRefs.current) {
-        if (headerRefs.current[k] === nextEl) { neighborKey = k; break }
-      }
-    }
-    resizeRightNeighborKey.current = neighborKey
-    if (neighborKey) {
-      const nMeasured = headerRefs.current?.[neighborKey]?.getBoundingClientRect()?.width
-      resizeRightStartWidth.current = (typeof nMeasured === 'number' && nMeasured > 0) ? nMeasured : (columnWidths[neighborKey] || 150)
-    } else {
-      resizeRightStartWidth.current = 0
-    }
+      : (columnWidths[columnKey] || getDefaultColumnWidth({ key: columnKey }))
   }, [columnWidths])
 
   const handleResizeMove = useCallback((e) => {
     if (!resizingColumn) return
+    
+    // Auto-scroll when dragging near edges of scroll container
+    const scrollContainer = hScrollRef.current
+    if (scrollContainer) {
+      const rect = scrollContainer.getBoundingClientRect()
+      const scrollEdgeThreshold = 50 // pixels from edge to trigger scroll
+      const scrollSpeed = 10 // pixels to scroll per frame
+      
+      // Check if mouse is near left edge
+      if (e.clientX < rect.left + scrollEdgeThreshold && scrollContainer.scrollLeft > 0) {
+        scrollContainer.scrollLeft -= scrollSpeed
+      }
+      // Check if mouse is near right edge
+      else if (e.clientX > rect.right - scrollEdgeThreshold) {
+        scrollContainer.scrollLeft += scrollSpeed
+      }
+    }
+    
     // Use requestAnimationFrame for smooth rendering
     if (resizeRAF.current) {
       cancelAnimationFrame(resizeRAF.current)
@@ -1091,16 +1142,10 @@ const Client2Page = () => {
     resizeRAF.current = requestAnimationFrame(() => {
       const diff = e.clientX - resizeStartX.current
       // Allow both directions with min width 50px
-      const leftWidth = Math.max(50, resizeStartWidth.current + diff)
-
-      // Adjust right neighbor inversely to keep total steady (Excel-like)
-      const rKey = resizeRightNeighborKey.current
-      if (rKey) {
-        const rightWidth = Math.max(50, resizeRightStartWidth.current - diff)
-        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth, [rKey]: rightWidth }))
-      } else {
-        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth }))
-      }
+      const newWidth = Math.max(50, resizeStartWidth.current + diff)
+      
+      // Simply update the column width - table will expand/contract accordingly
+      setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
     })
   }, [resizingColumn])
 
@@ -3052,6 +3097,22 @@ const Client2Page = () => {
                 maxHeight: tableHeight
               }}>
                 <style>{`
+                  /* Table cell boundary enforcement */
+                  table {
+                    border-collapse: separate;
+                    border-spacing: 0;
+                  }
+                  
+                  table th, table td {
+                    box-sizing: border-box;
+                    position: relative;
+                  }
+                  
+                  /* Ensure text doesn't overflow cell boundaries */
+                  table td > *, table th > * {
+                    max-width: 100%;
+                  }
+                  
                   .overflow-y-auto::-webkit-scrollbar {
                     width: 8px;
                   }
@@ -3068,7 +3129,7 @@ const Client2Page = () => {
                   
                   /* Horizontal scrollbar styling */
                   .overflow-x-auto::-webkit-scrollbar {
-                    height: 10px;
+                    height: 12px;
                   }
                   .overflow-x-auto::-webkit-scrollbar-track {
                     background: #f3f4f6;
@@ -3077,6 +3138,7 @@ const Client2Page = () => {
                   .overflow-x-auto::-webkit-scrollbar-thumb {
                     background: #9ca3af;
                     border-radius: 5px;
+                    border: 2px solid #f3f4f6;
                   }
                   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
                     background: #6b7280;
@@ -3135,10 +3197,14 @@ const Client2Page = () => {
                   scrollbarWidth: 'auto',
                   scrollbarColor: '#6b7280 #e5e7eb'
                 }}>
-                  <table ref={tableRef} className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
+                  <table ref={tableRef} className="divide-y divide-gray-200" style={{ 
+                    tableLayout: 'fixed', 
+                    width: `${totalTableWidth}px`,
+                    minWidth: '100%'
+                  }}>
                     <colgroup>
                       {visibleColumnsList.map(col => (
-                        <col key={`col-${col.key}`} style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined }} />
+                        <col key={`col-${col.key}`} style={{ width: `${getDefaultColumnWidth(col)}px` }} />
                       ))}
                     </colgroup>
                     <thead className="bg-blue-600 sticky top-0 z-10">
@@ -3147,23 +3213,27 @@ const Client2Page = () => {
                           const filterCount = getActiveFilterCount(col.key)
                           const isDragging = draggedColumn === col.key
                           const isDragOver = dragOverColumn === col.key
+                          const isResizing = resizingColumn === col.key
                           return (
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-move bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-all select-none relative ${
+                              className={`px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-move bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-all select-none relative ${
                                 isDragging ? 'opacity-50' : ''
-                              } ${isDragOver ? 'border-l-4 border-yellow-400' : ''}`}
+                              } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
                               draggable={!resizingColumn}
                               onDragStart={(e) => handleColumnDragStart(e, col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
                               onDragLeave={handleColumnDragLeave}
                               onDrop={(e) => handleColumnDrop(e, col.key)}
                               onDragEnd={handleColumnDragEnd}
-                              style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
+                              style={{ 
+                                minWidth: '80px',
+                                overflow: 'hidden'
+                              }}
                             >
-                              <div className="flex items-center gap-2 justify-between">
-                                <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 justify-between min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
                                   {/* Drag Handle Icon */}
                                   <svg 
                                     className="w-3 h-3 text-white/60 flex-shrink-0" 
@@ -3175,7 +3245,8 @@ const Client2Page = () => {
                                   </svg>
                                   <span 
                                     onClick={() => handleSort(col.key)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer truncate"
+                                    title={col.label}
                                   >
                                     {col.label}
                                   </span>
@@ -3679,12 +3750,17 @@ const Client2Page = () => {
                                 onMouseDown={(e) => handleResizeStart(e, col.key)}
                                 onDoubleClick={(e) => { e.stopPropagation(); handleAutoFit(col.key, col.baseKey) }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute top-0 right-0 h-full w-3 cursor-col-resize select-none z-30 hover:bg-blue-500/30 active:bg-blue-600/50 transition-colors"
-                                style={{ userSelect: 'none', touchAction: 'none' }}
+                                className="absolute top-0 right-0 h-full w-4 cursor-col-resize select-none z-30 hover:bg-blue-400/40 active:bg-blue-600/60 transition-colors"
+                                style={{ 
+                                  userSelect: 'none', 
+                                  touchAction: 'none',
+                                  pointerEvents: 'auto',
+                                  marginRight: '-2px'
+                                }}
                                 title="Drag to resize • Double-click to auto-fit"
                                 draggable={false}
                               >
-                                <div className="absolute right-0 top-0 w-[3px] h-full bg-gray-300 hover:bg-blue-500 active:bg-blue-600 transition-colors"></div>
+                                <div className="absolute right-[2px] top-0 w-[3px] h-full bg-white/40 hover:bg-blue-400 active:bg-blue-600 transition-colors shadow-sm"></div>
                               </div>
                             </th>
                           )
@@ -3703,7 +3779,7 @@ const Client2Page = () => {
                             }}
                           >
                             {visibleColumnsList.map(col => (
-                              <td key={col.key} data-col={col.key} className="px-6 py-4 whitespace-nowrap" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
+                              <td key={col.key} data-col={col.key} className="px-4 py-3" style={{ overflow: 'hidden' }}>
                                 <div className="h-4 skeleton-shimmer w-full"></div>
                               </td>
                             ))}
@@ -3722,20 +3798,27 @@ const Client2Page = () => {
                             }}
                           >
                             {visibleColumnsList.map(col => {
+                              const cellValue = formatValue(col.key, client[col.key])
+                              const rawValue = client[col.key]
+                              
                               // Special handling for login column - make it blue
                               if (col.key === 'login') {
                                 return (
                                   <td 
                                     key={col.key} 
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
-                                    style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
+                                    className="px-4 py-3 text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
+                                    style={{
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       handleViewClientDetails(client)
                                     }}
-                                    title="Click to view client details"
+                                    title={`${cellValue} - Click to view details`}
                                   >
-                                    {formatValue(col.key, client[col.key])}
+                                    {cellValue}
                                   </td>
                                 )
                               }
@@ -3744,11 +3827,16 @@ const Client2Page = () => {
                               return (
                                 <td 
                                   key={col.key} 
-                                  className={`px-6 py-4 whitespace-nowrap text-sm ${getValueColorClass(col.key, client[col.key]) || 'text-gray-900'}`}
+                                  className={`px-4 py-3 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
                                   data-col={col.key}
-                                  style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
+                                  style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  title={cellValue}
                                 >
-                                  {formatValue(col.key, client[col.key])}
+                                  {cellValue}
                                 </td>
                               )
                             })}
@@ -3760,11 +3848,23 @@ const Client2Page = () => {
                     {totals && Object.keys(totals).length > 0 && (
                       <tfoot className="bg-gray-100 font-semibold sticky bottom-0">
                         <tr>
-                          {visibleColumnsList.map(col => (
-                            <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}>
-                              {col.key === 'login' ? 'Total:' : formatValue(col.key, totals[col.key])}
-                            </td>
-                          ))}
+                          {visibleColumnsList.map(col => {
+                            const totalValue = col.key === 'login' ? 'Total:' : formatValue(col.key, totals[col.key])
+                            return (
+                              <td 
+                                key={col.key} 
+                                className="px-4 py-3 text-sm text-gray-900"
+                                style={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                title={totalValue}
+                              >
+                                {totalValue}
+                              </td>
+                            )
+                          })}
                         </tr>
                       </tfoot>
                     )}
@@ -3780,11 +3880,12 @@ const Client2Page = () => {
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#6b7280 #e5e7eb',
                   height: '20px',
-                  zIndex: 10
+                  zIndex: 10,
+                  pointerEvents: 'none' // don't block the native scrollbar beneath
                 }}
               >
                 <div style={{ 
-                  width: tableRef.current?.scrollWidth || '2000px',
+                  width: `${totalTableWidth}px`,
                   height: '1px'
                 }}></div>
               </div>
