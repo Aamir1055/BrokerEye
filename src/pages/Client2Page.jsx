@@ -471,6 +471,36 @@ const Client2Page = () => {
               }
             }
           }
+          // Numeric filters
+          if (key.endsWith('_number') && cfg) {
+            const field = key.replace('_number', '')
+            const op = cfg.operator
+            const v1 = cfg.value1
+            const v2 = cfg.value2
+            if (op === 'between') {
+              if (v1 !== '' && v1 != null) {
+                combinedFilters.push({ field, operator: 'greater_than_equal', value: String(v1) })
+              }
+              if (v2 !== '' && v2 != null) {
+                combinedFilters.push({ field, operator: 'less_than_equal', value: String(v2) })
+              }
+            } else if (op) {
+              if (v1 !== '' && v1 != null) {
+                combinedFilters.push({ field, operator: op, value: String(v1) })
+              }
+            }
+          }
+          // Text filters
+          if (key.endsWith('_text') && cfg) {
+            const field = key.replace('_text', '')
+            const op = cfg.operator
+            const val = cfg.value
+            if (val != null && String(val).length > 0) {
+              // Operators match API spec from Postman collection
+              // equal | not_equal | contains | not_contains | starts_with | ends_with
+              combinedFilters.push({ field, operator: op, value: String(val) })
+            }
+          }
           // Future: number/text header filters can be mapped here if needed
         })
       }
@@ -982,6 +1012,8 @@ const Client2Page = () => {
     }
     clearSort(columnKey)
     setShowFilterDropdown(null)
+    setCurrentPage(1)
+    fetchClients(false)
   }
   
   const getActiveFilterCount = (columnKey) => {
@@ -1027,6 +1059,8 @@ const Client2Page = () => {
     }))
     
     setShowFilterDropdown(null)
+    setCurrentPage(1)
+    fetchClients(false)
   }
   
   const initNumericFilterTemp = (columnKey) => {
@@ -1083,6 +1117,8 @@ const Client2Page = () => {
     }))
     
     setShowFilterDropdown(null)
+    setCurrentPage(1)
+    fetchClients(false)
   }
 
   // Fetch unique column values from API for checkbox filter
