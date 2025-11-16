@@ -60,6 +60,15 @@ const Client2Page = () => {
   const [showFilterMenu, setShowFilterMenu] = useState(false)
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
+  // Card filter mode: show only percentage cards or only non-percentage cards
+  const [cardFilterPercentMode, setCardFilterPercentMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('client2CardFilterPercentMode')
+      return saved ? JSON.parse(saved) : false
+    } catch (e) {
+      return false
+    }
+  })
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -111,6 +120,15 @@ const Client2Page = () => {
   const tableRef = useRef(null)
   const hScrollRef = useRef(null)
   const [resizingColumn, setResizingColumn] = useState(null)
+
+  // Persist card filter percentage mode
+  useEffect(() => {
+    try {
+      localStorage.setItem('client2CardFilterPercentMode', JSON.stringify(cardFilterPercentMode))
+    } catch (e) {
+      // ignore
+    }
+  }, [cardFilterPercentMode])
   
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -1650,6 +1668,7 @@ const Client2Page = () => {
                   </svg>
                   Card Filter
                 </button>
+                {/* Percentage Toggle moved next to Card Filter (as a sibling) */}
                 
                 {showCardFilterMenu && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-50 max-h-96 overflow-y-auto" style={{
@@ -1676,16 +1695,95 @@ const Client2Page = () => {
                         <div className="text-xs font-semibold text-gray-700">Show/Hide Cards</div>
                         <button
                           onClick={() => {
-                            const allVisible = Object.values(cardVisibility).every(v => v)
-                            const newVisibility = {}
-                            Object.keys(cardVisibility).forEach(key => {
-                              newVisibility[key] = !allVisible
-                            })
+                            // Determine the keys currently displayed in the menu and toggle only those
+                            const baseLabels = {
+                              assets: 'Assets',
+                              balance: 'Balance',
+                              blockedCommission: 'Blocked Commission',
+                              blockedProfit: 'Blocked Profit',
+                              commission: 'Commission',
+                              credit: 'Credit',
+                              dailyBonusIn: 'Daily Bonus In',
+                              dailyBonusOut: 'Daily Bonus Out',
+                              dailyCreditIn: 'Daily Credit In',
+                              dailyCreditOut: 'Daily Credit Out',
+                              dailyDeposit: 'Daily Deposit',
+                              dailyPnL: 'Daily P&L',
+                              dailySOCompensationIn: 'Daily SO Compensation In',
+                              dailySOCompensationOut: 'Daily SO Compensation Out',
+                              dailyWithdrawal: 'Daily Withdrawal',
+                              equity: 'Equity',
+                              floating: 'Floating',
+                              liabilities: 'Liabilities',
+                              lifetimeBonusIn: 'Lifetime Bonus In',
+                              lifetimeBonusOut: 'Lifetime Bonus Out',
+                              lifetimeCreditIn: 'Lifetime Credit In',
+                              lifetimeCreditOut: 'Lifetime Credit Out',
+                              lifetimeDeposit: 'Lifetime Deposit',
+                              lifetimePnL: 'Lifetime P&L',
+                              lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
+                              lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
+                              lifetimeWithdrawal: 'Lifetime Withdrawal',
+                              margin: 'Margin',
+                              marginFree: 'Margin Free',
+                              marginInitial: 'Margin Initial',
+                              marginLevel: 'Margin Level',
+                              marginMaintenance: 'Margin Maintenance',
+                              soEquity: 'SO Equity',
+                              soLevel: 'SO Level',
+                              soMargin: 'SO Margin',
+                              pnl: 'P&L',
+                              previousEquity: 'Previous Equity',
+                              profit: 'Profit',
+                              storage: 'Storage',
+                              thisMonthBonusIn: 'This Month Bonus In',
+                              thisMonthBonusOut: 'This Month Bonus Out',
+                              thisMonthCreditIn: 'This Month Credit In',
+                              thisMonthCreditOut: 'This Month Credit Out',
+                              thisMonthDeposit: 'This Month Deposit',
+                              thisMonthPnL: 'This Month P&L',
+                              thisMonthSOCompensationIn: 'This Month SO Compensation In',
+                              thisMonthSOCompensationOut: 'This Month SO Compensation Out',
+                              thisMonthWithdrawal: 'This Month Withdrawal',
+                              thisWeekBonusIn: 'This Week Bonus In',
+                              thisWeekBonusOut: 'This Week Bonus Out',
+                              thisWeekCreditIn: 'This Week Credit In',
+                              thisWeekCreditOut: 'This Week Credit Out',
+                              thisWeekDeposit: 'This Week Deposit',
+                              thisWeekPnL: 'This Week P&L',
+                              thisWeekSOCompensationIn: 'This Week SO Compensation In',
+                              thisWeekSOCompensationOut: 'This Week SO Compensation Out',
+                              thisWeekWithdrawal: 'This Week Withdrawal'
+                            }
+                            const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
+                            const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
+                            const items = cardFilterPercentMode ? percentItems : baseItems
+                            const filteredItems = items.filter(([_, label]) =>
+                              cardFilterSearchQuery === '' || label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                            )
+                            const displayedKeys = filteredItems.map(([key]) => key)
+                            const allVisible = displayedKeys.every(k => cardVisibility[k] !== false)
+                            const newVisibility = { ...cardVisibility }
+                            displayedKeys.forEach(k => { newVisibility[k] = !allVisible })
                             setCardVisibility(newVisibility)
                           }}
                           className="text-xs text-pink-600 hover:text-pink-700 font-medium"
                         >
-                          {Object.values(cardVisibility).every(v => v) ? 'Hide All' : 'Show All'}
+                          {/* Determine button label based on displayed items only */}
+                          {(() => {
+                            const baseLabels = {
+                              assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal'
+                            }
+                            const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
+                            const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
+                            const items = cardFilterPercentMode ? percentItems : baseItems
+                            const filteredItems = items.filter(([_, label]) =>
+                              cardFilterSearchQuery === '' || label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                            )
+                            const displayedKeys = filteredItems.map(([key]) => key)
+                            const allVisible = displayedKeys.every(k => cardVisibility[k] !== false)
+                            return allVisible ? 'Hide All' : 'Show All'
+                          })()}
                         </button>
                       </div>
                       
@@ -1758,13 +1856,10 @@ const Client2Page = () => {
                             thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                             thisWeekWithdrawal: 'This Week Withdrawal'
                           }
-                          // Build interleaved list: Normal then Percent version
-                          const items = []
-                          Object.entries(baseLabels).forEach(([key, label]) => {
-                            items.push([key, label])
-                            items.push([`${key}Percent`, `${label} %`])
-                          })
-                          return items
+                          // Build items based on toggle: only non-percent OR only percent
+                          const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
+                          const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
+                          const items = (cardFilterPercentMode ? percentItems : baseItems)
                             .filter(([key, label]) =>
                               cardFilterSearchQuery === '' ||
                               label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
@@ -1790,6 +1885,23 @@ const Client2Page = () => {
                     </div>
                   </div>
                 )}
+              </div>
+              {/* Percentage Toggle next to Card Filter button */}
+              <div className="flex items-center gap-2 select-none">
+                <span className="text-[11px] text-gray-700">Percentage</span>
+                <button
+                  onClick={() => setCardFilterPercentMode(v => !v)}
+                  className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
+                    cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
+                  }`}
+                  title="Toggle percentage cards in Card Filter"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
               
               {/* Groups Button */}
