@@ -157,32 +157,32 @@ const Client2Page = () => {
         console.error('Failed to parse saved card visibility:', e)
       }
     }
-    // Default: show only essential cards
+    // Default: show only 6 essential cards
     return {
       assets: false,
-      balance: true,
+      balance: false,
       blockedCommission: false,
       blockedProfit: false,
       commission: false,
-      credit: true,
+      credit: false,
       dailyBonusIn: false,
       dailyBonusOut: false,
       dailyCreditIn: false,
       dailyCreditOut: false,
-      dailyDeposit: true,
-      dailyPnL: true,
+      dailyDeposit: true,  // Card 1
+      dailyPnL: false,
       dailySOCompensationIn: false,
       dailySOCompensationOut: false,
-      dailyWithdrawal: true,
-      equity: true,
-      floating: false,
+      dailyWithdrawal: false,
+      equity: true,  // Card 2
+      floating: true,  // Card 3
       liabilities: false,
       lifetimeBonusIn: false,
       lifetimeBonusOut: false,
       lifetimeCreditIn: false,
       lifetimeCreditOut: false,
-      lifetimeDeposit: false,
-      lifetimePnL: true,
+      lifetimeDeposit: true,  // Card 4
+      lifetimePnL: true,  // Card 5
       lifetimeSOCompensationIn: false,
       lifetimeSOCompensationOut: false,
       lifetimeWithdrawal: false,
@@ -194,7 +194,7 @@ const Client2Page = () => {
       soEquity: false,
       soLevel: false,
       soMargin: false,
-      pnl: false,
+      pnl: true,  // Card 6
       previousEquity: false,
       profit: false,
       storage: false,
