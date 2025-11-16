@@ -442,12 +442,15 @@ const Client2Page = () => {
         payload.search = searchQuery.trim()
       }
       
-      // Add filters if present
-      const combinedFilters = []
-      // Track a single field that has multiple checkbox values selected (to emulate OR semantics)
-      let multiOrField = null
-      let multiOrValues = []
-      let multiOrConflict = false
+  // Add filters if present
+  const combinedFilters = []
+  // Track a single field that has multiple checkbox values selected (to emulate OR semantics)
+  let multiOrField = null
+  let multiOrValues = []
+  let multiOrConflict = false
+  // Track fields that already have text/number filters to avoid mixing with checkbox filters for same field
+  const textFilteredFields = new Set()
+  const numberFilteredFields = new Set()
       if (filters && filters.length > 0) {
         combinedFilters.push(...filters)
       }
@@ -456,8 +459,46 @@ const Client2Page = () => {
       // Checkbox values: if multiple selected for one field, we'll OR them via multiple requests
       if (columnFilters && Object.keys(columnFilters).length > 0) {
         Object.entries(columnFilters).forEach(([key, cfg]) => {
+          // Text filters first (record fields)
+          if (key.endsWith('_text') && cfg) {
+            const field = key.replace('_text', '')
+            const op = cfg.operator
+            const val = cfg.value
+            if (val != null && String(val).length > 0) {
+              combinedFilters.push({ field, operator: op, value: String(val).trim() })
+              textFilteredFields.add(field)
+            }
+            return
+          }
+          // Numeric filters (record fields)
+          if (key.endsWith('_number') && cfg) {
+            const field = key.replace('_number', '')
+            const op = cfg.operator
+            const v1 = cfg.value1
+            const v2 = cfg.value2
+            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+            if (op === 'between') {
+              if (num1 != null && Number.isFinite(num1)) {
+                combinedFilters.push({ field, operator: 'greater_than_equal', value: num1 })
+              }
+              if (num2 != null && Number.isFinite(num2)) {
+                combinedFilters.push({ field, operator: 'less_than_equal', value: num2 })
+              }
+            } else if (op && num1 != null && Number.isFinite(num1)) {
+              combinedFilters.push({ field, operator: op, value: num1 })
+            }
+            numberFilteredFields.add(field)
+            return
+          }
+        })
+        // Second pass for checkbox values; skip if field already has text/number filter
+        Object.entries(columnFilters).forEach(([key, cfg]) => {
           if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
             const field = key.replace('_checkbox', '')
+            if (textFilteredFields.has(field) || numberFilteredFields.has(field)) {
+              return // Don't combine checkbox with text/number for same field
+            }
             if (cfg.values.length === 1) {
               // Single selection → simple equality filter
               combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
@@ -469,36 +510,6 @@ const Client2Page = () => {
                 multiOrField = field
                 multiOrValues = cfg.values
               }
-            }
-          }
-          // Numeric filters
-          if (key.endsWith('_number') && cfg) {
-            const field = key.replace('_number', '')
-            const op = cfg.operator
-            const v1 = cfg.value1
-            const v2 = cfg.value2
-            if (op === 'between') {
-              if (v1 !== '' && v1 != null) {
-                combinedFilters.push({ field, operator: 'greater_than_equal', value: String(v1) })
-              }
-              if (v2 !== '' && v2 != null) {
-                combinedFilters.push({ field, operator: 'less_than_equal', value: String(v2) })
-              }
-            } else if (op) {
-              if (v1 !== '' && v1 != null) {
-                combinedFilters.push({ field, operator: op, value: String(v1) })
-              }
-            }
-          }
-          // Text filters
-          if (key.endsWith('_text') && cfg) {
-            const field = key.replace('_text', '')
-            const op = cfg.operator
-            const val = cfg.value
-            if (val != null && String(val).length > 0) {
-              // Operators match API spec from Postman collection
-              // equal | not_equal | contains | not_contains | starts_with | ends_with
-              combinedFilters.push({ field, operator: op, value: String(val) })
             }
           }
           // Future: number/text header filters can be mapped here if needed
