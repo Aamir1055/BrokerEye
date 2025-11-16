@@ -480,13 +480,13 @@ const Client2Page = () => {
             const num2 = v2 !== '' && v2 != null ? Number(v2) : null
             if (op === 'between') {
               if (num1 != null && Number.isFinite(num1)) {
-                combinedFilters.push({ field, operator: 'greater_than_equal', value: num1 })
+                combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
               }
               if (num2 != null && Number.isFinite(num2)) {
-                combinedFilters.push({ field, operator: 'less_than_equal', value: num2 })
+                combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
               }
             } else if (op && num1 != null && Number.isFinite(num1)) {
-              combinedFilters.push({ field, operator: op, value: num1 })
+              combinedFilters.push({ field, operator: op, value: String(num1) })
             }
             numberFilteredFields.add(field)
             return
