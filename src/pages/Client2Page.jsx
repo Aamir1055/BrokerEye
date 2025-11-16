@@ -32,7 +32,7 @@ const Client2Page = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(100)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
   const [totalPages, setTotalPages] = useState(1)
   
   // Search and filter state
