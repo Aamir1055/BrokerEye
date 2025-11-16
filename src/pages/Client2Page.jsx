@@ -136,7 +136,9 @@ const Client2Page = () => {
   const measureCanvasRef = useRef(null)
   const tableRef = useRef(null)
   const hScrollRef = useRef(null)
+  const tableContainerRef = useRef(null)
   const [resizingColumn, setResizingColumn] = useState(null)
+  const [tableHeight, setTableHeight] = useState('calc(100vh - 280px)')
 
   // Persist card filter percentage mode
   useEffect(() => {
@@ -347,6 +349,29 @@ const Client2Page = () => {
       localStorage.setItem('client2ColumnOrder', JSON.stringify(columnOrder))
     }
   }, [columnOrder])
+  
+  // Calculate dynamic table height based on available space
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (tableContainerRef.current) {
+        const rect = tableContainerRef.current.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const availableHeight = viewportHeight - rect.top - 20 // 20px padding at bottom
+        setTableHeight(`${Math.max(400, availableHeight)}px`)
+      }
+    }
+
+    calculateHeight()
+    window.addEventListener('resize', calculateHeight)
+    
+    // Recalculate when face cards visibility changes
+    const timeout = setTimeout(calculateHeight, 100)
+    
+    return () => {
+      window.removeEventListener('resize', calculateHeight)
+      clearTimeout(timeout)
+    }
+  }, [showFaceCards, filters.length])
   
   // All available columns
   const allColumns = [
@@ -2989,13 +3014,13 @@ const Client2Page = () => {
           
           {/* Table - Keep rows visible during sorting; no shimmer on sort */}
           {(!initialLoad && clients.length > 0) && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
               {/* Table Container with Vertical Scroll */}
               <div className="overflow-y-auto flex-1" style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
-                maxHeight: showFaceCards ? 'calc(100vh - 280px)' : 'calc(100vh - 150px)',
-                minHeight: '400px'
+                height: tableHeight,
+                maxHeight: tableHeight
               }}>
                 <style>{`
                   .overflow-y-auto::-webkit-scrollbar {
