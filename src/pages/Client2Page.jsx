@@ -90,6 +90,23 @@ const Client2Page = () => {
     noDeposit: false
   })
   
+  // Column ordering state
+  const getInitialColumnOrder = () => {
+    const saved = localStorage.getItem('client2ColumnOrder')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        console.error('Failed to parse saved column order:', e)
+      }
+    }
+    return null // Will use default order from allColumns
+  }
+  
+  const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
+  const [draggedColumn, setDraggedColumn] = useState(null)
+  const [dragOverColumn, setDragOverColumn] = useState(null)
+  
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState(() => {
     try {
@@ -324,6 +341,13 @@ const Client2Page = () => {
   
   const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
   
+  // Save column order to localStorage
+  useEffect(() => {
+    if (columnOrder) {
+      localStorage.setItem('client2ColumnOrder', JSON.stringify(columnOrder))
+    }
+  }, [columnOrder])
+  
   // All available columns
   const allColumns = [
     { key: 'login', label: 'Login', type: 'integer' },
@@ -401,8 +425,27 @@ const Client2Page = () => {
   
   // Get visible columns list
   const visibleColumnsList = useMemo(() => {
-    return allColumns.filter(c => visibleColumns[c.key] === true)
-  }, [visibleColumns])
+    const visible = allColumns.filter(c => visibleColumns[c.key] === true)
+    
+    // Apply column ordering if exists
+    if (columnOrder && Array.isArray(columnOrder)) {
+      const ordered = []
+      // First add columns in the specified order
+      columnOrder.forEach(key => {
+        const col = visible.find(c => c.key === key)
+        if (col) ordered.push(col)
+      })
+      // Then add any remaining visible columns that aren't in the order (new columns)
+      visible.forEach(col => {
+        if (!ordered.find(c => c.key === col.key)) {
+          ordered.push(col)
+        }
+      })
+      return ordered
+    }
+    
+    return visible
+  }, [allColumns, visibleColumns, columnOrder])
   
   // Save visible columns to localStorage
   useEffect(() => {
@@ -957,6 +1000,60 @@ const Client2Page = () => {
     } catch (err) {
       console.error('[Client2Page] Auto-fit error:', err)
     }
+  }
+  
+  // Column drag and drop handlers for reordering
+  const handleColumnDragStart = (e, columnKey) => {
+    setDraggedColumn(columnKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  
+  const handleColumnDragOver = (e, columnKey) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (columnKey !== draggedColumn) {
+      setDragOverColumn(columnKey)
+    }
+  }
+  
+  const handleColumnDragLeave = () => {
+    setDragOverColumn(null)
+  }
+  
+  const handleColumnDrop = (e, targetColumnKey) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null)
+      setDragOverColumn(null)
+      return
+    }
+    
+    // Get current order from visibleColumnsList
+    const currentOrder = visibleColumnsList.map(col => col.key)
+    const draggedIndex = currentOrder.indexOf(draggedColumn)
+    const targetIndex = currentOrder.indexOf(targetColumnKey)
+    
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedColumn(null)
+      setDragOverColumn(null)
+      return
+    }
+    
+    // Create new order array
+    const newOrder = [...currentOrder]
+    const [removed] = newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, removed)
+    
+    setColumnOrder(newOrder)
+    setDraggedColumn(null)
+    setDragOverColumn(null)
+  }
+  
+  const handleColumnDragEnd = () => {
+    setDraggedColumn(null)
+    setDragOverColumn(null)
   }
   
   // Column filter functions
@@ -2846,17 +2943,40 @@ const Client2Page = () => {
                       <tr>
                         {visibleColumnsList.map(col => {
                           const filterCount = getActiveFilterCount(col.key)
+                          const isDragging = draggedColumn === col.key
+                          const isDragOver = dragOverColumn === col.key
                           return (
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-colors select-none relative"
-                              onClick={() => handleSort(col.key)}
+                              className={`px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-move bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-all select-none relative ${
+                                isDragging ? 'opacity-50' : ''
+                              } ${isDragOver ? 'border-l-4 border-yellow-400' : ''}`}
+                              draggable={!resizingColumn}
+                              onDragStart={(e) => handleColumnDragStart(e, col.key)}
+                              onDragOver={(e) => handleColumnDragOver(e, col.key)}
+                              onDragLeave={handleColumnDragLeave}
+                              onDrop={(e) => handleColumnDrop(e, col.key)}
+                              onDragEnd={handleColumnDragEnd}
                               style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : undefined, minWidth: '80px' }}
                             >
                               <div className="flex items-center gap-2 justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span>{col.label}</span>
+                                  {/* Drag Handle Icon */}
+                                  <svg 
+                                    className="w-3 h-3 text-white/60 flex-shrink-0" 
+                                    fill="currentColor" 
+                                    viewBox="0 0 20 20"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                                  </svg>
+                                  <span 
+                                    onClick={() => handleSort(col.key)}
+                                    className="cursor-pointer"
+                                  >
+                                    {col.label}
+                                  </span>
                                   {sortBy === col.key && (
                                     <span className="text-white">
                                       {sortOrder === 'asc' ? '↑' : '↓'}
@@ -2905,14 +3025,13 @@ const Client2Page = () => {
                                         })
                                         setShowFilterDropdown(col.key)
                                         
-                                        // Fetch column values for text/non-numeric columns
+                                        // Fetch column values for ALL columns (including login)
                                         const columnType = getColumnType(col.key)
-                                        if (columnType !== 'float' && columnType !== 'integer') {
-                                          fetchColumnValues(col.key)
-                                          // Ensure selectedColumnValues for this column starts empty
-                                          if (!selectedColumnValues[col.key]) {
-                                            setSelectedColumnValues(prev => ({ ...prev, [col.key]: [] }))
-                                          }
+                                        // Always fetch values for checkbox filtering
+                                        fetchColumnValues(col.key)
+                                        // Ensure selectedColumnValues for this column starts empty
+                                        if (!selectedColumnValues[col.key]) {
+                                          setSelectedColumnValues(prev => ({ ...prev, [col.key]: [] }))
                                         }
                                       }
                                     }}
@@ -2933,14 +3052,13 @@ const Client2Page = () => {
                                   {showFilterDropdown === col.key && filterPosition && (() => {
                                     const columnKey = col.key // Capture the column key
                                     const columnType = getColumnType(columnKey)
-                                    const isNumeric = columnType === 'float'
+                                    const isNumeric = columnType === 'float' || columnType === 'integer'
                                     const isInteger = columnType === 'integer'
                                     
                                     // Initialize temp state for numeric filter if needed
                                     if (isNumeric && !numericFilterTemp[columnKey]) {
                                       initNumericFilterTemp(columnKey)
                                     }
-                                    
                                     const tempFilter = numericFilterTemp[columnKey] || { operator: 'equal', value1: '', value2: '' }
                                     
                                     return createPortal(
