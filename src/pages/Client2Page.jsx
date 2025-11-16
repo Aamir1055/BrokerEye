@@ -444,20 +444,32 @@ const Client2Page = () => {
       
       // Add filters if present
       const combinedFilters = []
+      // Track a single field that has multiple checkbox values selected (to emulate OR semantics)
+      let multiOrField = null
+      let multiOrValues = []
+      let multiOrConflict = false
       if (filters && filters.length > 0) {
         combinedFilters.push(...filters)
       }
 
       // Map column header filters to API filters
-      // Checkbox values: expand into multiple 'equal' filters for the same field
+      // Checkbox values: if multiple selected for one field, we'll OR them via multiple requests
       if (columnFilters && Object.keys(columnFilters).length > 0) {
         Object.entries(columnFilters).forEach(([key, cfg]) => {
           if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
             const field = key.replace('_checkbox', '')
-            // Expand into OR-like semantics by sending multiple equal filters for the same field
-            cfg.values.forEach((val) => {
-              combinedFilters.push({ field, operator: 'equal', value: val })
-            })
+            if (cfg.values.length === 1) {
+              // Single selection → simple equality filter
+              combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
+            } else {
+              // Multiple selections for this field
+              if (multiOrField && multiOrField !== field) {
+                multiOrConflict = true // More than one field needs OR; we'll fallback to AND behavior
+              } else {
+                multiOrField = field
+                multiOrValues = cfg.values
+              }
+            }
           }
           // Future: number/text header filters can be mapped here if needed
         })
@@ -504,88 +516,107 @@ const Client2Page = () => {
       const anyNormal = Object.entries(cardVisibility || {}).some(([key, value]) => !key.endsWith('Percent') && value !== false)
       const anyPercent = percentModeActive
 
-      // Build payloads
-      const payloadNormal = { ...payload, percentage: false }
-      const payloadPercent = { ...payload, percentage: true }
+      // Helper: build payload variants to emulate OR within a single field (if applicable)
+      const buildPayloadVariants = (base, percentageFlag) => {
+        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+          // Create a variant per value by appending an equality filter for this value
+          return multiOrValues.map((val) => {
+            const f = Array.isArray(base.filters) ? [...base.filters] : []
+            f.push({ field: multiOrField, operator: 'equal', value: val })
+            return { ...base, filters: f, percentage: percentageFlag }
+          })
+        }
+        return [{ ...base, percentage: percentageFlag }]
+      }
+
+      const payloadNormalVariants = buildPayloadVariants(payload, false)
+      const payloadPercentVariants = buildPayloadVariants(payload, true)
 
       // Fetch based on selection: both → fetch both; otherwise fetch one
       if (anyNormal && anyPercent) {
-        console.log('[Client2] Sending dual requests:', { normal: payloadNormal, percent: payloadPercent })
-        const [respNormal, respPercent] = await Promise.all([
-          brokerAPI.searchClients(payloadNormal),
-          brokerAPI.searchClients(payloadPercent)
-        ])
+        // Normal variants
+        const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
+        // Merge clients (union by login) and sum totals
+        const clientMap = new Map()
+        let mergedTotals = {}
+        let mergedTotalCount = 0
+        let pages = 1
+        normalResponses.forEach((resp) => {
+          const data = resp?.data || resp
+          const list = data?.clients || []
+          list.forEach(c => { if (!clientMap.has(c.login)) clientMap.set(c.login, c) })
+          const t = data?.totals || {}
+          Object.entries(t).forEach(([k, v]) => {
+            if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
+          })
+          mergedTotalCount += Number(data?.total || list.length || 0)
+          pages = Math.max(pages, Number(data?.pages || 1))
+        })
+        const unionClients = Array.from(clientMap.values())
+        // Slice for current page
+        const total = unionClients.length
+        const start = (currentPage - 1) * (itemsPerPage || 100)
+        const end = start + (itemsPerPage || 100)
+        setClients(unionClients.slice(start, end))
+        setTotalClients(total)
+        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 100))))
+        setTotals(mergedTotals)
+        setError('')
 
-        // Normal
-        if (respNormal && respNormal.data) {
-          const dataN = respNormal.data
-          setClients(dataN.clients || [])
-          setTotalClients(dataN.total || dataN.clients?.length || 0)
-          setTotalPages(dataN.pages || 1)
-          setTotals(dataN.totals || {})
-          setError('')
-        } else if (respNormal?.status === 0 && respNormal.data) {
-          setClients(respNormal.data.clients || [])
-          setTotalClients(respNormal.data.total || 0)
-          setTotalPages(respNormal.data.pages || 1)
-          setTotals(respNormal.data.totals || {})
-          setError('')
-        } else {
-          setError(respNormal?.message || 'Failed to fetch normal data')
-        }
-
-        // Percent
-        if (respPercent && respPercent.data) {
-          const dataP = respPercent.data
-          setTotalsPercent(dataP.totals || {})
-        } else if (respPercent?.status === 0 && respPercent.data) {
-          setTotalsPercent(respPercent.data.totals || {})
-        } else {
-          // Do not override previous error; just log
-          console.warn('[Client2] Failed to fetch percent data', respPercent)
-        }
+        // Percent variants (sum totals only)
+        const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
+        let mergedPercentTotals = {}
+        percentResponses.forEach((resp) => {
+          const t = (resp?.data || resp)?.totals || {}
+          Object.entries(t).forEach(([k, v]) => {
+            if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
+          })
+        })
+        setTotalsPercent(mergedPercentTotals)
       } else if (anyPercent) {
-        console.log('[Client2] Sending percent request:', payloadPercent)
-        const response = await brokerAPI.searchClients(payloadPercent)
-        if (response && response.data) {
-          const data = response.data
-          setClients(data.clients || [])
-          setTotalClients(data.total || data.clients?.length || 0)
-          setTotalPages(data.pages || 1)
-          setTotals({})
-          setTotalsPercent(data.totals || {})
-          setError('')
-        } else if (response?.status === 0 && response.data) {
-          setClients(response.data.clients || [])
-          setTotalClients(response.data.total || 0)
-          setTotalPages(response.data.pages || 1)
-          setTotals({})
-          setTotalsPercent(response.data.totals || {})
-          setError('')
-        } else {
-          setError(response?.message || 'Failed to fetch percent data')
-        }
+        // Percent only
+        const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
+        // Use first response's clients for table (percent mode only shows percent dataset)
+        const first = percentResponses[0]
+        const data = first?.data || first
+        setClients(data?.clients || [])
+        setTotalClients(data?.total || data?.clients?.length || 0)
+        setTotalPages(data?.pages || 1)
+        // Merge percent totals across variants
+        let mergedPercentTotals = {}
+        percentResponses.forEach((resp) => {
+          const t = (resp?.data || resp)?.totals || {}
+          Object.entries(t).forEach(([k, v]) => {
+            if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
+          })
+        })
+        setTotals({})
+        setTotalsPercent(mergedPercentTotals)
+        setError('')
       } else {
-        console.log('[Client2] Sending normal request:', payloadNormal)
-        const response = await brokerAPI.searchClients(payloadNormal)
-        if (response && response.data) {
-          const data = response.data
-          setClients(data.clients || [])
-          setTotalClients(data.total || data.clients?.length || 0)
-          setTotalPages(data.pages || 1)
-          setTotals(data.totals || {})
-          setTotalsPercent({})
-          setError('')
-        } else if (response?.status === 0 && response.data) {
-          setClients(response.data.clients || [])
-          setTotalClients(response.data.total || 0)
-          setTotalPages(response.data.pages || 1)
-          setTotals(response.data.totals || {})
-          setTotalsPercent({})
-          setError('')
-        } else {
-          setError(response?.message || 'Failed to fetch clients')
-        }
+        // Normal only
+        const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
+        const clientMap = new Map()
+        let mergedTotals = {}
+        normalResponses.forEach((resp) => {
+          const data = resp?.data || resp
+          const list = data?.clients || []
+          list.forEach(c => { if (!clientMap.has(c.login)) clientMap.set(c.login, c) })
+          const t = data?.totals || {}
+          Object.entries(t).forEach(([k, v]) => {
+            if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
+          })
+        })
+        const unionClients = Array.from(clientMap.values())
+        const total = unionClients.length
+        const start = (currentPage - 1) * (itemsPerPage || 100)
+        const end = start + (itemsPerPage || 100)
+        setClients(unionClients.slice(start, end))
+        setTotalClients(total)
+        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 100))))
+        setTotals(mergedTotals)
+        setTotalsPercent({})
+        setError('')
       }
     } catch (err) {
       console.error('[Client2] Error fetching clients:', err)
