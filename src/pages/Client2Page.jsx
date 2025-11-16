@@ -1062,9 +1062,9 @@ const Client2Page = () => {
   
   const applyNumberFilter = (columnKey) => {
     const temp = numericFilterTemp[columnKey]
-    if (!temp || !temp.value1) return
+    if (!temp || temp.value1 === '' || temp.value1 == null) return
     
-    if (temp.operator === 'between' && !temp.value2) return
+    if (temp.operator === 'between' && (temp.value2 === '' || temp.value2 == null)) return
     
     const filterConfig = {
       operator: temp.operator,
