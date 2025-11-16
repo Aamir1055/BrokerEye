@@ -450,13 +450,32 @@ const Client2Page = () => {
         combinedFilters.push(...filters)
       }
 
+      // Map UI column keys to API field names (backend uses different naming for some fields)
+      const columnKeyToAPIField = (colKey) => {
+        // Map UI camelCase keys to backend snake_case or exact field names per API spec
+        const fieldMap = {
+          lifetimePnL: 'lifetimePnL',  // Backend uses exact camelCase per Postman
+          thisMonthPnL: 'thisMonthPnL',
+          thisWeekPnL: 'thisWeekPnL',
+          dailyPnL: 'dailyPnL',
+          marginLevel: 'marginLevel',
+          marginFree: 'marginFree',
+          lastAccess: 'lastAccess',
+          zipCode: 'zipCode',
+          middleName: 'middleName',
+          lastName: 'lastName'
+        }
+        return fieldMap[colKey] || colKey
+      }
+
       // Map column header filters to API filters
       // Checkbox values: if multiple selected for one field, we'll OR them via multiple requests
       if (columnFilters && Object.keys(columnFilters).length > 0) {
         Object.entries(columnFilters).forEach(([key, cfg]) => {
           // Text filters first (record fields)
           if (key.endsWith('_text') && cfg) {
-            const field = key.replace('_text', '')
+            const uiKey = key.replace('_text', '')
+            const field = columnKeyToAPIField(uiKey)
             const opMap = {
               equal: 'equal',
               notEqual: 'not_equal',
@@ -469,13 +488,14 @@ const Client2Page = () => {
             const val = cfg.value
             if (val != null && String(val).length > 0) {
               combinedFilters.push({ field, operator: op, value: String(val).trim() })
-              textFilteredFields.add(field)
+              textFilteredFields.add(uiKey)
             }
             return
           }
           // Numeric filters (record fields)
           if (key.endsWith('_number') && cfg) {
-            const field = key.replace('_number', '')
+            const uiKey = key.replace('_number', '')
+            const field = columnKeyToAPIField(uiKey)
             const op = cfg.operator
             const v1 = cfg.value1
             const v2 = cfg.value2
@@ -491,15 +511,16 @@ const Client2Page = () => {
             } else if (op && num1 != null && Number.isFinite(num1)) {
               combinedFilters.push({ field, operator: op, value: String(num1) })
             }
-            numberFilteredFields.add(field)
+            numberFilteredFields.add(uiKey)
             return
           }
         })
         // Second pass for checkbox values; skip if field already has text/number filter
         Object.entries(columnFilters).forEach(([key, cfg]) => {
           if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
-            const field = key.replace('_checkbox', '')
-            if (textFilteredFields.has(field) || numberFilteredFields.has(field)) {
+            const uiKey = key.replace('_checkbox', '')
+            const field = columnKeyToAPIField(uiKey)
+            if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) {
               return // Don't combine checkbox with text/number for same field
             }
             if (cfg.values.length === 1) {
@@ -515,7 +536,6 @@ const Client2Page = () => {
               }
             }
           }
-          // Future: number/text header filters can be mapped here if needed
         })
       }
 
