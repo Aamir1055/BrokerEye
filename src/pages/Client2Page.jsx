@@ -1685,6 +1685,21 @@ const Client2Page = () => {
       return date.toLocaleString()
     }
     
+    // Format epoch timestamps (userLastUpdate, accountLastUpdate)
+    if (key === 'userLastUpdate' || key === 'accountLastUpdate') {
+      if (!value) return '-'
+      const timestamp = parseInt(value)
+      if (isNaN(timestamp)) return '-'
+      const date = new Date(timestamp)
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+    }
+    
     return value
   }
   
@@ -2979,7 +2994,8 @@ const Client2Page = () => {
               <div className="overflow-y-auto flex-1" style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
-                maxHeight: showFaceCards ? 'calc(100vh - 280px)' : 'calc(100vh - 150px)'
+                maxHeight: showFaceCards ? 'calc(100vh - 280px)' : 'calc(100vh - 150px)',
+                minHeight: '400px'
               }}>
                 <style>{`
                   .overflow-y-auto::-webkit-scrollbar {
@@ -2993,6 +3009,22 @@ const Client2Page = () => {
                     border-radius: 4px;
                   }
                   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+                    background: #6b7280;
+                  }
+                  
+                  /* Horizontal scrollbar styling */
+                  .overflow-x-auto::-webkit-scrollbar {
+                    height: 10px;
+                  }
+                  .overflow-x-auto::-webkit-scrollbar-track {
+                    background: #f3f4f6;
+                    border-radius: 5px;
+                  }
+                  .overflow-x-auto::-webkit-scrollbar-thumb {
+                    background: #9ca3af;
+                    border-radius: 5px;
+                  }
+                  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
                     background: #6b7280;
                   }
                   
@@ -3044,7 +3076,10 @@ const Client2Page = () => {
                   }
                 `}</style>
                 {/* Horizontal Scroll for Table */}
-                <div className="overflow-x-auto relative" ref={hScrollRef}>
+                <div className="overflow-x-auto relative" ref={hScrollRef} style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #f3f4f6'
+                }}>
                   <table ref={tableRef} className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
                       {visibleColumnsList.map(col => (
