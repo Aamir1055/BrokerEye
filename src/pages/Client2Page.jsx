@@ -6,7 +6,7 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
-import { brokerAPI } from '../services/api'
+import api, { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 
@@ -1156,7 +1156,7 @@ const Client2Page = () => {
       // Helper to perform a request and extract uniques for a given fields list
       const requestAndExtract = async (fieldsParam) => {
         const qs = new URLSearchParams({ fields: fieldsParam, page: 1, limit: 1000 }).toString()
-        const res = await brokerAPI.get(`/api/broker/clients/fields?${qs}`)
+  const res = await api.get(`/api/broker/clients/fields?${qs}`)
         if (res?.data?.status !== 'success') return []
         const rows = res.data?.data?.clients || []
         const set = new Set()
@@ -3231,12 +3231,12 @@ const Client2Page = () => {
                                 onMouseDown={(e) => handleResizeStart(e, col.key)}
                                 onDoubleClick={(e) => { e.stopPropagation(); handleAutoFit(col.key, col.baseKey) }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize select-none z-10 hover:bg-yellow-400 active:bg-yellow-500"
+                                className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize select-none z-20 hover:bg-yellow-400/60 active:bg-yellow-500/70"
                                 style={{ userSelect: 'none' }}
                                 title="Drag to resize column • Double-click to auto-fit"
                                 draggable={false}
                               >
-                                <div className="absolute right-0 top-0 w-px h-full bg-white/30 hover:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
+                                <div className="absolute right-0 top-0 w-[2px] h-full bg-white/40 group-hover:bg-yellow-400 active:bg-yellow-500 transition-colors"></div>
                               </div>
                             </th>
                           )
