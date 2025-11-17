@@ -11,12 +11,25 @@ import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 
 const Client2Page = () => {
-  // Column value dropdown paging constants
-  // We want chunky loads so users don't have to scroll one-by-one
-  const COLUMN_VALUES_PAGE_SIZE = 200           // rows to request per page from server
-  const COLUMN_VALUES_MIN_INITIAL = 200         // ensure at least this many unique values on first open (if possible)
-  const COLUMN_VALUES_MIN_BATCH = 200           // ensure at least this many new unique values per "load more"
+  // Column value dropdown paging defaults and settings
+  // Expose batch size as a quick setting (persisted), while capping parallel page prefetch to be safe.
   const COLUMN_VALUES_MAX_PAGES_PER_BATCH = 5   // safety cap to avoid excessive parallel requests
+
+  const getInitialColumnValuesBatchSize = () => {
+    try {
+      const saved = localStorage.getItem('client2ColumnValuesBatchSize')
+      const n = saved ? parseInt(saved) : 200
+      if (!Number.isFinite(n)) return 200
+      return Math.min(1000, Math.max(50, n))
+    } catch {
+      return 200
+    }
+  }
+  const [columnValuesBatchSize, setColumnValuesBatchSize] = useState(getInitialColumnValuesBatchSize)
+
+  useEffect(() => {
+    try { localStorage.setItem('client2ColumnValuesBatchSize', String(columnValuesBatchSize)) } catch {}
+  }, [columnValuesBatchSize])
   // Group context
   const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
   
@@ -1553,10 +1566,10 @@ const Client2Page = () => {
   }
 
   // Build payload for fetching column values using current table filters (server-side), excluding the current column's header filter
-  const buildColumnValuesPayload = (columnKey, page = 1, limit = COLUMN_VALUES_PAGE_SIZE) => {
+  const buildColumnValuesPayload = (columnKey, page = 1, limit = columnValuesBatchSize) => {
     const payload = {
       page: Number(page) || 1,
-      limit: Number(limit) || COLUMN_VALUES_PAGE_SIZE
+      limit: Number(limit) || columnValuesBatchSize
     }
     if (searchQuery && searchQuery.trim()) payload.search = searchQuery.trim()
 
@@ -1679,7 +1692,7 @@ const Client2Page = () => {
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
     try {
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, COLUMN_VALUES_PAGE_SIZE)
+  const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, columnValuesBatchSize)
 
       // Build payload variants to honor OR semantics for a single field
       const buildVariants = (b) => {
@@ -1706,12 +1719,12 @@ const Client2Page = () => {
 
       // If duplicates mean we got fewer than desired initial values, prefetch additional pages (up to cap)
       let currentPageLocal = 1
-      if (setVals.size < COLUMN_VALUES_MIN_INITIAL && maxPages > 1) {
-        const needValues = COLUMN_VALUES_MIN_INITIAL - setVals.size
+      if (setVals.size < columnValuesBatchSize && maxPages > 1) {
+        const needValues = columnValuesBatchSize - setVals.size
         // optimistic pages estimate; still enforce max cap
         const estPages = Math.min(
           COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1,
-          Math.max(0, Math.min(maxPages - 1, Math.ceil(needValues / COLUMN_VALUES_PAGE_SIZE)))
+          Math.max(0, Math.min(maxPages - 1, Math.ceil(needValues / columnValuesBatchSize)))
         )
         if (estPages > 0) {
           const pageIdxs = Array.from({ length: estPages }, (_, i) => i + 2) // pages 2..N
@@ -1753,7 +1766,7 @@ const Client2Page = () => {
     try {
       // We'll keep fetching subsequent pages until we've added ~COLUMN_VALUES_MIN_BATCH new unique values
       // or we hit the max pages or our safety batch cap.
-      let nextPage = currentPage + 1
+  let nextPage = currentPage + 1
       let pagesDiscovered = currentPage
       const existing = new Set(columnValues[columnKey] || [])
       const newVals = new Set()
@@ -1766,7 +1779,7 @@ const Client2Page = () => {
       }
 
       // First, fetch one page to make progress
-      let { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, COLUMN_VALUES_PAGE_SIZE)
+  let { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, columnValuesBatchSize)
       let variants = buildVariants(payload)
       let responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
       responses.forEach(resp => {
@@ -1782,13 +1795,13 @@ const Client2Page = () => {
       // If still below the target and there are more pages, prefetch a few more pages in parallel (capped)
       let extraBatches = 0
       while (
-        newVals.size < COLUMN_VALUES_MIN_BATCH &&
+        newVals.size < columnValuesBatchSize &&
         nextPage < pagesDiscovered &&
         extraBatches < (COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1)
       ) {
         nextPage += 1
         const pg = nextPage
-        ;({ payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, pg, COLUMN_VALUES_PAGE_SIZE))
+        ;({ payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, pg, columnValuesBatchSize))
         variants = buildVariants(payload)
         responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
         responses.forEach(resp => {
@@ -4785,6 +4798,32 @@ const Client2Page = () => {
                                                     </div>
                                                   </div>
                                                 </div>
+                                              </div>
+
+                                              {/* Quick setting: Values per load */}
+                                              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-2">
+                                                <label className="text-[11px] text-gray-700 font-semibold">Values per load</label>
+                                                <select
+                                                  value={columnValuesBatchSize}
+                                                  onChange={(e) => {
+                                                    const newSize = parseInt(e.target.value) || 200
+                                                    setColumnValuesBatchSize(newSize)
+                                                    // Reset this column's cached values so next fetch uses new batch size immediately
+                                                    setColumnValues(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
+                                                    setColumnValuesPage(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
+                                                    setColumnValuesHasMore(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
+                                                    setSelectedColumnValues(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
+                                                    // Kick off fresh load with new page size
+                                                    setTimeout(() => fetchColumnValues(columnKey), 0)
+                                                  }}
+                                                  className="px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                >
+                                                  <option value={100}>100</option>
+                                                  <option value={200}>200</option>
+                                                  <option value={300}>300</option>
+                                                  <option value={500}>500</option>
+                                                  <option value={1000}>1000</option>
+                                                </select>
                                               </div>
 
                                               {/* Checkbox Value List */}
