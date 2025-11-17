@@ -93,7 +93,7 @@ const Client2Page = () => {
   
   // Define default face card order for Client2 (matching all available cards in the actual rendering)
   const defaultClient2FaceCardOrder = [
-    'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
+    'totalClients', 'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
     'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyPnL',
     'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal',
     'equity', 'floating', 'liabilities',
@@ -112,8 +112,16 @@ const Client2Page = () => {
       const saved = localStorage.getItem('client2FaceCardOrder')
       if (saved) {
         const parsed = JSON.parse(saved)
-        // Validate that it's an array
-        if (Array.isArray(parsed)) return parsed
+        // Validate that it's an array and reconcile with current defaults
+        if (Array.isArray(parsed)) {
+          const defaults = [...defaultClient2FaceCardOrder]
+          const defaultSet = new Set(defaults)
+          // Keep only known keys and preserve saved order
+          const cleaned = parsed.filter(k => defaultSet.has(k))
+          // Append any new keys missing from saved order
+          defaults.forEach(k => { if (!cleaned.includes(k)) cleaned.push(k) })
+          return cleaned
+        }
       }
     } catch (e) {
       console.warn('Failed to parse client2FaceCardOrder from localStorage:', e)
@@ -195,6 +203,7 @@ const Client2Page = () => {
     }
     // Default: show only 6 essential cards
     return {
+      totalClients: true,
       assets: false,
       balance: false,
       blockedCommission: false,
@@ -578,31 +587,51 @@ const Client2Page = () => {
     return visible
   }, [allColumns, visibleColumns, columnOrder])
   
-  // Sync horizontal scrollbars
+  // Sync horizontal scrollbars (robust, loop-guarded)
   useEffect(() => {
     const mainScroll = hScrollRef.current
     const stickyScroll = stickyScrollRef.current
-    
+
     if (!mainScroll || !stickyScroll) return
-    
+
+    let raf = null
+    const syncingFromMain = { current: false }
+    const syncingFromSticky = { current: false }
+
     const handleMainScroll = () => {
-      if (stickyScroll && mainScroll) {
-        stickyScroll.scrollLeft = mainScroll.scrollLeft
+      if (!stickyScroll) return
+      if (syncingFromSticky.current) return
+      syncingFromMain.current = true
+      const left = mainScroll.scrollLeft
+      if (stickyScroll.scrollLeft !== left) {
+        stickyScroll.scrollLeft = left
       }
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => { syncingFromMain.current = false })
     }
-    
+
     const handleStickyScroll = () => {
-      if (mainScroll && stickyScroll) {
-        mainScroll.scrollLeft = stickyScroll.scrollLeft
+      if (!mainScroll) return
+      if (syncingFromMain.current) return
+      syncingFromSticky.current = true
+      const left = stickyScroll.scrollLeft
+      if (mainScroll.scrollLeft !== left) {
+        mainScroll.scrollLeft = left
       }
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => { syncingFromSticky.current = false })
     }
-    
-    mainScroll.addEventListener('scroll', handleMainScroll)
-    stickyScroll.addEventListener('scroll', handleStickyScroll)
-    
+
+    // Initialize sticky width and sync on mount
+    handleMainScroll()
+
+    mainScroll.addEventListener('scroll', handleMainScroll, { passive: true })
+    stickyScroll.addEventListener('scroll', handleStickyScroll, { passive: true })
+
     return () => {
       mainScroll.removeEventListener('scroll', handleMainScroll)
       stickyScroll.removeEventListener('scroll', handleStickyScroll)
+      if (raf) cancelAnimationFrame(raf)
     }
   }, [clients.length, visibleColumnsList.length])
   
@@ -836,9 +865,11 @@ const Client2Page = () => {
         payload.filters = combinedFilters
       }
       
-      // Add MT5 accounts filter if present
-      if (mt5Accounts && mt5Accounts.length > 0) {
-        payload.mt5Accounts = mt5Accounts
+      // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
+      let mt5AccountsFilter = []
+      // From Account Filter modal
+      if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) {
+        mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
       }
       
       // Add account range filter if present
@@ -857,10 +888,32 @@ const Client2Page = () => {
           payload.accountRangeMax = activeGroup.range.to
           console.log('[Client2] Applying range group filter:', activeGroup.range)
         } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-          // Manual selection group
-          payload.mt5Accounts = activeGroup.loginIds.map(id => Number(id))
-          console.log('[Client2] Applying manual group filter:', payload.mt5Accounts.length, 'accounts')
+          // Manual selection group: merge/intersect with any existing list
+          const groupAccounts = activeGroup.loginIds.map(id => Number(id))
+          if (mt5AccountsFilter.length > 0) {
+            const set = new Set(groupAccounts)
+            mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a)) // intersection
+          } else {
+            mt5AccountsFilter = [...new Set(groupAccounts)]
+          }
+          console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
         }
+      }
+
+      // Apply IB-selected MT5 accounts server-side
+      if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+        const ibAccounts = ibMT5Accounts.map(Number)
+        if (mt5AccountsFilter.length > 0) {
+          const set = new Set(ibAccounts)
+          mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a)) // intersection
+        } else {
+          mt5AccountsFilter = [...new Set(ibAccounts)]
+        }
+      }
+
+      // Assign final mt5Accounts if any
+      if (mt5AccountsFilter.length > 0) {
+        payload.mt5Accounts = mt5AccountsFilter
       }
       
       // Add sorting if present
@@ -1019,7 +1072,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup])
+  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts])
   
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
@@ -1057,18 +1110,13 @@ const Client2Page = () => {
       })
     }
     
-    // Column header filters are applied on the server (API-only). Skip client-side filtering here.
-    
-    // Apply IB filter (only when an IB with accounts is selected)
-    if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
-      filtered = filterByActiveIB(filtered, 'login')
-    }
+    // Column header filters and IB filter are applied on the server. Skip client-side filtering here.
     
     // Sorting is handled by the API via sortBy and sortOrder state
     // No client-side sorting needed as data comes pre-sorted from backend
     
     return filtered
-  }, [clients, quickFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
+  }, [clients, quickFilters])
   
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
@@ -1788,6 +1836,21 @@ const Client2Page = () => {
     setDraggedCard(null)
   }
 
+  // Ensure faceCardOrder always contains all known keys (in case defaults grow over time)
+  useEffect(() => {
+    try {
+      const defaults = [...defaultClient2FaceCardOrder]
+      const orderSet = new Set(faceCardOrder)
+      let changed = false
+      defaults.forEach(k => { if (!orderSet.has(k)) { orderSet.add(k); changed = true } })
+      if (changed) {
+        const merged = Array.from(orderSet)
+        setFaceCardOrder(merged)
+        localStorage.setItem('client2FaceCardOrder', JSON.stringify(merged))
+      }
+    } catch {}
+  }, [faceCardOrder])
+
   const resetClient2FaceCardOrder = () => {
     setFaceCardOrder(defaultClient2FaceCardOrder)
     localStorage.setItem('client2FaceCardOrder', JSON.stringify(defaultClient2FaceCardOrder))
@@ -1796,6 +1859,8 @@ const Client2Page = () => {
   // Get comprehensive card configuration for dynamic rendering - matches all 57 cards
   const getClient2CardConfig = useCallback((cardKey, totals) => {
     const configs = {
+      // COUNT
+      totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => totalClients || 0 },
       // A
       assets: { label: 'Assets', color: 'blue', getValue: () => totals?.assets || 0 },
       
@@ -1881,7 +1946,7 @@ const Client2Page = () => {
     }
     
     return configs[cardKey] || null
-  }, [])
+  }, [totalClients])
   
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
@@ -1968,7 +2033,11 @@ const Client2Page = () => {
       })
     }
     if (combinedFilters.length > 0) base.filters = combinedFilters
-    if (mt5Accounts && mt5Accounts.length > 0) base.mt5Accounts = mt5Accounts
+    // Start building the mt5Accounts filter (server-side) for export
+    let mt5AccountsFilter = []
+    if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) {
+      mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
+    }
     if (accountRangeMin && accountRangeMin.trim()) base.accountRangeMin = parseInt(accountRangeMin.trim())
     if (accountRangeMax && accountRangeMax.trim()) base.accountRangeMax = parseInt(accountRangeMax.trim())
     if (activeGroup) {
@@ -1976,9 +2045,25 @@ const Client2Page = () => {
         base.accountRangeMin = activeGroup.range.from
         base.accountRangeMax = activeGroup.range.to
       } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-        base.mt5Accounts = activeGroup.loginIds.map(id => Number(id))
+        const groupAccounts = activeGroup.loginIds.map(id => Number(id))
+        if (mt5AccountsFilter.length > 0) {
+          const set = new Set(groupAccounts)
+          mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a))
+        } else {
+          mt5AccountsFilter = [...new Set(groupAccounts)]
+        }
       }
     }
+    if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+      const ibAccounts = ibMT5Accounts.map(Number)
+      if (mt5AccountsFilter.length > 0) {
+        const set = new Set(ibAccounts)
+        mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a))
+      } else {
+        mt5AccountsFilter = [...new Set(ibAccounts)]
+      }
+    }
+    if (mt5AccountsFilter.length > 0) base.mt5Accounts = mt5AccountsFilter
     if (sortBy) { base.sortBy = sortBy; base.sortOrder = sortOrder }
 
     // Build payload variants when needed (OR semantics)
@@ -2042,11 +2127,7 @@ const Client2Page = () => {
       let rows = Array.from(clientMap.values())
       console.log('[Client2Page] Merged unique clients:', rows.length)
       
-      // Apply IB filter client-side to match table behavior
-      if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
-        rows = filterByActiveIB(rows, 'login')
-        console.log('[Client2Page] After IB filter:', rows.length)
-      }
+      // IB filter is applied server-side via mt5Accounts in payload variants
       
       // Apply table sort if set
       if (sortBy) {
@@ -2545,6 +2626,7 @@ const Client2Page = () => {
                       <div className="space-y-1">
                         {(() => {
                           const baseLabels = {
+                            totalClients: 'Total Clients',
                             assets: 'Assets',
                             balance: 'Balance',
                             blockedCommission: 'Blocked Commission',
@@ -2781,7 +2863,9 @@ const Client2Page = () => {
                             {card.label}
                           </div>
                           <div className={`text-sm font-bold ${textColorClass}`}>
-                            {formatIndianNumber((value || 0).toFixed(2))}
+                            {card.format === 'integer'
+                              ? formatIndianNumber(String(Math.round(value || 0)))
+                              : formatIndianNumber((value || 0).toFixed(2))}
                           </div>
                         </div>
                       )
@@ -3933,6 +4017,14 @@ const Client2Page = () => {
                   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
                     background: #6b7280;
                   }
+                  /* Hide-scrollbar utility for non-sticky main horizontal scrollbar */
+                  .hide-scrollbar {
+                    -ms-overflow-style: none; /* IE and Edge */
+                    scrollbar-width: none; /* Firefox */
+                  }
+                  .hide-scrollbar::-webkit-scrollbar {
+                    display: none; /* Chrome, Safari, Opera */
+                  }
                   
                   /* Staggered fade-in animation for lazy loading */
                   @keyframes fadeIn {
@@ -3983,8 +4075,8 @@ const Client2Page = () => {
                 `}</style>
                 
                 {/* Horizontal Scroll for Table - Always Visible */}
-                <div className="overflow-x-auto relative table-scroll-container" ref={hScrollRef} style={{
-                  scrollbarWidth: 'auto',
+                <div className="overflow-x-auto relative table-scroll-container hide-scrollbar" ref={hScrollRef} style={{
+                  scrollbarWidth: 'none',
                   scrollbarColor: '#6b7280 #e5e7eb'
                 }}>
                   <table ref={tableRef} className="divide-y divide-gray-200" style={{ 
