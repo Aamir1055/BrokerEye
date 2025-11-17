@@ -893,6 +893,23 @@ const Client2Page = () => {
             if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) {
               return // Don't combine checkbox with text/number for same field
             }
+            
+            // Get all available values for this column to check if we should invert the filter
+            const allValues = columnValues[uiKey] || []
+            const selectedValues = cfg.values
+            const unselectedValues = allValues.filter(v => !selectedValues.includes(v))
+            
+            // OPTIMIZATION: If more than half are selected (or few unselected), use NOT EQUAL for unselected values
+            // This prevents creating 1000+ OR queries when user unchecks just a few items
+            if (unselectedValues.length > 0 && unselectedValues.length < selectedValues.length && unselectedValues.length <= 10) {
+              // Use NOT EQUAL filters for unselected values (more efficient)
+              console.log(`[Client2] Using NOT EQUAL filter for ${field}: ${unselectedValues.length} excluded values instead of ${selectedValues.length} OR values`)
+              unselectedValues.forEach(value => {
+                combinedFilters.push({ field, operator: 'not_equal', value })
+              })
+              return
+            }
+            
             if (cfg.values.length === 1) {
               // Single selection → simple equality filter
               combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
