@@ -3870,9 +3870,11 @@ const Client2Page = () => {
                                                     onKeyDown={(e) => {
                                                       if (e.key === 'Enter') {
                                                         e.preventDefault()
+                                                        e.stopPropagation()
                                                         applyTextFilter(columnKey)
                                                         const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                         if (menu) menu.classList.add('hidden')
+                                                        setShowFilterDropdown(null)
                                                       }
                                                     }}
                                                   >
@@ -3893,6 +3895,7 @@ const Client2Page = () => {
                                                                     applyTextFilter(columnKey)
                                                                     const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                                     if (menu) menu.classList.add('hidden')
+                                                                    setShowFilterDropdown(null)
                                                                   }
                                                                 }}
                                                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
@@ -3918,6 +3921,7 @@ const Client2Page = () => {
                                                                     applyTextFilter(columnKey)
                                                                     const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                                     if (menu) menu.classList.add('hidden')
+                                                                    setShowFilterDropdown(null)
                                                                   }
                                                                 }}
                                                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
@@ -3940,6 +3944,7 @@ const Client2Page = () => {
                                                                   applyTextFilter(columnKey)
                                                                   const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                                   if (menu) menu.classList.add('hidden')
+                                                                  setShowFilterDropdown(null)
                                                                 }}
                                                                 className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                               >
