@@ -1119,8 +1119,29 @@ const Client2Page = () => {
       }
     } catch (err) {
       console.error('[Client2] Error fetching clients:', err)
+      console.error('[Client2] Error details:', {
+        message: err.message,
+        code: err.code,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      })
       if (!silent) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch clients')
+        let errorMessage = 'Failed to fetch clients'
+        if (err.code === 'ERR_NETWORK') {
+          errorMessage = 'Network error: Unable to connect to server. Please check if the backend is running.'
+        } else if (err.response?.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.'
+        } else if (err.response?.status === 403) {
+          errorMessage = 'Access denied. You do not have permission to view this data.'
+        } else if (err.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (err.response?.data?.message) {
+          errorMessage = err.response.data.message
+        } else if (err.message) {
+          errorMessage = err.message
+        }
+        setError(errorMessage)
       }
     } finally {
       if (!silent) {
