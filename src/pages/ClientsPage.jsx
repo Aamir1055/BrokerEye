@@ -225,12 +225,31 @@ const ClientsPage = () => {
 
   // Face cards: visibility, order, theme
   const defaultFaceCardOrder = [
-    1,2,3,4,5,6,8,9,10,11,12,13,14,
-    15,16,17,18,19,
-    20,21,22,23,24,25,26,27,28,29,30,31,
-    32,33,34,35,36,37,38,39,40,
-    41,42,43,44,45,46,47,48,49,50,
-    53,54,55
+    // Core financial metrics (6 cards)
+    1,   // Total Clients
+    2,   // Total Balance
+    3,   // Total Credit
+    4,   // Total Equity
+    5,   // PNL
+    6,   // Floating Profit
+    
+    // Daily metrics (3 cards)
+    8,   // Daily Deposit
+    9,   // Daily Withdrawal
+    10,  // Daily PNL
+    
+    // Period PNL (3 cards)
+    15,  // This Week PNL
+    16,  // This Month PNL
+    17,  // Lifetime PNL
+    
+    // Additional important metrics (6 cards)
+    11,  // Daily Net D/W
+    12,  // Total Rebate
+    13,  // Available Rebate %
+    14,  // Available Rebate
+    18,  // Blocked Rebate
+    19   // Lifetime Deposit
   ]
   const getInitialFaceCardOrder = () => {
     try {
