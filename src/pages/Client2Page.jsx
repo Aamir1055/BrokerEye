@@ -81,7 +81,10 @@ const Client2Page = () => {
   const [columnSortOrder, setColumnSortOrder] = useState({}) // Track sort order per column: 'asc', 'desc', or null
   const [filterPosition, setFilterPosition] = useState(null) // Track filter button position for portal
   const [columnValues, setColumnValues] = useState({}) // Store unique values for each column
-  const [columnValuesLoading, setColumnValuesLoading] = useState({}) // Track loading state for column values
+  const [columnValuesLoading, setColumnValuesLoading] = useState({}) // Track first-load state for column values
+  const [columnValuesLoadingMore, setColumnValuesLoadingMore] = useState({}) // Track incremental load state
+  const [columnValuesPage, setColumnValuesPage] = useState({}) // Track current page per column
+  const [columnValuesHasMore, setColumnValuesHasMore] = useState({}) // Track hasMore per column
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [quickFilters, setQuickFilters] = useState({
@@ -1543,7 +1546,126 @@ const Client2Page = () => {
     fetchClients(false)
   }
 
-  // Fetch unique column values from API for checkbox filter
+  // Build payload for fetching column values using current table filters (server-side), excluding the current column's header filter
+  const buildColumnValuesPayload = (columnKey, page = 1, limit = 200) => {
+    const payload = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 200
+    }
+    if (searchQuery && searchQuery.trim()) payload.search = searchQuery.trim()
+
+    // Collect filters like in fetchClients, but skip filters for the same columnKey to avoid self-filtering
+    const combinedFilters = []
+    let multiOrField = null
+    let multiOrValues = []
+    let multiOrConflict = false
+    const textFilteredFields = new Set()
+    const numberFilteredFields = new Set()
+
+    // Table-level filters
+    if (filters && filters.length > 0) combinedFilters.push(...filters)
+
+    const columnKeyToAPIField = (colKey) => {
+      const fieldMap = {
+        lifetimePnL: 'lifetimePnL',
+        thisMonthPnL: 'thisMonthPnL',
+        thisWeekPnL: 'thisWeekPnL',
+        dailyPnL: 'dailyPnL',
+        marginLevel: 'marginLevel',
+        marginFree: 'marginFree',
+        lastAccess: 'lastAccess',
+        zipCode: 'zipCode',
+        middleName: 'middleName',
+        lastName: 'lastName'
+      }
+      return fieldMap[colKey] || colKey
+    }
+
+    // Header filters except the current column
+    if (columnFilters && Object.keys(columnFilters).length > 0) {
+      Object.entries(columnFilters).forEach(([key, cfg]) => {
+        if (key.startsWith(columnKey + '_')) return // skip same column
+        if (key.endsWith('_text') && cfg) {
+          const uiKey = key.replace('_text', '')
+          const field = columnKeyToAPIField(uiKey)
+          const opMap = { equal: 'equal', notEqual: 'not_equal', contains: 'contains', doesNotContain: 'not_contains', startsWith: 'starts_with', endsWith: 'ends_with' }
+          const op = opMap[cfg.operator] || cfg.operator
+          const val = cfg.value
+          if (val != null && String(val).length > 0) {
+            combinedFilters.push({ field, operator: op, value: String(val).trim() })
+            textFilteredFields.add(uiKey)
+          }
+          return
+        }
+        if (key.endsWith('_number') && cfg) {
+          const uiKey = key.replace('_number', '')
+          if (uiKey === columnKey) return
+          const field = columnKeyToAPIField(uiKey)
+          const op = cfg.operator
+          const v1 = cfg.value1
+          const v2 = cfg.value2
+          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+          if (op === 'between') {
+            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+          } else if (op && num1 != null && Number.isFinite(num1)) {
+            combinedFilters.push({ field, operator: op, value: String(num1) })
+          }
+          numberFilteredFields.add(uiKey)
+          return
+        }
+      })
+      Object.entries(columnFilters).forEach(([key, cfg]) => {
+        if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
+          const uiKey = key.replace('_checkbox', '')
+          if (uiKey === columnKey) return
+          const field = columnKeyToAPIField(uiKey)
+          if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
+          if (cfg.values.length === 1) {
+            combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
+          } else {
+            if (multiOrField && multiOrField !== field) multiOrConflict = true
+            else { multiOrField = field; multiOrValues = cfg.values }
+          }
+        }
+      })
+    }
+    if (combinedFilters.length > 0) payload.filters = combinedFilters
+
+    // Merge account filters/group/IB
+    let mt5AccountsFilter = []
+    if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
+    if (accountRangeMin && accountRangeMin.trim()) payload.accountRangeMin = parseInt(accountRangeMin.trim())
+    if (accountRangeMax && accountRangeMax.trim()) payload.accountRangeMax = parseInt(accountRangeMax.trim())
+    if (activeGroup) {
+      if (activeGroup.range) {
+        payload.accountRangeMin = activeGroup.range.from
+        payload.accountRangeMax = activeGroup.range.to
+      } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+        const groupAccounts = activeGroup.loginIds.map(id => Number(id))
+        if (mt5AccountsFilter.length > 0) {
+          const set = new Set(groupAccounts)
+          mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a))
+        } else {
+          mt5AccountsFilter = [...new Set(groupAccounts)]
+        }
+      }
+    }
+    if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+      const ibAccounts = ibMT5Accounts.map(Number)
+      if (mt5AccountsFilter.length > 0) {
+        const set = new Set(ibAccounts)
+        mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a))
+      } else {
+        mt5AccountsFilter = [...new Set(ibAccounts)]
+      }
+    }
+    if (mt5AccountsFilter.length > 0) payload.mt5Accounts = mt5AccountsFilter
+    return { payload, multiOrField, multiOrValues, multiOrConflict }
+  }
+
+  // Fetch unique column values from server with pagination; first page
   const fetchColumnValues = async (columnKey) => {
     // Don't fetch if already loading or already loaded
     if (columnValuesLoading[columnKey] || columnValues[columnKey]) return
@@ -1551,44 +1673,79 @@ const Client2Page = () => {
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
     try {
-      // Map the column key to the actual API field name
-      // Remove 'Percent' suffix if present
-      const apiFieldName = columnKey.replace(/Percent$/, '')
+      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, 200)
 
-      // Helper to perform a request and extract uniques for a given fields list
-      const requestAndExtract = async (fieldsParam) => {
-        const qs = new URLSearchParams({ fields: fieldsParam, page: 1, limit: 1000 }).toString()
-  const res = await api.get(`/api/broker/clients/fields?${qs}`)
-        if (res?.data?.status !== 'success') return []
-        const rows = res.data?.data?.clients || []
-        const set = new Set()
-        for (const row of rows) {
-          const val = row?.[apiFieldName]
-          if (val !== null && val !== undefined && val !== '') set.add(val)
+      // Build payload variants to honor OR semantics for a single field
+      const buildVariants = (b) => {
+        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
         }
-        return Array.from(set)
+        return [b]
       }
 
-      // 1) Try with the single field first
-      let uniqueValues = await requestAndExtract(apiFieldName)
+      const variants = buildVariants(payload)
+      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
+      const setVals = new Set()
+      let totalPages = 1
+      responses.forEach(resp => {
+        const d = resp?.data || resp
+        const rows = d?.clients || []
+        rows.forEach(row => {
+          const v = row?.[columnKey]
+          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+        })
+        totalPages = Math.max(totalPages, Number(d?.pages || 1))
+      })
 
-      // 2) Fallback: ask for a broader common field set (covers most string columns)
-      if (!uniqueValues || uniqueValues.length === 0) {
-        const broadFields = [
-          'login','name','lastName','middleName','email','phone','group','country','city','state','zipCode','address','company','comment','currency'
-        ].join(',')
-        uniqueValues = await requestAndExtract(broadFields)
-      }
-
-  // Sort alphabetically and persist
-      uniqueValues.sort((a, b) => String(a).localeCompare(String(b)))
+      const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-  // Do NOT pre-select all values. Start with none selected; user will choose and click OK.
-  setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesPage(prev => ({ ...prev, [columnKey]: 1 }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+    }
+  }
+
+  // Fetch additional pages of unique column values on scroll
+  const fetchMoreColumnValues = async (columnKey) => {
+    if (columnValuesLoadingMore[columnKey]) return
+    if (!columnValuesHasMore[columnKey]) return
+    const currentPage = columnValuesPage[columnKey] || 1
+    const nextPage = currentPage + 1
+    setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
+    try {
+      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, 200)
+      const buildVariants = (b) => {
+        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
+        }
+        return [b]
+      }
+      const variants = buildVariants(payload)
+      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
+      const setVals = new Set(columnValues[columnKey] || [])
+      let pages = nextPage
+      responses.forEach(resp => {
+        const d = resp?.data || resp
+        const rows = d?.clients || []
+        rows.forEach(row => {
+          const v = row?.[columnKey]
+          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+        })
+        pages = Math.max(pages, Number(d?.pages || pages))
+      })
+      const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
+      setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
+      setColumnValuesPage(prev => ({ ...prev, [columnKey]: nextPage }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextPage < pages }))
+    } catch (err) {
+      console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
+    } finally {
+      setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
     }
   }
 
@@ -4426,6 +4583,8 @@ const Client2Page = () => {
                                           
                                           const allValues = columnValues[columnKey] || []
                                           const loading = columnValuesLoading[columnKey]
+                                          const loadingMore = columnValuesLoadingMore[columnKey]
+                                          const hasMore = columnValuesHasMore[columnKey]
                                           const selected = selectedColumnValues[columnKey] || []
                                           const searchQuery = columnValueSearch[columnKey] || ''
                                           
@@ -4587,7 +4746,18 @@ const Client2Page = () => {
                                                 </div>
 
                                                 {/* Values List */}
-                                                <div className="flex-1 overflow-y-auto px-3 py-2">
+                                                <div
+                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                  onScroll={(e) => {
+                                                    const target = e.currentTarget
+                                                    if (!target) return
+                                                    const threshold = 40
+                                                    const nearBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold
+                                                    if (nearBottom && !loading && !loadingMore && hasMore && !searchQuery) {
+                                                      fetchMoreColumnValues(columnKey)
+                                                    }
+                                                  }}
+                                                >
                                                   {loading ? (
                                                     <div className="py-8 text-center">
                                                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -4606,6 +4776,19 @@ const Client2Page = () => {
                                                           <span className="text-xs text-gray-700">{value}</span>
                                                         </label>
                                                       ))}
+                                                      {loadingMore && (
+                                                        <div className="py-3 text-center text-[11px] text-gray-500">Loading more…</div>
+                                                      )}
+                                                      {!loadingMore && hasMore && !searchQuery && (
+                                                        <div className="py-3 text-center">
+                                                          <button
+                                                            onClick={() => fetchMoreColumnValues(columnKey)}
+                                                            className="px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100"
+                                                          >
+                                                            Load more
+                                                          </button>
+                                                        </div>
+                                                      )}
                                                     </div>
                                                   ) : (
                                                     <div className="py-8 text-xs text-gray-500 text-center">
