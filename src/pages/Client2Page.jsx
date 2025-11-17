@@ -1130,7 +1130,7 @@ const Client2Page = () => {
   useEffect(() => {
     setColumnValues({})
     setSelectedColumnValues({})
-  }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery])
+  }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery, quickFilters])
   
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
@@ -1686,6 +1686,17 @@ const Client2Page = () => {
     try {
       // Use a large page size to minimize number of requests
       const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, 1000)
+
+      // Inject quick filter constraints so column values reflect current reduced dataset
+      if (quickFilters?.hasFloating) {
+        payload.filters = [...(payload.filters || []), { field: 'floating', operator: 'not_equal', value: '0' }]
+      }
+      if (quickFilters?.hasCredit) {
+        payload.filters = [...(payload.filters || []), { field: 'credit', operator: 'greater_than', value: '0' }]
+      }
+      if (quickFilters?.noDeposit) {
+        payload.filters = [...(payload.filters || []), { field: 'lifetimeDeposit', operator: 'equal', value: '0' }]
+      }
 
       // Build payload variants to honor OR semantics for a single field
       const buildVariants = (b) => {
