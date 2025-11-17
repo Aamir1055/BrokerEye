@@ -2731,16 +2731,27 @@ const Client2Page = () => {
                       // Get value
                       const value = card.getValue()
                       
-                      // Determine text color based on value if colorCheck is true
+                      // Determine colors based on value if colorCheck is true
                       let textColorClass = `text-${card.color}-700`
+                      let borderColorClass = `border-${card.color}-200`
+                      let labelColorClass = `text-${card.color}-600`
+                      
                       if (card.colorCheck) {
-                        textColorClass = value >= 0 ? 'text-green-700' : 'text-red-700'
+                        if (value >= 0) {
+                          textColorClass = 'text-green-700'
+                          borderColorClass = 'border-green-200'
+                          labelColorClass = 'text-green-600'
+                        } else {
+                          textColorClass = 'text-red-700'
+                          borderColorClass = 'border-red-200'
+                          labelColorClass = 'text-red-600'
+                        }
                       }
                       
                       return (
                         <div
                           key={cardKey}
-                          className={`bg-white rounded-lg shadow-sm border-2 border-${card.color}-200 p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
+                          className={`bg-white rounded-lg shadow-sm border-2 ${borderColorClass} p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
                           draggable
                           onDragStart={(e) => handleCardDragStart(e, cardKey)}
                           onDragOver={handleCardDragOver}
@@ -2750,7 +2761,7 @@ const Client2Page = () => {
                             opacity: draggedCard === cardKey ? 0.5 : 1
                           }}
                         >
-                          <div className={`text-[10px] font-medium text-${card.color}-600 mb-1`}>
+                          <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
                             {card.label}
                           </div>
                           <div className={`text-sm font-bold ${textColorClass}`}>
