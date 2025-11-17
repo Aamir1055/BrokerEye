@@ -146,6 +146,8 @@ export const DataProvider = ({ children }) => {
   
   // Track last processed state per client to prevent duplicate delta calculations
   const lastClientStateRef = useRef(new Map())
+  // Track last accepted timestamp per client to prevent out-of-order overwrites
+  const lastClientTimestampRef = useRef(new Map())
   
   // Flag to prevent multiple simultaneous full stats calculations
   const isCalculatingStatsRef = useRef(false)
@@ -432,8 +434,8 @@ export const DataProvider = ({ children }) => {
         console.warn(`[DataContext] ⚠️ Deduplicated ${rawData.length - data.length} duplicate clients (${rawData.length} → ${data.length})`)
       }
       
-      setClients(data)
-      setAccounts(data) // Keep accounts in sync
+  setClients(data)
+  setAccounts(data) // Keep accounts in sync
       
       // CRITICAL: Rebuild index maps after bulk data load to prevent stale indices
       // This is done outside the WebSocket subscription context, so we need to
@@ -442,6 +444,7 @@ export const DataProvider = ({ children }) => {
       
       // Initialize last state tracking for all clients to prevent duplicate processing
       lastClientStateRef.current.clear()
+      lastClientTimestampRef.current.clear()
       data.forEach(client => {
         if (client?.login) {
           const signature = [
@@ -459,6 +462,9 @@ export const DataProvider = ({ children }) => {
             toNum(client.lastUpdate)
           ].join('_')
           lastClientStateRef.current.set(client.login, signature)
+          // Seed last timestamp map for ordering protection
+          const seedTs = (client.serverTimestamp || client.lastUpdate) ? (client.serverTimestamp || (client.lastUpdate < 10000000000 ? client.lastUpdate * 1000 : client.lastUpdate)) : 0
+          if (seedTs) lastClientTimestampRef.current.set(client.login, seedTs)
         }
       })
       
@@ -871,6 +877,22 @@ export const DataProvider = ({ children }) => {
         
         for (let i = 0; i < updates.length; i++) {
           const { updatedAccount, accountLogin } = updates[i]
+
+          // Ordering guard: ignore out-of-order or timestamp-less older updates
+          const incomingTsRaw = updatedAccount?.serverTimestamp || updatedAccount?.lastUpdate || 0
+          const incomingTs = toMs(incomingTsRaw)
+          const prevTs = lastClientTimestampRef.current.get(accountLogin) || 0
+          // If we have a previous timestamp and incoming has no timestamp or is older, skip
+          if (prevTs > 0) {
+            if (!incomingTs) {
+              // No timestamp on incoming update → consider stale under heavy flow
+              continue
+            }
+            if (incomingTs < prevTs) {
+              // Older than last applied → skip to prevent data rollback
+              continue
+            }
+          }
           
           // Safety check: skip if updatedAccount is null/undefined
           if (!updatedAccount || !accountLogin) {
@@ -963,6 +985,8 @@ export const DataProvider = ({ children }) => {
             
             updateStatsIncremental(oldClient, merged)
             updated[index] = merged
+            // Update last timestamp after a successful apply
+            if (incomingTs) lastClientTimestampRef.current.set(accountLogin, incomingTs)
           }
         }
         return updated
@@ -987,6 +1011,14 @@ export const DataProvider = ({ children }) => {
         
         for (let i = 0; i < updates.length; i++) {
           const { updatedAccount, accountLogin } = updates[i]
+          // Ordering guard mirrors clients array update
+          const incomingTsRaw = updatedAccount?.serverTimestamp || updatedAccount?.lastUpdate || 0
+          const incomingTs = toMs(incomingTsRaw)
+          const prevTs = lastClientTimestampRef.current.get(accountLogin) || 0
+          if (prevTs > 0) {
+            if (!incomingTs) continue
+            if (incomingTs < prevTs) continue
+          }
           const index = accountIndexMap.get(accountLogin)
           
           if (index === undefined) {
@@ -1035,6 +1067,7 @@ export const DataProvider = ({ children }) => {
               }
               
               updated[correctIndex] = merged
+              if (incomingTs) lastClientTimestampRef.current.set(accountLogin, incomingTs)
               continue
             }
             
@@ -1063,6 +1096,7 @@ export const DataProvider = ({ children }) => {
               }
             }
             updated[index] = merged
+            if (incomingTs) lastClientTimestampRef.current.set(accountLogin, incomingTs)
           }
         }
         
@@ -1189,6 +1223,8 @@ export const DataProvider = ({ children }) => {
               toNum(normalizedUser.lastUpdate)
             ].join('_')
             lastClientStateRef.current.set(userLogin, signature)
+            const seedTs = (normalizedUser.serverTimestamp || normalizedUser.lastUpdate) ? (normalizedUser.serverTimestamp || (normalizedUser.lastUpdate < 10000000000 ? normalizedUser.lastUpdate * 1000 : normalizedUser.lastUpdate)) : 0
+            if (seedTs) lastClientTimestampRef.current.set(userLogin, seedTs)
             
             // Update stats incrementally for new user
             updateStatsIncremental(null, normalizedUser)
@@ -1216,6 +1252,20 @@ export const DataProvider = ({ children }) => {
         if (updatedUser && userLogin) {
           // Normalize USC currency values
           const normalizedUser = normalizeUSCValues(updatedUser)
+          // Preserve server timestamp for ordering
+          const msgTs = message.timestamp
+          if (msgTs) {
+            const tsMs = msgTs < 10000000000 ? msgTs * 1000 : msgTs
+            normalizedUser.serverTimestamp = tsMs
+          }
+          const incomingTs = normalizedUser?.serverTimestamp || (normalizedUser?.lastUpdate ? (normalizedUser.lastUpdate < 10000000000 ? normalizedUser.lastUpdate * 1000 : normalizedUser.lastUpdate) : 0)
+          const prevTs = lastClientTimestampRef.current.get(userLogin) || 0
+          if (prevTs > 0) {
+            if (!incomingTs || incomingTs < prevTs) {
+              // Stale USER_UPDATED under heavy flow — ignore
+              return
+            }
+          }
           
           let oldClient = null
           let mergedClient = null
@@ -1269,6 +1319,8 @@ export const DataProvider = ({ children }) => {
             }
             mergedClient = merged
             updated[index] = merged
+            // Update last timestamp map after successful merge
+            if (incomingTs) lastClientTimestampRef.current.set(userLogin, incomingTs)
             return updated
           })
           
@@ -1305,6 +1357,7 @@ export const DataProvider = ({ children }) => {
               }
             }
             updated[index] = merged
+            if (incomingTs) lastClientTimestampRef.current.set(userLogin, incomingTs)
             return updated
           })
         }
