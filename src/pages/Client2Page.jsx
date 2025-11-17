@@ -3338,7 +3338,7 @@ const Client2Page = () => {
           {(!initialLoad && clients.length > 0) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
               {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
-              <div className="overflow-auto relative table-scroll-container hide-scrollbar flex-1" ref={hScrollRef} style={{ 
+              <div className="overflow-auto relative table-scroll-container flex-1" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
                 height: tableHeight,
@@ -4194,23 +4194,7 @@ const Client2Page = () => {
                   </table>
               </div>
               
-              {/* Sticky Horizontal Scrollbar at Bottom - Always Visible */}
-              <div 
-                ref={stickyScrollRef}
-                className="sticky bottom-0 overflow-x-scroll bg-gray-50 border-t border-gray-300"
-                style={{
-                  height: '17px',
-                  zIndex: 20,
-                  pointerEvents: 'auto',
-                  cursor: 'default'
-                }}
-              >
-                <div style={{ 
-                  width: `${totalTableWidth}px`,
-                  height: '1px',
-                  pointerEvents: 'none'
-                }}></div>
-              </div>
+              {/* Removed duplicate sticky horizontal scrollbar to keep a single native scrollbar */}
             </div>
           )}
           
