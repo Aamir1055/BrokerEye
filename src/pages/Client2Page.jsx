@@ -3342,7 +3342,8 @@ const Client2Page = () => {
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
                 height: tableHeight,
-                maxHeight: tableHeight
+                maxHeight: tableHeight,
+                position: 'relative'
               }}>
                 <style>{`
                   /* Table cell boundary enforcement */
