@@ -2689,7 +2689,7 @@ const Client2Page = () => {
                 </div>
                 
                 {showCardFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-50 max-h-96 overflow-y-auto" style={{
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#9ca3af #f3f4f6'
                   }}>
@@ -3006,138 +3006,51 @@ const Client2Page = () => {
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {/* Show regular cards when NOT in percentage mode - DYNAMIC RENDERING */}
-                {!cardFilterPercentMode && (
-                  <>
-                    {faceCardOrder.map((cardKey) => {
-                      const card = getClient2CardConfig(cardKey, totals)
-                      
-                      // Skip if card config not found or card is hidden
-                      if (!card || cardVisibility[cardKey] === false) return null
-                      
-                      // Get value
-                      const value = card.getValue()
-                      
-                      // Determine colors based on value if colorCheck is true
-                      let textColorClass = `text-${card.color}-700`
-                      let borderColorClass = `border-${card.color}-200`
-                      let labelColorClass = `text-${card.color}-600`
-                      
-                      if (card.colorCheck) {
-                        if (value >= 0) {
-                          textColorClass = 'text-green-700'
-                          borderColorClass = 'border-green-200'
-                          labelColorClass = 'text-green-600'
-                        } else {
-                          textColorClass = 'text-red-700'
-                          borderColorClass = 'border-red-200'
-                          labelColorClass = 'text-red-600'
-                        }
-                      }
-                      
-                      return (
-                        <div
-                          key={cardKey}
-                          className={`bg-white rounded-lg shadow-sm border-2 ${borderColorClass} p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
-                          draggable
-                          onDragStart={(e) => handleCardDragStart(e, cardKey)}
-                          onDragOver={handleCardDragOver}
-                          onDrop={(e) => handleCardDrop(e, cardKey)}
-                          onDragEnd={handleCardDragEnd}
-                          style={{ 
-                            opacity: draggedCard === cardKey ? 0.5 : 1
-                          }}
-                        >
-                          <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
-                            {card.label}
-                          </div>
-                          <div className={`text-sm font-bold ${textColorClass}`}>
-                            {card.format === 'integer'
-                              ? formatIndianNumber(String(Math.round(value || 0)))
-                              : formatIndianNumber((value || 0).toFixed(2))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </>
-                )}
-
-                {/* Percentage view section - dynamically rendered */}
-
-                {/* Show percentage cards when IN percentage mode */}
-                {cardFilterPercentMode && (() => {
-                  const baseLabels = {
-                    assets: 'Assets',
-                    balance: 'Balance',
-                    blockedCommission: 'Blocked Commission',
-                    blockedProfit: 'Blocked Profit',
-                    commission: 'Commission',
-                    credit: 'Credit',
-                    dailyBonusIn: 'Daily Bonus In',
-                    dailyBonusOut: 'Daily Bonus Out',
-                    dailyCreditIn: 'Daily Credit In',
-                    dailyCreditOut: 'Daily Credit Out',
-                    dailyDeposit: 'Daily Deposit',
-                    dailyPnL: 'Daily P&L',
-                    dailySOCompensationIn: 'Daily SO Compensation In',
-                    dailySOCompensationOut: 'Daily SO Compensation Out',
-                    dailyWithdrawal: 'Daily Withdrawal',
-                    equity: 'Equity',
-                    floating: 'Floating',
-                    liabilities: 'Liabilities',
-                    lifetimeBonusIn: 'Lifetime Bonus In',
-                    lifetimeBonusOut: 'Lifetime Bonus Out',
-                    lifetimeCreditIn: 'Lifetime Credit In',
-                    lifetimeCreditOut: 'Lifetime Credit Out',
-                    lifetimeDeposit: 'Lifetime Deposit',
-                    lifetimePnL: 'Lifetime P&L',
-                    lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
-                    lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
-                    lifetimeWithdrawal: 'Lifetime Withdrawal',
-                    margin: 'Margin',
-                    marginFree: 'Margin Free',
-                    marginInitial: 'Margin Initial',
-                    marginLevel: 'Margin Level',
-                    marginMaintenance: 'Margin Maintenance',
-                    soEquity: 'SO Equity',
-                    soLevel: 'SO Level',
-                    soMargin: 'SO Margin',
-                    pnl: 'P&L',
-                    previousEquity: 'Previous Equity',
-                    profit: 'Profit',
-                    storage: 'Storage',
-                    thisMonthBonusIn: 'This Month Bonus In',
-                    thisMonthBonusOut: 'This Month Bonus Out',
-                    thisMonthCreditIn: 'This Month Credit In',
-                    thisMonthCreditOut: 'This Month Credit Out',
-                    thisMonthDeposit: 'This Month Deposit',
-                    thisMonthPnL: 'This Month P&L',
-                    thisMonthSOCompensationIn: 'This Month SO Compensation In',
-                    thisMonthSOCompensationOut: 'This Month SO Compensation Out',
-                    thisMonthWithdrawal: 'This Month Withdrawal',
-                    thisWeekBonusIn: 'This Week Bonus In',
-                    thisWeekBonusOut: 'This Week Bonus Out',
-                    thisWeekCreditIn: 'This Week Credit In',
-                    thisWeekCreditOut: 'This Week Credit Out',
-                    thisWeekDeposit: 'This Week Deposit',
-                    thisWeekPnL: 'This Week P&L',
-                    thisWeekSOCompensationIn: 'This Week SO Compensation In',
-                    thisWeekSOCompensationOut: 'This Week SO Compensation Out',
-                    thisWeekWithdrawal: 'This Week Withdrawal'
+                {faceCardOrder.map((cardKey) => {
+                  const card = getClient2CardConfig(cardKey, totals)
+                  if (!card || cardVisibility[cardKey] === false) return null
+                  // Determine if we are in percent mode and have a percent value for this key (exclude totalClients from % suffix/value transformation)
+                  const isPercent = cardFilterPercentMode && cardKey !== 'totalClients' && totalsPercent && Object.prototype.hasOwnProperty.call(totalsPercent, cardKey)
+                  const rawValue = isPercent ? (totalsPercent?.[cardKey] ?? 0) : card.getValue()
+                  // Colors
+                  let textColorClass = `text-${card.color}-700`
+                  let borderColorClass = `border-${card.color}-200`
+                  let labelColorClass = `text-${card.color}-600`
+                  if (card.colorCheck) {
+                    if (rawValue >= 0) {
+                      textColorClass = 'text-green-700'
+                      borderColorClass = 'border-green-200'
+                      labelColorClass = 'text-green-600'
+                    } else {
+                      textColorClass = 'text-red-700'
+                      borderColorClass = 'border-red-200'
+                      labelColorClass = 'text-red-600'
+                    }
                   }
-                  return Object.entries(baseLabels).map(([key, label]) => {
-                    // Show percentage for whatever base face cards are currently visible
-                    if (cardVisibility[key] === false) return null
-                    return (
-                      <div key={`percent-${key}`} className="bg-white rounded-lg shadow-sm border-2 border-pink-200 p-2 hover:shadow-md transition-shadow">
-                        <div className="text-[10px] font-medium text-pink-600 mb-1">{label} %</div>
-                        <div className="text-sm font-bold text-pink-700">
-                          {`${formatIndianNumber(((totalsPercent?.[key]) || 0).toFixed(2))}%`}
-                        </div>
+                  return (
+                    <div
+                      key={cardKey}
+                      className={`bg-white rounded-lg shadow-sm border-2 ${borderColorClass} p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
+                      draggable
+                      onDragStart={(e) => handleCardDragStart(e, cardKey)}
+                      onDragOver={handleCardDragOver}
+                      onDrop={(e) => handleCardDrop(e, cardKey)}
+                      onDragEnd={handleCardDragEnd}
+                      style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
+                    >
+                      <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
+                        {card.label}{isPercent ? ' %' : ''}
                       </div>
-                    )
-                  })
-                })()}
+                      <div className={`text-sm font-bold ${textColorClass}`}>
+                        {isPercent
+                          ? `${formatIndianNumber((rawValue || 0).toFixed(2))}%`
+                          : (card.format === 'integer'
+                              ? formatIndianNumber(String(Math.round(rawValue || 0)))
+                              : formatIndianNumber((rawValue || 0).toFixed(2)))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
