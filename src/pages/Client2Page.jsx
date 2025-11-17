@@ -419,6 +419,15 @@ const Client2Page = () => {
     }
   }, [columnOrder])
   
+  // Auto-focus filter dropdown when it opens for keyboard navigation
+  useEffect(() => {
+    if (showFilterDropdown && filterPanelRef.current) {
+      setTimeout(() => {
+        filterPanelRef.current?.focus()
+      }, 0)
+    }
+  }, [showFilterDropdown])
+  
   // Calculate dynamic table height based on available space
   useEffect(() => {
     const calculateHeight = () => {
@@ -3536,6 +3545,7 @@ const Client2Page = () => {
                                     return createPortal(
                                       <div 
                                         ref={filterPanelRef}
+                                        tabIndex={0}
                                         className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl flex flex-col text-[11px]"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseDown={(e) => e.stopPropagation()}
