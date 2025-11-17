@@ -1013,18 +1013,15 @@ const Client2Page = () => {
   const unionClients = Array.from(clientMap.values())
   // Server-side total count across variants (sums per-variant totals; safe because OR is for a single scalar field)
   const serverTotal = mergedTotalCount || 0
-  // Slice for current page
-  const total = unionClients.length
-        const start = (currentPage - 1) * (itemsPerPage || 50)
-        const end = start + (itemsPerPage || 50)
-        // SAFETY: Final filter before setting state
-        const safeClients = unionClients.slice(start, end).filter(c => c != null && c.login != null)
-        if (safeClients.length < unionClients.slice(start, end).length) {
-          console.warn('[Client2Page] Filtered out invalid clients from API response')
-        }
+  // NO client-side slicing - server already paginated
+  // SAFETY: Final filter before setting state
+  const safeClients = unionClients.filter(c => c != null && c.login != null)
+  if (safeClients.length < unionClients.length) {
+    console.warn('[Client2Page] Filtered out invalid clients from API response')
+  }
   setClients(safeClients)
   // Prefer server-reported total when available; fallback to union length
-  const effectiveTotal = serverTotal > 0 ? serverTotal : total
+  const effectiveTotal = serverTotal > 0 ? serverTotal : unionClients.length
   setTotalClients(effectiveTotal)
   setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 50))))
         setTotals(mergedTotals)
@@ -1097,16 +1094,14 @@ const Client2Page = () => {
         })
         const unionClients = Array.from(clientMap.values())
         const serverTotal = mergedTotalCount || 0
-        const total = unionClients.length
-        const start = (currentPage - 1) * (itemsPerPage || 100)
-        const end = start + (itemsPerPage || 100)
+        // NO client-side slicing - server already paginated
         // SAFETY: Final filter before setting state
-        const safeClients = unionClients.slice(start, end).filter(c => c != null && c.login != null)
-        if (safeClients.length < unionClients.slice(start, end).length) {
+        const safeClients = unionClients.filter(c => c != null && c.login != null)
+        if (safeClients.length < unionClients.length) {
           console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
         }
   setClients(safeClients)
-  const effectiveTotal = serverTotal > 0 ? serverTotal : total
+  const effectiveTotal = serverTotal > 0 ? serverTotal : unionClients.length
   setTotalClients(effectiveTotal)
   setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 100))))
         setTotals(mergedTotals)
@@ -1841,7 +1836,8 @@ const Client2Page = () => {
   // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Trigger immediate fetch for the new page
+    // Don't wait for scroll; data fetch happens via useEffect dependency on currentPage
   }
   
   // Handle items per page change
@@ -3046,7 +3042,7 @@ const Client2Page = () => {
                       </div>
                       <div className={`text-sm font-bold ${textColorClass}`}>
                         {isPercent
-                          ? `${formatIndianNumber((rawValue || 0).toFixed(2))}%`
+                          ? formatIndianNumber((rawValue || 0).toFixed(2))
                           : (card.format === 'integer'
                               ? formatIndianNumber(String(Math.round(rawValue || 0)))
                               : formatIndianNumber((rawValue || 0).toFixed(2)))}

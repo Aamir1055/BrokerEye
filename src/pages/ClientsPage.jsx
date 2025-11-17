@@ -1171,6 +1171,23 @@ const ClientsPage = () => {
       }
     }
 
+    // Fast path: when there are no filters, no search, and no sort, avoid worker lag.
+    const hasAnyFilters = !!(
+      filterByPositions ||
+      filterByCredit ||
+      filterNoDeposit ||
+      (searchQuery && String(searchQuery).trim()) ||
+      (columnFilters && Object.keys(columnFilters).length > 0)
+    )
+    const hasGroupIB = !!(activeGroupFilters?.clients) || !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
+    const hasSort = !!resolvedSortColumn
+
+    if (!hasAnyFilters && !hasGroupIB && !hasSort) {
+      // Identity list; keep table and face cards perfectly in sync with source clients
+      setFilteredClients(clients)
+      return
+    }
+
     let canceled = false
     const t = setTimeout(async () => {
       try {
@@ -1216,7 +1233,7 @@ const ClientsPage = () => {
           if (!canceled) setFilteredClients([])
         }
       }
-  }, 100) // tightened debounce for faster responsiveness
+    }, 100) // tightened debounce for faster responsiveness
 
     return () => { canceled = true; clearTimeout(t) }
   }, [
@@ -1812,12 +1829,8 @@ const ClientsPage = () => {
   // (removed memoized faceCardTotals)
   // Compute face card totals without memoization to avoid stale or drifting aggregates.
   const faceCardTotals = (() => {
-    const hasActiveGroup = !!(activeGroupFilters && activeGroupFilters.clients)
-    const hasActiveIB = !!(selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0)
-    const hasFilters = !!(filterByPositions || filterByCredit || filterNoDeposit || (searchQuery && String(searchQuery).trim()) || (columnFilters && Object.keys(columnFilters).length > 0) || hasActiveGroup || hasActiveIB)
-
-    // Use full clients list when no filters are active; otherwise use filtered list
-    const list = (hasFilters ? (filteredClients || []) : (clients || []))
+    // Always derive from the same list the table uses to prevent drift/flicker under load
+    const list = Array.isArray(filteredClients) ? filteredClients : []
 
     // Enhanced robust numeric sum helper with deep value inspection
     const sum = (key) => list.reduce((acc, c) => {
