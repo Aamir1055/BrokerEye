@@ -1111,6 +1111,13 @@ const Client2Page = () => {
     }
   }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts])
   
+  // Clear cached column values when filters change (IB, group, accounts, filters, search)
+  // This ensures column value dropdowns always fetch fresh data from API
+  useEffect(() => {
+    setColumnValues({})
+    setSelectedColumnValues({})
+  }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery])
+  
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
     fetchClients(false)
@@ -1685,9 +1692,11 @@ const Client2Page = () => {
   }
 
   // Fetch ALL unique column values from server (fetch all pages to get complete dataset)
-  const fetchColumnValues = async (columnKey) => {
-    // Don't fetch if already loading or already loaded
-    if (columnValuesLoading[columnKey] || columnValues[columnKey]) return
+  const fetchColumnValues = async (columnKey, forceRefresh = false) => {
+    // Don't fetch if already loading
+    if (columnValuesLoading[columnKey]) return
+    // Don't fetch if already loaded (unless forcing refresh)
+    if (!forceRefresh && columnValues[columnKey]) return
     
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
