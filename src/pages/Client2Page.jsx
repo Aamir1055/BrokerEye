@@ -2582,7 +2582,17 @@ const Client2Page = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Filter
+                  <span className="relative flex items-center">
+                    Filter
+                    {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
+                      <span
+                        className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none shadow-sm"
+                        title="Active quick filters count"
+                      >
+                        {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
+                      </span>
+                    )}
+                  </span>
                 </button>
                 
                 {showFilterMenu && (
