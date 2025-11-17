@@ -3541,6 +3541,13 @@ const Client2Page = () => {
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onWheel={(e) => e.stopPropagation()}
                                         onScroll={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter' && !isNumeric) {
+                                            e.preventDefault()
+                                            applyCheckboxFilter(columnKey)
+                                            setShowFilterDropdown(null)
+                                          }
+                                        }}
                                         style={{
                                           top: '50%',
                                           transform: 'translateY(-50%)',
