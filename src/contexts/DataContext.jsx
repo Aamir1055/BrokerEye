@@ -873,9 +873,45 @@ export const DataProvider = ({ children }) => {
             const oldClient = originalValues.get(accountLogin)
             const existingClient = updated[index]
             
-            // Safety check: if existingClient is undefined, skip this update
-            if (!existingClient) {
-              console.warn('DataContext: existingClient is undefined for', accountLogin, 'at index', index)
+            // Safety check: if existingClient is undefined or login mismatch, rebuild index and retry
+            if (!existingClient || existingClient.login !== accountLogin) {
+              // Index map is stale - find correct index
+              const correctIndex = updated.findIndex(c => c?.login === accountLogin)
+              if (correctIndex === -1) {
+                console.warn('DataContext: Client not found for', accountLogin, '(stale index', index, ')')
+                continue
+              }
+              // Update the map with correct index
+              clientIndexMap.set(accountLogin, correctIndex)
+              // Retry with correct index
+              const correctClient = updated[correctIndex]
+              const oldClientRetry = originalValues.get(accountLogin) || correctClient
+              
+              // Check if there are actual changes
+              let hasChanges = false
+              for (const key in updatedAccount) {
+                if (updatedAccount[key] !== undefined && updatedAccount[key] !== correctClient[key]) {
+                  if (key === '__isNormalized' && correctClient[key] && updatedAccount[key]) {
+                    continue
+                  }
+                  hasChanges = true
+                  break
+                }
+              }
+              
+              if (!hasChanges) {
+                continue
+              }
+              
+              const merged = { ...correctClient }
+              for (const key in updatedAccount) {
+                if (updatedAccount[key] !== undefined) {
+                  merged[key] = updatedAccount[key]
+                }
+              }
+              
+              updateStatsIncremental(oldClientRetry, merged)
+              updated[correctIndex] = merged
               continue
             }
             
@@ -938,6 +974,46 @@ export const DataProvider = ({ children }) => {
           } else {
             // Update existing - SELECTIVE MERGE: only update defined values
             const existingAccount = updated[index]
+            
+            // Safety check: if existingAccount is undefined or login mismatch, rebuild index and retry
+            if (!existingAccount || existingAccount.login !== accountLogin) {
+              // Index map is stale - find correct index
+              const correctIndex = updated.findIndex(a => a?.login === accountLogin)
+              if (correctIndex === -1) {
+                console.warn('DataContext: Account not found for', accountLogin, '(stale index', index, ')')
+                continue
+              }
+              // Update the map with correct index
+              accountIndexMap.set(accountLogin, correctIndex)
+              // Retry with correct index
+              const correctAccount = updated[correctIndex]
+              
+              // Check if there are actual changes
+              let hasChanges = false
+              for (const key in updatedAccount) {
+                if (updatedAccount[key] !== undefined && updatedAccount[key] !== correctAccount[key]) {
+                  if (key === '__isNormalized' && correctAccount[key] && updatedAccount[key]) {
+                    continue
+                  }
+                  hasChanges = true
+                  break
+                }
+              }
+              
+              if (!hasChanges) {
+                continue
+              }
+              
+              const merged = { ...correctAccount }
+              for (const key in updatedAccount) {
+                if (updatedAccount[key] !== undefined) {
+                  merged[key] = updatedAccount[key]
+                }
+              }
+              
+              updated[correctIndex] = merged
+              continue
+            }
             
             // Check if there are actual changes to prevent unnecessary object creation
             let hasChanges = false
