@@ -3542,9 +3542,13 @@ const Client2Page = () => {
                                         onWheel={(e) => e.stopPropagation()}
                                         onScroll={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && !isNumeric) {
+                                          if (e.key === 'Enter') {
                                             e.preventDefault()
-                                            applyCheckboxFilter(columnKey)
+                                            if (isNumeric) {
+                                              applyNumericFilter(columnKey)
+                                            } else {
+                                              applyCheckboxFilter(columnKey)
+                                            }
                                             setShowFilterDropdown(null)
                                           }
                                         }}
@@ -3863,6 +3867,14 @@ const Client2Page = () => {
                                                     id={`text-filter-menu-${columnKey}`}
                                                     className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
                                                     onClick={(e) => e.stopPropagation()}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        applyTextFilter(columnKey)
+                                                        const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                        if (menu) menu.classList.add('hidden')
+                                                      }
+                                                    }}
                                                   >
                                                     <div className="p-3 space-y-3">
                                                       {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
@@ -3875,6 +3887,14 @@ const Client2Page = () => {
                                                               <select
                                                                 value={tempTextFilter.operator}
                                                                 onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                  if (e.key === 'Enter') {
+                                                                    e.preventDefault()
+                                                                    applyTextFilter(columnKey)
+                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                    if (menu) menu.classList.add('hidden')
+                                                                  }
+                                                                }}
                                                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                               >
                                                                 <option value="equal">Equal...</option>
