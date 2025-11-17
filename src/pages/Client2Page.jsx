@@ -3650,6 +3650,14 @@ const Client2Page = () => {
                                                           placeholder="Enter value"
                                                           value={tempFilter.value1}
                                                           onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                              e.preventDefault()
+                                                              applyNumberFilter(columnKey)
+                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                              if (menu) menu.classList.add('hidden')
+                                                            }
+                                                          }}
                                                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                         />
                                                       </div>
@@ -3664,12 +3672,20 @@ const Client2Page = () => {
                                                             placeholder="Enter value"
                                                             value={tempFilter.value2}
                                                             onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                              if (e.key === 'Enter') {
+                                                                e.preventDefault()
+                                                                applyNumberFilter(columnKey)
+                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                                if (menu) menu.classList.add('hidden')
+                                                              }
+                                                            }}
                                                             className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                           />
                                                         </div>
                                                       )}
 
-                                                      {/* Apply/Clear Buttons */}
+                                                      {/* Apply Button */}
                                                       <div className="flex gap-2 pt-2 border-t border-gray-200">
                                                         <button
                                                           onClick={() => {
@@ -3677,23 +3693,9 @@ const Client2Page = () => {
                                                             const menu = document.getElementById(`number-filter-menu-${columnKey}`)
                                                             if (menu) menu.classList.add('hidden')
                                                           }}
-                                                          className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                          className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                         >
                                                           OK
-                                                        </button>
-                                                        <button
-                                                          onClick={() => {
-                                                            const numberFilterKey = `${columnKey}_number`
-                                                            setColumnFilters(prev => {
-                                                              const { [numberFilterKey]: _, ...rest } = prev
-                                                              return rest
-                                                            })
-                                                            const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                            if (menu) menu.classList.add('hidden')
-                                                          }}
-                                                          className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                        >
-                                                          Clear
                                                         </button>
                                                       </div>
                                                     </div>
@@ -3883,6 +3885,14 @@ const Client2Page = () => {
                                                                 placeholder="Enter text"
                                                                 value={tempTextFilter.value}
                                                                 onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                  if (e.key === 'Enter') {
+                                                                    e.preventDefault()
+                                                                    applyTextFilter(columnKey)
+                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                    if (menu) menu.classList.add('hidden')
+                                                                  }
+                                                                }}
                                                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                               />
                                                             </div>
@@ -3904,23 +3914,9 @@ const Client2Page = () => {
                                                                   const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                                   if (menu) menu.classList.add('hidden')
                                                                 }}
-                                                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                               >
                                                                 OK
-                                                              </button>
-                                                              <button
-                                                                onClick={() => {
-                                                                  const textFilterKey = `${columnKey}_text`
-                                                                  setColumnFilters(prev => {
-                                                                    const { [textFilterKey]: _, ...rest } = prev
-                                                                    return rest
-                                                                  })
-                                                                  const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                                  if (menu) menu.classList.add('hidden')
-                                                                }}
-                                                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                              >
-                                                                Clear
                                                               </button>
                                                             </div>
                                                           </>
