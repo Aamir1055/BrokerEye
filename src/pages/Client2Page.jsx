@@ -3501,10 +3501,10 @@ const Client2Page = () => {
                                         const columnType = getColumnType(col.key)
                                         // Always fetch values for checkbox filtering
                                         fetchColumnValues(col.key)
-                                        // Ensure selectedColumnValues for this column starts empty
-                                        if (!selectedColumnValues[col.key]) {
-                                          setSelectedColumnValues(prev => ({ ...prev, [col.key]: [] }))
-                                        }
+                                        // Initialize selectedColumnValues: if there's an active checkbox filter, restore it; otherwise start empty
+                                        const existingCheckboxFilter = columnFilters[`${col.key}_checkbox`]
+                                        const initialSelection = existingCheckboxFilter?.values || []
+                                        setSelectedColumnValues(prev => ({ ...prev, [col.key]: initialSelection }))
                                       }
                                     }}
                                     className={`p-0.5 transition-opacity hover:opacity-70 ${filterCount > 0 ? 'text-green-400' : 'text-white/60'}`}
@@ -3541,13 +3541,6 @@ const Client2Page = () => {
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onWheel={(e) => e.stopPropagation()}
                                         onScroll={(e) => e.stopPropagation()}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && !isNumeric) {
-                                            e.preventDefault()
-                                            applyCheckboxFilter(columnKey)
-                                            setShowFilterDropdown(null)
-                                          }
-                                        }}
                                         style={{
                                           top: '50%',
                                           transform: 'translateY(-50%)',
