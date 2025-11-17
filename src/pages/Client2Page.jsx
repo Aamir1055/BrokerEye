@@ -783,6 +783,20 @@ const Client2Page = () => {
       
   // Add filters if present
   const combinedFilters = []
+  
+      // Inject server-side quick filters (full dataset filtering)
+      if (quickFilters?.hasFloating) {
+        // Has Floating: exclude rows where floating == 0 (allow negative or positive)
+        combinedFilters.push({ field: 'floating', operator: 'not_equal', value: '0' })
+      }
+      if (quickFilters?.hasCredit) {
+        // Has Credit: credit strictly greater than 0
+        combinedFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (quickFilters?.noDeposit) {
+        // No Deposit: lifetimeDeposit == 0
+        combinedFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
   // Track a single field that has multiple checkbox values selected (to emulate OR semantics)
   let multiOrField = null
   let multiOrValues = []
@@ -1109,7 +1123,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts])
+  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
   
   // Clear cached column values when filters change (IB, group, accounts, filters, search)
   // This ensures column value dropdowns always fetch fresh data from API
@@ -1123,49 +1137,18 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
   
-  // Client-side filtering only (sorting is done by API)
+  // Server returns filtered dataset; only apply null safety locally
   const sortedClients = useMemo(() => {
-    // Guard: ensure clients is an array and filter out null/undefined entries
     if (!Array.isArray(clients)) return []
-    let filtered = clients.filter(c => c != null)
-    
-    // Apply quick filters first
-    if (quickFilters.hasFloating) {
-      filtered = filtered.filter(client => {
-        if (!client) return false
-        const floatingValue = parseFloat(client.floating) || 0
-        return floatingValue > 0
-      })
-    }
-    
-    if (quickFilters.hasCredit) {
-      filtered = filtered.filter(client => {
-        if (!client) return false
-        const creditValue = parseFloat(client.credit) || 0
-        return creditValue > 0
-      })
-    }
-    
-    if (quickFilters.noDeposit) {
-      filtered = filtered.filter(client => {
-        if (!client) return false
-        const depositValue = parseFloat(client.lifetimeDeposit) || 0
-        return depositValue === 0
-      })
-    }
-    
-    // Column header filters and IB filter are applied on the server. Skip client-side filtering here.
-    
-    // Sorting is handled by the API via sortBy and sortOrder state
-    // No client-side sorting needed as data comes pre-sorted from backend
-    
-    return filtered
-  }, [clients, quickFilters])
+    return clients.filter(c => c != null)
+  }, [clients])
   
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
     fetchClients()
   }, [fetchClients])
+  
+  // Removed server-side quick filter refetch; quick filters now apply client-side to current page only
   
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
   
@@ -2605,6 +2588,8 @@ const Client2Page = () => {
                                 ...prev,
                                 hasFloating: e.target.checked
                               }))
+                              setCurrentPage(1)
+                              fetchClients(false)
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
@@ -2619,6 +2604,8 @@ const Client2Page = () => {
                                 ...prev,
                                 hasCredit: e.target.checked
                               }))
+                              setCurrentPage(1)
+                              fetchClients(false)
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
@@ -2633,6 +2620,8 @@ const Client2Page = () => {
                                 ...prev,
                                 noDeposit: e.target.checked
                               }))
+                              setCurrentPage(1)
+                              fetchClients(false)
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
