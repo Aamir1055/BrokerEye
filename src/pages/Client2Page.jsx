@@ -3485,7 +3485,7 @@ const Client2Page = () => {
                         <col key={`col-${col.key}`} style={{ width: `${getDefaultColumnWidth(col)}px` }} />
                       ))}
                     </colgroup>
-                    <thead className="bg-blue-600 sticky top-0 z-50">
+                    <thead className="bg-blue-600 sticky top-0 z-50" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
                       <tr>
                         {visibleColumnsList.map(col => {
                           const filterCount = getActiveFilterCount(col.key)
@@ -3507,7 +3507,10 @@ const Client2Page = () => {
                               onDragEnd={handleColumnDragEnd}
                               style={{ 
                                 minWidth: '80px',
-                                overflow: 'hidden'
+                                overflow: 'hidden',
+                                backgroundColor: '#2563eb',
+                                position: 'sticky',
+                                top: 0
                               }}
                             >
                               <div className="flex items-center gap-2 justify-between min-w-0">
