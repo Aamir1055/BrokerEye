@@ -435,6 +435,11 @@ export const DataProvider = ({ children }) => {
       setClients(data)
       setAccounts(data) // Keep accounts in sync
       
+      // CRITICAL: Rebuild index maps after bulk data load to prevent stale indices
+      // This is done outside the WebSocket subscription context, so we need to
+      // reference the maps that will be created when WebSocket connects
+      // The actual rebuild will happen in the first processBatch call
+      
       // Initialize last state tracking for all clients to prevent duplicate processing
       lastClientStateRef.current.clear()
       data.forEach(client => {
@@ -747,6 +752,9 @@ export const DataProvider = ({ children }) => {
   // Adaptive flush tracking
   const firstPendingAtRef = { current: 0 }
   const lastFlushAtRef = { current: 0 }
+  // Processing lock to prevent race conditions during heavy flow
+  let isProcessingBatch = false
+  let queuedProcessing = false
     
     // Create index map for O(1) lookups instead of O(n) findIndex
     let clientIndexMap = new Map()
@@ -761,6 +769,15 @@ export const DataProvider = ({ children }) => {
     
     const processBatch = () => {
       if (pendingUpdates.size === 0) return
+      
+      // CRITICAL: Prevent concurrent batch processing to avoid race conditions
+      if (isProcessingBatch) {
+        // Queue another processing call after current one finishes
+        queuedProcessing = true
+        return
+      }
+      
+      isProcessingBatch = true
       
       // Mark receive timestamp at the start of processing a batch (throttled)
       {
@@ -831,9 +848,12 @@ export const DataProvider = ({ children }) => {
       // OPTIMIZED: Single state update for clients with index map
       let addedClientsCount = 0
       lowPriority(() => setClients(prev => {
-        // Rebuild index if needed
-        if (clientIndexMap.size === 0 && prev.length > 0) {
-          prev.forEach((c, i) => clientIndexMap.set(c.login, i))
+        // Rebuild index if needed OR if size mismatch (indicates stale map)
+        if (clientIndexMap.size === 0 || clientIndexMap.size !== prev.length) {
+          clientIndexMap.clear()
+          prev.forEach((c, i) => {
+            if (c?.login) clientIndexMap.set(c.login, i)
+          })
         }
         
         const updated = [...prev]
@@ -955,9 +975,12 @@ export const DataProvider = ({ children }) => {
       
       // OPTIMIZED: Single state update for accounts with index map
       lowPriority(() => setAccounts(prev => {
-        // Rebuild index if needed
-        if (accountIndexMap.size === 0 && prev.length > 0) {
-          prev.forEach((a, i) => accountIndexMap.set(a.login, i))
+        // Rebuild index if needed OR if size mismatch (indicates stale map)
+        if (accountIndexMap.size === 0 || accountIndexMap.size !== prev.length) {
+          accountIndexMap.clear()
+          prev.forEach((a, i) => {
+            if (a?.login) accountIndexMap.set(a.login, i)
+          })
         }
         
         const updated = [...prev]
@@ -1045,6 +1068,16 @@ export const DataProvider = ({ children }) => {
         
         return updated
       }))
+      
+      // Release processing lock and check if another batch is queued
+      // Use setTimeout to ensure state updates complete before next batch
+      setTimeout(() => {
+        isProcessingBatch = false
+        if (queuedProcessing && pendingUpdates.size > 0) {
+          queuedProcessing = false
+          processBatch()
+        }
+      }, 0)
     }
 
     // Track if we're receiving updates
