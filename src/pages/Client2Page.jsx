@@ -11,6 +11,12 @@ import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 
 const Client2Page = () => {
+  // Column value dropdown paging constants
+  // We want chunky loads so users don't have to scroll one-by-one
+  const COLUMN_VALUES_PAGE_SIZE = 200           // rows to request per page from server
+  const COLUMN_VALUES_MIN_INITIAL = 200         // ensure at least this many unique values on first open (if possible)
+  const COLUMN_VALUES_MIN_BATCH = 200           // ensure at least this many new unique values per "load more"
+  const COLUMN_VALUES_MAX_PAGES_PER_BATCH = 5   // safety cap to avoid excessive parallel requests
   // Group context
   const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
   
@@ -1547,10 +1553,10 @@ const Client2Page = () => {
   }
 
   // Build payload for fetching column values using current table filters (server-side), excluding the current column's header filter
-  const buildColumnValuesPayload = (columnKey, page = 1, limit = 200) => {
+  const buildColumnValuesPayload = (columnKey, page = 1, limit = COLUMN_VALUES_PAGE_SIZE) => {
     const payload = {
       page: Number(page) || 1,
-      limit: Number(limit) || 200
+      limit: Number(limit) || COLUMN_VALUES_PAGE_SIZE
     }
     if (searchQuery && searchQuery.trim()) payload.search = searchQuery.trim()
 
@@ -1673,7 +1679,7 @@ const Client2Page = () => {
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
     try {
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, 200)
+      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, COLUMN_VALUES_PAGE_SIZE)
 
       // Build payload variants to honor OR semantics for a single field
       const buildVariants = (b) => {
@@ -1683,10 +1689,11 @@ const Client2Page = () => {
         return [b]
       }
 
+      // Fetch page 1
       const variants = buildVariants(payload)
       const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
       const setVals = new Set()
-      let totalPages = 1
+      let maxPages = 1
       responses.forEach(resp => {
         const d = resp?.data || resp
         const rows = d?.clients || []
@@ -1694,14 +1701,42 @@ const Client2Page = () => {
           const v = row?.[columnKey]
           if (v !== null && v !== undefined && v !== '') setVals.add(v)
         })
-        totalPages = Math.max(totalPages, Number(d?.pages || 1))
+        maxPages = Math.max(maxPages, Number(d?.pages || 1))
       })
+
+      // If duplicates mean we got fewer than desired initial values, prefetch additional pages (up to cap)
+      let currentPageLocal = 1
+      if (setVals.size < COLUMN_VALUES_MIN_INITIAL && maxPages > 1) {
+        const needValues = COLUMN_VALUES_MIN_INITIAL - setVals.size
+        // optimistic pages estimate; still enforce max cap
+        const estPages = Math.min(
+          COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1,
+          Math.max(0, Math.min(maxPages - 1, Math.ceil(needValues / COLUMN_VALUES_PAGE_SIZE)))
+        )
+        if (estPages > 0) {
+          const pageIdxs = Array.from({ length: estPages }, (_, i) => i + 2) // pages 2..N
+          const moreVariants = pageIdxs.flatMap(pg => buildVariants({ ...payload, page: pg }))
+          const moreResponses = await Promise.all(moreVariants.map(p => brokerAPI.searchClients(p)))
+          let discoveredMax = maxPages
+          moreResponses.forEach(resp => {
+            const d = resp?.data || resp
+            const rows = d?.clients || []
+            rows.forEach(row => {
+              const v = row?.[columnKey]
+              if (v !== null && v !== undefined && v !== '') setVals.add(v)
+            })
+            discoveredMax = Math.max(discoveredMax, Number(d?.pages || 1))
+          })
+          maxPages = discoveredMax
+          currentPageLocal = 1 + estPages
+        }
+      }
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-      setColumnValuesPage(prev => ({ ...prev, [columnKey]: 1 }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
+      setColumnValuesPage(prev => ({ ...prev, [columnKey]: currentPageLocal }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: currentPageLocal < maxPages }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -1714,33 +1749,66 @@ const Client2Page = () => {
     if (columnValuesLoadingMore[columnKey]) return
     if (!columnValuesHasMore[columnKey]) return
     const currentPage = columnValuesPage[columnKey] || 1
-    const nextPage = currentPage + 1
     setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
     try {
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, 200)
+      // We'll keep fetching subsequent pages until we've added ~COLUMN_VALUES_MIN_BATCH new unique values
+      // or we hit the max pages or our safety batch cap.
+      let nextPage = currentPage + 1
+      let pagesDiscovered = currentPage
+      const existing = new Set(columnValues[columnKey] || [])
+      const newVals = new Set()
+
       const buildVariants = (b) => {
         if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
           return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
         }
         return [b]
       }
-      const variants = buildVariants(payload)
-      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-      const setVals = new Set(columnValues[columnKey] || [])
-      let pages = nextPage
+
+      // First, fetch one page to make progress
+      let { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, COLUMN_VALUES_PAGE_SIZE)
+      let variants = buildVariants(payload)
+      let responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
       responses.forEach(resp => {
         const d = resp?.data || resp
         const rows = d?.clients || []
         rows.forEach(row => {
           const v = row?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+          if (v !== null && v !== undefined && v !== '') newVals.add(v)
         })
-        pages = Math.max(pages, Number(d?.pages || pages))
+        pagesDiscovered = Math.max(pagesDiscovered, Number(d?.pages || pagesDiscovered))
       })
-      const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
+
+      // If still below the target and there are more pages, prefetch a few more pages in parallel (capped)
+      let extraBatches = 0
+      while (
+        newVals.size < COLUMN_VALUES_MIN_BATCH &&
+        nextPage < pagesDiscovered &&
+        extraBatches < (COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1)
+      ) {
+        nextPage += 1
+        const pg = nextPage
+        ;({ payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, pg, COLUMN_VALUES_PAGE_SIZE))
+        variants = buildVariants(payload)
+        responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
+        responses.forEach(resp => {
+          const d = resp?.data || resp
+          const rows = d?.clients || []
+          rows.forEach(row => {
+            const v = row?.[columnKey]
+            if (v !== null && v !== undefined && v !== '') newVals.add(v)
+          })
+          pagesDiscovered = Math.max(pagesDiscovered, Number(d?.pages || pagesDiscovered))
+        })
+        extraBatches += 1
+      }
+
+      // Merge and update state
+      const merged = new Set([...existing, ...newVals])
+      const uniqueValues = Array.from(merged).sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setColumnValuesPage(prev => ({ ...prev, [columnKey]: nextPage }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextPage < pages }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextPage < pagesDiscovered }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
