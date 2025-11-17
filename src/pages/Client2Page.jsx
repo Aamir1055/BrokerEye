@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
+import { useData } from '../contexts/DataContext'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
@@ -11,6 +12,8 @@ import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 
 const Client2Page = () => {
+  // DataContext (align with ClientsPage for positions cache usage)
+  const { positions: cachedPositions } = useData()
   // Column value dropdown paging defaults and settings
   // Expose batch size as a quick setting (persisted), while capping parallel page prefetch to be safe.
   const COLUMN_VALUES_MAX_PAGES_PER_BATCH = 5   // safety cap to avoid excessive parallel requests
@@ -4330,15 +4333,10 @@ const Client2Page = () => {
             setShowClientDetailModal(false)
             setSelectedClient(null)
           }}
-          onClientUpdate={(updatedClient) => {
-            // Update the client in the list
-            setClients(prevClients =>
-              prevClients.map(c =>
-                c.login === updatedClient.login ? updatedClient : c
-              )
-            )
-            setSelectedClient(updatedClient)
-          }}
+          // Use fetchClients for consistency with ClientsPage so modal-triggered updates refresh server-side dataset
+          onClientUpdate={fetchClients}
+          allPositionsCache={cachedPositions}
+          onCacheUpdate={() => { /* Positions managed by DataContext; no local update needed */ }}
         />
       )}
       
