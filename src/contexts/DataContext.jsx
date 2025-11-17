@@ -616,7 +616,7 @@ export const DataProvider = ({ children }) => {
     let totalMessagesReceived = 0
     let lastActivityLog = Date.now()
     
-    const unsubDebug = websocketService.subscribe('all', (message) => {
+  const unsubDebug = websocketService.subscribe('all', (message) => {
       totalMessagesReceived++
       
       // Log activity every 10 seconds
@@ -685,6 +685,17 @@ export const DataProvider = ({ children }) => {
                 return prev // skip state update
               }
             }
+            // Seed per-client timestamps on full snapshot acceptance to protect ordering
+            try {
+              lastClientTimestampRef.current.clear()
+              for (let i = 0; i < newClients.length; i++) {
+                const c = newClients[i]
+                if (!c || !c.login) continue
+                const tsRaw = c.serverTimestamp || c.lastUpdate || 0
+                const ts = toMs(tsRaw)
+                if (ts) lastClientTimestampRef.current.set(c.login, ts)
+              }
+            } catch {}
             return newClients
           }))
           lowPriority(() => setAccounts(prev => {
@@ -1757,20 +1768,34 @@ export const DataProvider = ({ children }) => {
     hasInitialSyncedRef.current = true
     
     const initialSync = async () => {
-      try {
-        await Promise.all([
-          fetchClients(true).catch(err => { console.error('[DataContext] Initial clients fetch failed:', err?.message || err) }),
-          fetchPositions(true).catch(err => { console.error('[DataContext] Initial positions fetch failed:', err?.message || err) }),
-          fetchOrders(true).catch(err => { console.error('[DataContext] Initial orders fetch failed:', err?.message || err) }),
-          fetchAccounts(true).catch(err => { console.error('[DataContext] Initial accounts fetch failed:', err?.message || err) })
-        ])
-      } catch (error) {
-        console.error('[DataContext] Initial sync error (aggregated):', error)
-      } finally {
-        if (!hasInitialData) {
-          setHasInitialData(true)
-          console.warn('[DataContext] ⚠️ Proceeding to connect WebSocket despite partial/failed initial sync')
+      const maxAttempts = 3
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          await Promise.all([
+            fetchClients(true).catch(err => { console.error('[DataContext] Initial clients fetch failed:', err?.message || err) }),
+            fetchPositions(true).catch(err => { console.error('[DataContext] Initial positions fetch failed:', err?.message || err) }),
+            fetchOrders(true).catch(err => { console.error('[DataContext] Initial orders fetch failed:', err?.message || err) }),
+            fetchAccounts(true).catch(err => { console.error('[DataContext] Initial accounts fetch failed:', err?.message || err) })
+          ])
+        } catch (error) {
+          console.error('[DataContext] Initial sync error (attempt', attempt, '):', error)
         }
+
+        // Success criteria: we must have at least some clients loaded
+        const ok = Array.isArray(clients) ? clients.length > 0 : false
+        if (ok) {
+          break
+        }
+        if (attempt < maxAttempts) {
+          const backoff = 800 * attempt
+          await new Promise(res => setTimeout(res, backoff))
+        }
+      }
+
+      // Only mark initial data ready if we actually have clients
+      if (!hasInitialData && Array.isArray(clients) && clients.length > 0) {
+        setHasInitialData(true)
+        console.log('[DataContext] ✅ Initial data loaded, WebSocket will connect now')
       }
     }
     
