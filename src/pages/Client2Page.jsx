@@ -3936,6 +3936,13 @@ const Client2Page = () => {
                                                     placeholder="Search values..."
                                                     value={searchQuery}
                                                     onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        applyCheckboxFilter(columnKey)
+                                                        setShowFilterDropdown(null)
+                                                      }
+                                                    }}
                                                     className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                   />
                                                 </div>
