@@ -3337,8 +3337,8 @@ const Client2Page = () => {
           {/* Table - Keep rows visible during sorting; no shimmer on sort */}
           {(!initialLoad && clients.length > 0) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
-              {/* Table Container with Vertical Scroll */}
-              <div className="overflow-y-auto flex-1" style={{ 
+              {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
+              <div className="overflow-auto relative table-scroll-container hide-scrollbar flex-1" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
                 height: tableHeight,
@@ -3470,11 +3470,7 @@ const Client2Page = () => {
                   }
                 `}</style>
                 
-                {/* Horizontal Scroll for Table - Always Visible */}
-                <div className="overflow-x-auto relative table-scroll-container hide-scrollbar" ref={hScrollRef} style={{
-                  scrollbarWidth: 'none',
-                  scrollbarColor: '#6b7280 #e5e7eb'
-                }}>
+                {/* Table */}
                   <table ref={tableRef} className="divide-y divide-gray-200" style={{ 
                     tableLayout: 'fixed', 
                     width: `${totalTableWidth}px`,
@@ -4196,7 +4192,6 @@ const Client2Page = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
               </div>
               
               {/* Sticky Horizontal Scrollbar at Bottom - Always Visible */}
