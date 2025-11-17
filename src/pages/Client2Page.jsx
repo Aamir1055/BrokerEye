@@ -894,15 +894,25 @@ const Client2Page = () => {
               return // Don't combine checkbox with text/number for same field
             }
             
-            // Get all available values for this column to check if we should invert the filter
+            // Get all available values for this column to check if we should optimize the filter
             const allValues = columnValues[uiKey] || []
             const selectedValues = cfg.values
             const unselectedValues = allValues.filter(v => !selectedValues.includes(v))
             
-            // OPTIMIZATION: If more than half are selected (or few unselected), use NOT EQUAL for unselected values
-            // This prevents creating 1000+ OR queries when user unchecks just a few items
-            if (unselectedValues.length > 0 && unselectedValues.length < selectedValues.length && unselectedValues.length <= 10) {
-              // Use NOT EQUAL filters for unselected values (more efficient)
+            // OPTIMIZATION 1: If ALL values are selected, skip the filter entirely (no need to filter)
+            if (allValues.length > 0 && selectedValues.length === allValues.length) {
+              console.log(`[Client2] Skipping filter for ${field}: all ${allValues.length} values selected`)
+              return // No filter needed when everything is selected
+            }
+            
+            // OPTIMIZATION 2: Use NOT EQUAL for unselected values if it's more efficient
+            // This prevents creating 1000+ OR queries when user selects most/all items
+            // Use NOT EQUAL if: fewer unselected values AND (unselected < 50 OR unselected < 10% of selected)
+            const shouldUseNotEqual = unselectedValues.length > 0 && 
+                                      unselectedValues.length < selectedValues.length &&
+                                      (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
+            
+            if (shouldUseNotEqual) {
               console.log(`[Client2] Using NOT EQUAL filter for ${field}: ${unselectedValues.length} excluded values instead of ${selectedValues.length} OR values`)
               unselectedValues.forEach(value => {
                 combinedFilters.push({ field, operator: 'not_equal', value })
@@ -3593,7 +3603,7 @@ const Client2Page = () => {
                                           if (e.key === 'Enter') {
                                             e.preventDefault()
                                             if (isNumeric) {
-                                              applyNumericFilter(columnKey)
+                                              applyNumberFilter(columnKey)
                                             } else {
                                               applyCheckboxFilter(columnKey)
                                             }
