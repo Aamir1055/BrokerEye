@@ -1580,9 +1580,18 @@ const Client2Page = () => {
   }
   
   const applySortToColumn = (columnKey, direction) => {
+    // Update the columnSortOrder state for UI indication
     setColumnSortOrder({
       [columnKey]: direction // Only one column can be sorted at a time
     })
+    
+    // Update sortBy and sortOrder to trigger API call
+    setSortBy(columnKey)
+    setSortOrder(direction)
+    
+    // Reset to first page when sorting changes
+    setCurrentPage(1)
+    
     setShowFilterDropdown(null)
   }
   
@@ -1591,6 +1600,13 @@ const Client2Page = () => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
+    
+    // Clear the API sort states if this was the active sort column
+    if (sortBy === columnKey) {
+      setSortBy('')
+      setSortOrder('asc')
+      setCurrentPage(1)
+    }
   }
   
   const getColumnType = (columnKey) => {
