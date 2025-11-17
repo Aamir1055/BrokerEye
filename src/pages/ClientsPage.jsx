@@ -516,16 +516,7 @@ const ClientsPage = () => {
         console.log('Fetching IB Commission Totals...')
         const response = await brokerAPI.getIBCommissionTotals()
         let data = response?.data || null
-        // If majority of clients use USC (or explicit currency flag provided) scale raw commission amounts
-        if (data) {
-          const majorityUSC = Array.isArray(clients) && clients.length > 0 && (clients.filter(c => (c?.currency || '').toLowerCase() === 'usc').length / clients.length) >= 0.5
-          const isUSCFlag = (data.currency || '').toLowerCase() === 'usc'
-          if (majorityUSC || isUSCFlag) {
-            // Only divide monetary amounts, not percentage fields
-            if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
-            if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
-          }
-        }
+        // Backend handles USC normalization; use values as-is
         console.log('Commission Totals (normalized if USC):', data)
         setCommissionTotals(data)
       } catch (err) {
@@ -551,14 +542,7 @@ const ClientsPage = () => {
         try {
           const response = await brokerAPI.getIBCommissionTotals()
           let data = response?.data || null
-          if (data) {
-            const majorityUSC = Array.isArray(clients) && clients.length > 0 && (clients.filter(c => (c?.currency || '').toLowerCase() === 'usc').length / clients.length) >= 0.5
-            const isUSCFlag = (data.currency || '').toLowerCase() === 'usc'
-            if (majorityUSC || isUSCFlag) {
-              if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
-              if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
-            }
-          }
+          // Backend handles USC normalization; use values as-is
           setCommissionTotals(data)
         } catch (err) {
           console.error('Failed to fetch commission totals:', err)
@@ -1591,10 +1575,7 @@ const ClientsPage = () => {
     if (value === null || value === undefined || value === '') return '-'
     let num = Number(value)
     if (isNaN(num)) return '-'
-    // If client's currency is USC, divide percentage by 100 for display (requested behavior)
-    if (client && (client.currency || '').toLowerCase() === 'usc') {
-      num = num / 100
-    }
+    // Backend handles USC scaling; show percentage as-is
     return num.toFixed(2)
   }
 
@@ -1820,12 +1801,7 @@ const ClientsPage = () => {
     return configs[cardId]
   }
 
-  // Helper: scale percentage fields for USC clients in face-card aggregations
-  const getScaledPercent = (client, percentKey) => {
-    const raw = (client?.[percentKey] || 0)
-    const isUSC = (client?.currency || '').toLowerCase() === 'usc'
-    return isUSC ? raw / 100 : raw
-  }
+  // Removed USC scaling helper; backend normalizes percentages/amounts now
 
   // Per-column dynamic sums based on currently displayed (filtered & paginated) clients
   // (Removed columnTotals debug aggregation; not required now that totals footer is gone)

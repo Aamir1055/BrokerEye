@@ -75,11 +75,7 @@ const IBCommissionsPage = () => {
       const response = await brokerAPI.getIBCommissionTotals()
       if (response.status === 'success' && response.data) {
         const data = { ...response.data }
-        const isUSC = (data.currency || '').toLowerCase() === 'usc'
-        if (isUSC) {
-          if (typeof data.total_commission === 'number') data.total_commission = data.total_commission / 100
-          if (typeof data.total_available_commission === 'number') data.total_available_commission = data.total_available_commission / 100
-        }
+        // Backend handles USC normalization; use values as-is
         setTotalCommission(data.total_commission || 0)
         setTotalAvailableCommission(data.total_available_commission || 0)
         setTotalCommissionPercentage(data.total_commission_percentage || 0)
