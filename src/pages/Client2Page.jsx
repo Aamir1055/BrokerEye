@@ -3484,7 +3484,7 @@ const Client2Page = () => {
                         <col key={`col-${col.key}`} style={{ width: `${getDefaultColumnWidth(col)}px` }} />
                       ))}
                     </colgroup>
-                    <thead className="bg-blue-600 sticky top-0 z-10">
+                    <thead className="bg-blue-600 sticky top-0 z-50">
                       <tr>
                         {visibleColumnsList.map(col => {
                           const filterCount = getActiveFilterCount(col.key)
@@ -4191,30 +4191,6 @@ const Client2Page = () => {
                         ))
                       )}
                     </tbody>
-                    {/* Totals Footer */}
-                    {totals && Object.keys(totals).length > 0 && (
-                      <tfoot className="bg-gray-100 font-semibold sticky bottom-0">
-                        <tr>
-                          {visibleColumnsList.map(col => {
-                            const totalValue = col.key === 'login' ? 'Total:' : formatValue(col.key, totals[col.key])
-                            return (
-                              <td 
-                                key={col.key} 
-                                className="px-4 py-3 text-sm text-gray-900"
-                                style={{
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                                title={totalValue}
-                              >
-                                {totalValue}
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      </tfoot>
-                    )}
                   </table>
                 </div>
               </div>
