@@ -4103,9 +4103,8 @@ const Client2Page = () => {
                         // Guard: filter out null/undefined clients
                         (sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                           <tr 
-                            key={`${client.login}-${animationKey}-${idx}`} 
-                            onClick={() => handleViewClientDetails(client)}
-                            className="hover:bg-blue-50 cursor-pointer transition-colors"
+                            key={`${client.login}-${animationKey}-${idx}`}
+                            className="hover:bg-blue-50 transition-colors"
                             style={{
                               opacity: 0,
                               animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
