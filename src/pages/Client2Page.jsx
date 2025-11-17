@@ -4554,10 +4554,77 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
+                                              {/* Checkbox Value List - Also for numeric columns */}
+                                              <div className="flex-1 overflow-hidden flex flex-col">
+                                                {/* Search Bar */}
+                                                <div className="px-3 py-2 border-b border-gray-200">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="Search values..."
+                                                    value={columnValueSearch[columnKey] || ''}
+                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                  />
+                                                </div>
+
+                                                {/* Select All Checkbox */}
+                                                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                  <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={(selectedColumnValues[columnKey] || []).length === (columnValues[columnKey] || []).length && (columnValues[columnKey] || []).length > 0}
+                                                      onChange={() => toggleSelectAllColumnValues(columnKey)}
+                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL ({(columnValues[columnKey] || []).length} values)</span>
+                                                  </label>
+                                                </div>
+
+                                                {/* Values List - All values loaded, no pagination */}
+                                                <div className="flex-1 overflow-y-auto px-3 py-2">
+                                                  {columnValuesLoading[columnKey] ? (
+                                                    <div className="py-8 text-center">
+                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                      <p className="text-xs text-gray-500 mt-2">Loading all values...</p>
+                                                    </div>
+                                                  ) : (() => {
+                                                    const allVals = columnValues[columnKey] || []
+                                                    const searchQ = columnValueSearch[columnKey] || ''
+                                                    const selected = selectedColumnValues[columnKey] || []
+                                                    const filteredVals = searchQ
+                                                      ? allVals.filter(v => String(v).toLowerCase().includes(searchQ.toLowerCase()))
+                                                      : allVals
+                                                    
+                                                    return filteredVals.length > 0 ? (
+                                                      <div className="space-y-1">
+                                                        {filteredVals.map((value) => (
+                                                          <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                            <input
+                                                              type="checkbox"
+                                                              checked={selected.includes(value)}
+                                                              onChange={() => toggleColumnValue(columnKey, value)}
+                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                            />
+                                                            <span className="text-xs text-gray-700">{value}</span>
+                                                          </label>
+                                                        ))}
+                                                      </div>
+                                                    ) : (
+                                                      <div className="py-8 text-xs text-gray-500 text-center">
+                                                        {searchQ ? 'No matching values found' : 'No values available'}
+                                                      </div>
+                                                    )
+                                                  })()}
+                                                </div>
+                                              </div>
+
                                               {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
-                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  onClick={() => {
+                                                    applyCheckboxFilter(columnKey)
+                                                    setShowFilterDropdown(null)
+                                                  }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
