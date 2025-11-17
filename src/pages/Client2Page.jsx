@@ -89,6 +89,39 @@ const Client2Page = () => {
     hasCredit: false,
     noDeposit: false
   })
+  const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
+  
+  // Define default face card order for Client2 (matching all available cards in the actual rendering)
+  const defaultClient2FaceCardOrder = [
+    'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
+    'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyPnL',
+    'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal',
+    'equity', 'floating', 'liabilities',
+    'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL',
+    'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeWithdrawal',
+    'margin', 'marginFree', 'marginInitial', 'marginLevel', 'marginMaintenance',
+    'soEquity', 'soLevel', 'soMargin', 'pnl', 'previousEquity', 'profit', 'storage',
+    'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthDeposit', 'thisMonthPnL',
+    'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
+    'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
+    'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal'
+  ]
+  
+  const getInitialClient2FaceCardOrder = () => {
+    try {
+      const saved = localStorage.getItem('client2FaceCardOrder')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Validate that it's an array
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch (e) {
+      console.warn('Failed to parse client2FaceCardOrder from localStorage:', e)
+    }
+    return defaultClient2FaceCardOrder
+  }
+  
+  const [faceCardOrder, setFaceCardOrder] = useState(getInitialClient2FaceCardOrder)
   
   // Column ordering state
   const getInitialColumnOrder = () => {
@@ -285,10 +318,11 @@ const Client2Page = () => {
   // Global percentage view disabled; use per-field % cards instead
   const showPercentage = false
 
-  // If any % face card is enabled, send percentage=true in the request
+  // If % mode toggle is ON or any % face card is enabled, send percentage=true in the request
   const percentModeActive = useMemo(() => {
-    return Object.entries(cardVisibility || {}).some(([key, value]) => key.endsWith('Percent') && value !== false)
-  }, [cardVisibility])
+    const anyPercentCard = Object.entries(cardVisibility || {}).some(([key, value]) => key.endsWith('Percent') && value !== false)
+    return cardFilterPercentMode || anyPercentCard
+  }, [cardFilterPercentMode, cardVisibility])
   
   // Filter modal state
   const [newFilterField, setNewFilterField] = useState('balance')
@@ -873,7 +907,10 @@ const Client2Page = () => {
         normalResponses.forEach((resp) => {
           const data = resp?.data || resp
           const list = data?.clients || []
-          list.forEach(c => { if (!clientMap.has(c.login)) clientMap.set(c.login, c) })
+          // SAFETY: Filter out null/undefined clients before adding to map
+          list.filter(c => c != null && c.login != null).forEach(c => { 
+            if (!clientMap.has(c.login)) clientMap.set(c.login, c) 
+          })
           const t = data?.totals || {}
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
@@ -886,7 +923,12 @@ const Client2Page = () => {
         const total = unionClients.length
         const start = (currentPage - 1) * (itemsPerPage || 50)
         const end = start + (itemsPerPage || 50)
-        setClients(unionClients.slice(start, end))
+        // SAFETY: Final filter before setting state
+        const safeClients = unionClients.slice(start, end).filter(c => c != null && c.login != null)
+        if (safeClients.length < unionClients.slice(start, end).length) {
+          console.warn('[Client2Page] Filtered out invalid clients from API response')
+        }
+        setClients(safeClients)
         setTotalClients(total)
         setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 50))))
         setTotals(mergedTotals)
@@ -910,7 +952,13 @@ const Client2Page = () => {
         // Use first response's clients for table (percent mode only shows percent dataset)
         const first = percentResponses[0]
         const data = first?.data || first
-        setClients(data?.clients || [])
+        // SAFETY: Filter out null/undefined clients before setting state
+        const rawClients = data?.clients || []
+        const safeClients = rawClients.filter(c => c != null && c.login != null)
+        if (safeClients.length < rawClients.length) {
+          console.warn('[Client2Page] Filtered out invalid clients from percent-only API response')
+        }
+        setClients(safeClients)
         setTotalClients(data?.total || data?.clients?.length || 0)
         setTotalPages(data?.pages || 1)
         // Merge percent totals across variants
@@ -933,7 +981,10 @@ const Client2Page = () => {
         normalResponses.forEach((resp) => {
           const data = resp?.data || resp
           const list = data?.clients || []
-          list.forEach(c => { if (!clientMap.has(c.login)) clientMap.set(c.login, c) })
+          // SAFETY: Filter out null/undefined clients before adding to map
+          list.filter(c => c != null && c.login != null).forEach(c => { 
+            if (!clientMap.has(c.login)) clientMap.set(c.login, c) 
+          })
           const t = data?.totals || {}
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
@@ -943,7 +994,12 @@ const Client2Page = () => {
         const total = unionClients.length
         const start = (currentPage - 1) * (itemsPerPage || 100)
         const end = start + (itemsPerPage || 100)
-        setClients(unionClients.slice(start, end))
+        // SAFETY: Final filter before setting state
+        const safeClients = unionClients.slice(start, end).filter(c => c != null && c.login != null)
+        if (safeClients.length < unionClients.slice(start, end).length) {
+          console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
+        }
+        setClients(safeClients)
         setTotalClients(total)
         setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 100))))
         setTotals(mergedTotals)
@@ -970,13 +1026,16 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
   
-  // Client-side filtering and sorting
+  // Client-side filtering only (sorting is done by API)
   const sortedClients = useMemo(() => {
-    let filtered = [...clients]
+    // Guard: ensure clients is an array and filter out null/undefined entries
+    if (!Array.isArray(clients)) return []
+    let filtered = clients.filter(c => c != null)
     
     // Apply quick filters first
     if (quickFilters.hasFloating) {
       filtered = filtered.filter(client => {
+        if (!client) return false
         const floatingValue = parseFloat(client.floating) || 0
         return floatingValue > 0
       })
@@ -984,6 +1043,7 @@ const Client2Page = () => {
     
     if (quickFilters.hasCredit) {
       filtered = filtered.filter(client => {
+        if (!client) return false
         const creditValue = parseFloat(client.credit) || 0
         return creditValue > 0
       })
@@ -991,6 +1051,7 @@ const Client2Page = () => {
     
     if (quickFilters.noDeposit) {
       filtered = filtered.filter(client => {
+        if (!client) return false
         const depositValue = parseFloat(client.lifetimeDeposit) || 0
         return depositValue === 0
       })
@@ -1003,65 +1064,11 @@ const Client2Page = () => {
       filtered = filterByActiveIB(filtered, 'login')
     }
     
-    // Apply column-specific sorting (from filter menu)
-    const sortColumnKey = Object.keys(columnSortOrder)[0]
-    if (sortColumnKey && columnSortOrder[sortColumnKey]) {
-      const direction = columnSortOrder[sortColumnKey]
-      filtered = [...filtered].sort((a, b) => {
-        const aVal = a[sortColumnKey]
-        const bVal = b[sortColumnKey]
-        
-        // Handle null/undefined values
-        if (aVal == null && bVal == null) return 0
-        if (aVal == null) return 1
-        if (bVal == null) return -1
-        
-        // Handle numbers
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return direction === 'asc' ? aVal - bVal : bVal - aVal
-        }
-        
-        // Handle strings (case-insensitive)
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        
-        if (direction === 'asc') {
-          return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
-        } else {
-          return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
-        }
-      })
-    }
-    // Apply default sorting
-    else if (sortBy && filtered.length > 0) {
-      filtered = [...filtered].sort((a, b) => {
-        const aVal = a[sortBy]
-        const bVal = b[sortBy]
-        
-        // Handle null/undefined values
-        if (aVal == null && bVal == null) return 0
-        if (aVal == null) return 1
-        if (bVal == null) return -1
-        
-        // Handle numbers
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return sortOrder === 'asc' ? aVal - bVal : bVal - aVal
-        }
-        
-        // Handle strings (case-insensitive)
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        
-        if (sortOrder === 'asc') {
-          return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
-        } else {
-          return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
-        }
-      })
-    }
+    // Sorting is handled by the API via sortBy and sortOrder state
+    // No client-side sorting needed as data comes pre-sorted from backend
     
     return filtered
-  }, [clients, sortBy, sortOrder, columnFilters, columnSortOrder, quickFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
+  }, [clients, quickFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
   
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
@@ -1199,7 +1206,8 @@ const Client2Page = () => {
       const headerWidth = measureText(headerText) + 60 // +60 for padding, icons, etc
       
       let maxCellWidth = headerWidth
-      const columnData = clients.map(row => row[baseKey || columnKey])
+      // Guard: filter out null/undefined clients
+      const columnData = (clients || []).filter(row => row != null).map(row => row[baseKey || columnKey])
       
       columnData.forEach(val => {
         const cellWidth = measureText(val) + 40 // +40 for padding
@@ -1283,7 +1291,7 @@ const Client2Page = () => {
       if (!Array.isArray(clients)) return []
       
       clients.forEach(client => {
-        if (!client) return
+        if (!client) return // Guard: skip null/undefined clients
         const value = client[columnKey]
         if (value !== null && value !== undefined && value !== '') {
           values.add(value)
@@ -1676,7 +1684,7 @@ const Client2Page = () => {
   
   // Export to CSV
   const handleExportToCSV = () => {
-    if (clients.length === 0) {
+    if (!clients || clients.length === 0) {
       alert('No data to export')
       return
     }
@@ -1684,8 +1692,8 @@ const Client2Page = () => {
     // Get headers
     const headers = visibleColumnsList.map(col => col.label).join(',')
     
-    // Get rows
-    const rows = clients.map(client => {
+    // Get rows - filter out null/undefined clients
+    const rows = (clients || []).filter(client => client != null).map(client => {
       return visibleColumnsList.map(col => {
         let value = client[col.key]
         
@@ -1730,17 +1738,392 @@ const Client2Page = () => {
     }
   }
   
-  // Export to Excel handler
-  const handleExportToExcel = (type) => {
-    setShowExportMenu(false)
+  // Face card drag and drop handlers
+  const handleCardDragStart = (e, cardKey) => {
+    setDraggedCard(cardKey)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  
+  const handleCardDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+  
+  const handleCardDrop = (e, targetCardKey) => {
+    e.preventDefault()
     
-    if (type === 'table') {
-      // Export current table view
-      downloadCSV(clients, `clients_table_${new Date().toISOString().split('T')[0]}.csv`)
-    } else if (type === 'all') {
-      // Export all data
-      downloadCSV(clients, `clients_all_${new Date().toISOString().split('T')[0]}.csv`)
+    if (draggedCard && draggedCard !== targetCardKey) {
+      const newOrder = [...faceCardOrder]
+      const draggedIndex = newOrder.indexOf(draggedCard)
+      const targetIndex = newOrder.indexOf(targetCardKey)
+      
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        // Swap the positions - matching ClientsPage approach
+        newOrder[draggedIndex] = targetCardKey
+        newOrder[targetIndex] = draggedCard
+        
+        setFaceCardOrder(newOrder)
+        localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
+      }
     }
+  }
+  
+  const handleCardDragEnd = () => {
+    setDraggedCard(null)
+  }
+
+  const resetClient2FaceCardOrder = () => {
+    setFaceCardOrder(defaultClient2FaceCardOrder)
+    localStorage.setItem('client2FaceCardOrder', JSON.stringify(defaultClient2FaceCardOrder))
+  }
+  
+  // Get comprehensive card configuration for dynamic rendering - matches all 57 cards
+  const getClient2CardConfig = useCallback((cardKey, totals) => {
+    const configs = {
+      // A
+      assets: { label: 'Assets', color: 'blue', getValue: () => totals?.assets || 0 },
+      
+      // B
+      balance: { label: 'Balance', color: 'indigo', getValue: () => totals?.balance || 0 },
+      blockedCommission: { label: 'Blocked Commission', color: 'gray', getValue: () => totals?.blockedCommission || 0 },
+      blockedProfit: { label: 'Blocked Profit', color: 'orange', getValue: () => totals?.blockedProfit || 0, colorCheck: true },
+      
+      // C
+      commission: { label: 'Commission', color: 'amber', getValue: () => totals?.commission || 0 },
+      credit: { label: 'Credit', color: 'emerald', getValue: () => totals?.credit || 0 },
+      
+      // D - Daily
+      dailyBonusIn: { label: 'Daily Bonus In', color: 'teal', getValue: () => totals?.dailyBonusIn || 0 },
+      dailyBonusOut: { label: 'Daily Bonus Out', color: 'red', getValue: () => totals?.dailyBonusOut || 0 },
+      dailyCreditIn: { label: 'Daily Credit In', color: 'emerald', getValue: () => totals?.dailyCreditIn || 0 },
+      dailyCreditOut: { label: 'Daily Credit Out', color: 'red', getValue: () => totals?.dailyCreditOut || 0 },
+      dailyDeposit: { label: 'Daily Deposit', color: 'green', getValue: () => totals?.dailyDeposit || 0 },
+      dailyPnL: { label: 'Daily P&L', color: 'cyan', getValue: () => totals?.dailyPnL || 0, colorCheck: true },
+      dailySOCompensationIn: { label: 'Daily SO Compensation In', color: 'purple', getValue: () => totals?.dailySOCompensationIn || 0 },
+      dailySOCompensationOut: { label: 'Daily SO Compensation Out', color: 'orange', getValue: () => totals?.dailySOCompensationOut || 0 },
+      dailyWithdrawal: { label: 'Daily Withdrawal', color: 'red', getValue: () => totals?.dailyWithdrawal || 0 },
+      
+      // E
+      equity: { label: 'Equity', color: 'purple', getValue: () => totals?.equity || 0 },
+      
+      // F
+      floating: { label: 'Floating P/L', color: 'cyan', getValue: () => totals?.floating || 0, colorCheck: true },
+      
+      // L
+      liabilities: { label: 'Liabilities', color: 'red', getValue: () => totals?.liabilities || 0 },
+      
+      // L - Lifetime
+      lifetimeBonusIn: { label: 'Lifetime Bonus In', color: 'teal', getValue: () => totals?.lifetimeBonusIn || 0 },
+      lifetimeBonusOut: { label: 'Lifetime Bonus Out', color: 'red', getValue: () => totals?.lifetimeBonusOut || 0 },
+      lifetimeCreditIn: { label: 'Lifetime Credit In', color: 'emerald', getValue: () => totals?.lifetimeCreditIn || 0 },
+      lifetimeCreditOut: { label: 'Lifetime Credit Out', color: 'red', getValue: () => totals?.lifetimeCreditOut || 0 },
+      lifetimeDeposit: { label: 'Lifetime Deposit', color: 'green', getValue: () => totals?.lifetimeDeposit || 0 },
+      lifetimePnL: { label: 'Lifetime P&L', color: 'indigo', getValue: () => totals?.lifetimePnL || 0, colorCheck: true },
+      lifetimeSOCompensationIn: { label: 'Lifetime SO Compensation In', color: 'purple', getValue: () => totals?.lifetimeSOCompensationIn || 0 },
+      lifetimeSOCompensationOut: { label: 'Lifetime SO Compensation Out', color: 'orange', getValue: () => totals?.lifetimeSOCompensationOut || 0 },
+      lifetimeWithdrawal: { label: 'Lifetime Withdrawal', color: 'red', getValue: () => totals?.lifetimeWithdrawal || 0 },
+      
+      // M
+      margin: { label: 'Margin', color: 'yellow', getValue: () => totals?.margin || 0 },
+      marginFree: { label: 'Margin Free', color: 'lime', getValue: () => totals?.marginFree || 0 },
+      marginInitial: { label: 'Margin Initial', color: 'sky', getValue: () => totals?.marginInitial || 0 },
+      marginLevel: { label: 'Margin Level', color: 'pink', getValue: () => totals?.marginLevel || 0 },
+      marginMaintenance: { label: 'Margin Maintenance', color: 'violet', getValue: () => totals?.marginMaintenance || 0 },
+      
+      // P
+      pnl: { label: 'P&L', color: 'cyan', getValue: () => totals?.pnl || 0, colorCheck: true },
+      previousEquity: { label: 'Previous Equity', color: 'slate', getValue: () => totals?.previousEquity || 0 },
+      profit: { label: 'Profit', color: 'green', getValue: () => totals?.profit || 0, colorCheck: true },
+      
+      // S
+      soEquity: { label: 'SO Equity', color: 'fuchsia', getValue: () => totals?.soEquity || 0 },
+      soLevel: { label: 'SO Level', color: 'rose', getValue: () => totals?.soLevel || 0 },
+      soMargin: { label: 'SO Margin', color: 'amber', getValue: () => totals?.soMargin || 0 },
+      storage: { label: 'Storage', color: 'gray', getValue: () => totals?.storage || 0 },
+      
+      // T - This Month
+      thisMonthBonusIn: { label: 'This Month Bonus In', color: 'teal', getValue: () => totals?.thisMonthBonusIn || 0 },
+      thisMonthBonusOut: { label: 'This Month Bonus Out', color: 'red', getValue: () => totals?.thisMonthBonusOut || 0 },
+      thisMonthCreditIn: { label: 'This Month Credit In', color: 'emerald', getValue: () => totals?.thisMonthCreditIn || 0 },
+      thisMonthCreditOut: { label: 'This Month Credit Out', color: 'red', getValue: () => totals?.thisMonthCreditOut || 0 },
+      thisMonthDeposit: { label: 'This Month Deposit', color: 'green', getValue: () => totals?.thisMonthDeposit || 0 },
+      thisMonthPnL: { label: 'This Month P&L', color: 'blue', getValue: () => totals?.thisMonthPnL || 0, colorCheck: true },
+      thisMonthSOCompensationIn: { label: 'This Month SO Compensation In', color: 'purple', getValue: () => totals?.thisMonthSOCompensationIn || 0 },
+      thisMonthSOCompensationOut: { label: 'This Month SO Compensation Out', color: 'orange', getValue: () => totals?.thisMonthSOCompensationOut || 0 },
+      thisMonthWithdrawal: { label: 'This Month Withdrawal', color: 'red', getValue: () => totals?.thisMonthWithdrawal || 0 },
+      
+      // T - This Week
+      thisWeekBonusIn: { label: 'This Week Bonus In', color: 'teal', getValue: () => totals?.thisWeekBonusIn || 0 },
+      thisWeekBonusOut: { label: 'This Week Bonus Out', color: 'red', getValue: () => totals?.thisWeekBonusOut || 0 },
+      thisWeekCreditIn: { label: 'This Week Credit In', color: 'emerald', getValue: () => totals?.thisWeekCreditIn || 0 },
+      thisWeekCreditOut: { label: 'This Week Credit Out', color: 'red', getValue: () => totals?.thisWeekCreditOut || 0 },
+      thisWeekDeposit: { label: 'This Week Deposit', color: 'green', getValue: () => totals?.thisWeekDeposit || 0 },
+      thisWeekPnL: { label: 'This Week P&L', color: 'indigo', getValue: () => totals?.thisWeekPnL || 0, colorCheck: true },
+      thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
+      thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
+      thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 }
+    }
+    
+    return configs[cardKey] || null
+  }, [])
+  
+  // Build export payload variants (reuses filter logic from fetchClients)
+  const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
+    // Base payload mirrors current filters/search/sort
+    const base = {
+      page: 1,
+      limit: 10000
+    }
+    if (searchQuery && searchQuery.trim()) base.search = searchQuery.trim()
+
+    // Collect filters like in fetchClients
+    const combinedFilters = []
+    let multiOrField = null
+    let multiOrValues = []
+    let multiOrConflict = false
+    const textFilteredFields = new Set()
+    const numberFilteredFields = new Set()
+    if (filters && filters.length > 0) {
+      combinedFilters.push(...filters)
+    }
+
+    // Map UI column keys to API field names
+    const columnKeyToAPIField = (colKey) => {
+      const fieldMap = {
+        lifetimePnL: 'lifetimePnL',
+        thisMonthPnL: 'thisMonthPnL',
+        thisWeekPnL: 'thisWeekPnL',
+        dailyPnL: 'dailyPnL',
+        marginLevel: 'marginLevel',
+        marginFree: 'marginFree',
+        lastAccess: 'lastAccess',
+        zipCode: 'zipCode',
+        middleName: 'middleName',
+        lastName: 'lastName'
+      }
+      return fieldMap[colKey] || colKey
+    }
+
+    // Column header filters
+    if (columnFilters && Object.keys(columnFilters).length > 0) {
+      Object.entries(columnFilters).forEach(([key, cfg]) => {
+        if (key.endsWith('_text') && cfg) {
+          const uiKey = key.replace('_text', '')
+          const field = columnKeyToAPIField(uiKey)
+          const opMap = { equal: 'equal', notEqual: 'not_equal', contains: 'contains', doesNotContain: 'not_contains', startsWith: 'starts_with', endsWith: 'ends_with' }
+          const op = opMap[cfg.operator] || cfg.operator
+          const val = cfg.value
+          if (val != null && String(val).length > 0) {
+            combinedFilters.push({ field, operator: op, value: String(val).trim() })
+            textFilteredFields.add(uiKey)
+          }
+          return
+        }
+        if (key.endsWith('_number') && cfg) {
+          const uiKey = key.replace('_number', '')
+          const field = columnKeyToAPIField(uiKey)
+          const op = cfg.operator
+          const v1 = cfg.value1
+          const v2 = cfg.value2
+          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+          if (op === 'between') {
+            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+          } else if (op && num1 != null && Number.isFinite(num1)) {
+            combinedFilters.push({ field, operator: op, value: String(num1) })
+          }
+          numberFilteredFields.add(uiKey)
+          return
+        }
+      })
+      Object.entries(columnFilters).forEach(([key, cfg]) => {
+        if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
+          const uiKey = key.replace('_checkbox', '')
+          const field = columnKeyToAPIField(uiKey)
+          if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
+          if (cfg.values.length === 1) {
+            combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
+          } else {
+            if (multiOrField && multiOrField !== field) multiOrConflict = true
+            else { multiOrField = field; multiOrValues = cfg.values }
+          }
+        }
+      })
+    }
+    if (combinedFilters.length > 0) base.filters = combinedFilters
+    if (mt5Accounts && mt5Accounts.length > 0) base.mt5Accounts = mt5Accounts
+    if (accountRangeMin && accountRangeMin.trim()) base.accountRangeMin = parseInt(accountRangeMin.trim())
+    if (accountRangeMax && accountRangeMax.trim()) base.accountRangeMax = parseInt(accountRangeMax.trim())
+    if (activeGroup) {
+      if (activeGroup.range) {
+        base.accountRangeMin = activeGroup.range.from
+        base.accountRangeMax = activeGroup.range.to
+      } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+        base.mt5Accounts = activeGroup.loginIds.map(id => Number(id))
+      }
+    }
+    if (sortBy) { base.sortBy = sortBy; base.sortOrder = sortOrder }
+
+    // Build payload variants when needed (OR semantics)
+    const buildVariants = (b) => {
+      if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+        return multiOrValues.map(val => {
+          const f = Array.isArray(b.filters) ? [...b.filters] : []
+          f.push({ field: multiOrField, operator: 'equal', value: val })
+          const p = { ...b, filters: f }
+          if (percentageFlag) p.percentage = true
+          return p
+        })
+      }
+      const p = { ...b }
+      if (percentageFlag) p.percentage = true
+      return [p]
+    }
+    return buildVariants(base)
+  }, [searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, activeGroup, sortBy, sortOrder])
+
+  // Fetch all pages for a single payload
+  const fetchAllPagesForPayload = useCallback(async (payload) => {
+    // First page
+    const first = await brokerAPI.searchClients({ ...payload, page: 1 })
+    const dataFirst = first?.data || first
+    const pages = Number(dataFirst?.pages || 1)
+    let list = dataFirst?.clients || []
+    if (pages > 1) {
+      const rest = await Promise.all(
+        Array.from({ length: pages - 1 }, (_, i) => brokerAPI.searchClients({ ...payload, page: i + 2 }))
+      )
+      rest.forEach(resp => {
+        const d = resp?.data || resp
+        list = list.concat(d?.clients || [])
+      })
+    }
+    return list
+  }, [])
+
+  // Gather full dataset for export matching current filters
+  const gatherExportDataset = useCallback(async () => {
+    try {
+      console.log('[Client2Page] Building export payload variants...')
+      const variants = buildExportPayloadVariants(false)
+      console.log('[Client2Page] Payload variants:', variants.length, variants)
+      
+      // Fetch and merge unique by login
+      const clientMap = new Map()
+      for (let i = 0; i < variants.length; i++) {
+        const p = variants[i]
+        console.log(`[Client2Page] Fetching pages for variant ${i + 1}/${variants.length}...`)
+        const rows = await fetchAllPagesForPayload(p)
+        console.log(`[Client2Page] Got ${rows?.length || 0} rows for variant ${i + 1}`)
+        // Guard: filter out null/undefined rows
+        if (Array.isArray(rows)) {
+          rows.filter(c => c != null).forEach(c => { 
+            if (c && c.login) clientMap.set(c.login, c) 
+          })
+        }
+      }
+      let rows = Array.from(clientMap.values())
+      console.log('[Client2Page] Merged unique clients:', rows.length)
+      
+      // Apply IB filter client-side to match table behavior
+      if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+        rows = filterByActiveIB(rows, 'login')
+        console.log('[Client2Page] After IB filter:', rows.length)
+      }
+      
+      // Apply table sort if set
+      if (sortBy) {
+        const dir = sortOrder === 'asc' ? 1 : -1
+        rows.sort((a, b) => {
+          if (!a || !b) return 0 // Guard
+          const av = a[sortBy], bv = b[sortBy]
+          if (av == null && bv == null) return 0
+          if (av == null) return 1
+          if (bv == null) return -1
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+          const as = String(av).toLowerCase(), bs = String(bv).toLowerCase()
+          if (as < bs) return -1 * dir
+          if (as > bs) return 1 * dir
+          return 0
+        })
+        console.log('[Client2Page] Sorted by', sortBy, sortOrder)
+      }
+      
+      console.log('[Client2Page] Final export dataset:', rows.length, 'rows')
+      return rows
+    } catch (err) {
+      console.error('[Client2Page] Export dataset error:', err)
+      alert('Failed to gather export data: ' + (err.message || 'Unknown error'))
+      return []
+    }
+  }, [buildExportPayloadVariants, fetchAllPagesForPayload, selectedIB, ibMT5Accounts, filterByActiveIB, sortBy, sortOrder])
+
+  // Export to Excel handler (CSV for now)
+  const handleExportToExcel = (type) => {
+    (async () => {
+      try {
+        console.log('[Client2Page] Export started, type:', type)
+        setShowExportMenu(false)
+        
+        console.log('[Client2Page] Gathering export dataset...')
+        const allRows = await gatherExportDataset()
+        console.log('[Client2Page] Export dataset gathered:', allRows?.length, 'rows')
+        
+        if (!allRows || allRows.length === 0) {
+          alert('No data to export. Please check your filters and try again.')
+          return
+        }
+        
+        // For "all" export, only include columns that have data in the fetched rows
+        let columns = type === 'all' ? allColumns : visibleColumnsList
+        
+        if (type === 'all' && allRows.length > 0) {
+          // Check which columns actually have data in the first row (sample)
+          const sampleRow = allRows[0]
+          const columnsWithData = columns.filter(col => {
+            // Keep column if it exists in the data (even if value is 0 or false)
+            return sampleRow.hasOwnProperty(col.key)
+          })
+          console.log('[Client2Page] Filtered columns with data:', columnsWithData.length, 'out of', columns.length)
+          columns = columnsWithData
+        }
+        
+        console.log('[Client2Page] Exporting', columns.length, 'columns for', allRows.length, 'rows')
+        
+        const headers = columns.map(col => col.label).join(',')
+        // Guard: filter out null/undefined clients before mapping
+        const rows = (allRows || []).filter(client => client != null).map(client => {
+          return columns.map(col => {
+            let value = client[col.key]
+            if (value === null || value === undefined || value === '') return ''
+            if (typeof value === 'string') {
+              value = value.replace(/"/g, '""')
+              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                value = `"${value}"`
+              }
+            }
+            return value
+          }).join(',')
+        }).join('\n')
+
+        const csvContent = headers + '\n' + rows
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        const suffix = type === 'all' ? 'all' : 'table'
+        link.setAttribute('download', `client2_${suffix}_${new Date().toISOString().split('T')[0]}.csv`)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        console.log('[Client2Page] Export completed successfully')
+      } catch (err) {
+        console.error('[Client2Page] Export error:', err)
+        alert('Export failed: ' + (err.message || 'Please try again.'))
+      }
+    })()
   }
   
   // View client details
@@ -2105,8 +2488,8 @@ const Client2Page = () => {
                               thisWeekWithdrawal: 'This Week Withdrawal'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
-                            const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
-                            const items = cardFilterPercentMode ? percentItems : baseItems
+                            // In % Mode we still filter base cards only; percent variants are no longer selectable
+                            const items = baseItems
                             const filteredItems = items.filter(([_, label]) =>
                               cardFilterSearchQuery === '' || label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
                             )
@@ -2124,8 +2507,7 @@ const Client2Page = () => {
                               assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
-                            const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
-                            const items = cardFilterPercentMode ? percentItems : baseItems
+                            const items = baseItems
                             const filteredItems = items.filter(([_, label]) =>
                               cardFilterSearchQuery === '' || label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
                             )
@@ -2207,8 +2589,8 @@ const Client2Page = () => {
                           }
                           // Build items based on toggle: only non-percent OR only percent
                           const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
-                          const percentItems = Object.entries(baseLabels).map(([key, label]) => [`${key}Percent`, `${label} %`])
-                          return (cardFilterPercentMode ? percentItems : baseItems)
+                          // Always show base items only; % view uses these as the source of which cards are shown
+                          return baseItems
                             .filter(([key, label]) =>
                               cardFilterSearchQuery === '' ||
                               label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
@@ -2325,77 +2707,73 @@ const Client2Page = () => {
             <div className="mb-3">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xs font-semibold text-gray-700">Summary Statistics {cardFilterPercentMode ? '(Percentage Mode)' : ''}</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetClient2FaceCardOrder}
+                    className="px-2 py-1 text-[10px] font-semibold rounded border border-blue-300 text-blue-600 hover:bg-blue-50"
+                    title="Reset face cards to default order"
+                  >
+                    Reset Order
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                {/* Show regular cards when NOT in percentage mode */}
-                {!cardFilterPercentMode && (<>
-                {/* Assets */}
-                {cardVisibility.assets !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-blue-600 mb-1">Assets</div>
-                    <div className="text-sm font-bold text-blue-700">{formatIndianNumber(((totals?.assets) || 0).toFixed(2))}</div>
-                  </div>
+                {/* Show regular cards when NOT in percentage mode - DYNAMIC RENDERING */}
+                {!cardFilterPercentMode && (
+                  <>
+                    {faceCardOrder.map((cardKey) => {
+                      const card = getClient2CardConfig(cardKey, totals)
+                      
+                      // Skip if card config not found or card is hidden
+                      if (!card || cardVisibility[cardKey] === false) return null
+                      
+                      // Get value
+                      const value = card.getValue()
+                      
+                      // Determine text color based on value if colorCheck is true
+                      let textColorClass = `text-${card.color}-700`
+                      if (card.colorCheck) {
+                        textColorClass = value >= 0 ? 'text-green-700' : 'text-red-700'
+                      }
+                      
+                      return (
+                        <div
+                          key={cardKey}
+                          className={`bg-white rounded-lg shadow-sm border-2 border-${card.color}-200 p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
+                          draggable
+                          onDragStart={(e) => handleCardDragStart(e, cardKey)}
+                          onDragOver={handleCardDragOver}
+                          onDrop={(e) => handleCardDrop(e, cardKey)}
+                          onDragEnd={handleCardDragEnd}
+                          style={{ 
+                            opacity: draggedCard === cardKey ? 0.5 : 1
+                          }}
+                        >
+                          <div className={`text-[10px] font-medium text-${card.color}-600 mb-1`}>
+                            {card.label}
+                          </div>
+                          <div className={`text-sm font-bold ${textColorClass}`}>
+                            {formatIndianNumber((value || 0).toFixed(2))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
                 )}
 
-                {/* Balance */}
-                {cardVisibility.balance !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-indigo-600 mb-1">Balance</div>
-                    <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.balance) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Blocked Commission */}
-                {cardVisibility.blockedCommission !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-gray-600 mb-1">Blocked Commission</div>
-                    <div className="text-sm font-bold text-gray-700">{formatIndianNumber(((totals?.blockedCommission) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Blocked Profit */}
-                {cardVisibility.blockedProfit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-orange-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-orange-600 mb-1">Blocked Profit</div>
-                    <div className={`text-sm font-bold ${((totals?.blockedProfit) || 0) >= 0 ? 'text-orange-700' : 'text-red-700'}`}>{formatIndianNumber(((totals?.blockedProfit) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Commission */}
-                {cardVisibility.commission !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-amber-600 mb-1">Commission</div>
-                    <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.commission) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Credit */}
-                {cardVisibility.credit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Credit</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.credit) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Bonus In */}
-                {cardVisibility.dailyBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-emerald-600 mb-1">Daily Bonus In</div>
-                    <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.dailyBonusIn) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
-                {/* Daily Bonus Out */}
-                {cardVisibility.dailyBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
-                    <div className="text-[10px] font-medium text-rose-600 mb-1">Daily Bonus Out</div>
-                    <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.dailyBonusOut) || 0).toFixed(2))}</div>
-                  </div>
-                )}
-
+                {/* Show percentage cards when IN percentage mode */}
                 {/* Daily Credit In */}
                 {cardVisibility.dailyCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailyCreditIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailyCreditIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailyCreditIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-teal-600 mb-1">Daily Credit In</div>
                     <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.dailyCreditIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2403,7 +2781,15 @@ const Client2Page = () => {
 
                 {/* Daily Credit Out */}
                 {cardVisibility.dailyCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailyCreditOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailyCreditOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailyCreditOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-amber-600 mb-1">Daily Credit Out</div>
                     <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.dailyCreditOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2411,7 +2797,15 @@ const Client2Page = () => {
 
                 {/* Daily Deposit */}
                 {cardVisibility.dailyDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailyDeposit')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailyDeposit')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailyDeposit' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-green-600 mb-1">Daily Deposit</div>
                     <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.dailyDeposit) || 0).toFixed(2))}</div>
                   </div>
@@ -2419,7 +2813,15 @@ const Client2Page = () => {
 
                 {/* Daily PnL */}
                 {cardVisibility.dailyPnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.dailyPnL || 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.dailyPnL || 0) >= 0 ? 'border-emerald-200' : 'border-rose-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailyPnL')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailyPnL')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailyPnL' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.dailyPnL || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>Daily PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.dailyPnL || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {(totals.dailyPnL || 0) >= 0 ? '▲' : '▼'}
@@ -2430,7 +2832,15 @@ const Client2Page = () => {
 
                 {/* Daily SO Compensation In */}
                 {cardVisibility.dailySOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailySOCompensationIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailySOCompensationIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailySOCompensationIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-lime-600 mb-1">Daily SO Compensation In</div>
                     <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.dailySOCompensationIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2438,7 +2848,15 @@ const Client2Page = () => {
 
                 {/* Daily SO Compensation Out */}
                 {cardVisibility.dailySOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailySOCompensationOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailySOCompensationOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailySOCompensationOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-yellow-600 mb-1">Daily SO Compensation Out</div>
                     <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.dailySOCompensationOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2446,7 +2864,15 @@ const Client2Page = () => {
 
                 {/* Daily Withdrawal */}
                 {cardVisibility.dailyWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'dailyWithdrawal')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'dailyWithdrawal')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'dailyWithdrawal' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-red-600 mb-1">Daily Withdrawal</div>
                     <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.dailyWithdrawal) || 0).toFixed(2))}</div>
                   </div>
@@ -2454,7 +2880,15 @@ const Client2Page = () => {
 
                 {/* Equity */}
                 {cardVisibility.equity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'equity')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'equity')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'equity' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-sky-600 mb-1">Equity</div>
                     <div className="text-sm font-bold text-sky-700">{formatIndianNumber(((totals?.equity) || 0).toFixed(2))}</div>
                   </div>
@@ -2462,7 +2896,15 @@ const Client2Page = () => {
 
                 {/* Floating */}
                 {cardVisibility.floating !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.floating || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.floating || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'floating')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'floating')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'floating' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.floating || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>Floating</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.floating || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
                       {(totals.floating || 0) >= 0 ? '▲' : '▼'}
@@ -2473,7 +2915,15 @@ const Client2Page = () => {
 
                 {/* Liabilities */}
                 {cardVisibility.liabilities !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'liabilities')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'liabilities')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'liabilities' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-red-600 mb-1">Liabilities</div>
                     <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.liabilities) || 0).toFixed(2))}</div>
                   </div>
@@ -2481,7 +2931,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Bonus In */}
                 {cardVisibility.lifetimeBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeBonusIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeBonusIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeBonusIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-emerald-600 mb-1">Lifetime Bonus In</div>
                     <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.lifetimeBonusIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2489,7 +2947,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Bonus Out */}
                 {cardVisibility.lifetimeBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeBonusOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeBonusOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeBonusOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-rose-600 mb-1">Lifetime Bonus Out</div>
                     <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.lifetimeBonusOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2497,7 +2963,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Credit In */}
                 {cardVisibility.lifetimeCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeCreditIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeCreditIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeCreditIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-teal-600 mb-1">Lifetime Credit In</div>
                     <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.lifetimeCreditIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2505,7 +2979,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Credit Out */}
                 {cardVisibility.lifetimeCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeCreditOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeCreditOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeCreditOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-amber-600 mb-1">Lifetime Credit Out</div>
                     <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.lifetimeCreditOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2513,7 +2995,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Deposit */}
                 {cardVisibility.lifetimeDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeDeposit')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeDeposit')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeDeposit' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-green-600 mb-1">Lifetime Deposit</div>
                     <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.lifetimeDeposit) || 0).toFixed(2))}</div>
                   </div>
@@ -2521,7 +3011,15 @@ const Client2Page = () => {
 
                 {/* Lifetime PnL */}
                 {cardVisibility.lifetimePnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.lifetimePnL || 0) >= 0 ? 'border-violet-200' : 'border-pink-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.lifetimePnL || 0) >= 0 ? 'border-violet-200' : 'border-pink-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimePnL')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimePnL')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimePnL' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.lifetimePnL || 0) >= 0 ? 'text-violet-600' : 'text-pink-600'}`}>Lifetime PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.lifetimePnL || 0) >= 0 ? 'text-violet-700' : 'text-pink-700'}`}>
                       {(totals.lifetimePnL || 0) >= 0 ? '▲' : '▼'}
@@ -2532,7 +3030,15 @@ const Client2Page = () => {
 
                 {/* Lifetime SO Compensation In */}
                 {cardVisibility.lifetimeSOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeSOCompensationIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeSOCompensationIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeSOCompensationIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-lime-600 mb-1">Lifetime SO Compensation In</div>
                     <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.lifetimeSOCompensationIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2540,7 +3046,15 @@ const Client2Page = () => {
 
                 {/* Lifetime SO Compensation Out */}
                 {cardVisibility.lifetimeSOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeSOCompensationOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeSOCompensationOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeSOCompensationOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-yellow-600 mb-1">Lifetime SO Compensation Out</div>
                     <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.lifetimeSOCompensationOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2548,7 +3062,15 @@ const Client2Page = () => {
 
                 {/* Lifetime Withdrawal */}
                 {cardVisibility.lifetimeWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'lifetimeWithdrawal')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'lifetimeWithdrawal')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'lifetimeWithdrawal' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-red-600 mb-1">Lifetime Withdrawal</div>
                     <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.lifetimeWithdrawal) || 0).toFixed(2))}</div>
                   </div>
@@ -2556,7 +3078,15 @@ const Client2Page = () => {
 
                 {/* Margin */}
                 {cardVisibility.margin !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-purple-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-purple-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'margin')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'margin')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'margin' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-purple-600 mb-1">Margin</div>
                     <div className="text-sm font-bold text-purple-700">{formatIndianNumber(((totals?.margin) || 0).toFixed(2))}</div>
                   </div>
@@ -2564,7 +3094,15 @@ const Client2Page = () => {
 
                 {/* Margin Free */}
                 {cardVisibility.marginFree !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-fuchsia-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-fuchsia-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'marginFree')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'marginFree')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'marginFree' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-fuchsia-600 mb-1">Margin Free</div>
                     <div className="text-sm font-bold text-fuchsia-700">{formatIndianNumber(((totals?.marginFree) || 0).toFixed(2))}</div>
                   </div>
@@ -2572,7 +3110,15 @@ const Client2Page = () => {
 
                 {/* Margin Initial */}
                 {cardVisibility.marginInitial !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'marginInitial')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'marginInitial')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'marginInitial' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-indigo-600 mb-1">Margin Initial</div>
                     <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.marginInitial) || 0).toFixed(2))}</div>
                   </div>
@@ -2580,7 +3126,15 @@ const Client2Page = () => {
 
                 {/* Margin Level */}
                 {cardVisibility.marginLevel !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-purple-300 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-purple-300 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'marginLevel')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'marginLevel')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'marginLevel' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-purple-600 mb-1">Margin Level</div>
                     <div className="text-sm font-bold text-purple-700">{formatPercentageValue((totals?.marginLevel) || 0)}</div>
                   </div>
@@ -2588,7 +3142,15 @@ const Client2Page = () => {
 
                 {/* Margin Maintenance */}
                 {cardVisibility.marginMaintenance !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-violet-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-violet-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'marginMaintenance')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'marginMaintenance')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'marginMaintenance' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-violet-600 mb-1">Margin Maintenance</div>
                     <div className="text-sm font-bold text-violet-700">{formatIndianNumber(((totals?.marginMaintenance) || 0).toFixed(2))}</div>
                   </div>
@@ -2596,7 +3158,15 @@ const Client2Page = () => {
 
                 {/* SO Equity */}
                 {cardVisibility.soEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'soEquity')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'soEquity')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'soEquity' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-indigo-600 mb-1">SO Equity</div>
                     <div className="text-sm font-bold text-indigo-700">{formatIndianNumber(((totals?.soEquity) || 0).toFixed(2))}</div>
                   </div>
@@ -2604,7 +3174,15 @@ const Client2Page = () => {
 
                 {/* SO Level */}
                 {cardVisibility.soLevel !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'soLevel')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'soLevel')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'soLevel' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-blue-600 mb-1">SO Level</div>
                     <div className="text-sm font-bold text-blue-700">{formatIndianNumber(((totals?.soLevel) || 0).toFixed(2))}</div>
                   </div>
@@ -2612,14 +3190,30 @@ const Client2Page = () => {
 
                 {/* SO Margin */}
                 {cardVisibility.soMargin !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-sky-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'soMargin')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'soMargin')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'soMargin' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-sky-600 mb-1">SO Margin</div>
                     <div className="text-sm font-bold text-sky-700">{formatIndianNumber(((totals?.soMargin) || 0).toFixed(2))}</div>
                   </div>
                 )}
                 {/* PnL */}
                 {cardVisibility.pnl !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.pnl || 0) >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.pnl || 0) >= 0 ? 'border-green-200' : 'border-red-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'pnl')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'pnl')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'pnl' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.pnl || 0) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                       {(totals.pnl || 0) >= 0 ? '▲' : '▼'}
@@ -2630,7 +3224,15 @@ const Client2Page = () => {
 
                 {/* Previous Equity */}
                 {cardVisibility.previousEquity !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-cyan-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'previousEquity')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'previousEquity')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'previousEquity' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-cyan-600 mb-1">Previous Equity</div>
                     <div className="text-sm font-bold text-cyan-700">{formatIndianNumber(((totals?.previousEquity) || 0).toFixed(2))}</div>
                   </div>
@@ -2638,7 +3240,15 @@ const Client2Page = () => {
 
                 {/* Profit */}
                 {cardVisibility.profit !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.profit || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.profit || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'profit')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'profit')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'profit' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.profit || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>Profit</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.profit || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
                       {(totals.profit || 0) >= 0 ? '▲' : '▼'}
@@ -2649,7 +3259,15 @@ const Client2Page = () => {
 
                 {/* Storage */}
                 {cardVisibility.storage !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'storage')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'storage')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'storage' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-gray-600 mb-1">Storage</div>
                     <div className={`text-sm font-bold ${((totals?.storage) || 0) >= 0 ? 'text-gray-700' : 'text-red-700'}`}>{formatIndianNumber(((totals?.storage) || 0).toFixed(2))}</div>
                   </div>
@@ -2657,7 +3275,15 @@ const Client2Page = () => {
 
                 {/* This Month Bonus In */}
                 {cardVisibility.thisMonthBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthBonusIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthBonusIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthBonusIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-emerald-600 mb-1">This Month Bonus In</div>
                     <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.thisMonthBonusIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2665,7 +3291,15 @@ const Client2Page = () => {
 
                 {/* This Month Bonus Out */}
                 {cardVisibility.thisMonthBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthBonusOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthBonusOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthBonusOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-rose-600 mb-1">This Month Bonus Out</div>
                     <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.thisMonthBonusOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2673,7 +3307,15 @@ const Client2Page = () => {
 
                 {/* This Month Credit In */}
                 {cardVisibility.thisMonthCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthCreditIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthCreditIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthCreditIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-teal-600 mb-1">This Month Credit In</div>
                     <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.thisMonthCreditIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2681,7 +3323,15 @@ const Client2Page = () => {
 
                 {/* This Month Credit Out */}
                 {cardVisibility.thisMonthCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthCreditOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthCreditOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthCreditOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-amber-600 mb-1">This Month Credit Out</div>
                     <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.thisMonthCreditOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2689,7 +3339,15 @@ const Client2Page = () => {
 
                 {/* This Month Deposit */}
                 {cardVisibility.thisMonthDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthDeposit')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthDeposit')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthDeposit' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-green-600 mb-1">This Month Deposit</div>
                     <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.thisMonthDeposit) || 0).toFixed(2))}</div>
                   </div>
@@ -2697,7 +3355,15 @@ const Client2Page = () => {
 
                 {/* This Month PnL */}
                 {cardVisibility.thisMonthPnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisMonthPnL || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisMonthPnL || 0) >= 0 ? 'border-teal-200' : 'border-orange-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthPnL')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthPnL')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthPnL' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>This Month PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisMonthPnL || 0) >= 0 ? 'text-teal-700' : 'text-orange-700'}`}>
                       {(totals.thisMonthPnL || 0) >= 0 ? '▲' : '▼'}
@@ -2708,7 +3374,15 @@ const Client2Page = () => {
 
                 {/* This Month SO Compensation In */}
                 {cardVisibility.thisMonthSOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthSOCompensationIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthSOCompensationIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthSOCompensationIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-lime-600 mb-1">This Month SO Compensation In</div>
                     <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.thisMonthSOCompensationIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2716,7 +3390,15 @@ const Client2Page = () => {
 
                 {/* This Month SO Compensation Out */}
                 {cardVisibility.thisMonthSOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthSOCompensationOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthSOCompensationOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthSOCompensationOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-yellow-600 mb-1">This Month SO Compensation Out</div>
                     <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.thisMonthSOCompensationOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2724,7 +3406,15 @@ const Client2Page = () => {
 
                 {/* This Month Withdrawal */}
                 {cardVisibility.thisMonthWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisMonthWithdrawal')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisMonthWithdrawal')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisMonthWithdrawal' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-red-600 mb-1">This Month Withdrawal</div>
                     <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.thisMonthWithdrawal) || 0).toFixed(2))}</div>
                   </div>
@@ -2732,7 +3422,15 @@ const Client2Page = () => {
 
                 {/* This Week Bonus In */}
                 {cardVisibility.thisWeekBonusIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-emerald-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekBonusIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekBonusIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekBonusIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-emerald-600 mb-1">This Week Bonus In</div>
                     <div className="text-sm font-bold text-emerald-700">{formatIndianNumber(((totals?.thisWeekBonusIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2740,7 +3438,15 @@ const Client2Page = () => {
 
                 {/* This Week Bonus Out */}
                 {cardVisibility.thisWeekBonusOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-rose-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekBonusOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekBonusOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekBonusOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-rose-600 mb-1">This Week Bonus Out</div>
                     <div className="text-sm font-bold text-rose-700">{formatIndianNumber(((totals?.thisWeekBonusOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2748,7 +3454,15 @@ const Client2Page = () => {
 
                 {/* This Week Credit In */}
                 {cardVisibility.thisWeekCreditIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekCreditIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekCreditIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekCreditIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-teal-600 mb-1">This Week Credit In</div>
                     <div className="text-sm font-bold text-teal-700">{formatIndianNumber(((totals?.thisWeekCreditIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2756,7 +3470,15 @@ const Client2Page = () => {
 
                 {/* This Week Credit Out */}
                 {cardVisibility.thisWeekCreditOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekCreditOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekCreditOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekCreditOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-amber-600 mb-1">This Week Credit Out</div>
                     <div className="text-sm font-bold text-amber-700">{formatIndianNumber(((totals?.thisWeekCreditOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2764,7 +3486,15 @@ const Client2Page = () => {
 
                 {/* This Week Deposit */}
                 {cardVisibility.thisWeekDeposit !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekDeposit')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekDeposit')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekDeposit' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-green-600 mb-1">This Week Deposit</div>
                     <div className="text-sm font-bold text-green-700">{formatIndianNumber(((totals?.thisWeekDeposit) || 0).toFixed(2))}</div>
                   </div>
@@ -2772,7 +3502,15 @@ const Client2Page = () => {
 
                 {/* This Week PnL */}
                 {cardVisibility.thisWeekPnL !== false && (
-                  <div className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisWeekPnL || 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'}`}>
+                  <div 
+                    className={`bg-white rounded-lg shadow-sm border-2 p-2 hover:shadow-md transition-shadow ${(totals.thisWeekPnL || 0) >= 0 ? 'border-cyan-200' : 'border-amber-200'}`}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekPnL')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekPnL')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekPnL' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className={`text-[10px] font-medium mb-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-600' : 'text-amber-600'}`}>This Week PnL</div>
                     <div className={`text-sm font-bold flex items-center gap-1 ${(totals.thisWeekPnL || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700'}`}>
                       {(totals.thisWeekPnL || 0) >= 0 ? '▲' : '▼'}
@@ -2783,7 +3521,15 @@ const Client2Page = () => {
 
                 {/* This Week SO Compensation In */}
                 {cardVisibility.thisWeekSOCompensationIn !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-lime-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekSOCompensationIn')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekSOCompensationIn')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekSOCompensationIn' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-lime-600 mb-1">This Week SO Compensation In</div>
                     <div className="text-sm font-bold text-lime-700">{formatIndianNumber(((totals?.thisWeekSOCompensationIn) || 0).toFixed(2))}</div>
                   </div>
@@ -2791,7 +3537,15 @@ const Client2Page = () => {
 
                 {/* This Week SO Compensation Out */}
                 {cardVisibility.thisWeekSOCompensationOut !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekSOCompensationOut')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekSOCompensationOut')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekSOCompensationOut' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-yellow-600 mb-1">This Week SO Compensation Out</div>
                     <div className="text-sm font-bold text-yellow-700">{formatIndianNumber(((totals?.thisWeekSOCompensationOut) || 0).toFixed(2))}</div>
                   </div>
@@ -2799,14 +3553,21 @@ const Client2Page = () => {
 
                 {/* This Week Withdrawal */}
                 {cardVisibility.thisWeekWithdrawal !== false && (
-                  <div className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow">
+                  <div 
+                    className="bg-white rounded-lg shadow-sm border-2 border-red-200 p-2 hover:shadow-md transition-shadow"
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, 'thisWeekWithdrawal')}
+                    onDragOver={handleCardDragOver}
+                    onDrop={(e) => handleCardDrop(e, 'thisWeekWithdrawal')}
+                    onDragEnd={handleCardDragEnd}
+                    style={{ opacity: draggedCard === 'thisWeekWithdrawal' ? 0.5 : 1, cursor: draggedCard ? 'grabbing' : 'grab' }}
+                  >
                     <div className="text-[10px] font-medium text-red-600 mb-1">This Week Withdrawal</div>
                     <div className="text-sm font-bold text-red-700">{formatIndianNumber(((totals?.thisWeekWithdrawal) || 0).toFixed(2))}</div>
                   </div>
                 )}
 
-                {/* End of regular cards - close the fragment */}
-                </>)}
+                
 
                 {/* Show percentage cards when IN percentage mode */}
                 {cardFilterPercentMode && (() => {
@@ -2870,12 +3631,14 @@ const Client2Page = () => {
                     thisWeekWithdrawal: 'This Week Withdrawal'
                   }
                   return Object.entries(baseLabels).map(([key, label]) => {
-                    const visKey = `${key}Percent`
-                    if (cardVisibility[visKey] === false) return null
+                    // Show percentage for whatever base face cards are currently visible
+                    if (cardVisibility[key] === false) return null
                     return (
-                      <div key={visKey} className="bg-white rounded-lg shadow-sm border-2 border-pink-200 p-2 hover:shadow-md transition-shadow">
+                      <div key={`percent-${key}`} className="bg-white rounded-lg shadow-sm border-2 border-pink-200 p-2 hover:shadow-md transition-shadow">
                         <div className="text-[10px] font-medium text-pink-600 mb-1">{label} %</div>
-                        <div className="text-sm font-bold text-pink-700">{formatIndianNumber(((totalsPercent?.[key]) || 0).toFixed(2))}</div>
+                        <div className="text-sm font-bold text-pink-700">
+                          {`${formatIndianNumber(((totalsPercent?.[key]) || 0).toFixed(2))}%`}
+                        </div>
                       </div>
                     )
                   })
@@ -3502,7 +4265,7 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
-                                              {/* OK/Clear Buttons */}
+                                              {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
                                                   onClick={() => setShowFilterDropdown(null)}
@@ -3511,10 +4274,10 @@ const Client2Page = () => {
                                                   OK
                                                 </button>
                                                 <button
-                                                  onClick={() => clearColumnFilter(columnKey)}
+                                                  onClick={() => setShowFilterDropdown(null)}
                                                   className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
                                                 >
-                                                  Clear
+                                                  Close
                                                 </button>
                                               </div>
                                             </>
@@ -3718,7 +4481,7 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
-                                              {/* OK/Clear Buttons */}
+                                              {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
                                                   onClick={() => {
@@ -3730,10 +4493,10 @@ const Client2Page = () => {
                                                   OK
                                                 </button>
                                                 <button
-                                                  onClick={() => clearColumnFilter(columnKey)}
+                                                  onClick={() => setShowFilterDropdown(null)}
                                                   className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
                                                 >
-                                                  Clear
+                                                  Close
                                                 </button>
                                               </div>
                                             </>
@@ -3787,7 +4550,8 @@ const Client2Page = () => {
                         ))
                       ) : (
                         // Actual data rows with staggered fade-in
-                        sortedClients.map((client, idx) => (
+                        // Guard: filter out null/undefined clients
+                        (sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                           <tr 
                             key={`${client.login}-${animationKey}-${idx}`} 
                             onClick={() => handleViewClientDetails(client)}
@@ -3798,8 +4562,8 @@ const Client2Page = () => {
                             }}
                           >
                             {visibleColumnsList.map(col => {
-                              const cellValue = formatValue(col.key, client[col.key])
-                              const rawValue = client[col.key]
+                              const cellValue = formatValue(col.key, client?.[col.key])
+                              const rawValue = client?.[col.key]
                               
                               // Special handling for login column - make it blue
                               if (col.key === 'login') {
@@ -3881,7 +4645,8 @@ const Client2Page = () => {
                   scrollbarColor: '#6b7280 #e5e7eb',
                   height: '20px',
                   zIndex: 10,
-                  pointerEvents: 'none' // don't block the native scrollbar beneath
+                  // Enable interaction so users can drag this scrollbar
+                  pointerEvents: 'auto'
                 }}
               >
                 <div style={{ 

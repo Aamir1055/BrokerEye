@@ -1142,7 +1142,8 @@ const ClientsPage = () => {
     if (!searchQuery || typeof searchQuery !== 'string' || !searchQuery.trim() || searchQuery.length < 1) return []
     const q = searchQuery.toLowerCase().trim()
     const matchedClients = []
-    sorted.forEach(c => {
+    // SAFETY: Filter out null clients before processing
+    sorted.filter(c => c != null).forEach(c => {
       const login = String(c.login || '')
       const name = String(c.name || '')
       const email = String(c.email || '')
@@ -1455,63 +1456,70 @@ const ClientsPage = () => {
 
   // Export to Excel (placed after filteredClients is defined)
   const handleExportToExcel = useCallback((exportType = 'table') => {
-    // Use full clients array for 'all' export, filtered for table export
-    const dataToExport = exportType === 'all' ? clients : filteredClients
-    
-    if (!dataToExport || dataToExport.length === 0) {
-      alert('No data to export')
-      return
-    }
+    try {
+      // Use full clients array for 'all' export, filtered for table export
+      const dataToExport = exportType === 'all' ? clients : filteredClients
+      
+      if (!dataToExport || dataToExport.length === 0) {
+        alert('No data to export')
+        return
+      }
 
-    // Get columns based on export type
-    const columnsToExport = exportType === 'all' 
-      ? dynamicColumns  // Export all columns
-      : dynamicColumns.filter(col => visibleColumns[col.key] === true)  // Export only visible columns
-    
-    // Prepare CSV content
-    const headers = columnsToExport.map(col => col.label).join(',')
-    const rows = dataToExport.map(client => {
-      return columnsToExport.map(col => {
-        let value = client[col.key]
-        
-        // Handle different data types
-        if (value === null || value === undefined) {
-          return ''
-        }
-        
-        // Format numbers
-        if (typeof value === 'number') {
-          value = value.toString()
-        }
-        
-        // Escape commas and quotes in strings
-        if (typeof value === 'string') {
-          value = value.replace(/"/g, '""')
-          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-            value = `"${value}"`
+      // Get columns based on export type
+      const columnsToExport = exportType === 'all' 
+        ? dynamicColumns  // Export all columns
+        : dynamicColumns.filter(col => visibleColumns[col.key] === true)  // Export only visible columns
+      
+      // Prepare CSV content
+      const headers = columnsToExport.map(col => col.label).join(',')
+      // SAFETY: Filter out null/undefined clients before mapping
+      const rows = dataToExport.filter(client => client != null).map(client => {
+        return columnsToExport.map(col => {
+          // SAFETY: Use optional chaining for property access
+          let value = client?.[col.key]
+          
+          // Handle different data types
+          if (value === null || value === undefined) {
+            return ''
           }
-        }
-        
-        return value
-      }).join(',')
-    }).join('\n')
+          
+          // Format numbers
+          if (typeof value === 'number') {
+            value = value.toString()
+          }
+          
+          // Escape commas and quotes in strings
+          if (typeof value === 'string') {
+            value = value.replace(/"/g, '""')
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+              value = `"${value}"`
+            }
+          }
+          
+          return value
+        }).join(',')
+      }).join('\n')
 
-    const csvContent = headers + '\n' + rows
+      const csvContent = headers + '\n' + rows
 
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    const exportLabel = exportType === 'all' ? 'all-columns' : 'table-columns'
-    link.setAttribute('download', `clients_${exportLabel}_${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    // Close the export menu after export
-    setShowExportMenu(false)
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      const exportLabel = exportType === 'all' ? 'all-columns' : 'table-columns'
+      link.setAttribute('download', `clients_${exportLabel}_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Close the export menu after export
+      setShowExportMenu(false)
+    } catch (error) {
+      console.error('[ClientsPage] Export failed:', error)
+      alert('Export failed. Please check the console for details.')
+    }
   }, [clients, filteredClients, visibleColumns, allColumns])
 
   // Auto-fit like Excel on double click (placed after displayedClients to avoid TDZ)
@@ -1522,7 +1530,8 @@ const ClientsPage = () => {
     let maxW = measureText(headerLabel)
 
     // Sample displayed rows (up to 100) for visible text widths
-    const sample = Array.isArray(displayedClients) ? displayedClients.slice(0, 100) : []
+    // SAFETY: Filter out null clients before slicing
+    const sample = Array.isArray(displayedClients) ? displayedClients.filter(c => c != null).slice(0, 100) : []
     for (let i = 0; i < sample.length; i++) {
       const client = sample[i]
       if (!client) continue
@@ -3626,7 +3635,8 @@ const ClientsPage = () => {
                       <td colSpan={visibleColumnsList.length * (displayMode === 'both' ? 2 : 1)} style={{ padding: 0, border: 'none' }} />
                     </tr>
                   )}
-                  {virtualizedClients.map((client, index) => {
+                  {/* SAFETY: Filter null clients before rendering */}
+                  {virtualizedClients.filter(client => client != null && client.login != null).map((client, index) => {
                     const globalIndex = virtualizationMetrics.startIndex + index
                     const isLastRow = index === displayedClients.length - 1
                     
@@ -3644,12 +3654,14 @@ const ClientsPage = () => {
                       let displayVal
                       if (displayMode === 'percentage' && isMetric) {
                         const percKey = percentageFieldMap[col.key]
-                        const val = percKey ? client[percKey] : undefined
+                        // SAFETY: Use optional chaining
+                        const val = percKey ? client?.[percKey] : undefined
                         titleVal = formatPercent(val, client)
                         displayVal = formatPercent(val, client)
                       } else {
-                        titleVal = formatValue(col.key, client[col.key], client)
-                        displayVal = formatValue(col.key, client[col.key], client)
+                        // SAFETY: Use optional chaining for property access
+                        titleVal = formatValue(col.key, client?.[col.key], client)
+                        displayVal = formatValue(col.key, client?.[col.key], client)
                       }
 
                       renderCols.push({ key: col.key, width: defaultWidth, value: displayVal, title: titleVal })
@@ -3657,7 +3669,8 @@ const ClientsPage = () => {
                       if (displayMode === 'both' && isMetric) {
                         const virtKey = `${col.key}_percentage_display`
                         const percKey = percentageFieldMap[col.key]
-                        const val = percKey ? client[percKey] : undefined
+                        // SAFETY: Use optional chaining
+                        const val = percKey ? client?.[percKey] : undefined
                         renderCols.push({ key: virtKey, width: defaultWidth, value: formatPercent(val, client), title: formatPercent(val, client) })
                       }
                     })

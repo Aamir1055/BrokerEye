@@ -525,8 +525,14 @@ export const DataProvider = ({ children }) => {
       const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getClients' })
       const rawData = response.data?.clients || []
 
+      // SAFETY: Filter out null/undefined clients before normalization
+      const validRawData = rawData.filter(c => c != null && c.login != null)
+      if (validRawData.length < rawData.length) {
+        console.warn(`[DataContext] Filtered out ${rawData.length - validRawData.length} invalid clients from API response`)
+      }
+
       // Normalize USC consistently using the shared helper (avoids double/partial normalization)
-      const normalizedData = rawData.map(normalizeUSCValues)
+      const normalizedData = validRawData.map(normalizeUSCValues)
       
       // Deduplicate clients by login (keep last occurrence)
       const clientsMap = new Map()
@@ -960,6 +966,13 @@ export const DataProvider = ({ children }) => {
         
         for (let i = 0; i < updates.length; i++) {
           const { updatedAccount, accountLogin } = updates[i]
+          
+          // Safety check: skip if updatedAccount is null/undefined
+          if (!updatedAccount || !accountLogin) {
+            console.warn('DataContext: Invalid update entry', { updatedAccount, accountLogin })
+            continue
+          }
+          
           const index = clientIndexMap.get(accountLogin)
           
           if (index === undefined) {
@@ -974,6 +987,12 @@ export const DataProvider = ({ children }) => {
             // Update existing - SELECTIVE MERGE: only update defined values, preserve existing for undefined
             const oldClient = originalValues.get(accountLogin)
             const existingClient = updated[index]
+            
+            // Safety check: if existingClient is undefined, skip this update
+            if (!existingClient) {
+              console.warn('DataContext: existingClient is undefined for', accountLogin, 'at index', index)
+              continue
+            }
             
             // Check if there are actual changes to prevent unnecessary object creation
             let hasChanges = false
@@ -1093,6 +1112,12 @@ export const DataProvider = ({ children }) => {
         
         // Normalize USC currency values
         const normalizedAccount = normalizeUSCValues(updatedAccount)
+        
+        // Safety check: ensure normalized account is valid
+        if (!normalizedAccount) {
+          console.error('[DataContext] ⚠️ normalizeUSCValues returned null/undefined for:', accountLogin)
+          return
+        }
         
         // Keep SERVER timestamp to measure actual system latency
         const serverTimestamp = message.timestamp
