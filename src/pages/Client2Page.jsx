@@ -971,9 +971,11 @@ const Client2Page = () => {
           mergedTotalCount += Number(data?.total || list.length || 0)
           pages = Math.max(pages, Number(data?.pages || 1))
         })
-        const unionClients = Array.from(clientMap.values())
-        // Slice for current page
-        const total = unionClients.length
+  const unionClients = Array.from(clientMap.values())
+  // Server-side total count across variants (sums per-variant totals; safe because OR is for a single scalar field)
+  const serverTotal = mergedTotalCount || 0
+  // Slice for current page
+  const total = unionClients.length
         const start = (currentPage - 1) * (itemsPerPage || 50)
         const end = start + (itemsPerPage || 50)
         // SAFETY: Final filter before setting state
@@ -981,9 +983,11 @@ const Client2Page = () => {
         if (safeClients.length < unionClients.slice(start, end).length) {
           console.warn('[Client2Page] Filtered out invalid clients from API response')
         }
-        setClients(safeClients)
-        setTotalClients(total)
-        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 50))))
+  setClients(safeClients)
+  // Prefer server-reported total when available; fallback to union length
+  const effectiveTotal = serverTotal > 0 ? serverTotal : total
+  setTotalClients(effectiveTotal)
+  setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 50))))
         setTotals(mergedTotals)
         setError('')
 
@@ -991,13 +995,21 @@ const Client2Page = () => {
   try { console.debug('[Client2] search payload (percent):', payloadPercentVariants) } catch {}
   const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         let mergedPercentTotals = {}
+        let percentTotalCount = 0
         percentResponses.forEach((resp) => {
           const t = (resp?.data || resp)?.totals || {}
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
           })
+          const d = resp?.data || resp
+          percentTotalCount += Number(d?.total || d?.clients?.length || 0)
         })
         setTotalsPercent(mergedPercentTotals)
+        // Prefer server-reported total across variants
+        if (percentTotalCount > 0) {
+          setTotalClients(percentTotalCount)
+          setTotalPages(Math.max(1, Math.ceil(percentTotalCount / (itemsPerPage || 50))))
+        }
       } else if (anyPercent) {
         // Percent only
   try { console.debug('[Client2] search payload (percent only):', payloadPercentVariants) } catch {}
@@ -1042,8 +1054,10 @@ const Client2Page = () => {
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
           })
+          mergedTotalCount += Number(data?.total || list.length || 0)
         })
         const unionClients = Array.from(clientMap.values())
+        const serverTotal = mergedTotalCount || 0
         const total = unionClients.length
         const start = (currentPage - 1) * (itemsPerPage || 100)
         const end = start + (itemsPerPage || 100)
@@ -1052,9 +1066,10 @@ const Client2Page = () => {
         if (safeClients.length < unionClients.slice(start, end).length) {
           console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
         }
-        setClients(safeClients)
-        setTotalClients(total)
-        setTotalPages(Math.max(1, Math.ceil(total / (itemsPerPage || 100))))
+  setClients(safeClients)
+  const effectiveTotal = serverTotal > 0 ? serverTotal : total
+  setTotalClients(effectiveTotal)
+  setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 100))))
         setTotals(mergedTotals)
         setTotalsPercent({})
         setError('')
