@@ -3382,6 +3382,27 @@ const Client2Page = () => {
                   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
                     background: #6b7280;
                   }
+                  
+                  /* Sticky horizontal scrollbar styling - always visible */
+                  .overflow-x-scroll::-webkit-scrollbar {
+                    height: 14px;
+                  }
+                  .overflow-x-scroll::-webkit-scrollbar-track {
+                    background: #e5e7eb;
+                    border-radius: 0;
+                  }
+                  .overflow-x-scroll::-webkit-scrollbar-thumb {
+                    background: #6b7280;
+                    border-radius: 4px;
+                    border: 2px solid #e5e7eb;
+                  }
+                  .overflow-x-scroll::-webkit-scrollbar-thumb:hover {
+                    background: #4b5563;
+                  }
+                  .overflow-x-scroll::-webkit-scrollbar-thumb:active {
+                    background: #374151;
+                  }
+                  
                   /* Hide-scrollbar utility for non-sticky main horizontal scrollbar */
                   .hide-scrollbar {
                     -ms-overflow-style: none; /* IE and Edge */
@@ -4192,19 +4213,18 @@ const Client2Page = () => {
               {/* Sticky Horizontal Scrollbar at Bottom - Always Visible */}
               <div 
                 ref={stickyScrollRef}
-                className="sticky bottom-0 overflow-x-auto bg-gray-100 border-t-2 border-gray-300"
+                className="sticky bottom-0 overflow-x-scroll bg-gray-50 border-t border-gray-300"
                 style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#6b7280 #e5e7eb',
-                  height: '20px',
-                  zIndex: 10,
-                  // Enable interaction so users can drag this scrollbar
-                  pointerEvents: 'auto'
+                  height: '17px',
+                  zIndex: 20,
+                  pointerEvents: 'auto',
+                  cursor: 'default'
                 }}
               >
                 <div style={{ 
                   width: `${totalTableWidth}px`,
-                  height: '1px'
+                  height: '1px',
+                  pointerEvents: 'none'
                 }}></div>
               </div>
             </div>
