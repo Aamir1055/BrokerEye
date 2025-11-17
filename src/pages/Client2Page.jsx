@@ -1684,7 +1684,7 @@ const Client2Page = () => {
     return { payload, multiOrField, multiOrValues, multiOrConflict }
   }
 
-  // Fetch unique column values from server with pagination; first page
+  // Fetch ALL unique column values from server (fetch all pages to get complete dataset)
   const fetchColumnValues = async (columnKey) => {
     // Don't fetch if already loading or already loaded
     if (columnValuesLoading[columnKey] || columnValues[columnKey]) return
@@ -1692,7 +1692,8 @@ const Client2Page = () => {
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
     try {
-  const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, columnValuesBatchSize)
+      // Use a large page size to minimize number of requests
+      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, 1000)
 
       // Build payload variants to honor OR semantics for a single field
       const buildVariants = (b) => {
@@ -1702,7 +1703,7 @@ const Client2Page = () => {
         return [b]
       }
 
-      // Fetch page 1
+      // Fetch page 1 to discover total pages
       const variants = buildVariants(payload)
       const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
       const setVals = new Set()
@@ -1717,39 +1718,25 @@ const Client2Page = () => {
         maxPages = Math.max(maxPages, Number(d?.pages || 1))
       })
 
-      // If duplicates mean we got fewer than desired initial values, prefetch additional pages (up to cap)
-      let currentPageLocal = 1
-      if (setVals.size < columnValuesBatchSize && maxPages > 1) {
-        const needValues = columnValuesBatchSize - setVals.size
-        // optimistic pages estimate; still enforce max cap
-        const estPages = Math.min(
-          COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1,
-          Math.max(0, Math.min(maxPages - 1, Math.ceil(needValues / columnValuesBatchSize)))
-        )
-        if (estPages > 0) {
-          const pageIdxs = Array.from({ length: estPages }, (_, i) => i + 2) // pages 2..N
-          const moreVariants = pageIdxs.flatMap(pg => buildVariants({ ...payload, page: pg }))
-          const moreResponses = await Promise.all(moreVariants.map(p => brokerAPI.searchClients(p)))
-          let discoveredMax = maxPages
-          moreResponses.forEach(resp => {
-            const d = resp?.data || resp
-            const rows = d?.clients || []
-            rows.forEach(row => {
-              const v = row?.[columnKey]
-              if (v !== null && v !== undefined && v !== '') setVals.add(v)
-            })
-            discoveredMax = Math.max(discoveredMax, Number(d?.pages || 1))
+      // Fetch ALL remaining pages to get complete dataset
+      if (maxPages > 1) {
+        const remainingPages = Array.from({ length: maxPages - 1 }, (_, i) => i + 2) // pages 2..maxPages
+        const allVariants = remainingPages.flatMap(pg => buildVariants({ ...payload, page: pg }))
+        const allResponses = await Promise.all(allVariants.map(p => brokerAPI.searchClients(p)))
+        allResponses.forEach(resp => {
+          const d = resp?.data || resp
+          const rows = d?.clients || []
+          rows.forEach(row => {
+            const v = row?.[columnKey]
+            if (v !== null && v !== undefined && v !== '') setVals.add(v)
           })
-          maxPages = discoveredMax
-          currentPageLocal = 1 + estPages
-        }
+        })
       }
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-      setColumnValuesPage(prev => ({ ...prev, [columnKey]: currentPageLocal }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: currentPageLocal < maxPages }))
+      // No pagination state needed anymore since we load everything
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -1757,78 +1744,8 @@ const Client2Page = () => {
     }
   }
 
-  // Fetch additional pages of unique column values on scroll
-  const fetchMoreColumnValues = async (columnKey) => {
-    if (columnValuesLoadingMore[columnKey]) return
-    if (!columnValuesHasMore[columnKey]) return
-    const currentPage = columnValuesPage[columnKey] || 1
-    setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
-    try {
-      // We'll keep fetching subsequent pages until we've added ~COLUMN_VALUES_MIN_BATCH new unique values
-      // or we hit the max pages or our safety batch cap.
-  let nextPage = currentPage + 1
-      let pagesDiscovered = currentPage
-      const existing = new Set(columnValues[columnKey] || [])
-      const newVals = new Set()
-
-      const buildVariants = (b) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
-        }
-        return [b]
-      }
-
-      // First, fetch one page to make progress
-  let { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, columnValuesBatchSize)
-      let variants = buildVariants(payload)
-      let responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-      responses.forEach(resp => {
-        const d = resp?.data || resp
-        const rows = d?.clients || []
-        rows.forEach(row => {
-          const v = row?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') newVals.add(v)
-        })
-        pagesDiscovered = Math.max(pagesDiscovered, Number(d?.pages || pagesDiscovered))
-      })
-
-      // If still below the target and there are more pages, prefetch a few more pages in parallel (capped)
-      let extraBatches = 0
-      while (
-        newVals.size < columnValuesBatchSize &&
-        nextPage < pagesDiscovered &&
-        extraBatches < (COLUMN_VALUES_MAX_PAGES_PER_BATCH - 1)
-      ) {
-        nextPage += 1
-        const pg = nextPage
-        ;({ payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, pg, columnValuesBatchSize))
-        variants = buildVariants(payload)
-        responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-        responses.forEach(resp => {
-          const d = resp?.data || resp
-          const rows = d?.clients || []
-          rows.forEach(row => {
-            const v = row?.[columnKey]
-            if (v !== null && v !== undefined && v !== '') newVals.add(v)
-          })
-          pagesDiscovered = Math.max(pagesDiscovered, Number(d?.pages || pagesDiscovered))
-        })
-        extraBatches += 1
-      }
-
-      // Merge and update state
-      const merged = new Set([...existing, ...newVals])
-      const uniqueValues = Array.from(merged).sort((a, b) => String(a).localeCompare(String(b)))
-      setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setColumnValuesPage(prev => ({ ...prev, [columnKey]: nextPage }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextPage < pagesDiscovered }))
-    } catch (err) {
-      console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
-    } finally {
-      setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
-    }
-  }
+  // No longer needed - we fetch all values upfront now
+  // const fetchMoreColumnValues = async (columnKey) => { ... }
 
   // Toggle individual value selection
   const toggleColumnValue = (columnKey, value) => {
@@ -4800,32 +4717,6 @@ const Client2Page = () => {
                                                 </div>
                                               </div>
 
-                                              {/* Quick setting: Values per load */}
-                                              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-2">
-                                                <label className="text-[11px] text-gray-700 font-semibold">Values per load</label>
-                                                <select
-                                                  value={columnValuesBatchSize}
-                                                  onChange={(e) => {
-                                                    const newSize = parseInt(e.target.value) || 200
-                                                    setColumnValuesBatchSize(newSize)
-                                                    // Reset this column's cached values so next fetch uses new batch size immediately
-                                                    setColumnValues(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
-                                                    setColumnValuesPage(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
-                                                    setColumnValuesHasMore(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
-                                                    setSelectedColumnValues(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
-                                                    // Kick off fresh load with new page size
-                                                    setTimeout(() => fetchColumnValues(columnKey), 0)
-                                                  }}
-                                                  className="px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                >
-                                                  <option value={100}>100</option>
-                                                  <option value={200}>200</option>
-                                                  <option value={300}>300</option>
-                                                  <option value={500}>500</option>
-                                                  <option value={1000}>1000</option>
-                                                </select>
-                                              </div>
-
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
                                                 {/* Search Bar */}
@@ -4848,27 +4739,16 @@ const Client2Page = () => {
                                                       onChange={() => toggleSelectAllColumnValues(columnKey)}
                                                       className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                     />
-                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL</span>
+                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL ({allValues.length} values)</span>
                                                   </label>
                                                 </div>
 
-                                                {/* Values List */}
-                                                <div
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
-                                                  onScroll={(e) => {
-                                                    const target = e.currentTarget
-                                                    if (!target) return
-                                                    const threshold = 40
-                                                    const nearBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold
-                                                    if (nearBottom && !loading && !loadingMore && hasMore && !searchQuery) {
-                                                      fetchMoreColumnValues(columnKey)
-                                                    }
-                                                  }}
-                                                >
+                                                {/* Values List - All values loaded, no pagination */}
+                                                <div className="flex-1 overflow-y-auto px-3 py-2">
                                                   {loading ? (
                                                     <div className="py-8 text-center">
                                                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                      <p className="text-xs text-gray-500 mt-2">Loading all values...</p>
                                                     </div>
                                                   ) : filteredValues.length > 0 ? (
                                                     <div className="space-y-1">
@@ -4883,19 +4763,6 @@ const Client2Page = () => {
                                                           <span className="text-xs text-gray-700">{value}</span>
                                                         </label>
                                                       ))}
-                                                      {loadingMore && (
-                                                        <div className="py-3 text-center text-[11px] text-gray-500">Loading more…</div>
-                                                      )}
-                                                      {!loadingMore && hasMore && !searchQuery && (
-                                                        <div className="py-3 text-center">
-                                                          <button
-                                                            onClick={() => fetchMoreColumnValues(columnKey)}
-                                                            className="px-2 py-1 text-[11px] border border-gray-300 rounded hover:bg-gray-100"
-                                                          >
-                                                            Load more
-                                                          </button>
-                                                        </div>
-                                                      )}
                                                     </div>
                                                   ) : (
                                                     <div className="py-8 text-xs text-gray-500 text-center">
