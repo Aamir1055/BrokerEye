@@ -368,11 +368,9 @@ const Client2Page = () => {
   // Global percentage view disabled; use per-field % cards instead
   const showPercentage = false
 
-  // If % mode toggle is ON or any % face card is enabled, send percentage=true in the request
-  const percentModeActive = useMemo(() => {
-    const anyPercentCard = Object.entries(cardVisibility || {}).some(([key, value]) => key.endsWith('Percent') && value !== false)
-    return cardFilterPercentMode || anyPercentCard
-  }, [cardFilterPercentMode, cardVisibility])
+  // Percentage mode now ONLY controlled by explicit toggle (cardFilterPercentMode)
+  // Face card visibility no longer auto-triggers percentage API calls to avoid unintended requests.
+  const percentModeActive = cardFilterPercentMode === true
   
   // Filter modal state
   const [newFilterField, setNewFilterField] = useState('balance')
@@ -1040,13 +1038,10 @@ const Client2Page = () => {
         payload.sortOrder = sortOrder
       }
 
-  // Determine whether any normal and/or percent face cards are enabled
-      const anyNormal = Object.entries(cardVisibility || {}).some(([key, value]) => !key.endsWith('Percent') && value !== false)
-      const anyPercent = percentModeActive
-
-  // OPTIMIZATION: Only fetch percentage data if actually needed (percentage mode is ON)
-  // This prevents unnecessary API calls when user is not viewing percentage cards/columns
-  const shouldFetchPercentage = anyPercent
+      // ALWAYS fetch normal data for table display
+      const anyNormal = true
+      // Only fetch percent data when explicit toggle ON
+      const shouldFetchPercentage = percentModeActive
 
       // Helper: build payload variants to emulate OR within a single field (if applicable)
       const buildPayloadVariants = (base, percentageFlag) => {
@@ -1056,22 +1051,22 @@ const Client2Page = () => {
             const f = Array.isArray(base.filters) ? [...base.filters] : []
             f.push({ field: multiOrField, operator: 'equal', value: val })
             const p = { ...base, filters: f }
-            if (percentageFlag) p.percentage = true
+            if (percentageFlag && shouldFetchPercentage) p.percentage = true
             return p
           })
         }
         const p = { ...base }
-        if (percentageFlag) p.percentage = true
+        if (percentageFlag && shouldFetchPercentage) p.percentage = true
         return [p]
       }
 
       const payloadNormalVariants = buildPayloadVariants(payload, false)
-      const payloadPercentVariants = buildPayloadVariants(payload, true)
+      const payloadPercentVariants = shouldFetchPercentage ? buildPayloadVariants(payload, true) : []
 
-  if (DEBUG_LOGS) console.log('[Client2] Sending payloads - Normal:', payloadNormalVariants, 'Percent (only if needed):', shouldFetchPercentage ? payloadPercentVariants : 'SKIPPED')
+    if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', payloadNormalVariants, 'Percent:', shouldFetchPercentage ? payloadPercentVariants : 'SKIPPED')
 
-      // Fetch based on selection: both → fetch both; otherwise fetch one
-      if (anyNormal && shouldFetchPercentage) {
+      // Fetch normal always, then optionally percent
+      if (shouldFetchPercentage) {
         // Normal variants
   const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         // Merge clients (union by login) and sum totals
@@ -2398,12 +2393,12 @@ const Client2Page = () => {
           const f = Array.isArray(b.filters) ? [...b.filters] : []
           f.push({ field: multiOrField, operator: 'equal', value: val })
           const p = { ...b, filters: f }
-          if (percentageFlag) p.percentage = true
+          if (percentageFlag && percentModeActive) p.percentage = true
           return p
         })
       }
       const p = { ...b }
-      if (percentageFlag) p.percentage = true
+      if (percentageFlag && percentModeActive) p.percentage = true
       return [p]
     }
     return buildVariants(base)
