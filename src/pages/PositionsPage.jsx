@@ -10,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
+import IBSelector from '../components/IBSelector'
 
 const PositionsPage = () => {
   // Use cached data from DataContext
@@ -1857,6 +1858,9 @@ const PositionsPage = () => {
                   setShowGroupModal(true)
                 }}
               />
+              
+              {/* IB Filter Button */}
+              <IBSelector />
               
               {/* NET Position Toggle */}
               <button

@@ -847,25 +847,25 @@ const MarginLevelPage = () => {
             </div>
           </div>
 
-          {/* Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 relative z-0">
-            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Total Under 50%</p>
-              <p className="text-lg font-semibold text-gray-900">{filtered.length}</p>
+          {/* Stats Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
+            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Under 50%</p>
+              <p className="text-sm font-bold text-gray-900">{filtered.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-green-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Avg Margin Level</p>
-              <p className="text-lg font-semibold text-gray-900">
+            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
+              <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Avg Margin Level</p>
+              <p className="text-sm font-bold text-gray-900">
                 {filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) + '%' : '-'}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-purple-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Unique Logins</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(filtered.map(o=>o.login)).size}</p>
+            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
+              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(filtered.map(o=>o.login)).size}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-3">
-              <p className="text-xs text-gray-500 mb-1">Logins Under 50%</p>
-              <p className="text-lg font-semibold text-gray-900">{new Set(filtered.map(a=>a.login)).size}</p>
+            <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
+              <p className="text-[10px] font-semibold text-orange-600 uppercase mb-0">Logins Under 50%</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(filtered.map(a=>a.login)).size}</p>
             </div>
           </div>
 
