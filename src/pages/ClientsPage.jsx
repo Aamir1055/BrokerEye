@@ -201,7 +201,7 @@ const ClientsPage = () => {
     } catch (e) {
       console.error('Failed to load display mode:', e)
     }
-    return 'both' // Default
+    return 'value' // Default
   }
 
   const [searchInput, setSearchInput] = useState('')
@@ -245,7 +245,7 @@ const ClientsPage = () => {
 
   // Face cards: visibility, order, theme
   const defaultFaceCardOrder = [
-    // Core financial metrics (6 cards)
+    // Core financial metrics
     1,   // Total Clients
     2,   // Total Balance
     3,   // Total Credit
@@ -253,23 +253,21 @@ const ClientsPage = () => {
     5,   // PNL
     6,   // Floating Profit
     
-    // Daily metrics (3 cards)
+    // Daily metrics
     8,   // Daily Deposit
     9,   // Daily Withdrawal
     10,  // Daily PNL
     
-    // Period PNL (3 cards)
-    15,  // This Week PNL
-    16,  // This Month PNL
-    17,  // Lifetime PNL
+    // Period PNL
+    11,  // This Week PNL
+    12,  // This Month PNL
+    13,  // Lifetime PNL
     
-    // Additional important metrics (6 cards)
-    11,  // Daily Net D/W
-    12,  // Total Rebate
-    13,  // Available Rebate %
-    14,  // Available Rebate
-    18,  // Blocked Rebate
-    19   // Lifetime Deposit
+    // Additional metrics
+    14,  // Daily Net D/W
+    15,  // Total Rebate
+    16,  // Available Rebate
+    66,  // Net Lifetime PNL
   ]
   const getInitialFaceCardOrder = () => {
     try {
@@ -285,7 +283,13 @@ const ClientsPage = () => {
       const saved = localStorage.getItem('clientsCardVisibility')
       if (saved) return JSON.parse(saved)
     } catch {}
+    // Only show cards in defaultFaceCardOrder, hide all others
     const map = {}
+    // Set all cards to false first
+    for (let i = 1; i <= 67; i++) {
+      map[i] = false
+    }
+    // Then enable only the default cards
     defaultFaceCardOrder.forEach(id => { map[id] = true })
     return map
   }
