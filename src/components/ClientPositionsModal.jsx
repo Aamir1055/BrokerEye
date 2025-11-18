@@ -255,17 +255,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }, [allPositionsCache, client.login])
 
-  // Fetch aggregated deal stats for the client (disabled - endpoint not available)
+  // Fetch aggregated deal stats for the client (GET endpoint per requirement)
   useEffect(() => {
-    // Backend doesn't have /api/broker/clients/${login}/deals/stats endpoint
-    // Commenting out to prevent 404 errors
-    /*
     let cancelled = false
     const loadStats = async () => {
       try {
         setDealStatsLoading(true)
         setDealStatsError('')
-        const res = await brokerAPI.getClientDealStats(client.login)
+        const res = await brokerAPI.getClientDealStatsGET(client.login)
         const data = res?.data || res
         if (!cancelled) setDealStats(data || null)
       } catch (err) {
@@ -279,7 +276,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
     if (client?.login) loadStats()
     return () => { cancelled = true }
-    */
   }, [client?.login])
 
   // Persist deal stat visibility
@@ -2792,39 +2788,40 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             <div className="space-y-1">
               {/* Positions + Deals Summary face cards in 2 rows of Excel-like cells */}
               {(() => {
-                const items = []
+                // Build first row: fixed position & money cards
+                const row1 = []
                 const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
                 const lifetime = Number(clientData?.lifetimePnL ?? clientData?.pnl ?? 0)
                 const floating = Number(clientData?.floating ?? totalPL)
                 const bookPnL = lifetime + floating
 
                 if (fixedCardVisibility.pf_totalPositions) {
-                  items.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700', accent: 'border-blue-300' })
+                  row1.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700', accent: 'border-blue-300' })
                 }
                 if (fixedCardVisibility.pf_totalVolume) {
                   const vol = positions.reduce((sum, p) => sum + (p.volume || 0), 0)
-                  items.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
+                  row1.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
                 }
                 if (fixedCardVisibility.pf_totalPL) {
-                  items.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
+                  row1.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_lifetimePnL) {
-                  items.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime), accent: lifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
+                  row1.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime), accent: lifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
                 }
                 if (fixedCardVisibility.pf_bookPnL) {
-                  items.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL), accent: bookPnL >= 0 ? 'border-emerald-400' : 'border-red-400' })
+                  row1.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL), accent: bookPnL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_balance) {
-                  items.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700', accent: 'border-cyan-300' })
+                  row1.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700', accent: 'border-cyan-300' })
                 }
                 if (fixedCardVisibility.pf_credit) {
-                  items.push({ label: 'Credit', value: formatCurrency(clientData?.credit), labelClass: 'text-violet-700', accent: 'border-violet-300' })
+                  row1.push({ label: 'Credit', value: formatCurrency(clientData?.credit), labelClass: 'text-violet-700', accent: 'border-violet-300' })
                 }
                 if (fixedCardVisibility.pf_equity) {
-                  items.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700', accent: 'border-green-300' })
+                  row1.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700', accent: 'border-green-300' })
                 }
 
-                // Append Deals Summary cells to items
+                // Build second row: Deals Summary (six face cards from GET stats)
                 const keys = dealStats ? Object.keys(dealStats) : []
                 const visibleKeys = keys.filter(k => dealStatVisibility[k])
                 const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
@@ -2833,6 +2830,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   ...preferredOrder.filter(k => baseKeys.includes(k)),
                   ...baseKeys.filter(k => !preferredOrder.includes(k))
                 ]
+                const row2 = []
                 const dealAccent = (k, v) => {
                   if (k === 'totalCommission') return 'border-amber-400'
                   if (k === 'totalDeals') return 'border-blue-300'
@@ -2844,15 +2842,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 }
                 toRender.forEach((key) => {
                   const styles = getDealStatStyle(key, dealStats?.[key])
-                  items.push({ label: toTitle(key), value: formatStatValue(key, dealStats?.[key]), labelClass: styles.label, valueClass: styles.value, accent: dealAccent(key, dealStats?.[key]) })
+                  row2.push({ label: toTitle(key), value: formatStatValue(key, dealStats?.[key]), labelClass: styles.label, valueClass: styles.value, accent: dealAccent(key, dealStats?.[key]) })
                 })
 
-                if (!items.length) return null
-
-                // Split into exactly two rows
-                const half = Math.ceil(items.length / 2)
-                const row1 = items.slice(0, half)
-                const row2 = items.slice(half)
+                if (!row1.length && !row2.length) return null
 
                 return (
                   <div className="space-y-2">

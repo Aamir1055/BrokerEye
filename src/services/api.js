@@ -226,6 +226,16 @@ export const brokerAPI = {
       }
     }
   },
+
+  // Get aggregated deal stats for a client via GET (explicit endpoint as requested)
+  getClientDealStatsGET: async (login, from = null, to = null) => {
+    const qs = []
+    if (from != null) qs.push(`from=${from}`)
+    if (to != null) qs.push(`to=${to}`)
+    const q = qs.length ? `?${qs.join('&')}` : ''
+    const response = await api.get(`/api/broker/clients/${login}/deals/stats${q}`)
+    return response.data
+  },
   
   // Get all positions
   getPositions: async () => {
