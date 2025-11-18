@@ -1177,34 +1177,34 @@ const PendingOrdersPage = () => {
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 2)}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 5)}
+                              {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
                               {priceDelta !== undefined && priceDelta !== 0 ? (
                                 <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(5)}
+                                  {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(3)}
                                 </span>
                               ) : null}
                             </div>
                           </td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 5)}</td>
+                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 3)}</td>
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 5)}
+                              {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
                               {slDelta !== undefined && slDelta !== 0 ? (
                                 <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {slDelta > 0 ? '▲' : '▼'} {Math.abs(slDelta).toFixed(5)}
+                                  {slDelta > 0 ? '▲' : '▼'} {Math.abs(slDelta).toFixed(3)}
                                 </span>
                               ) : null}
                             </div>
                           </td>
                           <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
                             <div className="flex items-center gap-1">
-                              {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 5)}
+                              {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
                               {tpDelta !== undefined && tpDelta !== 0 ? (
                                 <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {tpDelta > 0 ? '▲' : '▼'} {Math.abs(tpDelta).toFixed(5)}
+                                  {tpDelta > 0 ? '▲' : '▼'} {Math.abs(tpDelta).toFixed(3)}
                                 </span>
                               ) : null}
                             </div>

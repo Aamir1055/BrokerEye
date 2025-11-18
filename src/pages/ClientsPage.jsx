@@ -3123,25 +3123,6 @@ const ClientsPage = () => {
             overflow: 'hidden',
             minHeight: '250px'
           }}>
-            {/* YouTube-style Loading Progress Bar */}
-            {(isRefreshing || isSorting) && (
-              <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
-                <style>{`
-                  @keyframes headerSlide {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(400%); }
-                  }
-                  .header-loading-bar {
-                    width: 30%;
-                    height: 100%;
-                    background: #2563eb;
-                    animation: headerSlide 1.2s ease-in-out;
-                  }
-                `}</style>
-                <div className="header-loading-bar absolute top-0 left-0 h-full" />
-              </div>
-            )}
-            
             {/* Helper text for column reordering */}
             <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -3678,6 +3659,32 @@ const ClientsPage = () => {
                     })()}
                   </tr>
                 </thead>
+                
+                {/* YouTube-style Loading Progress Bar - Below Header */}
+                {(isRefreshing || isSorting) && (
+                  <thead>
+                    <tr>
+                      <th colSpan={visibleColumnsList.length * (displayMode === 'both' ? 2 : 1)} style={{ padding: 0, height: '4px', border: 'none' }}>
+                        <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
+                          <style>{`
+                            @keyframes headerSlide {
+                              0% { transform: translateX(-100%); }
+                              100% { transform: translateX(400%); }
+                            }
+                            .header-loading-bar {
+                              width: 30%;
+                              height: 100%;
+                              background: #2563eb;
+                              animation: headerSlide 1.2s ease-in-out;
+                            }
+                          `}</style>
+                          <div className="header-loading-bar absolute top-0 left-0 h-full" />
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                )}
+                
                 <tbody className="bg-white divide-y divide-gray-100">
                   {/* Virtualization padding (top) */}
                   {topPadding > 0 && (

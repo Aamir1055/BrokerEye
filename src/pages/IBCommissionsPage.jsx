@@ -313,37 +313,35 @@ const IBCommissionsPage = () => {
   }, [columnWidths])
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
-      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} relative z-0`}>
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
-          <div className="flex items-center justify-between px-6 py-4">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900"
+                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">IB Commissions</h1>
-                <p className="text-sm text-gray-600 mt-1">Manage introducing broker commission percentages</p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">IB Commissions</h1>
+                <p className="text-xs text-gray-500 mt-0.5">Manage introducing broker commission percentages</p>
               </div>
             </div>
           </div>
-        </header>
 
-        {/* Face Cards - 4 Metrics */}
-        <div className="px-6 pt-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+          {/* Face Cards - 4 Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
             {/* Total Rebate Card */}
             <div className="bg-white rounded shadow-sm border border-blue-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
               <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">
@@ -414,11 +412,10 @@ const IBCommissionsPage = () => {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden px-6 pb-6">
-          <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
+          {/* Main Content */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
             {/* Top Controls: match Clients style (search + pagination + per-page) */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-t-xl border-b border-blue-200 p-4">
                 {/* Left: per page + page nav */}
@@ -646,7 +643,6 @@ const IBCommissionsPage = () => {
               )}
             </div>
           </div>
-        </main>
 
         {/* Bulk Sync Modal */}
         {showBulkSyncModal && (
@@ -790,7 +786,9 @@ const IBCommissionsPage = () => {
             </div>
           </div>
         )}
-      </div>
+        </div>
+        </div>
+      </main>
     </div>
   )
 }
