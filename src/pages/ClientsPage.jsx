@@ -2256,7 +2256,9 @@ const ClientsPage = () => {
                         className="w-full px-2 py-1.5 text-xs text-gray-700 border border-pink-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent placeholder:text-gray-400"
                       />
                     </div>
-                    {[
+                    {(() => {
+                      // All available face card options (values and percentage variants)
+                      const allCardOptions = [ 
                       { id: 1, label: 'Total Clients' },
                       { id: 2, label: 'Total Balance' },
                       { id: 3, label: 'Total Credit' },
@@ -2309,25 +2311,48 @@ const ClientsPage = () => {
                       { id: 49, label: 'Monthly Previous Equity' },
                       { id: 50, label: 'Previous Equity' },
                       { id: 53, label: 'Book PnL' }
-                    ].filter(card => 
-                      card.label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
-                    ).map(card => (
-                      <label
-                        key={card.id}
-                        className="flex items-center px-3 py-2 hover:bg-pink-100 cursor-pointer transition-colors rounded-md mx-2"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={cardVisibility[card.id] !== false}
-                          onChange={() => setCardVisibility(prev => ({
-                            ...prev,
-                            [card.id]: prev[card.id] === false ? true : false
-                          }))}
-                          className="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-semibold text-gray-700">{card.label}</span>
-                      </label>
-                    ))}
+                      ]
+
+                      // Filter by search text
+                      .filter(card => card.label.toLowerCase().includes(cardFilterSearchQuery.toLowerCase()))
+
+                      // Filter by display mode
+                      .filter(card => {
+                        const isPercent = card.label.includes('%')
+                        if (displayMode === 'percentage') return isPercent
+                        if (displayMode === 'value') return !isPercent
+                        return true // both
+                      })
+
+                      // Render each option with robust toggle
+                      .map(card => (
+                        <label
+                          key={card.id}
+                          className="flex items-center px-3 py-2 hover:bg-pink-100 cursor-pointer transition-colors rounded-md mx-2"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={cardVisibility[card.id] !== false}
+                            onChange={() => {
+                              // Toggle visibility explicitly between true/false
+                              setCardVisibility(prev => ({
+                                ...prev,
+                                [card.id]: prev[card.id] === false ? true : false
+                              }))
+                              // Ensure the card exists in the face card order when turned on
+                              setFaceCardOrder(prev => {
+                                if (prev.includes(card.id)) return prev
+                                const updated = [...prev, card.id]
+                                try { localStorage.setItem('clientsFaceCardOrder', JSON.stringify(updated)) } catch {}
+                                return updated
+                              })
+                            }}
+                            className="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-xs font-semibold text-gray-700">{card.label}</span>
+                        </label>
+                      ))
+                    })()}
                   </div>
                 )}
               </div>
