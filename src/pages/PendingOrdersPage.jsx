@@ -1127,7 +1127,7 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Orders Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden" style={{ height: '450px' }}>
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden" style={{ height: '510px' }}>
             <div className="flex-1 h-full overflow-y-auto">
               {displayedOrders.length === 0 ? (
                 <div className="text-center py-12">
@@ -1220,12 +1220,7 @@ const PendingOrdersPage = () => {
 
           {/* Pagination Controls - Bottom removed as per request */}
 
-          {/* Connection status helper */}
-          <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
-            <p className="text-xs text-gray-600">
-              <strong>Status:</strong> {connectionState === 'connected' ? 'Live via WebSocket' : connectionState}
-            </p>
-          </div>
+          {/* Connection status helper removed per request */}
         </div>
       </main>
       

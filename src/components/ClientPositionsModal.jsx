@@ -2159,7 +2159,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               ) : (
                 <div className="overflow-x-auto max-h-96">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-purple-600 sticky top-0 z-10 shadow-md">
+                    <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
                         <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Symbol</th>
                         <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">NET Type</th>
@@ -2171,7 +2171,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {netPositions.map((netPos, index) => (
-                        <tr key={`${netPos.symbol}-${index}`} className="hover:bg-purple-50 transition-colors">
+                        <tr key={`${netPos.symbol}-${index}`} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {netPos.symbol}
                           </td>

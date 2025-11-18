@@ -455,6 +455,23 @@ const ClientsPage = () => {
     return visibleCols
   }, [dynamicColumns, visibleColumns, columnOrder])
 
+  // Compute total table width (including virtual percentage columns in 'both' mode)
+  const totalTableWidth = useMemo(() => {
+    if (!visibleColumnsList || visibleColumnsList.length === 0) return 0
+    const baseWidth = visibleColumnsList.reduce((sum, col) => {
+      const w = columnWidths[col.key]
+      return sum + (typeof w === 'number' && w > 0 ? w : 150)
+    }, 0)
+    if (displayMode === 'both') {
+      const extra = visibleColumnsList.filter(c => isMetricColumn(c.key)).reduce((sum, col) => {
+        const vw = columnWidths[col.key + '_percentage_display']
+        return sum + (typeof vw === 'number' && vw > 0 ? vw : 120)
+      }, 0)
+      return baseWidth + extra
+    }
+    return baseWidth
+  }, [visibleColumnsList, columnWidths, displayMode])
+
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('clientsPageVisibleColumns', JSON.stringify(visibleColumns))
@@ -599,23 +616,9 @@ const ClientsPage = () => {
     resizeStartWidth.current = (typeof measured === 'number' && measured > 0)
       ? measured
       : (columnWidths[columnKey] || 150) // Fallback to last set width or 150px
-
-    // Determine immediate right neighbor (Excel-like resize)
-    const currentEl = headerRefs.current?.[columnKey]
-    const nextEl = currentEl?.nextElementSibling || null
-    let neighborKey = null
-    if (nextEl) {
-      for (const k in headerRefs.current) {
-        if (headerRefs.current[k] === nextEl) { neighborKey = k; break }
-      }
-    }
-    resizeRightNeighborKey.current = neighborKey
-    if (neighborKey) {
-      const nMeasured = headerRefs.current?.[neighborKey]?.getBoundingClientRect()?.width
-      resizeRightStartWidth.current = (typeof nMeasured === 'number' && nMeasured > 0) ? nMeasured : (columnWidths[neighborKey] || 150)
-    } else {
-      resizeRightStartWidth.current = 0
-    }
+    // New behavior: do NOT shrink neighbor; allow table to grow horizontally
+    resizeRightNeighborKey.current = null
+    resizeRightStartWidth.current = 0
   }, [columnWidths])
 
   const handleResizeMove = useCallback((e) => {
@@ -628,15 +631,8 @@ const ClientsPage = () => {
       const diff = e.clientX - resizeStartX.current
       // Allow both directions with min width 50px
       const leftWidth = Math.max(50, resizeStartWidth.current + diff)
-
-      // Adjust right neighbor inversely to keep total steady (Excel-like)
-      const rKey = resizeRightNeighborKey.current
-      if (rKey) {
-        const rightWidth = Math.max(50, resizeRightStartWidth.current - diff)
-        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth, [rKey]: rightWidth }))
-      } else {
-        setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth }))
-      }
+      // Only adjust the active column; overall table width increases
+      setColumnWidths(prev => ({ ...prev, [resizingColumn]: leftWidth }))
     })
   }, [resizingColumn])
 
@@ -2112,8 +2108,8 @@ const ClientsPage = () => {
         })}
       />
       
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-hidden relative z-10`}>
-        <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-auto relative z-10`}>
+        <div className="max-w-full mx-auto flex flex-col min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
@@ -3119,32 +3115,13 @@ const ClientsPage = () => {
           </div>
 
           {/* Data Table */}
-          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col flex-1 min-h-0" style={{ 
+          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
             overflow: 'hidden',
-            minHeight: '250px'
+            minHeight: '250px',
+            height: showFaceCards ? '310px' : '510px'
           }}>
-            {/* Helper text for column reordering */}
-            <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-xs text-blue-700 font-medium">
-                  <span className="font-bold">Tip:</span> Drag column headers to reorder • Double-click resize handle to auto-fit
-                </p>
-              </div>
-              {columnOrder && (
-                <button
-                  onClick={resetColumnOrder}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
-                  title="Reset to default column order"
-                >
-                  Reset Order
-                </button>
-              )}
-            </div>
             
-            <div ref={scrollContainerRef} onScroll={handleScroll} className="overflow-y-auto flex-1" style={{ 
+            <div ref={scrollContainerRef} onScroll={handleScroll} className="overflow-auto flex-1" style={{ 
               scrollbarWidth: 'thin',
               scrollbarColor: '#3b82f6 #e5e7eb',
               zoom: `${zoomLevel}%`,
@@ -3153,7 +3130,8 @@ const ClientsPage = () => {
             }}>
               <style>{`
                 .flex-1::-webkit-scrollbar {
-                  width: 8px;
+                  width: 6px;
+                  height: 10px;
                 }
                 .flex-1::-webkit-scrollbar-track {
                   background: #f3f4f6;
@@ -3166,7 +3144,21 @@ const ClientsPage = () => {
                   background: #1d4ed8;
                 }
               `}</style>
-              <table ref={tableRef} className="w-full divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed', willChange: 'contents' }}>
+              <table ref={tableRef} className="divide-y divide-gray-200 mb-4" style={{ tableLayout: 'fixed', width: `${totalTableWidth}px`, minWidth: '100%' }}>
+                <colgroup>
+                  {(() => {
+                    const cols = []
+                    visibleColumnsList.forEach(col => {
+                      const baseW = columnWidths[col.key]
+                      cols.push(<col key={col.key} style={{ width: (typeof baseW === 'number' && baseW > 0 ? baseW : 150) + 'px' }} />)
+                      if (displayMode === 'both' && isMetricColumn(col.key)) {
+                        const virtW = columnWidths[col.key + '_percentage_display']
+                        cols.push(<col key={col.key + '_percentage_display'} style={{ width: (typeof virtW === 'number' && virtW > 0 ? virtW : 120) + 'px' }} />)
+                      }
+                    })
+                    return cols
+                  })()}
+                </colgroup>
                 <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, overflow: 'visible', willChange: 'auto' }}>
                   <tr>
                     {(() => {
@@ -3194,6 +3186,7 @@ const ClientsPage = () => {
                         const filterCount = getActiveFilterCount(col.baseKey)
                         const isFilterable = !col.key.endsWith('_percentage_display') // Only filter base columns
                         const isLastColumn = colIndex >= renderCols.length - 3 // Last 3 columns
+                        const defaultPixelWidth = 150 // Default width in pixels for each column
                         
                         return (
                         <th
@@ -3203,9 +3196,9 @@ const ClientsPage = () => {
                           onDragOver={(e) => isFilterable && handleColumnDragOver(e)}
                           onDrop={(e) => isFilterable && handleColumnDrop(e, col.baseKey)}
                           onDragEnd={handleColumnDragEnd}
-                          className={`px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700/70 transition-all ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
+                          className={`px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700 transition-colors ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
                           ref={el => { if (el) { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el } }}
-                          style={{ width: columnWidths[col.key] || col.width + '%', minWidth: 44, overflow: 'visible', position: 'relative' }}
+                          style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : `${defaultPixelWidth}px`, minWidth: '80px', overflow: 'visible', position: 'relative' }}
                           title={isFilterable ? `${col.label} - Drag to reorder` : col.label}
                         >
                           {/* Column Resize Handle */}
@@ -3741,11 +3734,12 @@ const ClientsPage = () => {
                         {renderCols.map(col => {
                           // Special handling for login column - make it clickable
                           if (col.key === 'login') {
+                            const defaultPixelWidth = 150
                             return (
                               <td 
                                 key={col.key} 
                                 className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all" 
-                                style={{ width: columnWidths[col.key] || `${col.width}%` }}
+                                style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : `${defaultPixelWidth}px`, minWidth: '80px' }}
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setSelectedClient(client)
@@ -3764,8 +3758,9 @@ const ClientsPage = () => {
                           }
                           
                           // Regular columns
+                          const defaultPixelWidth = 150
                           return (
-                            <td key={col.key} className="px-2 py-1.5 text-[13px] text-gray-800" style={{ width: columnWidths[col.key] || `${col.width}%`, minWidth: 44 }}>
+                            <td key={col.key} className="px-2 py-1.5 text-[13px] text-gray-800" style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : `${defaultPixelWidth}px`, minWidth: '80px' }}>
                               <div className="truncate" title={col.title}>
                                 {col.value}
                               </div>
