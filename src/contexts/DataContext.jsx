@@ -164,6 +164,12 @@ export const DataProvider = ({ children }) => {
   // Track if initial data load is complete (to control WebSocket connection)
   const [hasInitialData, setHasInitialData] = useState(false)
   
+  // Track last lag check to prevent frequent reconnections
+  const lastLagCheckRef = useRef(0)
+  const isReconnectingRef = useRef(false)
+  const LAG_THRESHOLD_MS = 100000 // 100 seconds = 100,000 milliseconds
+  const LAG_CHECK_INTERVAL_MS = 30000 // Check every 30 seconds
+  
   const [loading, setLoading] = useState({
     clients: false,
     positions: false,
@@ -1799,6 +1805,59 @@ export const DataProvider = ({ children }) => {
     
     initialSync()
   }, [isAuthenticated])
+
+  // Monitor lag and auto-reconnect with fresh data when lag exceeds threshold
+  useEffect(() => {
+    if (!isAuthenticated || !hasInitialData) return
+    
+    const lagCheckInterval = setInterval(() => {
+      const now = Date.now()
+      
+      // Prevent frequent checks and reconnections
+      if (now - lastLagCheckRef.current < LAG_CHECK_INTERVAL_MS) {
+        return
+      }
+      
+      lastLagCheckRef.current = now
+      
+      // Check if lag exceeds threshold
+      if (latestMeasuredLagMs && latestMeasuredLagMs >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
+        const lagSeconds = Math.floor(latestMeasuredLagMs / 1000)
+        console.warn(`[DataContext] ⚠️ High lag detected: ${lagSeconds}s (threshold: 100s) - Reconnecting WebSocket and fetching fresh data...`)
+        
+        isReconnectingRef.current = true
+        
+        // Disconnect WebSocket
+        websocketService.disconnect()
+        
+        // Fetch fresh data from API
+        Promise.all([
+          fetchClients(true).catch(err => console.error('[DataContext] Lag recovery: fetchClients failed:', err)),
+          fetchPositions(true).catch(err => console.error('[DataContext] Lag recovery: fetchPositions failed:', err)),
+          fetchOrders(true).catch(err => console.error('[DataContext] Lag recovery: fetchOrders failed:', err)),
+          fetchAccounts(true).catch(err => console.error('[DataContext] Lag recovery: fetchAccounts failed:', err))
+        ]).then(() => {
+          console.log('[DataContext] ✅ Fresh data loaded, reconnecting WebSocket...')
+          
+          // Wait a moment for data to settle, then reconnect WebSocket
+          setTimeout(() => {
+            websocketService.connect()
+            isReconnectingRef.current = false
+            console.log('[DataContext] ✅ WebSocket reconnected after lag recovery')
+          }, 1000)
+        }).catch(err => {
+          console.error('[DataContext] ❌ Lag recovery failed:', err)
+          // Try to reconnect anyway
+          setTimeout(() => {
+            websocketService.connect()
+            isReconnectingRef.current = false
+          }, 2000)
+        })
+      }
+    }, LAG_CHECK_INTERVAL_MS)
+    
+    return () => clearInterval(lagCheckInterval)
+  }, [isAuthenticated, hasInitialData, latestMeasuredLagMs, fetchClients, fetchPositions, fetchOrders, fetchAccounts])
 
   const value = useMemo(() => ({
     // Data
