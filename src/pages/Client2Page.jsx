@@ -43,7 +43,16 @@ const Client2Page = () => {
   // IB context
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const getInitialSidebarOpen = () => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      if (v === null) return false // collapsed by default
+      return JSON.parse(v)
+    } catch {
+      return false
+    }
+  }
+  const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -114,6 +123,9 @@ const Client2Page = () => {
     hasCredit: false,
     noDeposit: false
   })
+  // Networking guards for polling
+  const fetchAbortRef = useRef(null)
+  const isFetchingRef = useRef(false)
   const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
   
   // Define default face card order for Client2 (matching all available cards in the actual rendering)
@@ -997,7 +1009,7 @@ const Client2Page = () => {
         payload.sortOrder = sortOrder
       }
 
-      // Determine whether any normal and/or percent face cards are enabled
+  // Determine whether any normal and/or percent face cards are enabled
       const anyNormal = Object.entries(cardVisibility || {}).some(([key, value]) => !key.endsWith('Percent') && value !== false)
       const anyPercent = percentModeActive
 
@@ -1024,8 +1036,6 @@ const Client2Page = () => {
       // Fetch based on selection: both → fetch both; otherwise fetch one
       if (anyNormal && anyPercent) {
         // Normal variants
-  // Debug: log outgoing payload(s)
-  try { console.debug('[Client2] search payload (normal):', payloadNormalVariants) } catch {}
   const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         // Merge clients (union by login) and sum totals
         const clientMap = new Map()
@@ -1064,7 +1074,6 @@ const Client2Page = () => {
         setError('')
 
         // Percent variants (sum totals only)
-  try { console.debug('[Client2] search payload (percent):', payloadPercentVariants) } catch {}
   const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         let mergedPercentTotals = {}
         let percentTotalCount = 0
@@ -1084,7 +1093,6 @@ const Client2Page = () => {
         }
       } else if (anyPercent) {
         // Percent only
-  try { console.debug('[Client2] search payload (percent only):', payloadPercentVariants) } catch {}
   const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         // Use first response's clients for table (percent mode only shows percent dataset)
         const first = percentResponses[0]
@@ -1111,10 +1119,10 @@ const Client2Page = () => {
         setError('')
       } else {
         // Normal only
-  try { console.debug('[Client2] search payload (normal only):', payloadNormalVariants) } catch {}
   const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         const clientMap = new Map()
         let mergedTotals = {}
+        let mergedTotalCount = 0
         normalResponses.forEach((resp) => {
           const data = resp?.data || resp
           const list = data?.clients || []
@@ -1145,6 +1153,12 @@ const Client2Page = () => {
         setError('')
       }
     } catch (err) {
+      // Ignore request cancellations caused by in-flight aborts
+      const isCanceled = err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(err?.message || '')
+      if (isCanceled) {
+        try { console.debug('[Client2] fetchClients canceled (expected on fast refresh)') } catch {}
+        return
+      }
       console.error('[Client2] Error fetching clients:', err)
       console.error('[Client2] Error details:', {
         message: err.message,
@@ -1171,6 +1185,7 @@ const Client2Page = () => {
         setError(errorMessage)
       }
     } finally {
+      isFetchingRef.current = false
       if (!silent) {
         setLoading(false)
       }
@@ -1207,12 +1222,11 @@ const Client2Page = () => {
   
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
   
-  // Auto-refresh every 1 second (silent update)
+  // Auto-refresh every 3 seconds (silent update) with in-flight cancellation
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchClients(true) // silent = true, no loading spinner
-    }, 1000)
-    
+    }, 3000)
     return () => clearInterval(intervalId)
   }, [fetchClients])
   
@@ -2607,9 +2621,22 @@ const Client2Page = () => {
       {/* Clean White Background */}
       <div className="absolute inset-0 bg-white"></div>
       
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => {
+          setSidebarOpen(false)
+          try { localStorage.setItem('sidebarOpen', 'false') } catch {}
+        }}
+        onToggle={() => {
+          setSidebarOpen(v => {
+            const next = !v
+            try { localStorage.setItem('sidebarOpen', JSON.stringify(next)) } catch {}
+            return next
+          })
+        }}
+      />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -3310,12 +3337,28 @@ const Client2Page = () => {
             </div>
           )}
           
-          {/* Initial Loading Spinner */}
-          {initialLoad && loading && <LoadingSpinner />}
-          
-          {/* Table - Keep rows visible during sorting; no shimmer on sort */}
-          {(!initialLoad && clients.length > 0) && (
+          {/* Table - Show table with progress bar for all loading states */}
+          {(clients.length > 0 || (initialLoad && loading)) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
+              {/* YouTube-style Loading Progress Bar - Between pagination and table header */}
+              {(loading || isRefreshing) && (
+                <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
+                  <style>{`
+                    @keyframes headerSlide {
+                      0% { transform: translateX(-100%); }
+                      100% { transform: translateX(400%); }
+                    }
+                    .header-loading-bar {
+                      width: 30%;
+                      height: 100%;
+                      background: #2563eb;
+                      animation: headerSlide 0.9s linear infinite;
+                    }
+                  `}</style>
+                  <div className="header-loading-bar absolute top-0 left-0 h-full" />
+                </div>
+              )}
+              
               {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
               <div className="overflow-auto relative table-scroll-container flex-1" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
@@ -3443,7 +3486,7 @@ const Client2Page = () => {
                   }
                   .header-loading-bar {
                     width: 30%; height: 100%;
-                    background: #22c55e; /* tailwind green-500 */
+                    background: #2563eb; /* tailwind blue-600 - matches table header */
                     border-radius: 2px;
                     animation: headerSlide 0.9s linear infinite;
                   }
@@ -4129,27 +4172,9 @@ const Client2Page = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
-                      {loading && !isSorting ? (
-                        // Progressive loading skeleton with staggered animation
-                        Array.from({ length: 10 }).map((_, idx) => (
-                          <tr 
-                            key={`skeleton-${animationKey}-${idx}`} 
-                            style={{
-                              opacity: 0,
-                              animation: `fadeIn 0.3s ease-in forwards ${idx * 50}ms`
-                            }}
-                          >
-                            {visibleColumnsList.map(col => (
-                              <td key={col.key} data-col={col.key} className="px-4 py-3" style={{ overflow: 'hidden' }}>
-                                <div className="h-4 skeleton-shimmer w-full"></div>
-                              </td>
-                            ))}
-                          </tr>
-                        ))
-                      ) : (
-                        // Actual data rows with staggered fade-in
-                        // Guard: filter out null/undefined clients
-                        (sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
+                      {/* Always show actual data rows with staggered fade-in */}
+                      {/* Guard: filter out null/undefined clients */}
+                      {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                           <tr 
                             key={`${client.login}-${animationKey}-${idx}`}
                             className="hover:bg-blue-50 transition-colors"
@@ -4202,8 +4227,7 @@ const Client2Page = () => {
                               )
                             })}
                           </tr>
-                        ))
-                      )}
+                        ))}
                     </tbody>
                   </table>
               </div>

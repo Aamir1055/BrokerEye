@@ -7,7 +7,14 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import Sidebar from '../components/Sidebar'
 
 const IBCommissionsPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const getInitialSidebarOpen = () => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      if (v === null) return false
+      return JSON.parse(v)
+    } catch { return false }
+  }
+  const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [commissions, setCommissions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -307,9 +314,13 @@ const IBCommissionsPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen','false') } catch {} }}
+        onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+      />
       
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
           <div className="flex items-center justify-between px-6 py-4">

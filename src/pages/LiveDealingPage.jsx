@@ -17,7 +17,14 @@ const LiveDealingPage = () => {
   const { positions: cachedPositions } = useData() // Get positions from DataContext
   const { filterByActiveGroup } = useGroups()
   const { filterByActiveIB } = useIB()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const getInitialSidebarOpen = () => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      if (v === null) return false
+      return JSON.parse(v)
+    } catch { return false }
+  }
+  const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
@@ -1293,9 +1300,20 @@ const LiveDealingPage = () => {
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => {
+          setSidebarOpen(false)
+          try { localStorage.setItem('sidebarOpen', 'false') } catch {}
+        }}
+        onToggle={() => setSidebarOpen(v => {
+          const n = !v
+          try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}
+          return n
+        })}
+      />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 flex flex-col overflow-hidden">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">

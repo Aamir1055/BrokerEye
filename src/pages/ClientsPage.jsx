@@ -36,7 +36,14 @@ const ClientsPage = () => {
       isMountedRef.current = false
     }
   }, [])
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const getInitialSidebarOpen = () => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      if (v === null) return false
+      return JSON.parse(v)
+    } catch { return false }
+  }
+  const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [error, setError] = useState('')
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
@@ -2087,9 +2094,20 @@ const ClientsPage = () => {
       {/* Clean White Background */}
       <div className="absolute inset-0 bg-white"></div>
       
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => {
+          setSidebarOpen(false)
+          try { localStorage.setItem('sidebarOpen', 'false') } catch {}
+        }}
+        onToggle={() => setSidebarOpen(v => {
+          const n = !v
+          try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}
+          return n
+        })}
+      />
       
-      <main className="flex-1 p-3 sm:p-4 lg:p-6 lg:ml-60 overflow-hidden relative z-10">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-hidden relative z-10`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">

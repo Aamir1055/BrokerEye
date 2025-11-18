@@ -292,13 +292,9 @@ export const DataProvider = ({ children }) => {
   // Update stats incrementally based on old vs new client data (batched)
   const updateStatsIncremental = useCallback((oldClient, newClient) => {
     if (!newClient?.login) return
-    
-    // Check if we've already processed this exact update
+
     const clientLogin = newClient.login
     const lastState = lastClientStateRef.current.get(clientLogin)
-    
-    // Create a signature of the current state for key financial fields
-    // Include all numeric fields that feed our totals so we don't skip updates that change them
     const currentSignature = [
       toNum(newClient.balance),
       toNum(newClient.credit),
@@ -313,34 +309,25 @@ export const DataProvider = ({ children }) => {
       toNum(newClient.lifetimePnL),
       toNum(newClient.lastUpdate)
     ].join('_')
-    
-    // Skip if this is a duplicate update (same signature as last processed)
-    if (lastState === currentSignature) {
-      return // Already processed this exact state
-    }
-    
-    // Update the last processed signature
+
+    if (lastState === currentSignature) return
     lastClientStateRef.current.set(clientLogin, currentSignature)
-    
-    // Calculate delta (use lastState parsed values if available, otherwise use oldClient)
+
     const delta = {
       totalBalance: toNum(newClient?.balance) - toNum(oldClient?.balance),
       totalCredit: toNum(newClient?.credit) - toNum(oldClient?.credit),
       totalEquity: toNum(newClient?.equity) - toNum(oldClient?.equity),
       totalPnl: toNum(newClient?.pnl) - toNum(oldClient?.pnl),
       totalProfit: toNum(newClient?.profit) - toNum(oldClient?.profit),
-      // API uses camelCase for deposit/withdrawal fields
       dailyDeposit: toNum(newClient?.dailyDeposit) - toNum(oldClient?.dailyDeposit),
       dailyWithdrawal: toNum(newClient?.dailyWithdrawal) - toNum(oldClient?.dailyWithdrawal),
-      // Use backend-provided PnL bucket deltas directly (no sign inversion)
       dailyPnL: toNum(newClient?.dailyPnL) - toNum(oldClient?.dailyPnL),
       thisWeekPnL: toNum(newClient?.thisWeekPnL) - toNum(oldClient?.thisWeekPnL),
       thisMonthPnL: toNum(newClient?.thisMonthPnL) - toNum(oldClient?.thisMonthPnL),
       lifetimePnL: toNum(newClient?.lifetimePnL) - toNum(oldClient?.lifetimePnL),
       totalDeposit: toNum(newClient?.dailyDeposit) - toNum(oldClient?.dailyDeposit)
     }
-    
-    // Accumulate deltas in batch
+
     const batch = statsUpdateBatchRef.current
     batch.deltas.totalBalance += delta.totalBalance
     batch.deltas.totalCredit += delta.totalCredit
@@ -354,8 +341,7 @@ export const DataProvider = ({ children }) => {
     batch.deltas.thisMonthPnL += delta.thisMonthPnL
     batch.deltas.lifetimePnL += delta.lifetimePnL
     batch.deltas.totalDeposit += delta.totalDeposit
-    
-    // Schedule batch update (debounced; adaptive delay)
+
     if (!batch.pending) {
       batch.pending = true
       const delay = Math.max(200, Math.min(2000, statsBatchDelayRef.current || 1000))
@@ -375,133 +361,113 @@ export const DataProvider = ({ children }) => {
           lifetimePnL: prev.lifetimePnL + batch.deltas.lifetimePnL,
           totalDeposit: prev.totalDeposit + batch.deltas.totalDeposit
         }))
-        
-        // Reset batch
         batch.deltas = {
-          totalBalance: 0, totalCredit: 0, totalEquity: 0, totalPnl: 0, totalProfit: 0,
-          dailyDeposit: 0, dailyWithdrawal: 0, dailyPnL: 0, thisWeekPnL: 0, thisMonthPnL: 0, lifetimePnL: 0,
+          totalBalance: 0,
+          totalCredit: 0,
+          totalEquity: 0,
+          totalPnl: 0,
+          totalProfit: 0,
+          dailyDeposit: 0,
+          dailyWithdrawal: 0,
+          dailyPnL: 0,
+          thisWeekPnL: 0,
+          thisMonthPnL: 0,
+          lifetimePnL: 0,
           totalDeposit: 0
         }
         batch.pending = false
-      }, delay) // Adaptive stats update interval
+      }, delay)
     }
   }, [])
 
-  // Fetch clients data
+  // Fetch clients data (REST snapshot). Includes retry, dedup, normalization, timestamp seeding, and initial stats calculation.
   const fetchClients = useCallback(async (force = false) => {
     if (!isAuthenticated) {
       console.log('[DataContext] Not authenticated, skipping fetchClients')
       return []
     }
-    
-    // Prevent concurrent fetches using ref-based lock (immediate check)
+
+    // Prevent concurrent fetches
     if (isFetchingClientsRef.current) {
       console.log('[DataContext] ⚠️ fetchClients already in progress, skipping duplicate call')
       return clients
     }
-    
+
+    // Use cached data if not stale and not forced
     if (!force && clients.length > 0 && !isStale('clients')) {
       return clients
     }
 
-    // Set lock immediately (before async state update)
     isFetchingClientsRef.current = true
     setLoading(prev => ({ ...prev, clients: true }))
-    
+
     try {
       const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getClients' })
       const rawData = response.data?.clients || []
 
-      // SAFETY: Filter out null/undefined clients before normalization
-      const validRawData = rawData.filter(c => c != null && c.login != null)
+      // Filter null/invalid entries early
+      const validRawData = rawData.filter(c => c && c.login != null)
       if (validRawData.length < rawData.length) {
         console.warn(`[DataContext] Filtered out ${rawData.length - validRawData.length} invalid clients from API response`)
       }
 
-      // Normalize USC consistently using the shared helper (avoids double/partial normalization)
-      const normalizedData = validRawData.map(normalizeUSCValues)
-      
-      // Deduplicate clients by login (keep last occurrence)
-      const clientsMap = new Map()
-      normalizedData.forEach(client => {
-        if (client && client.login) {
-          clientsMap.set(client.login, client)
-        }
-      })
-      const data = Array.from(clientsMap.values())
-      
-      if (rawData.length !== data.length) {
-        console.warn(`[DataContext] ⚠️ Deduplicated ${rawData.length - data.length} duplicate clients (${rawData.length} → ${data.length})`)
+      // Normalize
+      const normalized = validRawData.map(normalizeUSCValues)
+
+      // Deduplicate by login (last occurrence wins)
+      const map = new Map()
+      normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
+      const data = Array.from(map.values())
+      if (normalized.length !== data.length) {
+        console.warn(`[DataContext] ⚠️ Deduplicated ${normalized.length - data.length} duplicate clients (${normalized.length} → ${data.length})`)
       }
-      
-  setClients(data)
-  setAccounts(data) // Keep accounts in sync
-      
-      // CRITICAL: Rebuild index maps after bulk data load to prevent stale indices
-      // This is done outside the WebSocket subscription context, so we need to
-      // reference the maps that will be created when WebSocket connects
-      // The actual rebuild will happen in the first processBatch call
-      
-      // Initialize last state tracking for all clients to prevent duplicate processing
+
+      setClients(data)
+      setAccounts(data)
+
+      // Seed signatures & timestamps
       lastClientStateRef.current.clear()
       lastClientTimestampRef.current.clear()
-      data.forEach(client => {
-        if (client?.login) {
-          const signature = [
-            toNum(client.balance),
-            toNum(client.credit),
-            toNum(client.equity),
-            toNum(client.pnl),
-            toNum(client.profit),
-            toNum(client.dailyDeposit),
-            toNum(client.dailyWithdrawal),
-            toNum(client.dailyPnL),
-            toNum(client.thisWeekPnL),
-            toNum(client.thisMonthPnL),
-            toNum(client.lifetimePnL),
-            toNum(client.lastUpdate)
-          ].join('_')
-          lastClientStateRef.current.set(client.login, signature)
-          // Seed last timestamp map for ordering protection
-          const seedTs = (client.serverTimestamp || client.lastUpdate) ? (client.serverTimestamp || (client.lastUpdate < 10000000000 ? client.lastUpdate * 1000 : client.lastUpdate)) : 0
-          if (seedTs) lastClientTimestampRef.current.set(client.login, seedTs)
-        }
+      data.forEach(c => {
+        if (!c?.login) return
+        const sig = [
+          toNum(c.balance), toNum(c.credit), toNum(c.equity), toNum(c.pnl), toNum(c.profit),
+          toNum(c.dailyDeposit), toNum(c.dailyWithdrawal), toNum(c.dailyPnL), toNum(c.thisWeekPnL),
+          toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate)
+        ].join('_')
+        lastClientStateRef.current.set(c.login, sig)
+        const tsRaw = c.serverTimestamp || c.lastUpdate || 0
+        const ts = tsRaw ? (tsRaw < 10000000000 ? tsRaw * 1000 : tsRaw) : 0
+        if (ts) lastClientTimestampRef.current.set(c.login, ts)
       })
-      
-      // Calculate full stats on initial load (with guard against concurrent calls)
+
+      // Initial full stats calculation (guard against concurrent)
       if (!isCalculatingStatsRef.current) {
         isCalculatingStatsRef.current = true
         const stats = calculateFullStats(data)
         setClientStats(stats)
-        console.log('[DataContext] 📊 Initial stats calculated:', stats)
-        // Reset flag after a short delay to allow state update to complete
         setTimeout(() => { isCalculatingStatsRef.current = false }, 100)
-      } else {
-        console.log('[DataContext] ⚠️ Skipped redundant stats calculation (already in progress)')
       }
+
       setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() }))
-      
-      // Mark that we have initial data - safe to connect WebSocket now
-      if (!hasInitialData) {
+
+      if (!hasInitialData && data.length > 0) {
         setHasInitialData(true)
-        console.log('[DataContext] ✅ Initial data loaded, WebSocket will connect now')
+        console.log('[DataContext] ✅ Initial clients loaded; WebSocket can connect')
       }
-      
       return data
-    } catch (error) {
-      console.error('[DataContext] Failed to fetch clients:', error)
-      // Allow WebSocket to connect even if REST failed; live updates can populate state
+    } catch (err) {
+      console.error('[DataContext] Failed to fetch clients:', err)
       if (!hasInitialData) {
         setHasInitialData(true)
         console.warn('[DataContext] ⚠️ Proceeding to WebSocket without initial clients due to errors')
       }
-      throw error
+      throw err
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
-      // Release lock
       isFetchingClientsRef.current = false
     }
-  }, [clients, isAuthenticated])
+  }, [clients, isAuthenticated, calculateFullStats])
 
   // Fetch positions data
   const fetchPositions = useCallback(async (force = false) => {
@@ -633,7 +599,7 @@ export const DataProvider = ({ children }) => {
       }
     })
 
-    // Subscribe to clients updates
+    // Subscribe to clients updates (snapshot). Merge per-client only when newer to avoid stat oscillation.
   const unsubClients = websocketService.subscribe('clients', (data) => {
       try {
         // Mark receive timestamp for latency instrumentation (throttled)
@@ -646,112 +612,114 @@ export const DataProvider = ({ children }) => {
         }
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
-          // Normalize USC currency values for all clients
-          const normalizedClients = rawClients.map(normalizeUSCValues)
-          
-          // Deduplicate clients by login
-          const clientsMap = new Map()
-          normalizedClients.forEach(client => {
-            if (client && client.login) {
-              clientsMap.set(client.login, client)
-            }
-          })
-          const newClients = Array.from(clientsMap.values())
-          
-          if (normalizedClients.length !== newClients.length) {
-            console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${normalizedClients.length - newClients.length} duplicate clients`)
+          const normalized = rawClients.map(normalizeUSCValues)
+          const map = new Map()
+          normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
+          const snapshot = Array.from(map.values())
+
+          if (normalized.length !== snapshot.length) {
+            console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${normalized.length - snapshot.length} duplicate clients`)
           }
-          
-          // Guard: avoid cascading re-renders if snapshot is identical (same logins + signatures)
-          let shouldUpdateSnapshot = true
+
           lowPriority(() => setClients(prev => {
-            if (prev.length === newClients.length) {
-              let allSame = true
-              for (let i = 0; i < prev.length; i++) {
-                const a = prev[i]
-                const b = newClients[i]
-                // Compare using robust numeric comparison to handle string/number type mismatches
-                if (!a || !b || a.login !== b.login || 
-                    toNum(a.balance) !== toNum(b.balance) || 
-                    toNum(a.equity) !== toNum(b.equity) || 
-                    toNum(a.profit) !== toNum(b.profit) || 
-                    toNum(a.lastUpdate) !== toNum(b.lastUpdate)) {
-                  allSame = false
-                  break
-                }
-              }
-              if (allSame) {
-                shouldUpdateSnapshot = false
-                return prev // skip state update
-              }
-            }
-            // Seed per-client timestamps on full snapshot acceptance to protect ordering
-            try {
+            const existing = Array.isArray(prev) ? prev : []
+            if (existing.length === 0) {
+              // First snapshot: seed timestamps & signatures, full replace
               lastClientTimestampRef.current.clear()
-              for (let i = 0; i < newClients.length; i++) {
-                const c = newClients[i]
-                if (!c || !c.login) continue
+              snapshot.forEach(c => {
                 const tsRaw = c.serverTimestamp || c.lastUpdate || 0
                 const ts = toMs(tsRaw)
-                if (ts) lastClientTimestampRef.current.set(c.login, ts)
-              }
-            } catch {}
-            return newClients
-          }))
-          lowPriority(() => setAccounts(prev => {
-            if (!shouldUpdateSnapshot) return prev
-            return newClients
-          }))
-          if (shouldUpdateSnapshot) {
-            lowPriority(() => setLastFetch(prev => ({ ...prev, clients: Date.now(), accounts: Date.now() })))
-          }
-
-          // Reset signature tracking to this fresh snapshot
-          lastClientStateRef.current.clear()
-          newClients.forEach(c => {
-            if (c?.login) {
-              const sig = [
-                toNum(c.balance),
-                toNum(c.credit),
-                toNum(c.equity),
-                toNum(c.pnl),
-                toNum(c.profit),
-                toNum(c.dailyDeposit),
-                toNum(c.dailyWithdrawal),
-                toNum(c.dailyPnL),
-                toNum(c.thisWeekPnL),
-                toNum(c.thisMonthPnL),
-                toNum(c.lifetimePnL),
-                toNum(c.lastUpdate)
-              ].join('_')
-              lastClientStateRef.current.set(c.login, sig)
+                if (c.login && ts) lastClientTimestampRef.current.set(c.login, ts)
+              })
+              // Signatures
+              lastClientStateRef.current.clear()
+              snapshot.forEach(c => {
+                if (!c?.login) return
+                const sig = [
+                  toNum(c.balance), toNum(c.credit), toNum(c.equity), toNum(c.pnl), toNum(c.profit),
+                  toNum(c.dailyDeposit), toNum(c.dailyWithdrawal), toNum(c.dailyPnL), toNum(c.thisWeekPnL),
+                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate)
+                ].join('_')
+                lastClientStateRef.current.set(c.login, sig)
+              })
+              const snapStats = calculateFullStats(snapshot)
+              lowPriority(() => setClientStats(snapStats))
+              lowPriority(() => setLastFetch(p => ({ ...p, clients: Date.now(), accounts: Date.now() })))
+              return snapshot
             }
-          })
 
-          // Recalculate full stats on fresh snapshot
-          if (shouldUpdateSnapshot) {
-            try {
-              const snapStats = calculateFullStats(newClients)
-              // Only apply if differs meaningfully (prevent update depth loops)
+            // Merge newer entries only
+            const updated = [...existing]
+            let statsChanged = false
+            snapshot.forEach(incoming => {
+              if (!incoming || !incoming.login) return
+              const login = incoming.login
+              const incomingTsRaw = incoming.serverTimestamp || incoming.lastUpdate || 0
+              const incomingTs = toMs(incomingTsRaw)
+              const prevTs = lastClientTimestampRef.current.get(login) || 0
+              if (prevTs && incomingTs && incomingTs < prevTs) {
+                // stale snapshot entry, skip
+                return
+              }
+              const idx = updated.findIndex(c => c?.login === login)
+              if (idx === -1) {
+                updated.push(incoming)
+                if (incomingTs) lastClientTimestampRef.current.set(login, incomingTs)
+                statsChanged = true
+                return
+              }
+              const existingClient = updated[idx]
+              // Determine if any tracked numeric field changed
+              const fields = ['balance','credit','equity','pnl','profit','dailyDeposit','dailyWithdrawal','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL']
+              let changed = false
+              for (const f of fields) {
+                if (toNum(existingClient[f]) !== toNum(incoming[f])) { changed = true; break }
+              }
+              if (!changed) return
+              updated[idx] = { ...existingClient, ...incoming }
+              if (incomingTs) lastClientTimestampRef.current.set(login, incomingTs)
+              statsChanged = true
+            })
+
+            if (statsChanged) {
+              // Recompute stats once
+              const snapStats = calculateFullStats(updated)
               const diff = diffStats(snapStats, clientStats)
               const hasMeaningfulDiff = Object.values(diff).some(v => Math.abs(v) > 0.00001)
               if (hasMeaningfulDiff) {
                 lowPriority(() => setClientStats(snapStats))
               }
-            } catch (e) {
-              console.warn('[DataContext] Failed recalculating stats from full snapshot', e)
+              // Rebuild signatures for changed clients only (or all for simplicity)
+              lastClientStateRef.current.clear()
+              updated.forEach(c => {
+                if (!c?.login) return
+                const sig = [
+                  toNum(c.balance), toNum(c.credit), toNum(c.equity), toNum(c.pnl), toNum(c.profit),
+                  toNum(c.dailyDeposit), toNum(c.dailyWithdrawal), toNum(c.dailyPnL), toNum(c.thisWeekPnL),
+                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate)
+                ].join('_')
+                lastClientStateRef.current.set(c.login, sig)
+              })
+              lowPriority(() => setLastFetch(p => ({ ...p, clients: Date.now(), accounts: Date.now() })))
             }
-          }
-          
-          // Update timestamp from bulk data
-          if (newClients.length > 0) {
+            return updated
+          }))
+
+          // Keep accounts array aligned if snapshot changed anything
+          lowPriority(() => setAccounts(prevAcc => {
+            if (!Array.isArray(prevAcc) || prevAcc.length === 0) return snapshot
+            return prevAcc // Keep as-is; accounts updated via incremental flow
+          }))
+
+          // Update timestamp metrics from a sample of snapshot
+          if (snapshot.length > 0) {
             let maxTs = 0
-            for (let i = 0; i < Math.min(newClients.length, 100); i++) {
-              const rawTs = newClients[i]?.serverTimestamp || newClients[i]?.lastUpdate || 0
+            for (let i = 0; i < Math.min(snapshot.length, 100); i++) {
+              const rawTs = snapshot[i]?.serverTimestamp || snapshot[i]?.lastUpdate || 0
               const tsMs = toMs(rawTs)
               if (tsMs > maxTs) maxTs = tsMs
             }
-            if (maxTs === 0) maxTs = Date.now() // Fallback to current time
+            if (maxTs === 0) maxTs = Date.now()
             setLatestServerTimestamp(maxTs)
             setLatestMeasuredLagMs(Math.max(0, Date.now() - maxTs))
           }

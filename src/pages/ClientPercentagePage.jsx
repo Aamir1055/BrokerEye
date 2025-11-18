@@ -825,9 +825,13 @@ const ClientPercentagePage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen','false') } catch {} }}
+        onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+      />
       
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-60">
+      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">

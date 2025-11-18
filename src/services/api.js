@@ -431,9 +431,10 @@ export const brokerAPI = {
   },
 
   // Search clients with advanced filtering, pagination, and sorting
-  searchClients: async (payload) => {
-    const response = await api.post('/api/broker/clients/search', payload)
-    return response.data
+  // Accept optional axios config (e.g., { signal, timeout }) for per-request control
+  searchClients: async (payload, options = {}) => {
+    const response = await api.post('/api/broker/clients/search', payload, options)
+    return response
   }
 }
 
