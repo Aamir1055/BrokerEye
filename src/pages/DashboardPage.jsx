@@ -9,7 +9,17 @@ import MiniDataTable from '../components/dashboard/MiniDataTable'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 
 const DashboardPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Initialize sidebar state from localStorage
+  const getInitialSidebarOpen = () => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      if (v === null) return false // collapsed by default
+      return JSON.parse(v)
+    } catch {
+      return false
+    }
+  }
+  const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const { user } = useAuth()
   const { clients, positions, orders, clientStats, loading, connectionState } = useData()
   const navigate = useNavigate()
@@ -432,7 +442,7 @@ const DashboardPage = () => {
       />
       
       {/* Main Content */}
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-x-hidden`}>
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">

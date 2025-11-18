@@ -11,6 +11,9 @@ import api, { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 
+// Gate verbose logs behind env flag to keep console clean in production
+const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
+
 const Client2Page = () => {
   // DataContext (align with ClientsPage for positions cache usage)
   const { positions: cachedPositions } = useData()
@@ -215,6 +218,7 @@ const Client2Page = () => {
   const tableRef = useRef(null)
   const hScrollRef = useRef(null)
   const stickyScrollRef = useRef(null)
+  const faceCardsRef = useRef(null)
   const tableContainerRef = useRef(null)
   const [resizingColumn, setResizingColumn] = useState(null)
   const [tableHeight, setTableHeight] = useState('calc(100vh - 280px)')
@@ -440,28 +444,65 @@ const Client2Page = () => {
     }
   }, [showFilterDropdown])
   
-  // Calculate dynamic table height based on available space
+  // Calculate dynamic table height based on available space and changing UI above the table
+  const visibleCardCount = useMemo(() => {
+    try {
+      return (faceCardOrder || []).filter(k => (cardVisibility?.[k] !== false)).length
+    } catch {
+      return 0
+    }
+  }, [faceCardOrder, cardVisibility])
+
+  // Improved dynamic height: measure actual table container offset each time instead of relying on static approximations.
+  // Shrinks when cards are visible; expands when cards hidden. Reacts to card count & layout shifts.
   useEffect(() => {
-    const calculateHeight = () => {
+    const measureAndSet = () => {
+      if (!tableContainerRef.current) return
+      // Use the container's distance from top of viewport for precise remaining space.
+      const top = tableContainerRef.current.getBoundingClientRect().top
+      const viewportHeight = window.innerHeight
+      // Bottom buffer: keep tiny breathing room (4px) so scrollbar track isn't flush with edge.
+      const bottomBuffer = 4
+      // Dynamic min height: smaller when cards visible, larger when hidden so user sees more rows.
+      const minHeight = showFaceCards ? 240 : 480
+      // If face cards are visible, reserve their live height (already pushes container downward).
+      // Remaining available vertical space:
+      const available = viewportHeight - top - bottomBuffer
+      const finalHeight = Math.max(minHeight, available)
+      setTableHeight(`${finalHeight}px`)
+    }
+
+    // Initial + double RAF to wait for layout / transitions.
+    measureAndSet()
+    requestAnimationFrame(() => requestAnimationFrame(measureAndSet))
+
+    const handleResize = () => measureAndSet()
+    window.addEventListener('resize', handleResize)
+
+    // Observe face card region & table container for size mutations.
+    let roCards, roTable
+    if (typeof ResizeObserver !== 'undefined') {
+      if (faceCardsRef.current) {
+        roCards = new ResizeObserver(measureAndSet)
+        try { roCards.observe(faceCardsRef.current) } catch {}
+      }
       if (tableContainerRef.current) {
-        const rect = tableContainerRef.current.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-        const availableHeight = viewportHeight - rect.top - 20 // 20px padding at bottom
-        setTableHeight(`${Math.max(400, availableHeight)}px`)
+        roTable = new ResizeObserver(measureAndSet)
+        try { roTable.observe(tableContainerRef.current) } catch {}
       }
     }
 
-    calculateHeight()
-    window.addEventListener('resize', calculateHeight)
-    
-    // Recalculate when face cards visibility changes
-    const timeout = setTimeout(calculateHeight, 100)
-    
+    // Mutation observer catches class / visibility toggles impacting layout.
+    const mutObs = new MutationObserver(measureAndSet)
+    try { mutObs.observe(document.body, { attributes: true, subtree: true, childList: true }) } catch {}
+
     return () => {
-      window.removeEventListener('resize', calculateHeight)
-      clearTimeout(timeout)
+      window.removeEventListener('resize', handleResize)
+      try { roCards && roCards.disconnect() } catch {}
+      try { roTable && roTable.disconnect() } catch {}
+      try { mutObs.disconnect() } catch {}
     }
-  }, [showFaceCards, filters.length])
+  }, [showFaceCards, visibleCardCount, cardFilterPercentMode, sidebarOpen])
   
   // All available columns
   const allColumns = [
@@ -792,7 +833,9 @@ const Client2Page = () => {
       if (!silent) {
         setLoading(true)
       }
-      setError('')
+  setError('')
+  // Normalize axios response shapes: some backends return data under data.data
+  const extractData = (resp) => (resp?.data?.data) || (resp?.data) || resp
       
       // Build request payload - always include page/limit as per API contract
       const payload = {
@@ -913,7 +956,7 @@ const Client2Page = () => {
             
             // OPTIMIZATION 1: If ALL values are selected, skip the filter entirely (no need to filter)
             if (allValues.length > 0 && selectedValues.length === allValues.length) {
-              console.log(`[Client2] Skipping filter for ${field}: all ${allValues.length} values selected`)
+              if (DEBUG_LOGS) console.log(`[Client2] Skipping filter for ${field}: all ${allValues.length} values selected`)
               return // No filter needed when everything is selected
             }
             
@@ -925,7 +968,7 @@ const Client2Page = () => {
                                       (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
             
             if (shouldUseNotEqual) {
-              console.log(`[Client2] Using NOT EQUAL filter for ${field}: ${unselectedValues.length} excluded values instead of ${selectedValues.length} OR values`)
+              if (DEBUG_LOGS) console.log(`[Client2] Using NOT EQUAL filter for ${field}: ${unselectedValues.length} excluded values instead of ${selectedValues.length} OR values`)
               unselectedValues.forEach(value => {
                 combinedFilters.push({ field, operator: 'not_equal', value })
               })
@@ -973,7 +1016,7 @@ const Client2Page = () => {
           // Range-based group
           payload.accountRangeMin = activeGroup.range.from
           payload.accountRangeMax = activeGroup.range.to
-          console.log('[Client2] Applying range group filter:', activeGroup.range)
+          if (DEBUG_LOGS) console.log('[Client2] Applying range group filter:', activeGroup.range)
         } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
           // Manual selection group: merge/intersect with any existing list
           const groupAccounts = activeGroup.loginIds.map(id => Number(id))
@@ -983,7 +1026,7 @@ const Client2Page = () => {
           } else {
             mt5AccountsFilter = [...new Set(groupAccounts)]
           }
-          console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
+          if (DEBUG_LOGS) console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
         }
       }
 
@@ -1033,6 +1076,8 @@ const Client2Page = () => {
       const payloadNormalVariants = buildPayloadVariants(payload, false)
       const payloadPercentVariants = buildPayloadVariants(payload, true)
 
+  if (DEBUG_LOGS) console.log('[Client2] Sending payloads - Normal:', payloadNormalVariants, 'Percent:', payloadPercentVariants)
+
       // Fetch based on selection: both → fetch both; otherwise fetch one
       if (anyNormal && anyPercent) {
         // Normal variants
@@ -1043,8 +1088,14 @@ const Client2Page = () => {
         let mergedTotalCount = 0
         let pages = 1
         normalResponses.forEach((resp) => {
-          const data = resp?.data || resp
+          if (DEBUG_LOGS) console.log('[Client2] Raw response:', resp)
+          if (DEBUG_LOGS) console.log('[Client2] resp.data:', resp?.data)
+          const data = extractData(resp)
+          if (DEBUG_LOGS) console.log('[Client2] Extracted data:', data)
+          if (DEBUG_LOGS) console.log('[Client2] data.clients:', data?.clients)
+          if (DEBUG_LOGS) console.log('[Client2] data.data:', data?.data)
           const list = data?.clients || []
+          if (DEBUG_LOGS) console.log('[Client2] Final list:', list, 'length:', list.length)
           // SAFETY: Filter out null/undefined clients before adding to map
           list.filter(c => c != null && c.login != null).forEach(c => { 
             if (!clientMap.has(c.login)) clientMap.set(c.login, c) 
@@ -1063,7 +1114,7 @@ const Client2Page = () => {
   // SAFETY: Final filter before setting state
   const safeClients = unionClients.filter(c => c != null && c.login != null)
   if (safeClients.length < unionClients.length) {
-    console.warn('[Client2Page] Filtered out invalid clients from API response')
+  if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from API response')
   }
   setClients(safeClients)
   // Prefer server-reported total when available; fallback to union length
@@ -1078,11 +1129,11 @@ const Client2Page = () => {
         let mergedPercentTotals = {}
         let percentTotalCount = 0
         percentResponses.forEach((resp) => {
-          const t = (resp?.data || resp)?.totals || {}
+          const t = extractData(resp)?.totals || {}
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
           })
-          const d = resp?.data || resp
+          const d = extractData(resp)
           percentTotalCount += Number(d?.total || d?.clients?.length || 0)
         })
         setTotalsPercent(mergedPercentTotals)
@@ -1095,13 +1146,13 @@ const Client2Page = () => {
         // Percent only
   const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         // Use first response's clients for table (percent mode only shows percent dataset)
-        const first = percentResponses[0]
-        const data = first?.data || first
+    const first = percentResponses[0]
+    const data = extractData(first)
         // SAFETY: Filter out null/undefined clients before setting state
         const rawClients = data?.clients || []
         const safeClients = rawClients.filter(c => c != null && c.login != null)
         if (safeClients.length < rawClients.length) {
-          console.warn('[Client2Page] Filtered out invalid clients from percent-only API response')
+          if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from percent-only API response')
         }
         setClients(safeClients)
         setTotalClients(data?.total || data?.clients?.length || 0)
@@ -1109,7 +1160,7 @@ const Client2Page = () => {
         // Merge percent totals across variants
         let mergedPercentTotals = {}
         percentResponses.forEach((resp) => {
-          const t = (resp?.data || resp)?.totals || {}
+          const t = extractData(resp)?.totals || {}
           Object.entries(t).forEach(([k, v]) => {
             if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
           })
@@ -1124,7 +1175,7 @@ const Client2Page = () => {
         let mergedTotals = {}
         let mergedTotalCount = 0
         normalResponses.forEach((resp) => {
-          const data = resp?.data || resp
+          const data = extractData(resp)
           const list = data?.clients || []
           // SAFETY: Filter out null/undefined clients before adding to map
           list.filter(c => c != null && c.login != null).forEach(c => { 
@@ -1142,7 +1193,7 @@ const Client2Page = () => {
         // SAFETY: Final filter before setting state
         const safeClients = unionClients.filter(c => c != null && c.login != null)
         if (safeClients.length < unionClients.length) {
-          console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
+          if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
         }
   setClients(safeClients)
   const effectiveTotal = serverTotal > 0 ? serverTotal : unionClients.length
@@ -1156,7 +1207,7 @@ const Client2Page = () => {
       // Ignore request cancellations caused by in-flight aborts
       const isCanceled = err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(err?.message || '')
       if (isCanceled) {
-        try { console.debug('[Client2] fetchClients canceled (expected on fast refresh)') } catch {}
+  try { if (DEBUG_LOGS) console.debug('[Client2] fetchClients canceled (expected on fast refresh)') } catch {}
         return
       }
       console.error('[Client2] Error fetching clients:', err)
@@ -1753,6 +1804,7 @@ const Client2Page = () => {
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     
     try {
+      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
       // Use a large page size to minimize number of requests
       const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, 1000)
 
@@ -1781,7 +1833,7 @@ const Client2Page = () => {
       const setVals = new Set()
       let maxPages = 1
       responses.forEach(resp => {
-        const d = resp?.data || resp
+        const d = extract(resp)
         const rows = d?.clients || []
         rows.forEach(row => {
           const v = row?.[columnKey]
@@ -1796,7 +1848,7 @@ const Client2Page = () => {
         const allVariants = remainingPages.flatMap(pg => buildVariants({ ...payload, page: pg }))
         const allResponses = await Promise.all(allVariants.map(p => brokerAPI.searchClients(p)))
         allResponses.forEach(resp => {
-          const d = resp?.data || resp
+          const d = extract(resp)
           const rows = d?.clients || []
           rows.forEach(row => {
             const v = row?.[columnKey]
@@ -1845,6 +1897,27 @@ const Client2Page = () => {
       // Select all
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [...allValues] }))
     }
+  }
+
+  // Toggle select only currently visible (filtered) values for the column
+  const toggleSelectVisibleColumnValues = (columnKey) => {
+    const allValues = columnValues[columnKey] || []
+    const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+    const visible = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+    const currentSelected = selectedColumnValues[columnKey] || []
+    const allVisibleSelected = visible.length > 0 && visible.every(v => currentSelected.includes(v))
+
+    let nextSelected
+    if (allVisibleSelected) {
+      // Deselect only the currently visible values
+      const visibleSet = new Set(visible)
+      nextSelected = currentSelected.filter(v => !visibleSet.has(v))
+    } else {
+      // Add visible values to the selection
+      const merged = new Set([...currentSelected, ...visible])
+      nextSelected = Array.from(merged)
+    }
+    setSelectedColumnValues(prev => ({ ...prev, [columnKey]: nextSelected }))
   }
 
   // Apply checkbox filter
@@ -2617,7 +2690,7 @@ const Client2Page = () => {
   }, [showFilterDropdown])
   
   return (
-    <div className="h-screen flex overflow-hidden relative">
+    <div className="min-h-screen flex overflow-x-hidden overflow-y-auto relative">
       {/* Clean White Background */}
       <div className="absolute inset-0 bg-white"></div>
       
@@ -2636,7 +2709,7 @@ const Client2Page = () => {
         }}
       />
       
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+  <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -3000,7 +3073,20 @@ const Client2Page = () => {
               
               {/* Cards Toggle Button */}
               <button
-                onClick={() => setShowFaceCards(!showFaceCards)}
+                onClick={() => {
+                  setShowFaceCards(v => !v)
+                  // Defer re-measure after toggle
+                  setTimeout(() => {
+                    if (tableContainerRef.current) {
+                      const top = tableContainerRef.current.getBoundingClientRect().top
+                      const viewportHeight = window.innerHeight
+                      const bottomBuffer = 4
+                      const minHeight = !showFaceCards ? 240 : 480 // showFaceCards is previous state
+                      const available = viewportHeight - top - bottomBuffer
+                      setTableHeight(`${Math.max(minHeight, available)}px`)
+                    }
+                  }, 50)
+                }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
                   showFaceCards 
                     ? 'bg-blue-50 border-blue-500 text-blue-700' 
@@ -3074,7 +3160,7 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-3">
+            <div className="mb-3" ref={faceCardsRef}>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xs font-semibold text-gray-700">Summary Statistics {cardFilterPercentMode ? '(Percentage Mode)' : ''}</h2>
                 <div className="flex items-center gap-2">
@@ -3828,17 +3914,26 @@ const Client2Page = () => {
                                                   />
                                                 </div>
 
-                                                {/* Select All Checkbox */}
+                                                {/* Select Visible Checkbox */}
                                                 <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                  <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={(selectedColumnValues[columnKey] || []).length === (columnValues[columnKey] || []).length && (columnValues[columnKey] || []).length > 0}
-                                                      onChange={() => toggleSelectAllColumnValues(columnKey)}
-                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL ({(columnValues[columnKey] || []).length} values)</span>
-                                                  </label>
+                                                  {(() => {
+                                                    const allVals = columnValues[columnKey] || []
+                                                    const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                    const visible = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
+                                                    const selected = selectedColumnValues[columnKey] || []
+                                                    const allVisibleSelected = visible.length > 0 && visible.every(v => selected.includes(v))
+                                                    return (
+                                                      <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input
+                                                          type="checkbox"
+                                                          checked={allVisibleSelected}
+                                                          onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                        />
+                                                        <span className="text-xs font-bold text-gray-700">Select visible ({visible.length})</span>
+                                                      </label>
+                                                    )
+                                                  })()}
                                                 </div>
 
                                                 {/* Values List - All values loaded, no pagination */}
@@ -4080,16 +4175,16 @@ const Client2Page = () => {
                                                   />
                                                 </div>
 
-                                                {/* Select All Checkbox */}
+                                                {/* Select Visible Checkbox */}
                                                 <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                                                   <label className="flex items-center gap-2 cursor-pointer">
                                                     <input
                                                       type="checkbox"
-                                                      checked={selected.length === allValues.length && allValues.length > 0}
-                                                      onChange={() => toggleSelectAllColumnValues(columnKey)}
+                                                      checked={filteredValues.length > 0 && filteredValues.every(v => selected.includes(v))}
+                                                      onChange={() => toggleSelectVisibleColumnValues(columnKey)}
                                                       className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                     />
-                                                    <span className="text-xs font-bold text-gray-700">SELECT ALL ({allValues.length} values)</span>
+                                                    <span className="text-xs font-bold text-gray-700">Select visible ({filteredValues.length})</span>
                                                   </label>
                                                 </div>
 
