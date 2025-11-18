@@ -2319,9 +2319,9 @@ const ClientsPage = () => {
                       // Filter by display mode
                       .filter(card => {
                         const isPercent = card.label.includes('%')
-                        if (displayMode === 'percentage') return isPercent
+                        // Show all fields in percentage and both modes; filter only in value mode
                         if (displayMode === 'value') return !isPercent
-                        return true // both
+                        return true
                       })
 
                       // Render each option with robust toggle
