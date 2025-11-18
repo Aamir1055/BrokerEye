@@ -1492,9 +1492,11 @@ const LiveDealingPage = () => {
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">
                 {timeFilter === '24h' ? 'Deals (24h)' : timeFilter === '7d' ? 'Deals (7d)' : 'Filtered Deals'}
               </p>
-              <p className="text-sm font-bold text-gray-900">{searchedDeals.length}</p>
+              <p className="text-sm font-bold text-gray-900">
+                {searchedDeals.length >= 1000 ? '1000+' : searchedDeals.length}
+              </p>
               {searchQuery && (
-                <p className="text-[10px] text-gray-400 mt-0.5">of {deals.length} total</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">of {deals.length >= 1000 ? '1000+' : deals.length} total</p>
               )}
             </div>
             <div className="bg-white rounded shadow-sm border border-green-200 p-2">
