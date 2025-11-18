@@ -207,7 +207,7 @@ const GraphicalAnalyticsPage = () => {
     <div className="min-h-screen flex bg-gray-50">
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen','false') } catch {} }}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       

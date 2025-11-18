@@ -92,7 +92,7 @@ const BrokerRulePage = () => {
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen','false') } catch {} }}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       

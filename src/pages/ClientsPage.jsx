@@ -2103,7 +2103,7 @@ const ClientsPage = () => {
         isOpen={sidebarOpen}
         onClose={() => {
           setSidebarOpen(false)
-          try { localStorage.setItem('sidebarOpen', 'false') } catch {}
+          try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {}
         }}
         onToggle={() => setSidebarOpen(v => {
           const n = !v

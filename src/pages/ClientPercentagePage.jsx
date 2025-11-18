@@ -834,7 +834,7 @@ const ClientPercentagePage = () => {
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarOpen}
-        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen','false') } catch {} }}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
