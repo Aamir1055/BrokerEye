@@ -166,6 +166,7 @@ export const DataProvider = ({ children }) => {
   
   // Track last lag check to prevent frequent reconnections
   const isReconnectingRef = useRef(false)
+  const latestMeasuredLagRef = useRef(null)
   const LAG_THRESHOLD_MS = 100000 // 100 seconds = 100,000 milliseconds
   const LAG_CHECK_INTERVAL_MS = 5000 // Check every 5 seconds for faster detection
   
@@ -1812,6 +1813,7 @@ export const DataProvider = ({ children }) => {
     const lagUpdateInterval = setInterval(() => {
       const currentLag = Math.max(0, Date.now() - latestServerTimestamp)
       setLatestMeasuredLagMs(currentLag)
+      latestMeasuredLagRef.current = currentLag
     }, 1000) // Update every second
     
     return () => clearInterval(lagUpdateInterval)
@@ -1827,11 +1829,12 @@ export const DataProvider = ({ children }) => {
     console.log('[DataContext] 🔍 Lag monitor started - will check every 5s for lag >= 100s')
     
     const lagCheckInterval = setInterval(() => {
-      const lagSeconds = latestMeasuredLagMs ? Math.floor(latestMeasuredLagMs / 1000) : 0
+      const currentLag = latestMeasuredLagRef.current
+      const lagSeconds = currentLag ? Math.floor(currentLag / 1000) : 0
       console.log(`[DataContext] Lag check: ${lagSeconds}s (threshold: 100s, reconnecting: ${isReconnectingRef.current})`)
       
       // Check if lag exceeds threshold
-      if (latestMeasuredLagMs && latestMeasuredLagMs >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
+      if (currentLag && currentLag >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
         console.warn(`[DataContext] ⚠️ High lag detected: ${lagSeconds}s (threshold: 100s) - Reconnecting WebSocket and fetching fresh data...`)
         
         isReconnectingRef.current = true
@@ -1866,7 +1869,7 @@ export const DataProvider = ({ children }) => {
     }, LAG_CHECK_INTERVAL_MS)
     
     return () => clearInterval(lagCheckInterval)
-  }, [isAuthenticated, hasInitialData, latestMeasuredLagMs, fetchClients, fetchPositions, fetchOrders, fetchAccounts])
+  }, [isAuthenticated, hasInitialData, fetchClients, fetchPositions, fetchOrders, fetchAccounts])
 
   const value = useMemo(() => ({
     // Data
