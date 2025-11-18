@@ -320,7 +320,7 @@ const IBCommissionsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
-      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} relative`}>
+      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} relative z-0`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 relative z-10">
           <div className="flex items-center justify-between px-6 py-4">
