@@ -1249,6 +1249,14 @@ const Client2Page = () => {
     fetchRebateTotals()
   }, [fetchClients, fetchRebateTotals])
   
+  // Auto-refresh rebate totals every 1 hour
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchRebateTotals()
+    }, 3600000) // 3600000ms = 1 hour
+    return () => clearInterval(intervalId)
+  }, [fetchRebateTotals])
+  
   // Removed server-side quick filter refetch; quick filters now apply client-side to current page only
   
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
