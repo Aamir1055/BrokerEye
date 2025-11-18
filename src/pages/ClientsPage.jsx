@@ -1790,8 +1790,8 @@ const ClientsPage = () => {
   14: { id: 14, title: 'Daily Net D/W', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
       15: { id: 15, title: 'Total Rebate', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
       16: { id: 16, title: 'Available Rebate', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
-      17: { id: 17, title: 'Total Rebate %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
-      18: { id: 18, title: 'Available Rebate %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      17: { id: 17, title: 'Total Rebate %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Rebate %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
       19: { id: 19, title: 'Blocked Rebate', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
       // Daily Bonus
       20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
@@ -1838,20 +1838,20 @@ const ClientsPage = () => {
   // Book PnL (Lifetime PnL + Floating Profit)
   53: { id: 53, title: 'Book PnL', value: (stats.lifetimePnL || 0) + (stats.totalProfit || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) + (stats.totalProfit || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700' },
   // Daily Deposit & Withdrawal % of total D/W
-  54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyDepositSharePercent || 0).toFixed(2)}`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
-  55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyWithdrawalSharePercent || 0).toFixed(2)}`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
+  54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyDepositSharePercent || 0).toFixed(2)}%`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
+  55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalSharePercent || 0, simple: true, formattedValue: `${Math.abs(stats.dailyWithdrawalSharePercent || 0).toFixed(2)}%`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
       
       // Percentage variants for main metrics
-      56: { id: 56, title: 'Total Balance %', value: stats.totalBalancePercent || 0, formattedValue: formatIndianNumber((stats.totalBalancePercent || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-300', textColor: 'text-indigo-700' },
-      57: { id: 57, title: 'Total Credit %', value: stats.totalCreditPercent || 0, formattedValue: formatIndianNumber((stats.totalCreditPercent || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-300', textColor: 'text-emerald-700' },
-      58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: formatIndianNumber((stats.totalEquityPercent || 0).toFixed(2)), simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
-      59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnlPercent || 0).toFixed(2)) },
-      60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfitPercent || 0).toFixed(2)), iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
-      61: { id: 61, title: 'Daily PnL %', value: stats.dailyPnLPercent || 0, withArrow: true, isPositive: (stats.dailyPnLPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnLPercent || 0).toFixed(2)), borderColor: (stats.dailyPnLPercent || 0) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
-      62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnLPercent || 0).toFixed(2)), borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
-      63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnLPercent || 0).toFixed(2)), borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
-      64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnLPercent || 0).toFixed(2)), borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
-      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(2)), borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' }
+      56: { id: 56, title: 'Total Balance %', value: stats.totalBalancePercent || 0, formattedValue: `${Math.abs(stats.totalBalancePercent || 0).toFixed(2)}%`, simple: true, borderColor: 'border-indigo-300', textColor: 'text-indigo-700' },
+      57: { id: 57, title: 'Total Credit %', value: stats.totalCreditPercent || 0, formattedValue: `${Math.abs(stats.totalCreditPercent || 0).toFixed(2)}%`, simple: true, borderColor: 'border-emerald-300', textColor: 'text-emerald-700' },
+      58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: `${Math.abs(stats.totalEquityPercent || 0).toFixed(2)}%`, simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
+      59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: `${Math.abs(stats.totalPnlPercent || 0).toFixed(2)}%` },
+      60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: `${Math.abs(stats.totalProfitPercent || 0).toFixed(2)}%`, iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
+      61: { id: 61, title: 'Daily PnL %', value: stats.dailyPnLPercent || 0, withArrow: true, isPositive: (stats.dailyPnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.dailyPnLPercent || 0).toFixed(2)}%`, borderColor: (stats.dailyPnLPercent || 0) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
+      62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.thisWeekPnLPercent || 0).toFixed(2)}%`, borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
+      63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.thisMonthPnLPercent || 0).toFixed(2)}%`, borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
+      64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.lifetimePnLPercent || 0).toFixed(2)}%`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
+      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(2)}%`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' }
     }
     return configs[cardId]
   }
@@ -1954,11 +1954,11 @@ const ClientsPage = () => {
       thisWeekPnL: sum('thisWeekPnL'),
       thisMonthPnL: sum('thisMonthPnL'),
       lifetimePnL: sum('lifetimePnL'),
-      // Commission metrics sourced from API on login and hourly refresh
+      // Commission metrics: amounts from API, percentage cards from column sums
       totalCommission: commissionTotals?.total_commission || 0,
       availableCommission: commissionTotals?.total_available_commission || 0,
-      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
-      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+      totalCommissionPercent: sum('applied_percentage'),
+      availableCommissionPercent: sum('applied_percentage'),
       blockedCommission: sum('blockedCommission'),
       // Bonus metrics
       dailyBonusIn,
@@ -2594,6 +2594,11 @@ const ClientsPage = () => {
                     54: 8, // Daily Deposit % -> Daily Deposit
                     55: 9  // Daily Withdrawal % -> Daily Withdrawal
                   }
+                  // If a percentage variant is present alongside its normal counterpart in the order,
+                  // skip rendering the percentage one to avoid duplicate keys in value mode
+                  if (percentToNormalMap[cardId] && faceCardOrder.includes(percentToNormalMap[cardId])) {
+                    return null
+                  }
                   if (percentToNormalMap[cardId]) {
                     effectiveCardId = percentToNormalMap[cardId]
                   }
@@ -2691,6 +2696,15 @@ const ClientsPage = () => {
             {displayMode === 'percentage' && (
               <>
                 {faceCardOrder.map((cardId) => {
+                  // If the current card is a percentage variant and its normal counterpart
+                  // also exists in the order, skip this entry to avoid duplicate rendering
+                  const percentToNormalMapForSkip = {
+                    56: 2, 57: 3, 58: 4, 59: 5, 60: 6, 61: 10, 62: 11, 63: 12, 64: 13, 65: 53,
+                    17: 15, 18: 16, 54: 8, 55: 9
+                  }
+                  if (percentToNormalMapForSkip[cardId] && faceCardOrder.includes(percentToNormalMapForSkip[cardId])) {
+                    return null
+                  }
                   // Map normal card IDs to their percentage equivalents when in percentage mode
                   let effectiveCardId = cardId
                   const normalToPercentMap = {
@@ -2806,6 +2820,12 @@ const ClientsPage = () => {
             {displayMode === 'both' && (
               <>
                 {faceCardOrder.map((cardId) => {
+                  // Skip percentage variant cards - they'll be shown with their normal counterparts
+                  const percentCardIds = [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 17, 18, 54, 55]
+                  if (percentCardIds.includes(cardId)) {
+                    return null
+                  }
+                  
                   // In both mode, show both normal and percentage cards side by side
                   const cards = []
                   
