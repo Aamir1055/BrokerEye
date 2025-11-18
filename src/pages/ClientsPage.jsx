@@ -3119,7 +3119,7 @@ const ClientsPage = () => {
             minHeight: '250px'
           }}>
             {/* YouTube-style Loading Progress Bar */}
-            {(loading.clients || isRefreshing) && (
+            {isRefreshing && (
               <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
                 <style>{`
                   @keyframes headerSlide {
