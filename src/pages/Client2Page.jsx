@@ -3532,7 +3532,7 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${
+                              className={`px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${
                                 isDragging ? 'opacity-50' : ''
                               } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
                               onClick={() => handleSort(col.key)}
