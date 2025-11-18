@@ -195,31 +195,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     if (updated) setClientData(updated)
   }, [liveClients, client?.login])
 
-  // Restore stats API (single client account fetch) to refresh face card values.
-  // This complements liveClients (WS) and ensures fields like lifetimePnL are present even before WS updates.
-  useEffect(() => {
-    let cancelled = false
-    const loadAccount = async () => {
-      if (!client?.login) return
-      try {
-        const data = await brokerAPI.getClientAccount(client.login)
-        if (!cancelled && data) {
-          // Merge only defined fields to avoid wiping existing WS-fed values
-          setClientData(prev => ({ ...prev, ...data }))
-        }
-      } catch (err) {
-        // Silent fail – we keep WS data; optionally could set an error state
-        if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
-          console.warn('[ClientPositionsModal] getClientAccount failed:', err?.message || err)
-        }
-      }
-    }
-    loadAccount()
-    // Optional periodic refresh (every 60s) in case backend updates non-WS fields
-    const interval = setInterval(loadAccount, 60000)
-    return () => { cancelled = true; clearInterval(interval) }
-  }, [client?.login])
-
   // Toggle column visibility
   const togglePositionsColumn = (columnKey) => {
     setPositionsVisibleColumns(prev => {
