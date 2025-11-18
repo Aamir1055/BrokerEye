@@ -3169,6 +3169,12 @@ const Client2Page = () => {
                 {faceCardOrder.map((cardKey) => {
                   const card = getClient2CardConfig(cardKey, totals)
                   if (!card || cardVisibility[cardKey] === false) return null
+                  
+                  // Hide percentage rebate cards when not in percentage mode
+                  if ((cardKey === 'availableRebatePercent' || cardKey === 'totalRebatePercent') && !cardFilterPercentMode) return null
+                  // Hide normal rebate cards when in percentage mode
+                  if ((cardKey === 'availableRebate' || cardKey === 'totalRebate') && cardFilterPercentMode) return null
+                  
                   // Determine if we are in percent mode and have a percent value for this key (exclude totalClients from % suffix/value transformation)
                   const isPercent = cardFilterPercentMode && cardKey !== 'totalClients' && totalsPercent && Object.prototype.hasOwnProperty.call(totalsPercent, cardKey)
                   const rawValue = isPercent ? (totalsPercent?.[cardKey] ?? 0) : card.getValue()
