@@ -10,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
+import IBSelector from '../components/IBSelector'
 
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
@@ -1344,6 +1345,9 @@ const LiveDealingPage = () => {
                   setShowGroupModal(true)
                 }}
               />
+              
+              {/* IB Filter Button */}
+              <IBSelector />
               
               {/* Filter Button */}
               <div className="relative">
