@@ -192,12 +192,24 @@ const ClientsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
+  const getInitialDisplayMode = () => {
+    try {
+      const saved = localStorage.getItem('clientsPageDisplayMode')
+      if (saved && ['value', 'percentage', 'both'].includes(saved)) {
+        return saved
+      }
+    } catch (e) {
+      console.error('Failed to load display mode:', e)
+    }
+    return 'both' // Default
+  }
+
   const [searchInput, setSearchInput] = useState('')
   const [itemsPerPage, setItemsPerPage] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
-  const [displayMode, setDisplayMode] = useState('both') // 'both' | 'percentage'
+  const [displayMode, setDisplayMode] = useState(getInitialDisplayMode)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSorting, setIsSorting] = useState(false)
 
@@ -488,6 +500,11 @@ const ClientsPage = () => {
   useEffect(() => {
     localStorage.setItem('clientsCardVisibility', JSON.stringify(cardVisibility))
   }, [cardVisibility])
+
+  // Save display mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('clientsPageDisplayMode', displayMode)
+  }, [displayMode])
 
   // Remove page-level initial fetch to avoid duplicate REST calls; DataContext handles initial sync
 
