@@ -233,19 +233,18 @@ export const DataProvider = ({ children }) => {
 
   // Helper function to normalize USC currency values - backend now handles it; no-op
   const normalizeUSCValues = (client) => {
-    // If backend is still dividing certain fields by 100 for USC, we need to reverse it
-    // Fields that are divided: profit, equity (calculated fields from WebSocket)
-    // Fields that are NOT divided: dailyDeposit, credit, dailyWithdrawal, balance (raw DB values)
-    if (client && client.currency === 'USC') {
-      return {
-        ...client,
-        profit: toNum(client.profit) * 100,
-        equity: toNum(client.equity) * 100,
-        pnl: toNum(client.pnl) * 100,
-        floating: toNum(client.floating) * 100,
-        margin: toNum(client.margin) * 100,
-        marginFree: toNum(client.marginFree) * 100
-      }
+    // Debug: Log first few clients to see actual data
+    if (client && client.login && Math.random() < 0.01) {
+      console.log('[DataContext] Sample client data:', {
+        login: client.login,
+        currency: client.currency,
+        dailyDeposit: client.dailyDeposit,
+        credit: client.credit,
+        dailyWithdrawal: client.dailyWithdrawal,
+        profit: client.profit,
+        equity: client.equity,
+        balance: client.balance
+      })
     }
     return client
   }
