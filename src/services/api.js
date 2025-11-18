@@ -204,6 +204,36 @@ export const brokerAPI = {
     return response.data
   },
   
+  // Get single client/account stats (robust fallback across possible backend variants)
+  // Tries multiple endpoints and returns the first successful response data
+  getClientAccount: async (login) => {
+    const endpoints = [
+      `/api/broker/clients/${login}/stats`,
+      `/api/broker/clients/${login}/account`,
+      `/api/broker/clients/${login}`,
+      `/api/clients/${login}`,
+      `/api/broker/account/${login}`
+    ]
+    for (let i = 0; i < endpoints.length; i++) {
+      const ep = endpoints[i]
+      try {
+        if (DEBUG_LOGS) console.log(`[API] getClientAccount attempt ${i + 1}: ${ep}`)
+        const res = await api.get(ep)
+        // Some backends wrap data, others return raw object
+        const data = res.data?.data?.client || res.data?.data || res.data?.client || res.data
+        if (data && (data.login === login || data.login == null)) {
+          return data
+        }
+        // If shape unexpected still return
+        return data
+      } catch (err) {
+        if (DEBUG_LOGS) console.warn(`[API] getClientAccount failed (${ep}):`, err.response?.status || err.code || err.message)
+        // continue to next endpoint
+      }
+    }
+    throw new Error('No working client account stats endpoint found')
+  },
+  
   // Get aggregated deal stats for a client (POST as provided by backend)
   getClientDealStats: async (login, from = 0, to = null) => {
     try {
