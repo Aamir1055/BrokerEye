@@ -3426,25 +3426,6 @@ const Client2Page = () => {
           {/* Table - Show table with progress bar for all loading states */}
           {(clients.length > 0 || (initialLoad && loading)) && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
-              {/* YouTube-style Loading Progress Bar - Between pagination and table header */}
-              {(loading || isRefreshing) && (
-                <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
-                  <style>{`
-                    @keyframes headerSlide {
-                      0% { transform: translateX(-100%); }
-                      100% { transform: translateX(400%); }
-                    }
-                    .header-loading-bar {
-                      width: 30%;
-                      height: 100%;
-                      background: #2563eb;
-                      animation: headerSlide 0.9s linear infinite;
-                    }
-                  `}</style>
-                  <div className="header-loading-bar absolute top-0 left-0 h-full" />
-                </div>
-              )}
-              
               {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
               <div className="overflow-auto relative table-scroll-container flex-1" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
@@ -4266,6 +4247,32 @@ const Client2Page = () => {
                         })}
                       </tr>
                     </thead>
+                    
+                    {/* YouTube-style Loading Progress Bar - Below table header */}
+                    {(loading || isRefreshing) && (
+                      <thead className="sticky z-40" style={{ top: '48px' }}>
+                        <tr>
+                          <th colSpan={visibleColumnsList.length} className="p-0" style={{ height: '3px' }}>
+                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                              <style>{`
+                                @keyframes headerSlide {
+                                  0% { transform: translateX(-100%); }
+                                  100% { transform: translateX(400%); }
+                                }
+                                .header-loading-bar {
+                                  width: 30%;
+                                  height: 100%;
+                                  background: #2563eb;
+                                  animation: headerSlide 0.9s linear infinite;
+                                }
+                              `}</style>
+                              <div className="header-loading-bar absolute top-0 left-0 h-full" />
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                    )}
+                    
                     <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
