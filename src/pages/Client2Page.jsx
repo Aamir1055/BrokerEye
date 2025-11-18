@@ -3208,6 +3208,11 @@ const Client2Page = () => {
                   const card = getClient2CardConfig(displayCardKey, dataSource)
                   if (!card || cardVisibility[cardKey] === false) return null
                   
+                  // Add % to label when in percentage mode (except for cards that already have it)
+                  const displayLabel = cardFilterPercentMode && !card.label.includes('%') 
+                    ? `${card.label} %` 
+                    : card.label
+                  
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
                   // Colors
@@ -3237,7 +3242,7 @@ const Client2Page = () => {
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
                       <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
-                        {card.label}
+                        {displayLabel}
                       </div>
                       <div className={`text-sm font-bold ${textColorClass}`}>
                         {card.format === 'integer'
