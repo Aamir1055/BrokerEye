@@ -146,7 +146,8 @@ const Client2Page = () => {
     'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
     'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
     'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal',
-    'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent'
+    'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent',
+    'netLifetimePnL', 'netLifetimePnLPercent', 'bookPnL', 'bookPnLPercent'
   ]
   
   const getInitialClient2FaceCardOrder = () => {
@@ -366,7 +367,12 @@ const Client2Page = () => {
       availableRebate: true,
       availableRebatePercent: true,
       totalRebate: true,
-      totalRebatePercent: true
+      totalRebatePercent: true,
+      // Calculated PnL cards
+      netLifetimePnL: true,
+      netLifetimePnLPercent: true,
+      bookPnL: true,
+      bookPnLPercent: true
     }
   }
   
@@ -2254,11 +2260,17 @@ const Client2Page = () => {
       availableRebate: { label: 'Available Rebate', color: 'teal', getValue: () => rebateTotals?.availableRebate || 0 },
       availableRebatePercent: { label: 'Available Rebate %', color: 'cyan', getValue: () => rebateTotals?.availableRebatePercent || 0 },
       totalRebate: { label: 'Total Rebate', color: 'emerald', getValue: () => rebateTotals?.totalRebate || 0 },
-      totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 }
+      totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 },
+      
+      // Calculated PnL cards
+      netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
+      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
+      bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
+      bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true }
     }
     
     return configs[cardKey] || null
-  }, [totalClients, rebateTotals])
+  }, [totalClients, rebateTotals, totals])
   
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
@@ -2927,7 +2939,11 @@ const Client2Page = () => {
                               availableRebate: 'Available Rebate',
                               availableRebatePercent: 'Available Rebate %',
                               totalRebate: 'Total Rebate',
-                              totalRebatePercent: 'Total Rebate %'
+                              totalRebatePercent: 'Total Rebate %',
+                              netLifetimePnL: 'Net Lifetime PnL',
+                              netLifetimePnLPercent: 'Net Lifetime PnL %',
+                              bookPnL: 'Book PnL',
+                              bookPnLPercent: 'Book PnL %'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             // In % Mode we still filter base cards only; percent variants are no longer selectable
@@ -2946,7 +2962,7 @@ const Client2Page = () => {
                           {/* Determine button label based on displayed items only */}
                           {(() => {
                             const baseLabels = {
-                              assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', availableRebatePercent: 'Available Rebate %', totalRebate: 'Total Rebate', totalRebatePercent: 'Total Rebate %'
+                              assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', availableRebatePercent: 'Available Rebate %', totalRebate: 'Total Rebate', totalRebatePercent: 'Total Rebate %', netLifetimePnL: 'Net Lifetime PnL', netLifetimePnLPercent: 'Net Lifetime PnL %', bookPnL: 'Book PnL', bookPnLPercent: 'Book PnL %'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             const items = baseItems
@@ -3032,7 +3048,11 @@ const Client2Page = () => {
                             availableRebate: 'Available Rebate',
                             availableRebatePercent: 'Available Rebate %',
                             totalRebate: 'Total Rebate',
-                            totalRebatePercent: 'Total Rebate %'
+                            totalRebatePercent: 'Total Rebate %',
+                            netLifetimePnL: 'Net Lifetime PnL',
+                            netLifetimePnLPercent: 'Net Lifetime PnL %',
+                            bookPnL: 'Book PnL',
+                            bookPnLPercent: 'Book PnL %'
                           }
                           // Build items based on toggle: only non-percent OR only percent
                           const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
@@ -3174,6 +3194,11 @@ const Client2Page = () => {
                   if ((cardKey === 'availableRebatePercent' || cardKey === 'totalRebatePercent') && !cardFilterPercentMode) return null
                   // Hide normal rebate cards when in percentage mode
                   if ((cardKey === 'availableRebate' || cardKey === 'totalRebate') && cardFilterPercentMode) return null
+                  
+                  // Hide percentage PnL cards when not in percentage mode
+                  if ((cardKey === 'netLifetimePnLPercent' || cardKey === 'bookPnLPercent') && !cardFilterPercentMode) return null
+                  // Hide normal PnL cards when in percentage mode
+                  if ((cardKey === 'netLifetimePnL' || cardKey === 'bookPnL') && cardFilterPercentMode) return null
                   
                   // Determine if we are in percent mode and have a percent value for this key (exclude totalClients from % suffix/value transformation)
                   const isPercent = cardFilterPercentMode && cardKey !== 'totalClients' && totalsPercent && Object.prototype.hasOwnProperty.call(totalsPercent, cardKey)
