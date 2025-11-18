@@ -3189,22 +3189,25 @@ const Client2Page = () => {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
                 {faceCardOrder.map((cardKey) => {
-                  const card = getClient2CardConfig(cardKey, totals)
+                  // Determine which card variant to show based on percentage mode
+                  let displayCardKey = cardKey
+                  
+                  // Switch to percentage variants when in percentage mode
+                  if (cardFilterPercentMode) {
+                    if (cardKey === 'availableRebate') displayCardKey = 'availableRebatePercent'
+                    if (cardKey === 'totalRebate') displayCardKey = 'totalRebatePercent'
+                    if (cardKey === 'netLifetimePnL') displayCardKey = 'netLifetimePnLPercent'
+                    if (cardKey === 'bookPnL') displayCardKey = 'bookPnLPercent'
+                  }
+                  
+                  // Skip percentage variants in card order (they're accessed via switching above)
+                  if (cardKey.endsWith('Percent')) return null
+                  
+                  const card = getClient2CardConfig(displayCardKey, totals)
                   if (!card || cardVisibility[cardKey] === false) return null
                   
-                  // Hide percentage rebate cards when not in percentage mode
-                  if ((cardKey === 'availableRebatePercent' || cardKey === 'totalRebatePercent') && !cardFilterPercentMode) return null
-                  // Hide normal rebate cards when in percentage mode
-                  if ((cardKey === 'availableRebate' || cardKey === 'totalRebate') && cardFilterPercentMode) return null
-                  
-                  // Hide percentage PnL cards when not in percentage mode
-                  if ((cardKey === 'netLifetimePnLPercent' || cardKey === 'bookPnLPercent') && !cardFilterPercentMode) return null
-                  // Hide normal PnL cards when in percentage mode
-                  if ((cardKey === 'netLifetimePnL' || cardKey === 'bookPnL') && cardFilterPercentMode) return null
-                  
-                  // Determine if we are in percent mode and have a percent value for this key (exclude totalClients from % suffix/value transformation)
-                  const isPercent = cardFilterPercentMode && cardKey !== 'totalClients' && totalsPercent && Object.prototype.hasOwnProperty.call(totalsPercent, cardKey)
-                  const rawValue = isPercent ? (totalsPercent?.[cardKey] ?? 0) : card.getValue()
+                  // Use the card's getValue directly (already handles percentage calculations)
+                  const rawValue = card.getValue()
                   // Colors
                   let textColorClass = `text-${card.color}-700`
                   let borderColorClass = `border-${card.color}-200`
