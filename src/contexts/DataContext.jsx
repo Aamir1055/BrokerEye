@@ -233,18 +233,44 @@ export const DataProvider = ({ children }) => {
 
   // Helper function to normalize USC currency values - backend now handles it; no-op
   const normalizeUSCValues = (client) => {
-    // Debug: Log first few clients to see actual data
-    if (client && client.login && Math.random() < 0.01) {
-      console.log('[DataContext] Sample client data:', {
+    // Debug: Log client data with ALL numeric fields expanded
+    if (client && client.login && client.login === 301608) { // USC client from your logs
+      console.log('[DataContext] USC Client 301608 FULL DATA:', JSON.stringify({
         login: client.login,
         currency: client.currency,
-        dailyDeposit: client.dailyDeposit,
+        balance: client.balance,
         credit: client.credit,
-        dailyWithdrawal: client.dailyWithdrawal,
-        profit: client.profit,
         equity: client.equity,
-        balance: client.balance
-      })
+        profit: client.profit,
+        floating: client.floating,
+        dailyDeposit: client.dailyDeposit,
+        dailyWithdrawal: client.dailyWithdrawal,
+        lifetimeDeposit: client.lifetimeDeposit,
+        lifetimeWithdrawal: client.lifetimeWithdrawal,
+        pnl: client.pnl,
+        dailyPnL: client.dailyPnL,
+        margin: client.margin,
+        marginFree: client.marginFree
+      }, null, 2))
+    }
+    if (client && client.login && client.login === 302089) { // USD client with deposit from your logs
+      console.log('[DataContext] USD Client 302089 FULL DATA:', JSON.stringify({
+        login: client.login,
+        currency: client.currency,
+        balance: client.balance,
+        credit: client.credit,
+        equity: client.equity,
+        profit: client.profit,
+        floating: client.floating,
+        dailyDeposit: client.dailyDeposit,
+        dailyWithdrawal: client.dailyWithdrawal,
+        lifetimeDeposit: client.lifetimeDeposit,
+        lifetimeWithdrawal: client.lifetimeWithdrawal,
+        pnl: client.pnl,
+        dailyPnL: client.dailyPnL,
+        margin: client.margin,
+        marginFree: client.marginFree
+      }, null, 2))
     }
     return client
   }
