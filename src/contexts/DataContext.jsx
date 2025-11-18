@@ -231,46 +231,30 @@ export const DataProvider = ({ children }) => {
     throw lastError
   }, [])
 
-  // Helper function to normalize USC currency values - backend now handles it; no-op
+  // Helper function to normalize USC currency values - WebSocket sends USC * 100
   const normalizeUSCValues = (client) => {
-    // Debug: Log client data with ALL numeric fields expanded
-    if (client && client.login && client.login === 301608) { // USC client from your logs
-      console.log('[DataContext] USC Client 301608 FULL DATA:', JSON.stringify({
-        login: client.login,
-        currency: client.currency,
-        balance: client.balance,
-        credit: client.credit,
-        equity: client.equity,
-        profit: client.profit,
-        floating: client.floating,
-        dailyDeposit: client.dailyDeposit,
-        dailyWithdrawal: client.dailyWithdrawal,
-        lifetimeDeposit: client.lifetimeDeposit,
-        lifetimeWithdrawal: client.lifetimeWithdrawal,
-        pnl: client.pnl,
-        dailyPnL: client.dailyPnL,
-        margin: client.margin,
-        marginFree: client.marginFree
-      }, null, 2))
-    }
-    if (client && client.login && client.login === 302089) { // USD client with deposit from your logs
-      console.log('[DataContext] USD Client 302089 FULL DATA:', JSON.stringify({
-        login: client.login,
-        currency: client.currency,
-        balance: client.balance,
-        credit: client.credit,
-        equity: client.equity,
-        profit: client.profit,
-        floating: client.floating,
-        dailyDeposit: client.dailyDeposit,
-        dailyWithdrawal: client.dailyWithdrawal,
-        lifetimeDeposit: client.lifetimeDeposit,
-        lifetimeWithdrawal: client.lifetimeWithdrawal,
-        pnl: client.pnl,
-        dailyPnL: client.dailyPnL,
-        margin: client.margin,
-        marginFree: client.marginFree
-      }, null, 2))
+    // WebSocket sends USC values multiplied by 100, need to divide them back
+    if (client && client.currency === 'USC') {
+      const normalized = {
+        ...client,
+        balance: toNum(client.balance) / 100,
+        credit: toNum(client.credit) / 100,
+        equity: toNum(client.equity) / 100,
+        profit: toNum(client.profit) / 100,
+        floating: toNum(client.floating) / 100,
+        margin: toNum(client.margin) / 100,
+        marginFree: toNum(client.marginFree) / 100,
+        pnl: toNum(client.pnl) / 100,
+        dailyPnL: toNum(client.dailyPnL) / 100,
+        lifetimeDeposit: toNum(client.lifetimeDeposit) / 100,
+        lifetimeWithdrawal: toNum(client.lifetimeWithdrawal) / 100,
+        dailyDeposit: toNum(client.dailyDeposit) / 100,
+        dailyWithdrawal: toNum(client.dailyWithdrawal) / 100,
+        thisWeekPnL: toNum(client.thisWeekPnL) / 100,
+        thisMonthPnL: toNum(client.thisMonthPnL) / 100,
+        lifetimePnL: toNum(client.lifetimePnL) / 100
+      }
+      return normalized
     }
     return client
   }
