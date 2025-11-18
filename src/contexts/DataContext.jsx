@@ -165,10 +165,9 @@ export const DataProvider = ({ children }) => {
   const [hasInitialData, setHasInitialData] = useState(false)
   
   // Track last lag check to prevent frequent reconnections
-  const lastLagCheckRef = useRef(0)
   const isReconnectingRef = useRef(false)
   const LAG_THRESHOLD_MS = 100000 // 100 seconds = 100,000 milliseconds
-  const LAG_CHECK_INTERVAL_MS = 30000 // Check every 30 seconds
+  const LAG_CHECK_INTERVAL_MS = 5000 // Check every 5 seconds for faster detection
   
   const [loading, setLoading] = useState({
     clients: false,
@@ -1811,15 +1810,6 @@ export const DataProvider = ({ children }) => {
     if (!isAuthenticated || !hasInitialData) return
     
     const lagCheckInterval = setInterval(() => {
-      const now = Date.now()
-      
-      // Prevent frequent checks and reconnections
-      if (now - lastLagCheckRef.current < LAG_CHECK_INTERVAL_MS) {
-        return
-      }
-      
-      lastLagCheckRef.current = now
-      
       // Check if lag exceeds threshold
       if (latestMeasuredLagMs && latestMeasuredLagMs >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
         const lagSeconds = Math.floor(latestMeasuredLagMs / 1000)
