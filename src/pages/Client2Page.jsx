@@ -3203,7 +3203,9 @@ const Client2Page = () => {
                   // Skip percentage variants in card order (they're accessed via switching above)
                   if (cardKey.endsWith('Percent')) return null
                   
-                  const card = getClient2CardConfig(displayCardKey, totals)
+                  // Use totalsPercent when in percentage mode, otherwise use totals
+                  const dataSource = cardFilterPercentMode ? totalsPercent : totals
+                  const card = getClient2CardConfig(displayCardKey, dataSource)
                   if (!card || cardVisibility[cardKey] === false) return null
                   
                   // Use the card's getValue directly (already handles percentage calculations)
