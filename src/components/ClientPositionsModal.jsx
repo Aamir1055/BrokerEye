@@ -1396,19 +1396,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden border border-slate-200">
         {/* Modal Header - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between p-5 border-b-2 border-slate-200 bg-blue-600">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b-2 border-slate-200 bg-blue-600">
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-lg font-bold text-white tracking-tight">
               {(client?.name && String(client.name).trim().length > 0)
                 ? `${client.name} - ${client.login}`
                 : client.login}
             </h2>
             <div className="flex items-center gap-4 mt-2">
-              <p className="text-xs text-blue-100">{client.email || 'No email'}</p>
+              <p className="text-[11px] text-blue-100">{client.email || 'No email'}</p>
               {client.lastAccess && (
-                <p className="text-xs text-blue-100">
+                <p className="text-[11px] text-blue-100">
                   Last Access: <span className="font-semibold text-white">{formatTime(client.lastAccess)}</span>
                 </p>
               )}
@@ -1622,16 +1622,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </div>
               ) : (
                 <>
-                  {dealsServerLimitReached && (
-                    <div className="mb-3 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                      <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Showing first {CLIENT_DEALS_FETCH_LIMIT} deals for this range. Narrow date range to see older records.
-                      </p>
-                    </div>
-                  )}
+                  
                   {/* Search Bar */}
                   <div className="mb-4 flex items-center gap-3">
                     <div className="relative flex-1" ref={searchRef}>
@@ -2332,6 +2323,17 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   )}
                 </div>
               </div>
+
+              {dealsServerLimitReached && (
+                <div className="mb-3 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                  <p className="text-[11px] text-amber-800 font-medium flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Showing first {CLIENT_DEALS_FETCH_LIMIT} deals for this range. Narrow date range to see older records.
+                  </p>
+                </div>
+              )}
 
               {dealsLoading ? (
                 <div className="flex justify-center items-center py-12">
