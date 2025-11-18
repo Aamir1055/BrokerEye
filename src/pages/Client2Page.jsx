@@ -2264,13 +2264,13 @@ const Client2Page = () => {
       
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
-      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
+      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totalsPercent?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
       bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
-      bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true }
+      bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0), colorCheck: true }
     }
     
     return configs[cardKey] || null
-  }, [totalClients, rebateTotals, totals])
+  }, [totalClients, rebateTotals, totals, totalsPercent])
   
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
