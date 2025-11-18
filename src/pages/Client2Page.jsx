@@ -461,10 +461,10 @@ const Client2Page = () => {
       // Use the container's distance from top of viewport for precise remaining space.
       const top = tableContainerRef.current.getBoundingClientRect().top
       const viewportHeight = window.innerHeight
-      // Bottom buffer: keep tiny breathing room (4px) so scrollbar track isn't flush with edge.
-      const bottomBuffer = 4
+      // Bottom buffer: maximized space by removing buffer
+      const bottomBuffer = 0
       // Dynamic min height: smaller when cards visible, larger when hidden so user sees more rows.
-      const minHeight = showFaceCards ? 240 : 480
+      const minHeight = showFaceCards ? 220 : 460
       // If face cards are visible, reserve their live height (already pushes container downward).
       // Remaining available vertical space:
       const available = viewportHeight - top - bottomBuffer
@@ -3080,8 +3080,8 @@ const Client2Page = () => {
                     if (tableContainerRef.current) {
                       const top = tableContainerRef.current.getBoundingClientRect().top
                       const viewportHeight = window.innerHeight
-                      const bottomBuffer = 4
-                      const minHeight = !showFaceCards ? 240 : 480 // showFaceCards is previous state
+                      const bottomBuffer = 0
+                      const minHeight = !showFaceCards ? 220 : 460 // showFaceCards is previous state
                       const available = viewportHeight - top - bottomBuffer
                       setTableHeight(`${Math.max(minHeight, available)}px`)
                     }
