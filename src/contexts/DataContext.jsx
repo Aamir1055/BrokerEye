@@ -1805,6 +1805,18 @@ export const DataProvider = ({ children }) => {
     initialSync()
   }, [isAuthenticated])
 
+  // Continuously update lag every second based on last known server timestamp
+  useEffect(() => {
+    if (!latestServerTimestamp) return
+    
+    const lagUpdateInterval = setInterval(() => {
+      const currentLag = Math.max(0, Date.now() - latestServerTimestamp)
+      setLatestMeasuredLagMs(currentLag)
+    }, 1000) // Update every second
+    
+    return () => clearInterval(lagUpdateInterval)
+  }, [latestServerTimestamp])
+
   // Monitor lag and auto-reconnect with fresh data when lag exceeds threshold
   useEffect(() => {
     if (!isAuthenticated || !hasInitialData) return
