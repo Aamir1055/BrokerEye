@@ -2519,7 +2519,7 @@ const ClientsPage = () => {
               <>
                 {faceCardOrder.map((cardId) => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
-                  if (!card || !cardVisibility[cardId]) return null
+                  if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
                   const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
@@ -2612,7 +2612,7 @@ const ClientsPage = () => {
               <>
                 {faceCardOrder.map((cardId) => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
-                  if (!card || !cardVisibility[cardId]) return null
+                  if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
                   const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
@@ -2705,7 +2705,7 @@ const ClientsPage = () => {
               <>
                 {faceCardOrder.map((cardId) => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
-                  if (!card || !cardVisibility[cardId]) return null
+                  if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
                   const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
