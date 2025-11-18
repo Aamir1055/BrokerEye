@@ -1408,6 +1408,23 @@ const Client2Page = () => {
   const handleColumnDragStart = (e, columnKey) => {
     setDraggedColumn(columnKey)
     e.dataTransfer.effectAllowed = 'move'
+    
+    // Create custom drag image showing the full column header
+    const headerElement = headerRefs.current[columnKey]
+    if (headerElement) {
+      // Clone the header element for drag preview
+      const clone = headerElement.cloneNode(true)
+      clone.style.position = 'absolute'
+      clone.style.top = '-9999px'
+      clone.style.width = `${headerElement.offsetWidth}px`
+      clone.style.backgroundColor = '#2563eb'
+      clone.style.padding = '12px 16px'
+      clone.style.borderRadius = '6px'
+      clone.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      document.body.appendChild(clone)
+      e.dataTransfer.setDragImage(clone, headerElement.offsetWidth / 2, 20)
+      setTimeout(() => document.body.removeChild(clone), 0)
+    }
   }
   
   const handleColumnDragOver = (e, columnKey) => {
@@ -3571,15 +3588,13 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-move bg-blue-600 hover:bg-blue-700 active:bg-blue-700 transition-all select-none relative ${
+                              className={`px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${
                                 isDragging ? 'opacity-50' : ''
                               } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
-                              draggable={!resizingColumn}
-                              onDragStart={(e) => handleColumnDragStart(e, col.key)}
+                              onClick={() => handleSort(col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
                               onDragLeave={handleColumnDragLeave}
                               onDrop={(e) => handleColumnDrop(e, col.key)}
-                              onDragEnd={handleColumnDragEnd}
                               style={{ 
                                 minWidth: '80px',
                                 overflow: 'hidden',
@@ -3590,18 +3605,28 @@ const Client2Page = () => {
                             >
                               <div className="flex items-center gap-2 justify-between min-w-0">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  {/* Drag Handle Icon */}
-                                  <svg 
-                                    className="w-3 h-3 text-white/60 flex-shrink-0" 
-                                    fill="currentColor" 
-                                    viewBox="0 0 20 20"
+                                  {/* Drag Handle Area - larger clickable area on left side */}
+                                  <div
+                                    className="flex items-center gap-2 cursor-move hover:opacity-80 py-1 -ml-2 pl-2 pr-1"
+                                    draggable={!resizingColumn}
+                                    onDragStart={(e) => {
+                                      e.stopPropagation()
+                                      handleColumnDragStart(e, col.key)
+                                    }}
+                                    onDragEnd={handleColumnDragEnd}
                                     onClick={(e) => e.stopPropagation()}
+                                    title="Drag to reorder column"
                                   >
-                                    <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
-                                  </svg>
+                                    <svg 
+                                      className="w-3 h-3 text-white/60 flex-shrink-0" 
+                                      fill="currentColor" 
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                                    </svg>
+                                  </div>
                                   <span 
-                                    onClick={() => handleSort(col.key)}
-                                    className="cursor-pointer truncate"
+                                    className="truncate"
                                     title={col.label}
                                   >
                                     {col.label}
