@@ -221,7 +221,6 @@ const Client2Page = () => {
   const faceCardsRef = useRef(null)
   const tableContainerRef = useRef(null)
   const [resizingColumn, setResizingColumn] = useState(null)
-  const [tableHeight, setTableHeight] = useState('calc(100vh - 280px)')
 
   // Persist card filter percentage mode
   useEffect(() => {
@@ -451,44 +450,7 @@ const Client2Page = () => {
     }
   }, [faceCardOrder, cardVisibility])
 
-  // Calculate table height once on mount and when UI elements change, but don't recalculate on scroll
-  useEffect(() => {
-    const measureAndSet = () => {
-      if (!tableContainerRef.current) return
-      // Use the container's distance from top of viewport for precise remaining space.
-      const top = tableContainerRef.current.getBoundingClientRect().top
-      const viewportHeight = window.innerHeight
-      // Bottom buffer: space reserved at bottom
-      const bottomBuffer = 150  // leaves 150px space at bottom
-      // Fixed min height based on cards visibility
-      const minHeight = showFaceCards ? 250 : 350
-      // If face cards are visible, reserve their live height (already pushes container downward).
-      // Remaining available vertical space:
-      const available = viewportHeight - top - bottomBuffer
-      const finalHeight = Math.max(minHeight, available)
-      setTableHeight(`${finalHeight}px`)
-    }
 
-    // Initial calculation with delay for layout
-    measureAndSet()
-    requestAnimationFrame(() => requestAnimationFrame(measureAndSet))
-
-    // Only recalculate on window resize, not on scroll
-    const handleResize = () => measureAndSet()
-    window.addEventListener('resize', handleResize)
-
-    // Only observe face card region for size changes (when cards are toggled)
-    let roCards
-    if (typeof ResizeObserver !== 'undefined' && faceCardsRef.current) {
-      roCards = new ResizeObserver(measureAndSet)
-      try { roCards.observe(faceCardsRef.current) } catch {}
-    }
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      try { roCards && roCards.disconnect() } catch {}
-    }
-  }, [showFaceCards, visibleCardCount, cardFilterPercentMode, sidebarOpen])
   
   // All available columns
   const allColumns = [
@@ -3077,20 +3039,7 @@ const Client2Page = () => {
               
               {/* Cards Toggle Button */}
               <button
-                onClick={() => {
-                  setShowFaceCards(v => !v)
-                  // Defer re-measure after toggle
-                  setTimeout(() => {
-                    if (tableContainerRef.current) {
-                      const top = tableContainerRef.current.getBoundingClientRect().top
-                      const viewportHeight = window.innerHeight
-                      const bottomBuffer = 150  // leaves 150px space at bottom
-                      const minHeight = !showFaceCards ? 250 : 350 // showFaceCards is previous state
-                      const available = viewportHeight - top - bottomBuffer
-                      setTableHeight(`${Math.max(minHeight, available)}px`)
-                    }
-                  }, 50)
-                }}
+                onClick={() => setShowFaceCards(v => !v)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
                   showFaceCards 
                     ? 'bg-blue-50 border-blue-500 text-blue-700' 
@@ -3429,11 +3378,7 @@ const Client2Page = () => {
           
           {/* Table - Show table with progress bar for all loading states */}
           {(clients.length > 0 || (initialLoad && loading)) && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ 
-              height: tableHeight,
-              maxHeight: tableHeight,
-              flexShrink: 0
-            }}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef}>
               {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
               <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
