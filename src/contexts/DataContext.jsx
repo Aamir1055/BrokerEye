@@ -158,6 +158,9 @@ export const DataProvider = ({ children }) => {
   // Track if initial sync has been done
   const hasInitialSyncedRef = useRef(false)
   
+  // Track if REST data was loaded (to prevent WebSocket from replacing it immediately)
+  const hasRestDataRef = useRef(false)
+  
   // Track if initial data load is complete (to control WebSocket connection)
   const [hasInitialData, setHasInitialData] = useState(false)
   
@@ -424,6 +427,7 @@ export const DataProvider = ({ children }) => {
 
       setClients(data)
       setAccounts(data)
+      hasRestDataRef.current = true  // Mark REST data as loaded
 
       // Seed signatures & timestamps
       lastClientStateRef.current.clear()
@@ -623,8 +627,9 @@ export const DataProvider = ({ children }) => {
 
           lowPriority(() => setClients(prev => {
             const existing = Array.isArray(prev) ? prev : []
-            if (existing.length === 0) {
-              // First snapshot: seed timestamps & signatures, full replace
+            // Only do full replace if no REST data was loaded AND no existing data
+            if (existing.length === 0 && !hasRestDataRef.current) {
+              // First snapshot: seed timestamps & signatures, full replace only if no REST data
               lastClientTimestampRef.current.clear()
               snapshot.forEach(c => {
                 const tsRaw = c.serverTimestamp || c.lastUpdate || 0
