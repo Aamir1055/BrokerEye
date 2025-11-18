@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
+import IBSelector from '../components/IBSelector'
 
 // Helpers
 const getMarginLevelPercent = (obj) => {
@@ -842,6 +843,9 @@ const MarginLevelPage = () => {
                   setShowGroupModal(true)
                 }}
               />
+              
+              {/* IB Filter Button */}
+              <IBSelector />
               
               <WebSocketIndicator />
             </div>
