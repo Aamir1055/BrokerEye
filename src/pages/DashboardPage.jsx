@@ -443,7 +443,7 @@ const DashboardPage = () => {
       
       {/* Main Content */}
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden transition-all duration-300 ${sidebarOpen ? 'ml-60' : 'ml-16'}`}>
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">

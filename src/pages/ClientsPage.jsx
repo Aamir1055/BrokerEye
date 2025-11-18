@@ -199,6 +199,7 @@ const ClientsPage = () => {
   const [sortDirection, setSortDirection] = useState('asc')
   const [displayMode, setDisplayMode] = useState('both') // 'both' | 'percentage'
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSorting, setIsSorting] = useState(false)
 
   // Dropdowns, modals, and refs
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
@@ -1376,6 +1377,10 @@ const ClientsPage = () => {
   // Handle column header click for sorting with debounce protection
   const sortTimeoutRef = useRef(null)
   const handleSort = useCallback((columnKey) => {
+    // Trigger loading animation
+    setIsSorting(true)
+    setTimeout(() => setIsSorting(false), 1200) // Match animation duration
+    
     // Clear any pending sort operation
     if (sortTimeoutRef.current) {
       clearTimeout(sortTimeoutRef.current)
@@ -3119,7 +3124,7 @@ const ClientsPage = () => {
             minHeight: '250px'
           }}>
             {/* YouTube-style Loading Progress Bar */}
-            {isRefreshing && (
+            {(isRefreshing || isSorting) && (
               <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
                 <style>{`
                   @keyframes headerSlide {
@@ -3130,7 +3135,7 @@ const ClientsPage = () => {
                     width: 30%;
                     height: 100%;
                     background: #2563eb;
-                    animation: headerSlide 0.9s linear infinite;
+                    animation: headerSlide 1.2s ease-in-out;
                   }
                 `}</style>
                 <div className="header-loading-bar absolute top-0 left-0 h-full" />
