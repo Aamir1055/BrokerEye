@@ -476,6 +476,9 @@ const MarginLevelPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
+  // Show loading only for table data
+  const isDataLoading = loading.accounts
+
   // Helper function to render table header with filter
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
     const filterCount = getActiveFilterCount(columnKey)
@@ -802,8 +805,6 @@ const MarginLevelPage = () => {
     )
   }
 
-  if (loading.accounts) return <LoadingSpinner />
-
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
@@ -814,7 +815,7 @@ const MarginLevelPage = () => {
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
+          {/* Header - Always visible */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <button
@@ -851,29 +852,51 @@ const MarginLevelPage = () => {
             </div>
           </div>
 
-          {/* Stats Summary */}
+          {/* Stats Summary - Show skeleton while loading */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
             <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Under 50%</p>
-              <p className="text-sm font-bold text-gray-900">{filtered.length}</p>
+              <p className="text-sm font-bold text-gray-900">
+                {isDataLoading ? (
+                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                ) : (
+                  filtered.length
+                )}
+              </p>
             </div>
             <div className="bg-white rounded shadow-sm border border-green-200 p-2">
               <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Avg Margin Level</p>
               <p className="text-sm font-bold text-gray-900">
-                {filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) + '%' : '-'}
+                {isDataLoading ? (
+                  <span className="inline-block h-5 w-16 bg-gray-200 animate-pulse rounded"></span>
+                ) : (
+                  filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) + '%' : '-'
+                )}
               </p>
             </div>
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
               <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
-              <p className="text-sm font-bold text-gray-900">{new Set(filtered.map(o=>o.login)).size}</p>
+              <p className="text-sm font-bold text-gray-900">
+                {isDataLoading ? (
+                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                ) : (
+                  new Set(filtered.map(o=>o.login)).size
+                )}
+              </p>
             </div>
             <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
               <p className="text-[10px] font-semibold text-orange-600 uppercase mb-0">Logins Under 50%</p>
-              <p className="text-sm font-bold text-gray-900">{new Set(filtered.map(a=>a.login)).size}</p>
+              <p className="text-sm font-bold text-gray-900">
+                {isDataLoading ? (
+                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                ) : (
+                  new Set(filtered.map(a=>a.login)).size
+                )}
+              </p>
             </div>
           </div>
 
-          {/* Pagination Controls - Top */}
+          {/* Pagination Controls - Always visible */}
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
@@ -1028,10 +1051,22 @@ const MarginLevelPage = () => {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Table - Show skeleton while loading */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <div className="overflow-y-auto flex-1">
-              {displayedAccounts.length === 0 ? (
+              {isDataLoading ? (
+                <div className="p-8">
+                  <div className="animate-pulse space-y-4">
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                    <div className="h-10 bg-gray-100 rounded"></div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                    <div className="h-10 bg-gray-100 rounded"></div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                    <div className="h-10 bg-gray-100 rounded"></div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ) : displayedAccounts.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
