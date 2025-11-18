@@ -2576,7 +2576,29 @@ const ClientsPage = () => {
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
-                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  // Map percentage card IDs to their normal equivalents when in value mode
+                  let effectiveCardId = cardId
+                  const percentToNormalMap = {
+                    56: 2, // Total Balance % -> Total Balance
+                    57: 3, // Total Credit % -> Total Credit
+                    58: 4, // Total Equity % -> Total Equity
+                    59: 5, // PNL % -> PNL
+                    60: 6, // Floating Profit % -> Floating Profit
+                    61: 10, // Daily PnL % -> Daily PnL
+                    62: 11, // This Week PnL % -> This Week PnL
+                    63: 12, // This Month PnL % -> This Month PnL
+                    64: 13, // Lifetime PnL % -> Lifetime PnL
+                    65: 53, // Book PnL % -> Book PnL
+                    17: 15, // Total Rebate % -> Total Rebate
+                    18: 16, // Available Rebate % -> Available Rebate
+                    54: 8, // Daily Deposit % -> Daily Deposit
+                    55: 9  // Daily Withdrawal % -> Daily Withdrawal
+                  }
+                  if (percentToNormalMap[cardId]) {
+                    effectiveCardId = percentToNormalMap[cardId]
+                  }
+                  
+                  const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
                   if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
@@ -2669,7 +2691,29 @@ const ClientsPage = () => {
             {displayMode === 'percentage' && (
               <>
                 {faceCardOrder.map((cardId) => {
-                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  // Map normal card IDs to their percentage equivalents when in percentage mode
+                  let effectiveCardId = cardId
+                  const normalToPercentMap = {
+                    2: 56, // Total Balance -> Total Balance %
+                    3: 57, // Total Credit -> Total Credit %
+                    4: 58, // Total Equity -> Total Equity %
+                    5: 59, // PNL -> PNL %
+                    6: 60, // Floating Profit -> Floating Profit %
+                    10: 61, // Daily PnL -> Daily PnL %
+                    11: 62, // This Week PnL -> This Week PnL %
+                    12: 63, // This Month PnL -> This Month PnL %
+                    13: 64, // Lifetime PnL -> Lifetime PnL %
+                    53: 65, // Book PnL -> Book PnL %
+                    15: 17, // Total Rebate -> Total Rebate %
+                    16: 18, // Available Rebate -> Available Rebate %
+                    8: 54, // Daily Deposit -> Daily Deposit %
+                    9: 55  // Daily Withdrawal -> Daily Withdrawal %
+                  }
+                  if (normalToPercentMap[cardId]) {
+                    effectiveCardId = normalToPercentMap[cardId]
+                  }
+                  
+                  const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
                   if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
@@ -2762,93 +2806,114 @@ const ClientsPage = () => {
             {displayMode === 'both' && (
               <>
                 {faceCardOrder.map((cardId) => {
-                  const card = getFaceCardConfig(cardId, faceCardTotals)
-                  if (!card || cardVisibility[cardId] === false) return null
+                  // In both mode, show both normal and percentage cards side by side
+                  const cards = []
                   
-                  // Apply themed colors
-                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
-                  
-                  // Simple cards (no icons)
-                  if (card.simple) {
-                    return (
-                      <div
-                        key={card.id}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
-                          {card.formattedValue != null ? card.formattedValue : card.value}
-                        </p>
-                      </div>
-                    )
+                  // Add the normal card
+                  const normalCard = getFaceCardConfig(cardId, faceCardTotals)
+                  if (normalCard && cardVisibility[cardId] !== false) {
+                    cards.push({ ...normalCard, renderKey: `${cardId}-normal` })
                   }
                   
-                  // Cards with icon (PNL, Floating Profit)
-                  if (card.withIcon) {
-                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
-                    return (
-                      <div
-                        key={card.id}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
-                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
-                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              {card.id === 5 && card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                              )}
-                              {card.id === 5 && !card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                              )}
-                              {card.id === 6 && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                              )}
-                            </svg>
-                          </div>
+                  // Check if this card has a percentage variant
+                  const normalToPercentMap = {
+                    2: 56, 3: 57, 4: 58, 5: 59, 6: 60, 10: 61, 11: 62, 12: 63, 13: 64, 53: 65,
+                    15: 17, 16: 18, 8: 54, 9: 55
+                  }
+                  const percentCardId = normalToPercentMap[cardId]
+                  if (percentCardId) {
+                    const percentCard = getFaceCardConfig(percentCardId, faceCardTotals)
+                    if (percentCard && cardVisibility[cardId] !== false) {
+                      cards.push({ ...percentCard, renderKey: `${cardId}-percent` })
+                    }
+                  }
+                  
+                  return cards.map(card => {
+                    // Apply themed colors
+                    const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  
+                    // Simple cards (no icons)
+                    if (card.simple) {
+                      return (
+                        <div
+                          key={card.renderKey}
+                          draggable
+                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
+                          onDragEnd={handleFaceCardDragEnd}
+                          onDragOver={handleFaceCardDragOver}
+                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
+                          className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                        >
+                          <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
+                          <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
+                            {card.formattedValue != null ? card.formattedValue : card.value}
+                          </p>
                         </div>
-                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
-                      </div>
-                    )
-                  }
-                  
-                  // Cards with arrow (PnL cards)
-                  if (card.withArrow) {
-                    return (
-                      <div
-                        key={card.id}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
-                      </div>
-                    )
-                  }
-                  
-                  return null
+                      )
+                    }
+                    
+                    // Cards with icon (Market Exposure and Credit)
+                    if (card.withIcon) {
+                      const iconColor = card.id === 5 ? (card.isPositive ? 'green' : 'red') : 'blue'
+                      return (
+                        <div
+                          key={card.renderKey}
+                          draggable
+                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
+                          onDragEnd={handleFaceCardDragEnd}
+                          onDragOver={handleFaceCardDragOver}
+                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
+                          className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
+                            <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
+                              <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                {card.id === 5 && card.isPositive && (
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                )}
+                                {card.id === 5 && !card.isPositive && (
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                )}
+                                {card.id === 6 && (
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                                )}
+                              </svg>
+                            </div>
+                          </div>
+                          <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
+                            {card.isPositive ? '▲ ' : '▼ '}
+                            {card.isPositive ? '' : '-'}
+                            {card.formattedValue}
+                          </p>
+                        </div>
+                      )
+                    }
+                    
+                    // Cards with arrow (PnL cards)
+                    if (card.withArrow) {
+                      return (
+                        <div
+                          key={card.renderKey}
+                          draggable
+                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
+                          onDragEnd={handleFaceCardDragEnd}
+                          onDragOver={handleFaceCardDragOver}
+                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
+                          className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
+                        >
+                          <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
+                          <p className={`text-sm font-bold ${themedColors.valueColor}`}>
+                            {card.isPositive ? '▲ ' : '▼ '}
+                            {card.isPositive ? '' : '-'}
+                            {card.formattedValue}
+                          </p>
+                        </div>
+                      )
+                    }
+                    
+                    return null
+                  })
                 })}
               </>
             )}
