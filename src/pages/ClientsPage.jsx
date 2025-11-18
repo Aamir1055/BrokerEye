@@ -1851,7 +1851,10 @@ const ClientsPage = () => {
       62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.thisWeekPnLPercent || 0).toFixed(2)}%`, borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
       63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.thisMonthPnLPercent || 0).toFixed(2)}%`, borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
       64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${Math.abs(stats.lifetimePnLPercent || 0).toFixed(2)}%`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
-      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(2)}%`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' }
+      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(2)}%`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
+      // Net Lifetime PnL (Lifetime PnL - Total Rebate)
+      66: { id: 66, title: 'Net Lifetime PnL', value: (stats.lifetimePnL || 0) - (stats.totalCommission || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalCommission || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'border-green-200' : 'border-red-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-700' : 'text-red-700' },
+      67: { id: 67, title: 'Net Lifetime PnL %', value: (stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0, formattedValue: `${Math.abs((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)).toFixed(2)}%`, borderColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'border-green-300' : 'border-red-300', textColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-700' : 'text-red-700', valueColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-800' : 'text-red-800' }
     }
     return configs[cardId]
   }
@@ -2341,7 +2344,9 @@ const ClientsPage = () => {
                       { id: 62, label: 'This Week PnL %' },
                       { id: 63, label: 'This Month PnL %' },
                       { id: 64, label: 'Lifetime PnL %' },
-                      { id: 65, label: 'Book PnL %' }
+                      { id: 65, label: 'Book PnL %' },
+                      { id: 66, label: 'Net Lifetime PnL' },
+                      { id: 67, label: 'Net Lifetime PnL %' }
                       ]
 
                       // Filter by search text
@@ -2589,6 +2594,7 @@ const ClientsPage = () => {
                     63: 12, // This Month PnL % -> This Month PnL
                     64: 13, // Lifetime PnL % -> Lifetime PnL
                     65: 53, // Book PnL % -> Book PnL
+                    67: 66, // Net Lifetime PnL % -> Net Lifetime PnL
                     17: 15, // Total Rebate % -> Total Rebate
                     18: 16, // Available Rebate % -> Available Rebate
                     54: 8, // Daily Deposit % -> Daily Deposit
@@ -2700,7 +2706,7 @@ const ClientsPage = () => {
                   // also exists in the order, skip this entry to avoid duplicate rendering
                   const percentToNormalMapForSkip = {
                     56: 2, 57: 3, 58: 4, 59: 5, 60: 6, 61: 10, 62: 11, 63: 12, 64: 13, 65: 53,
-                    17: 15, 18: 16, 54: 8, 55: 9
+                    67: 66, 17: 15, 18: 16, 54: 8, 55: 9
                   }
                   if (percentToNormalMapForSkip[cardId] && faceCardOrder.includes(percentToNormalMapForSkip[cardId])) {
                     return null
@@ -2718,6 +2724,7 @@ const ClientsPage = () => {
                     12: 63, // This Month PnL -> This Month PnL %
                     13: 64, // Lifetime PnL -> Lifetime PnL %
                     53: 65, // Book PnL -> Book PnL %
+                    66: 67, // Net Lifetime PnL -> Net Lifetime PnL %
                     15: 17, // Total Rebate -> Total Rebate %
                     16: 18, // Available Rebate -> Available Rebate %
                     8: 54, // Daily Deposit -> Daily Deposit %
@@ -2838,7 +2845,7 @@ const ClientsPage = () => {
                   // Check if this card has a percentage variant
                   const normalToPercentMap = {
                     2: 56, 3: 57, 4: 58, 5: 59, 6: 60, 10: 61, 11: 62, 12: 63, 13: 64, 53: 65,
-                    15: 17, 16: 18, 8: 54, 9: 55
+                    66: 67, 15: 17, 16: 18, 8: 54, 9: 55
                   }
                   const percentCardId = normalToPercentMap[cardId]
                   if (percentCardId) {
