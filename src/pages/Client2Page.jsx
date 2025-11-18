@@ -64,6 +64,7 @@ const Client2Page = () => {
   const [totalClients, setTotalClients] = useState(0)
   const [totals, setTotals] = useState({})
   const [rebateTotals, setRebateTotals] = useState({})
+  const [totalsPercent, setTotalsPercent] = useState({}) // Percent totals (server response when percentage:true)
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -2659,9 +2660,6 @@ const Client2Page = () => {
     const num = Number(value) || 0
     return `${formatIndianNumber(num.toFixed(2))} %`
   }
-  
-  // Percent totals (server response when percentage:true)
-  const [totalsPercent, setTotalsPercent] = useState({})
 
   // Save card visibility to localStorage whenever it changes
   useEffect(() => {
