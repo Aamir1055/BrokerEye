@@ -2318,10 +2318,10 @@ const ClientsPage = () => {
                       >
                         <input
                           type="checkbox"
-                          checked={cardVisibility[card.id]}
+                          checked={cardVisibility[card.id] !== false}
                           onChange={() => setCardVisibility(prev => ({
                             ...prev,
-                            [card.id]: !prev[card.id]
+                            [card.id]: prev[card.id] === false ? true : false
                           }))}
                           className="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 focus:ring-1"
                         />
