@@ -3235,14 +3235,12 @@ const Client2Page = () => {
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
                       <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
-                        {card.label}{isPercent ? ' %' : ''}
+                        {card.label}
                       </div>
                       <div className={`text-sm font-bold ${textColorClass}`}>
-                        {isPercent
-                          ? formatIndianNumber((rawValue || 0).toFixed(2))
-                          : (card.format === 'integer'
-                              ? formatIndianNumber(String(Math.round(rawValue || 0)))
-                              : formatIndianNumber((rawValue || 0).toFixed(2)))}
+                        {card.format === 'integer'
+                          ? formatIndianNumber(String(Math.round(rawValue || 0)))
+                          : formatIndianNumber((rawValue || 0).toFixed(2))}
                       </div>
                     </div>
                   )
