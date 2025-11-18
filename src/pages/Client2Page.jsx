@@ -1044,6 +1044,10 @@ const Client2Page = () => {
       const anyNormal = Object.entries(cardVisibility || {}).some(([key, value]) => !key.endsWith('Percent') && value !== false)
       const anyPercent = percentModeActive
 
+  // OPTIMIZATION: Only fetch percentage data if actually needed (percentage mode is ON)
+  // This prevents unnecessary API calls when user is not viewing percentage cards/columns
+  const shouldFetchPercentage = anyPercent
+
       // Helper: build payload variants to emulate OR within a single field (if applicable)
       const buildPayloadVariants = (base, percentageFlag) => {
         if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
@@ -1064,10 +1068,10 @@ const Client2Page = () => {
       const payloadNormalVariants = buildPayloadVariants(payload, false)
       const payloadPercentVariants = buildPayloadVariants(payload, true)
 
-  if (DEBUG_LOGS) console.log('[Client2] Sending payloads - Normal:', payloadNormalVariants, 'Percent:', payloadPercentVariants)
+  if (DEBUG_LOGS) console.log('[Client2] Sending payloads - Normal:', payloadNormalVariants, 'Percent (only if needed):', shouldFetchPercentage ? payloadPercentVariants : 'SKIPPED')
 
       // Fetch based on selection: both → fetch both; otherwise fetch one
-      if (anyNormal && anyPercent) {
+      if (anyNormal && shouldFetchPercentage) {
         // Normal variants
   const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
         // Merge clients (union by login) and sum totals
@@ -1130,7 +1134,7 @@ const Client2Page = () => {
           setTotalClients(percentTotalCount)
           setTotalPages(Math.max(1, Math.ceil(percentTotalCount / (itemsPerPage || 50))))
         }
-      } else if (anyPercent) {
+      } else if (shouldFetchPercentage) {
         // Percent only
   const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
         // Use first response's clients for table (percent mode only shows percent dataset)

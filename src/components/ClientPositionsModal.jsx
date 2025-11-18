@@ -255,8 +255,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }, [allPositionsCache, client.login])
 
-  // Fetch aggregated deal stats for the client
+  // Fetch aggregated deal stats for the client (disabled - endpoint not available)
   useEffect(() => {
+    // Backend doesn't have /api/broker/clients/${login}/deals/stats endpoint
+    // Commenting out to prevent 404 errors
+    /*
     let cancelled = false
     const loadStats = async () => {
       try {
@@ -276,6 +279,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
     if (client?.login) loadStats()
     return () => { cancelled = true }
+    */
   }, [client?.login])
 
   // Persist deal stat visibility
