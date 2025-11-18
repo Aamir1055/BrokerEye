@@ -3243,6 +3243,7 @@ const Client2Page = () => {
                         {card.format === 'integer'
                           ? formatIndianNumber(String(Math.round(rawValue || 0)))
                           : formatIndianNumber((rawValue || 0).toFixed(2))}
+                        {cardFilterPercentMode && ' %'}
                       </div>
                     </div>
                   )
