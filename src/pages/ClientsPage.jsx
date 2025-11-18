@@ -3196,7 +3196,7 @@ const ClientsPage = () => {
                           onDragOver={(e) => isFilterable && handleColumnDragOver(e)}
                           onDrop={(e) => isFilterable && handleColumnDrop(e, col.baseKey)}
                           onDragEnd={handleColumnDragEnd}
-                          className={`px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700 transition-colors ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
+                          className={`px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider relative group hover:bg-blue-700 transition-colors bg-blue-600 ${isFilterable ? 'cursor-move' : ''} ${draggingColumn === col.baseKey ? 'opacity-50' : ''}`}
                           ref={el => { if (el) { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el } }}
                           style={{ width: columnWidths[col.key] ? `${columnWidths[col.key]}px` : `${defaultPixelWidth}px`, minWidth: '80px', overflow: 'visible', position: 'relative' }}
                           title={isFilterable ? `${col.label} - Drag to reorder` : col.label}
