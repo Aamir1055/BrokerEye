@@ -1819,12 +1819,19 @@ export const DataProvider = ({ children }) => {
 
   // Monitor lag and auto-reconnect with fresh data when lag exceeds threshold
   useEffect(() => {
-    if (!isAuthenticated || !hasInitialData) return
+    if (!isAuthenticated || !hasInitialData) {
+      console.log('[DataContext] Lag monitor disabled:', { isAuthenticated, hasInitialData })
+      return
+    }
+    
+    console.log('[DataContext] 🔍 Lag monitor started - will check every 5s for lag >= 100s')
     
     const lagCheckInterval = setInterval(() => {
+      const lagSeconds = latestMeasuredLagMs ? Math.floor(latestMeasuredLagMs / 1000) : 0
+      console.log(`[DataContext] Lag check: ${lagSeconds}s (threshold: 100s, reconnecting: ${isReconnectingRef.current})`)
+      
       // Check if lag exceeds threshold
       if (latestMeasuredLagMs && latestMeasuredLagMs >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
-        const lagSeconds = Math.floor(latestMeasuredLagMs / 1000)
         console.warn(`[DataContext] ⚠️ High lag detected: ${lagSeconds}s (threshold: 100s) - Reconnecting WebSocket and fetching fresh data...`)
         
         isReconnectingRef.current = true
