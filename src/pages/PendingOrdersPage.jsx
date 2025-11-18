@@ -1123,8 +1123,8 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Orders Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden">
-            <div className="flex-1">
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden" style={{ height: '450px' }}>
+            <div className="flex-1 h-full overflow-y-auto">
               {displayedOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
