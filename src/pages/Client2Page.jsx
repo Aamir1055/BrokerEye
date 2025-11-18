@@ -3425,13 +3425,15 @@ const Client2Page = () => {
           
           {/* Table - Show table with progress bar for all loading states */}
           {(clients.length > 0 || (initialLoad && loading)) && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col" ref={tableContainerRef}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ 
+              height: tableHeight,
+              maxHeight: tableHeight,
+              flexShrink: 0
+            }}>
               {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
-              <div className="overflow-auto relative table-scroll-container flex-1" ref={hScrollRef} style={{ 
+              <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{ 
                 scrollbarWidth: 'thin',
                 scrollbarColor: '#9ca3af #e5e7eb',
-                height: tableHeight,
-                maxHeight: tableHeight,
                 position: 'relative'
               }}>
                 <style>{`
