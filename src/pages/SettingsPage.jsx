@@ -8,7 +8,14 @@ import BackupCodesModal from '../components/BackupCodesModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 const SettingsPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   const { user } = useAuth()
   const navigate = useNavigate()
   

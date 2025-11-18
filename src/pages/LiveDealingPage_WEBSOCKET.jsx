@@ -7,7 +7,14 @@ import LoadingSpinner from '../components/LoadingSpinner'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const LiveDealingPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   
   // Load deals from localStorage on mount
   const [deals, setDeals] = useState(() => {

@@ -5,7 +5,14 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import ApplyRuleModal from '../components/ApplyRuleModal'
 
 const BrokerRulePage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   const [availableRules, setAvailableRules] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)

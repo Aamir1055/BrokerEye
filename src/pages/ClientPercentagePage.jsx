@@ -14,7 +14,14 @@ const ClientPercentagePage = () => {
   const { filterByActiveGroup } = useGroups()
   const { filterByActiveIB } = useIB()
   const { positions: cachedPositions } = useData()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

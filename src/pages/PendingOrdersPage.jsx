@@ -15,7 +15,14 @@ const PendingOrdersPage = () => {
   const { filterByActiveGroup } = useGroups()
   const { filterByActiveIB } = useIB()
   
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   const [error, setError] = useState('')
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)

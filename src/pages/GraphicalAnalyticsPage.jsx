@@ -6,7 +6,14 @@ import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
 
 const GraphicalAnalyticsPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem('sidebarOpen')
+      return v ? JSON.parse(v) : false
+    } catch {
+      return false
+    }
+  })
   const { user } = useAuth()
   const navigate = useNavigate()
   const { clients, positions } = useData()
