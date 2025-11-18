@@ -46,10 +46,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   
   const handleNavigate = (path) => {
     navigate(path)
-    // Only close sidebar on mobile screens (< lg breakpoint)
-    if (typeof onClose === 'function' && window.innerWidth < 1024) {
-      onClose()
-    }
+    // Sidebar should only close via toggle button, not on navigation
   }
   
   const isActivePath = (path) => {
