@@ -3118,6 +3118,25 @@ const ClientsPage = () => {
             overflow: 'hidden',
             minHeight: '250px'
           }}>
+            {/* YouTube-style Loading Progress Bar */}
+            {(loading.clients || isRefreshing) && (
+              <div className="relative w-full h-1 bg-gray-200 overflow-hidden">
+                <style>{`
+                  @keyframes headerSlide {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(400%); }
+                  }
+                  .header-loading-bar {
+                    width: 30%;
+                    height: 100%;
+                    background: #2563eb;
+                    animation: headerSlide 0.9s linear infinite;
+                  }
+                `}</style>
+                <div className="header-loading-bar absolute top-0 left-0 h-full" />
+              </div>
+            )}
+            
             {/* Helper text for column reordering */}
             <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
