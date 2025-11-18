@@ -453,8 +453,7 @@ const Client2Page = () => {
     }
   }, [faceCardOrder, cardVisibility])
 
-  // Improved dynamic height: measure actual table container offset each time instead of relying on static approximations.
-  // Shrinks when cards are visible; expands when cards hidden. Reacts to card count & layout shifts.
+  // Calculate table height once on mount and when UI elements change, but don't recalculate on scroll
   useEffect(() => {
     const measureAndSet = () => {
       if (!tableContainerRef.current) return
@@ -472,35 +471,24 @@ const Client2Page = () => {
       setTableHeight(`${finalHeight}px`)
     }
 
-    // Initial + double RAF to wait for layout / transitions.
+    // Initial calculation with delay for layout
     measureAndSet()
     requestAnimationFrame(() => requestAnimationFrame(measureAndSet))
 
+    // Only recalculate on window resize, not on scroll
     const handleResize = () => measureAndSet()
     window.addEventListener('resize', handleResize)
 
-    // Observe face card region & table container for size mutations.
-    let roCards, roTable
-    if (typeof ResizeObserver !== 'undefined') {
-      if (faceCardsRef.current) {
-        roCards = new ResizeObserver(measureAndSet)
-        try { roCards.observe(faceCardsRef.current) } catch {}
-      }
-      if (tableContainerRef.current) {
-        roTable = new ResizeObserver(measureAndSet)
-        try { roTable.observe(tableContainerRef.current) } catch {}
-      }
+    // Only observe face card region for size changes (when cards are toggled)
+    let roCards
+    if (typeof ResizeObserver !== 'undefined' && faceCardsRef.current) {
+      roCards = new ResizeObserver(measureAndSet)
+      try { roCards.observe(faceCardsRef.current) } catch {}
     }
-
-    // Mutation observer catches class / visibility toggles impacting layout.
-    const mutObs = new MutationObserver(measureAndSet)
-    try { mutObs.observe(document.body, { attributes: true, subtree: true, childList: true }) } catch {}
 
     return () => {
       window.removeEventListener('resize', handleResize)
       try { roCards && roCards.disconnect() } catch {}
-      try { roTable && roTable.disconnect() } catch {}
-      try { mutObs.disconnect() } catch {}
     }
   }, [showFaceCards, visibleCardCount, cardFilterPercentMode, sidebarOpen])
   
