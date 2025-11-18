@@ -63,6 +63,7 @@ const Client2Page = () => {
   const [clients, setClients] = useState([])
   const [totalClients, setTotalClients] = useState(0)
   const [totals, setTotals] = useState({})
+  const [rebateTotals, setRebateTotals] = useState({})
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -144,7 +145,8 @@ const Client2Page = () => {
     'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthDeposit', 'thisMonthPnL',
     'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
     'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
-    'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal'
+    'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal',
+    'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent'
   ]
   
   const getInitialClient2FaceCardOrder = () => {
@@ -359,7 +361,12 @@ const Client2Page = () => {
       thisWeekPnLPercent: false,
       thisWeekSOCompensationInPercent: false,
       thisWeekSOCompensationOutPercent: false,
-      thisWeekWithdrawalPercent: false
+      thisWeekWithdrawalPercent: false,
+      // Rebate cards (all visible by default)
+      availableRebate: true,
+      availableRebatePercent: true,
+      totalRebate: true,
+      totalRebatePercent: true
     }
   }
   
@@ -1213,10 +1220,27 @@ const Client2Page = () => {
     return clients.filter(c => c != null)
   }, [clients])
   
+  // Fetch rebate totals from API
+  const fetchRebateTotals = useCallback(async () => {
+    try {
+      const response = await brokerAPI.getIBCommissionTotals()
+      const data = response?.data || {}
+      setRebateTotals({
+        availableRebate: data.total_available_commission || 0,
+        availableRebatePercent: data.total_available_commission_percentage || 0,
+        totalRebate: data.total_commission || 0,
+        totalRebatePercent: data.total_commission_percentage || 0
+      })
+    } catch (err) {
+      console.error('[Client2] Error fetching rebate totals:', err)
+    }
+  }, [])
+
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
     fetchClients()
-  }, [fetchClients])
+    fetchRebateTotals()
+  }, [fetchClients, fetchRebateTotals])
   
   // Removed server-side quick filter refetch; quick filters now apply client-side to current page only
   
@@ -2224,11 +2248,17 @@ const Client2Page = () => {
       thisWeekPnL: { label: 'This Week P&L', color: 'indigo', getValue: () => totals?.thisWeekPnL || 0, colorCheck: true },
       thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
       thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
-      thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 }
+      thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 },
+      
+      // Rebate cards
+      availableRebate: { label: 'Available Rebate', color: 'teal', getValue: () => rebateTotals?.availableRebate || 0 },
+      availableRebatePercent: { label: 'Available Rebate %', color: 'cyan', getValue: () => rebateTotals?.availableRebatePercent || 0 },
+      totalRebate: { label: 'Total Rebate', color: 'emerald', getValue: () => rebateTotals?.totalRebate || 0 },
+      totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 }
     }
     
     return configs[cardKey] || null
-  }, [totalClients])
+  }, [totalClients, rebateTotals])
   
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
@@ -2893,7 +2923,11 @@ const Client2Page = () => {
                               thisWeekPnL: 'This Week P&L',
                               thisWeekSOCompensationIn: 'This Week SO Compensation In',
                               thisWeekSOCompensationOut: 'This Week SO Compensation Out',
-                              thisWeekWithdrawal: 'This Week Withdrawal'
+                              thisWeekWithdrawal: 'This Week Withdrawal',
+                              availableRebate: 'Available Rebate',
+                              availableRebatePercent: 'Available Rebate %',
+                              totalRebate: 'Total Rebate',
+                              totalRebatePercent: 'Total Rebate %'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             // In % Mode we still filter base cards only; percent variants are no longer selectable
@@ -2912,7 +2946,7 @@ const Client2Page = () => {
                           {/* Determine button label based on displayed items only */}
                           {(() => {
                             const baseLabels = {
-                              assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal'
+                              assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', availableRebatePercent: 'Available Rebate %', totalRebate: 'Total Rebate', totalRebatePercent: 'Total Rebate %'
                             }
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             const items = baseItems
@@ -2994,7 +3028,11 @@ const Client2Page = () => {
                             thisWeekPnL: 'This Week P&L',
                             thisWeekSOCompensationIn: 'This Week SO Compensation In',
                             thisWeekSOCompensationOut: 'This Week SO Compensation Out',
-                            thisWeekWithdrawal: 'This Week Withdrawal'
+                            thisWeekWithdrawal: 'This Week Withdrawal',
+                            availableRebate: 'Available Rebate',
+                            availableRebatePercent: 'Available Rebate %',
+                            totalRebate: 'Total Rebate',
+                            totalRebatePercent: 'Total Rebate %'
                           }
                           // Build items based on toggle: only non-percent OR only percent
                           const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
