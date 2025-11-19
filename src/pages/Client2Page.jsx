@@ -827,6 +827,7 @@ const Client2Page = () => {
   
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
+    console.log('[Client2] fetchClients called - silent:', silent, 'columnFilters:', columnFilters)
     try {
       if (!silent) {
         setLoading(true)
@@ -835,7 +836,7 @@ const Client2Page = () => {
   // Normalize axios response shapes: some backends return data under data.data
   const extractData = (resp) => (resp?.data?.data) || (resp?.data) || resp
       
-      // Build request payload - always include page/limit as per API contract
+      // Build request payload - simple pagination (column filters handled by /fields endpoint)
       const payload = {
         page: Number(currentPage) || 1,
         limit: Number(itemsPerPage) || 100
@@ -848,6 +849,12 @@ const Client2Page = () => {
       
   // Add filters if present
   const combinedFilters = []
+  // Capture login checkbox selections to apply via mt5Accounts (OR semantics)
+  let checkboxLoginIds = []
+  // Track multi-value checkbox selections for OR handling via multiple requests
+  let multiOrField = null
+  let multiOrValues = []
+  let multiOrConflict = false
   
       // Inject server-side quick filters (full dataset filtering)
       if (quickFilters?.hasFloating) {
@@ -862,10 +869,6 @@ const Client2Page = () => {
         // No Deposit: lifetimeDeposit == 0
         combinedFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
       }
-  // Track a single field that has multiple checkbox values selected (to emulate OR semantics)
-  let multiOrField = null
-  let multiOrValues = []
-  let multiOrConflict = false
   // Track fields that already have text/number filters to avoid mixing with checkbox filters for same field
   const textFilteredFields = new Set()
   const numberFilteredFields = new Set()
@@ -891,96 +894,94 @@ const Client2Page = () => {
         return fieldMap[colKey] || colKey
       }
 
-      // Map column header filters to API filters
-      // Checkbox values: if multiple selected for one field, we'll OR them via multiple requests
-      if (columnFilters && Object.keys(columnFilters).length > 0) {
-        Object.entries(columnFilters).forEach(([key, cfg]) => {
-          // Text filters first (record fields)
-          if (key.endsWith('_text') && cfg) {
-            const uiKey = key.replace('_text', '')
-            const field = columnKeyToAPIField(uiKey)
-            const opMap = {
-              equal: 'equal',
-              notEqual: 'not_equal',
-              contains: 'contains',
-              doesNotContain: 'not_contains',
-              startsWith: 'starts_with',
-              endsWith: 'ends_with'
-            }
-            const op = opMap[cfg.operator] || cfg.operator
-            const val = cfg.value
-            if (val != null && String(val).length > 0) {
-              combinedFilters.push({ field, operator: op, value: String(val).trim() })
-              textFilteredFields.add(uiKey)
-            }
-            return
+      // Add column header filters: text, number, checkbox
+      // Text filters
+      Object.entries(columnFilters || {}).forEach(([key, cfg]) => {
+        if (key.endsWith('_text') && cfg) {
+          const uiKey = key.replace('_text', '')
+          const field = columnKeyToAPIField(uiKey)
+          const opMap = { equal: 'equal', notEqual: 'not_equal', contains: 'contains', doesNotContain: 'not_contains', startsWith: 'starts_with', endsWith: 'ends_with' }
+          const op = opMap[cfg.operator] || cfg.operator
+          const val = cfg.value
+          if (val != null && String(val).length > 0) {
+            combinedFilters.push({ field, operator: op, value: String(val).trim() })
           }
-          // Numeric filters (record fields)
-          if (key.endsWith('_number') && cfg) {
-            const uiKey = key.replace('_number', '')
-            const field = columnKeyToAPIField(uiKey)
-            const op = cfg.operator
-            const v1 = cfg.value1
-            const v2 = cfg.value2
-            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
-            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
-            if (op === 'between') {
-              if (num1 != null && Number.isFinite(num1)) {
-                combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
-              }
-              if (num2 != null && Number.isFinite(num2)) {
-                combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
-              }
-            } else if (op && num1 != null && Number.isFinite(num1)) {
-              combinedFilters.push({ field, operator: op, value: String(num1) })
-            }
-            numberFilteredFields.add(uiKey)
-            return
+        }
+      })
+      // Number filters
+      Object.entries(columnFilters || {}).forEach(([key, cfg]) => {
+        if (key.endsWith('_number') && cfg) {
+          const uiKey = key.replace('_number', '')
+          const field = columnKeyToAPIField(uiKey)
+          const op = cfg.operator
+          const v1 = cfg.value1
+          const v2 = cfg.value2
+          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+          if (op === 'between') {
+            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+          } else if (op && num1 != null && Number.isFinite(num1)) {
+            combinedFilters.push({ field, operator: op, value: String(num1) })
           }
-        })
-        // Second pass for checkbox values; skip if field already has text/number filter
-        Object.entries(columnFilters).forEach(([key, cfg]) => {
-          if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
-            const uiKey = key.replace('_checkbox', '')
-            const field = columnKeyToAPIField(uiKey)
-            if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) {
-              return // Don't combine checkbox with text/number for same field
-            }
-            
-            // Check if there's an active search query for this column
-            const hasActiveSearch = columnValueSearch[uiKey] && columnValueSearch[uiKey].trim().length > 0
-            
-            // NOTE: Optimizations disabled because columnValues only contains lazy-loaded subset (500 values)
-            // We can't reliably determine if "all values" are selected without full dataset
-            // Future: Track if column has loaded all values before applying optimizations
-            
-            if (cfg.values.length === 1) {
-              // Single selection → simple equality filter
-              combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
-            } else if (cfg.values.length <= 10 || hasActiveSearch) {
-              // Allow unlimited values if search is active, otherwise limit to 10 for OR logic
-              if (multiOrField && multiOrField !== field) {
-                multiOrConflict = true // More than one field needs OR; we'll fallback to AND behavior
-              } else {
-                multiOrField = field
-                multiOrValues = hasActiveSearch ? cfg.values : cfg.values.slice(0, 10)
-              }
+        }
+      })
+      // Add checkbox filters - use smart optimization for OR semantics
+      Object.keys(columnFilters).forEach(filterKey => {
+        if (filterKey.endsWith('_checkbox')) {
+          const columnKey = filterKey.replace('_checkbox', '')
+          const filterValues = columnFilters[filterKey]?.values || []
+          
+          if (filterValues.length > 0) {
+            // Special-case: login filters should use mt5Accounts for proper OR semantics
+            if (columnKey === 'login') {
+              checkboxLoginIds = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
+              console.log(`[Client2] 🔍 Using mt5Accounts for login checkbox: ${checkboxLoginIds.length} accounts`)
             } else {
-              // Too many values selected (>10) without search → only use first 10 to prevent timeout
-              console.warn(`[Client2] Too many checkbox values selected for ${field} (${cfg.values.length}), limiting to first 10`)
-              if (multiOrField && multiOrField !== field) {
-                multiOrConflict = true
+              const field = columnKeyToAPIField(columnKey)
+              const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
+              
+              // Optimization: skip if ALL values are selected (no filtering needed)
+              const allValues = columnValues[columnKey] || []
+              if (allValues.length > 0 && selectedValues.length === allValues.length) {
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: all values selected, skipping filter`)
+                return
+              }
+              
+              // Smart optimization: use not_equal for unselected values if more efficient
+              const unselectedValues = allValues.filter(v => !selectedValues.includes(String(v).trim()))
+              const shouldUseNotEqual = unselectedValues.length > 0 && 
+                                       unselectedValues.length < selectedValues.length &&
+                                       (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
+              
+              if (shouldUseNotEqual) {
+                // More efficient to exclude few unselected values than include many selected
+                unselectedValues.forEach(value => {
+                  combinedFilters.push({ field, operator: 'not_equal', value: String(value).trim() })
+                })
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using not_equal (excluding ${unselectedValues.length} values)`)
+              } else if (selectedValues.length === 1) {
+                // Single value: simple equal filter
+                combinedFilters.push({ field, operator: 'equal', value: selectedValues[0] })
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: single value equal filter`)
               } else {
-                multiOrField = field
-                multiOrValues = cfg.values.slice(0, 10) // Limit to 10 values
+                // Multiple values: use multi-request OR approach
+                if (multiOrField && multiOrField !== field) {
+                  multiOrConflict = true
+                } else {
+                  multiOrField = field
+                  multiOrValues = selectedValues
+                }
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: multi-value OR (${selectedValues.length} values)`)
               }
             }
           }
-        })
-      }
+        }
+      })
 
       if (combinedFilters.length > 0) {
         payload.filters = combinedFilters
+        console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
       
       // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
@@ -1029,6 +1030,16 @@ const Client2Page = () => {
         }
       }
 
+      // Merge in login checkbox selections (OR) into mt5Accounts filter
+      if (checkboxLoginIds.length > 0) {
+        if (mt5AccountsFilter.length > 0) {
+          const set = new Set(checkboxLoginIds)
+          mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(Number(a))) // intersection with existing mt5 list
+        } else {
+          mt5AccountsFilter = [...new Set(checkboxLoginIds)]
+        }
+      }
+
       // Assign final mt5Accounts if any
       if (mt5AccountsFilter.length > 0) {
         payload.mt5Accounts = mt5AccountsFilter
@@ -1041,154 +1052,116 @@ const Client2Page = () => {
       }
 
       // ALWAYS fetch normal data for table display
-      const anyNormal = true
-      // Only fetch percent data when explicit toggle ON
       const shouldFetchPercentage = percentModeActive
 
-      // Helper: build payload variants to emulate OR within a single field (if applicable)
-      const buildPayloadVariants = (base, percentageFlag) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          // Create a variant per value by appending an equality filter for this value
-          return multiOrValues.map((val) => {
-            const f = Array.isArray(base.filters) ? [...base.filters] : []
-            f.push({ field: multiOrField, operator: 'equal', value: val })
-            const p = { ...base, filters: f }
-            if (percentageFlag && shouldFetchPercentage) p.percentage = true
-            return p
-          })
-        }
-        const p = { ...base }
-        if (percentageFlag && shouldFetchPercentage) p.percentage = true
-        return [p]
+      // Build payload for normal and percentage requests
+      const payloadNormal = { ...payload }
+      const payloadPercent = shouldFetchPercentage ? { ...payload, percentage: true } : null
+
+    // Helper: build payload variants for multi-value OR filtering
+    const buildPayloadVariants = (basePayload, isPercentage) => {
+      if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+        // Create separate request for each value (OR semantics)
+        return multiOrValues.map(val => {
+          const filters = Array.isArray(basePayload.filters) ? [...basePayload.filters] : []
+          filters.push({ field: multiOrField, operator: 'equal', value: val })
+          const variant = { ...basePayload, filters }
+          if (isPercentage) variant.percentage = true
+          return variant
+        })
       }
+      // No multi-OR needed
+      const single = { ...basePayload }
+      if (isPercentage) single.percentage = true
+      return [single]
+    }
 
-      const payloadNormalVariants = buildPayloadVariants(payload, false)
-      const payloadPercentVariants = shouldFetchPercentage ? buildPayloadVariants(payload, true) : []
+    // Create payload variants for multi-value checkbox filters
+    const normalPayloads = buildPayloadVariants(payloadNormal, false)
+    const percentPayloads = shouldFetchPercentage ? buildPayloadVariants(payloadPercent, true) : []
+    
+    if (normalPayloads.length > 1) {
+      console.log(`[Client2] 🔄 Multi-value OR: fetching ${normalPayloads.length} variants for ${multiOrField}`)
+    }
 
-    if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', payloadNormalVariants, 'Percent:', shouldFetchPercentage ? payloadPercentVariants : 'SKIPPED')
+    // Always log payload when filters are present to debug filtering issues
+    if (payload.filters && payload.filters.length > 0) {
+      console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(normalPayloads[0], null, 2))
+    }
+    if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', normalPayloads.length, 'Percent:', shouldFetchPercentage ? percentPayloads.length : 'SKIPPED')
 
-      // Fetch normal always, then optionally percent
+      // Fetch data: if multi-value OR, fetch all variants and merge results
       if (shouldFetchPercentage) {
-        // Normal variants
-  const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
-        // Merge clients (union by login) and sum totals
-        const clientMap = new Map()
-        let mergedTotals = {}
-        let mergedTotalCount = 0
-        let pages = 1
-        normalResponses.forEach((resp) => {
-          if (DEBUG_LOGS) console.log('[Client2] Raw response:', resp)
-          if (DEBUG_LOGS) console.log('[Client2] resp.data:', resp?.data)
-          const data = extractData(resp)
-          if (DEBUG_LOGS) console.log('[Client2] Extracted data:', data)
-          if (DEBUG_LOGS) console.log('[Client2] data.clients:', data?.clients)
-          if (DEBUG_LOGS) console.log('[Client2] data.data:', data?.data)
-          const list = data?.clients || []
-          if (DEBUG_LOGS) console.log('[Client2] Final list:', list, 'length:', list.length)
-          // SAFETY: Filter out null/undefined clients before adding to map
-          list.filter(c => c != null && c.login != null).forEach(c => { 
-            if (!clientMap.has(c.login)) clientMap.set(c.login, c) 
+        // Fetch both normal and percentage data
+        const [normalResponses, percentResponses] = await Promise.all([
+          Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p))),
+          Promise.all(percentPayloads.map(p => brokerAPI.searchClients(p)))
+        ])
+        
+        // Merge normal responses (deduplicate by login)
+        const allNormalClients = []
+        const seenLogins = new Set()
+        let totalFromAllVariants = 0
+        normalResponses.forEach(response => {
+          const data = extractData(response)
+          const clients = (data?.clients || []).filter(c => c != null && c.login != null)
+          totalFromAllVariants += Number(data?.total || 0)
+          clients.forEach(client => {
+            if (!seenLogins.has(client.login)) {
+              seenLogins.add(client.login)
+              allNormalClients.push(client)
+            }
           })
-          const t = data?.totals || {}
-          Object.entries(t).forEach(([k, v]) => {
-            if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
-          })
-          mergedTotalCount += Number(data?.total || list.length || 0)
-          pages = Math.max(pages, Number(data?.pages || 1))
         })
-  const unionClients = Array.from(clientMap.values())
-  // Server-side total count across variants (sums per-variant totals; safe because OR is for a single scalar field)
-  const serverTotal = mergedTotalCount || 0
-  // NO client-side slicing - server already paginated
-  // SAFETY: Final filter before setting state
-  const safeClients = unionClients.filter(c => c != null && c.login != null)
-  if (safeClients.length < unionClients.length) {
-  if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from API response')
-  }
-  setClients(safeClients)
-  // Prefer server-reported total when available; fallback to union length
-  const effectiveTotal = serverTotal > 0 ? serverTotal : unionClients.length
-  setTotalClients(effectiveTotal)
-  setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 50))))
-        setTotals(mergedTotals)
+        
+        // Use first response for metadata
+        const normalData = extractData(normalResponses[0])
+        const normalTotals = normalData?.totals || {}
+        // For multi-request: use sum of totals; for single request: use API total
+        const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allNormalClients.length || 0)
+        const pages = normalPayloads.length > 1 ? Math.ceil(allNormalClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
+        
+        setClients(allNormalClients)
+        setTotalClients(normalTotal)
+        setTotalPages(pages)
+        setTotals(normalTotals)
         setError('')
 
-        // Percent variants (sum totals only)
-  const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
-        let mergedPercentTotals = {}
-        let percentTotalCount = 0
-        percentResponses.forEach((resp) => {
-          const t = extractData(resp)?.totals || {}
-          Object.entries(t).forEach(([k, v]) => {
-            if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
-          })
-          const d = extractData(resp)
-          percentTotalCount += Number(d?.total || d?.clients?.length || 0)
-        })
-        setTotalsPercent(mergedPercentTotals)
-        // Prefer server-reported total across variants
-        if (percentTotalCount > 0) {
-          setTotalClients(percentTotalCount)
-          setTotalPages(Math.max(1, Math.ceil(percentTotalCount / (itemsPerPage || 50))))
-        }
-      } else if (shouldFetchPercentage) {
-        // Percent only
-  const percentResponses = await Promise.all(payloadPercentVariants.map(p => brokerAPI.searchClients(p)))
-        // Use first response's clients for table (percent mode only shows percent dataset)
-    const first = percentResponses[0]
-    const data = extractData(first)
-        // SAFETY: Filter out null/undefined clients before setting state
-        const rawClients = data?.clients || []
-        const safeClients = rawClients.filter(c => c != null && c.login != null)
-        if (safeClients.length < rawClients.length) {
-          if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from percent-only API response')
-        }
-        setClients(safeClients)
-        setTotalClients(data?.total || data?.clients?.length || 0)
-        setTotalPages(data?.pages || 1)
-        // Merge percent totals across variants
-        let mergedPercentTotals = {}
-        percentResponses.forEach((resp) => {
-          const t = extractData(resp)?.totals || {}
-          Object.entries(t).forEach(([k, v]) => {
-            if (typeof v === 'number') mergedPercentTotals[k] = (mergedPercentTotals[k] || 0) + v
-          })
-        })
-        setTotals({})
-        setTotalsPercent(mergedPercentTotals)
-        setError('')
+        // Merge percentage data
+        const percentData = extractData(percentResponses[0])
+        const percentTotals = percentData?.totals || {}
+        setTotalsPercent(percentTotals)
       } else {
-        // Normal only
-  const normalResponses = await Promise.all(payloadNormalVariants.map(p => brokerAPI.searchClients(p)))
-        const clientMap = new Map()
-        let mergedTotals = {}
-        let mergedTotalCount = 0
-        normalResponses.forEach((resp) => {
-          const data = extractData(resp)
-          const list = data?.clients || []
-          // SAFETY: Filter out null/undefined clients before adding to map
-          list.filter(c => c != null && c.login != null).forEach(c => { 
-            if (!clientMap.has(c.login)) clientMap.set(c.login, c) 
+        // Normal only - fetch all variants and merge
+        const normalResponses = await Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p)))
+        
+        // Merge results (deduplicate by login)
+        const allClients = []
+        const seenLogins = new Set()
+        let totalFromAllVariants = 0
+        normalResponses.forEach(response => {
+          const data = extractData(response)
+          const clients = (data?.clients || []).filter(c => c != null && c.login != null)
+          totalFromAllVariants += Number(data?.total || 0)
+          clients.forEach(client => {
+            if (!seenLogins.has(client.login)) {
+              seenLogins.add(client.login)
+              allClients.push(client)
+            }
           })
-          const t = data?.totals || {}
-          Object.entries(t).forEach(([k, v]) => {
-            if (typeof v === 'number') mergedTotals[k] = (mergedTotals[k] || 0) + v
-          })
-          mergedTotalCount += Number(data?.total || list.length || 0)
         })
-        const unionClients = Array.from(clientMap.values())
-        const serverTotal = mergedTotalCount || 0
-        // NO client-side slicing - server already paginated
-        // SAFETY: Final filter before setting state
-        const safeClients = unionClients.filter(c => c != null && c.login != null)
-        if (safeClients.length < unionClients.length) {
-          if (DEBUG_LOGS) console.warn('[Client2Page] Filtered out invalid clients from normal-only API response')
-        }
-  setClients(safeClients)
-  const effectiveTotal = serverTotal > 0 ? serverTotal : unionClients.length
-  setTotalClients(effectiveTotal)
-  setTotalPages(Math.max(1, Math.ceil(effectiveTotal / (itemsPerPage || 100))))
-        setTotals(mergedTotals)
+        
+        // Use first response for metadata
+        const normalData = extractData(normalResponses[0])
+        const normalTotals = normalData?.totals || {}
+        // For multi-request: use sum of totals; for single request: use API total
+        const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allClients.length || 0)
+        const pages = normalPayloads.length > 1 ? Math.ceil(allClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
+        
+        setClients(allClients)
+        setTotalClients(normalTotal)
+        setTotalPages(pages)
+        setTotals(normalTotals)
         setTotalsPercent({})
         setError('')
       }
@@ -1247,10 +1220,10 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
   
-  // Server returns filtered dataset; only apply null safety locally
+  // Pass-through - filtering done by API
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    return clients.filter(c => c != null)
+    return clients.filter(c => c != null && c.login != null)
   }, [clients])
   
   // Fetch rebate totals from API
@@ -1271,6 +1244,7 @@ const Client2Page = () => {
 
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
+    console.log('[Client2] useEffect triggered - fetching clients')
     fetchClients()
     fetchRebateTotals()
   }, [fetchClients, fetchRebateTotals])
@@ -1597,8 +1571,7 @@ const Client2Page = () => {
     }
     clearSort(columnKey)
     setShowFilterDropdown(null)
-    setCurrentPage(1)
-    fetchClients(false)
+    console.log('[Client2] ✅ Checkbox filter cleared (client-side filtering updated)')
   }
   
   const getActiveFilterCount = (columnKey) => {
@@ -1638,14 +1611,24 @@ const Client2Page = () => {
       value2: temp.value2 ? parseFloat(temp.value2) : null
     }
     
-    setColumnFilters(prev => ({
-      ...prev,
-      [`${columnKey}_number`]: filterConfig
-    }))
+    console.log('[Client2] applyNumberFilter called for', columnKey, 'with config:', filterConfig)
+    
+    setColumnFilters(prev => {
+      const updated = {
+        ...prev,
+        [`${columnKey}_number`]: filterConfig
+      }
+      console.log('[Client2] Updated columnFilters:', updated)
+      return updated
+    })
     
     setShowFilterDropdown(null)
     setCurrentPage(1)
-    fetchClients(false)
+    
+    // Immediately fetch full dataset with new filter
+    setTimeout(() => {
+      fetchClients(false)
+    }, 0)
   }
   
   const initNumericFilterTemp = (columnKey) => {
@@ -1696,14 +1679,24 @@ const Client2Page = () => {
       caseSensitive: temp.caseSensitive
     }
     
-    setColumnFilters(prev => ({
-      ...prev,
-      [`${columnKey}_text`]: filterConfig
-    }))
+    console.log('[Client2] applyTextFilter called for', columnKey, 'with config:', filterConfig)
+    
+    setColumnFilters(prev => {
+      const updated = {
+        ...prev,
+        [`${columnKey}_text`]: filterConfig
+      }
+      console.log('[Client2] Updated columnFilters:', updated)
+      return updated
+    })
     
     setShowFilterDropdown(null)
     setCurrentPage(1)
-    fetchClients(false)
+    
+    // Immediately fetch full dataset with new filter
+    setTimeout(() => {
+      fetchClients(false)
+    }, 0)
   }
 
   // Build payload for fetching column values using current table filters (server-side), excluding the current column's header filter
@@ -1782,11 +1775,14 @@ const Client2Page = () => {
           if (uiKey === columnKey) return
           const field = columnKeyToAPIField(uiKey)
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
-          if (cfg.values.length === 1) {
-            combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
+          const rawValues = cfg.values.map(v => String(v).trim()).filter(v => v.length > 0)
+          if (rawValues.length === 0) return
+          if (rawValues.length === 1) {
+            combinedFilters.push({ field, operator: 'equal', value: rawValues[0] })
           } else {
+            // Provide array for backend; treat multi-value as OR by storing values list
             if (multiOrField && multiOrField !== field) multiOrConflict = true
-            else { multiOrField = field; multiOrValues = cfg.values }
+            else { multiOrField = field; multiOrValues = rawValues }
           }
         }
       })
@@ -1827,6 +1823,20 @@ const Client2Page = () => {
 
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
+    // Only allow API calls for specific columns
+    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone']
+    if (!allowedColumns.includes(columnKey)) {
+      console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
+      // Initialize states to prevent undefined values
+      setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 0 }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 0 }))
+      return
+    }
+    
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
     // Skip for unsupported fields
@@ -1904,6 +1914,20 @@ const Client2Page = () => {
 
   // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
+    // Only allow API calls for specific columns
+    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone']
+    if (!allowedColumns.includes(columnKey)) {
+      console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
+      // Initialize states to prevent undefined values
+      setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 0 }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 0 }))
+      return
+    }
+    
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
     // Don't fetch if already loaded (unless forcing refresh)
@@ -2116,26 +2140,33 @@ const Client2Page = () => {
     setSelectedColumnValues(prev => ({ ...prev, [columnKey]: nextSelected }))
   }
 
-  // Apply checkbox filter
+  // Apply checkbox filter - builds server-side filters using proper API format
   const applyCheckboxFilter = (columnKey) => {
     const selected = selectedColumnValues[columnKey] || []
     
+    console.log('[Client2] ========================================')
+    console.log('[Client2] applyCheckboxFilter called')
+    console.log('[Client2] columnKey:', columnKey)
+    console.log('[Client2] selected values:', selected)
+    console.log('[Client2] selected count:', selected.length)
+    console.log('[Client2] ========================================')
+    
     if (selected.length === 0) {
-      // No values selected, clear filter
+      console.log('[Client2] No values selected, clearing filter')
       clearColumnFilter(columnKey)
       return
     }
     
-    // Create a filter configuration for checkbox selection
+    setShowFilterDropdown(null)
+    setCurrentPage(1)
+    
+    // Store filter in state - will be sent to API via fetchClients
     setColumnFilters(prev => ({
       ...prev,
       [`${columnKey}_checkbox`]: { values: selected }
     }))
     
-    setShowFilterDropdown(null)
-    // Immediately refetch via API with new header filters and reset to first page
-    setCurrentPage(1)
-    fetchClients(false)
+    console.log('[Client2] ✅ Checkbox filter set - will be sent to API')
   }
   
   const applySortToColumn = (columnKey, direction) => {
@@ -2547,11 +2578,13 @@ const Client2Page = () => {
           const uiKey = key.replace('_checkbox', '')
           const field = columnKeyToAPIField(uiKey)
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
-          if (cfg.values.length === 1) {
-            combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
+          const rawValues = cfg.values.map(v => String(v).trim()).filter(v => v.length > 0)
+          if (rawValues.length === 0) return
+          if (rawValues.length === 1) {
+            combinedFilters.push({ field, operator: 'equal', value: rawValues[0] })
           } else {
             if (multiOrField && multiOrField !== field) multiOrConflict = true
-            else { multiOrField = field; multiOrValues = cfg.values }
+            else { multiOrField = field; multiOrValues = rawValues }
           }
         }
       })
@@ -2971,7 +3004,7 @@ const Client2Page = () => {
                                 hasFloating: e.target.checked
                               }))
                               setCurrentPage(1)
-                              fetchClients(false)
+                              // useEffect will handle fetching with updated filters
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
@@ -2987,7 +3020,7 @@ const Client2Page = () => {
                                 hasCredit: e.target.checked
                               }))
                               setCurrentPage(1)
-                              fetchClients(false)
+                              // useEffect will handle fetching with updated filters
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
@@ -3003,7 +3036,7 @@ const Client2Page = () => {
                                 noDeposit: e.target.checked
                               }))
                               setCurrentPage(1)
-                              fetchClients(false)
+                              // useEffect will handle fetching with updated filters
                             }}
                             className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                           />
@@ -4143,11 +4176,6 @@ const Client2Page = () => {
                                                             />
                                                             <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
                                                           </label>
-                                                          {selected.length > 10 && !hasActiveSearch && (
-                                                            <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-300 rounded text-xs text-amber-700">
-                                                              ⚠️ {selected.length} values selected. Only first 10 will be used to prevent timeout.
-                                                            </div>
-                                                          )}
                                                         </>
                                                       )
                                                     })()}
@@ -4460,11 +4488,6 @@ const Client2Page = () => {
                                                             />
                                                             <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
                                                           </label>
-                                                          {selected.length > 10 && !hasActiveSearch && (
-                                                            <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-300 rounded text-xs text-amber-700">
-                                                              ⚠️ {selected.length} values selected. Only first 10 will be used to prevent timeout.
-                                                            </div>
-                                                          )}
                                                         </>
                                                       )
                                                     })()}
