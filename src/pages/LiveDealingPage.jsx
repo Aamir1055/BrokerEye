@@ -1785,18 +1785,18 @@ const LiveDealingPage = () => {
                   {displayedDeals.map((deal, index) => (
                     <tr key={deal.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {visibleColumns.time && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {formatTime(deal.time)}
                         </td>
                       )}
                       {visibleColumns.deal && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] font-medium text-gray-900">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-900">
                           {deal.rawData?.deal || deal.id}
                         </td>
                       )}
                       {visibleColumns.login && (
                         <td 
-                          className="px-3 py-2.5 whitespace-nowrap text-[14px] font-medium text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                          className="px-3 py-2.5 whitespace-nowrap text-[12px] text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
                           onClick={(e) => {
                             e.stopPropagation()
                             setSelectedLogin(deal.login)
@@ -1807,7 +1807,7 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.action && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px]">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                             deal.rawData?.action === 'BUY' 
                               ? 'bg-green-100 text-green-800' 
@@ -1818,12 +1818,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.symbol && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-900 font-medium">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-900">
                           {deal.rawData?.symbol || '-'}
                         </td>
                       )}
                       {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.volume_percentage != null
                                 ? Number(deal.rawData.volume_percentage).toFixed(2)
@@ -1832,17 +1832,17 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.volumePercentage && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.volume_percentage != null ? Number(deal.rawData.volume_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.price && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.price?.toFixed(5) || '-'}
                         </td>
                       )}
                       {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[13px] font-medium ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
                           (deal.rawData?.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {displayMode === 'percentage'
@@ -1853,14 +1853,14 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.profitPercentage && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[13px] ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {deal.rawData?.profit_percentage != null ? Number(deal.rawData.profit_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.commission_percentage != null
                                 ? Number(deal.rawData.commission_percentage).toFixed(2)
@@ -1869,12 +1869,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.commissionPercentage && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.commission_percentage != null ? Number(deal.rawData.commission_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.storage_percentage != null
                                 ? Number(deal.rawData.storage_percentage).toFixed(2)
@@ -1883,34 +1883,34 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.storagePercentage && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.storage_percentage != null ? Number(deal.rawData.storage_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.appliedPercentage && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
                             {deal.rawData?.applied_percentage != null ? Number(deal.rawData.applied_percentage).toFixed(1) : '0.0'}
                           </span>
                         </td>
                       )}
                       {visibleColumns.entry && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.entry || 0}
                         </td>
                       )}
                       {visibleColumns.order && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.order || '-'}
                         </td>
                       )}
                       {visibleColumns.position && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.position || '-'}
                         </td>
                       )}
                       {visibleColumns.reason && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-600">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-600">
                           {deal.rawData?.reason || '-'}
                         </td>
                       )}

@@ -1842,7 +1842,7 @@ export const DataProvider = ({ children }) => {
       return
     }
     
-    console.log('[DataContext] 🔍 Lag monitor started - will check every 5s for lag >= 100s')
+    console.log('[DataContext] 🔍 Lag monitor started - will check every 5s and reconnect if lag is >= 100s (100 seconds or more)')
     
     const lagCheckInterval = setInterval(() => {
       const currentLag = latestMeasuredLagRef.current
