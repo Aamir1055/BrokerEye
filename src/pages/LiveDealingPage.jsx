@@ -1068,8 +1068,8 @@ const LiveDealingPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div 
                         className={`absolute top-0 w-40 bg-white border border-gray-300 rounded shadow-lg z-50 ${
-                          ['entry', 'order', 'position', 'reason'].includes(columnKey)
-                            ? 'right-full mr-1'  // Open to the left for last columns
+                          ['order', 'position', 'reason'].includes(columnKey)
+                            ? 'right-full mr-1'  // Open to the left for last 3 columns
                             : 'left-full ml-1'   // Open to the right for other columns
                         }`}
                         onClick={(e) => e.stopPropagation()}
