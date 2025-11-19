@@ -1837,58 +1837,88 @@ const Client2Page = () => {
     
     try {
       // Use dedicated fields API endpoint that searches across ALL data
-      const params = {
+      const baseParams = {
         fields: columnKey,
         search: searchQuery.trim() || undefined
-      }
-      
-      // When searching, use high limit to get all results; when browsing, use pagination
-      if (searchQuery && searchQuery.trim()) {
-        params.limit = 999999 // High limit to get all search results from backend
-      } else {
-        params.page = 1
-        params.limit = 500
       }
 
       // Add quick filter constraints as query params
       if (quickFilters?.hasFloating) {
-        params.hasFloating = true
+        baseParams.hasFloating = true
       }
       if (quickFilters?.hasCredit) {
-        params.hasCredit = true
+        baseParams.hasCredit = true
       }
       if (quickFilters?.noDeposit) {
-        params.noDeposit = true
+        baseParams.noDeposit = true
       }
 
       // Add group filter if active
       if (activeGroup?.logins && activeGroup.logins.length > 0) {
-        params.logins = activeGroup.logins.join(',')
+        baseParams.logins = activeGroup.logins.join(',')
       }
 
       // Add IB filter if active
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
-        params.ibAccounts = ibMT5Accounts.join(',')
+        baseParams.ibAccounts = ibMT5Accounts.join(',')
       }
 
-      const response = await brokerAPI.getClientFields(params)
-      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
-      const data = extract(response)
-      
-      // Extract unique values from response
-      const clients = data?.clients || []
       const setVals = new Set()
-      clients.forEach(client => {
-        const v = client?.[columnKey]
-        if (v !== null && v !== undefined && v !== '') setVals.add(v)
-      })
+      
+      if (searchQuery && searchQuery.trim()) {
+        // When searching, fetch ALL pages to get complete results (backend caps at 100 per page)
+        const firstParams = { ...baseParams, page: 1, limit: 100 }
+        const firstResponse = await brokerAPI.getClientFields(firstParams)
+        const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+        const firstData = extract(firstResponse)
+        
+        // Extract values from first page
+        const firstClients = firstData?.clients || []
+        firstClients.forEach(client => {
+          const v = client?.[columnKey]
+          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+        })
+        
+        // Get total pages and fetch remaining pages if needed
+        const totalPages = Math.max(1, Number(firstData?.pages || firstData?.totalPages || 1))
+        
+        if (totalPages > 1) {
+          // Fetch all remaining pages in parallel
+          const pagePromises = []
+          for (let page = 2; page <= totalPages; page++) {
+            const pageParams = { ...baseParams, page, limit: 100 }
+            pagePromises.push(brokerAPI.getClientFields(pageParams))
+          }
+          
+          const pageResponses = await Promise.all(pagePromises)
+          pageResponses.forEach(resp => {
+            const data = extract(resp)
+            const clients = data?.clients || []
+            clients.forEach(client => {
+              const v = client?.[columnKey]
+              if (v !== null && v !== undefined && v !== '') setVals.add(v)
+            })
+          })
+        }
+      } else {
+        // When browsing (no search), use regular pagination
+        const params = { ...baseParams, page: 1, limit: 500 }
+        const response = await brokerAPI.getClientFields(params)
+        const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+        const data = extract(response)
+        
+        const clients = data?.clients || []
+        clients.forEach(client => {
+          const v = client?.[columnKey]
+          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+        })
+      }
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
-      const totalPages = Math.max(1, Number(data?.pages || 1))
       
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 1 }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false })) // All loaded when searching
       setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: false }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values with search for ${columnKey}:`, err)
