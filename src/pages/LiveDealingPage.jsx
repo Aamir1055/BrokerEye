@@ -1766,15 +1766,15 @@ const LiveDealingPage = () => {
                     {visibleColumns.action && renderHeaderCell('action', 'Action')}
                     {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
                     {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volume', displayMode === 'percentage' ? 'Volume %' : 'Volume')}
-                    {visibleColumns.volumePercentage && (displayMode === 'both') && renderHeaderCell('volumePercentage', 'Volume %')}
+                    {visibleColumns.volumePercentage && renderHeaderCell('volumePercentage', 'Volume %')}
                     {visibleColumns.price && renderHeaderCell('price', 'Price')}
                     {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profit', displayMode === 'percentage' ? 'Profit %' : 'Profit')}
-                    {visibleColumns.profitPercentage && (displayMode === 'both') && renderHeaderCell('profitPercentage', 'Profit %')}
+                    {visibleColumns.profitPercentage && renderHeaderCell('profitPercentage', 'Profit %')}
                     {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commission', displayMode === 'percentage' ? 'Commission %' : 'Commission')}
-                    {visibleColumns.commissionPercentage && (displayMode === 'both') && renderHeaderCell('commissionPercentage', 'Commission %')}
+                    {visibleColumns.commissionPercentage && renderHeaderCell('commissionPercentage', 'Commission %')}
                     {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storage', displayMode === 'percentage' ? 'Storage %' : 'Storage')}
-                    {visibleColumns.storagePercentage && (displayMode === 'both') && renderHeaderCell('storagePercentage', 'Storage %')}
-                    {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('appliedPercentage', 'Applied %')}
+                    {visibleColumns.storagePercentage && renderHeaderCell('storagePercentage', 'Storage %')}
+                    {visibleColumns.appliedPercentage && renderHeaderCell('appliedPercentage', 'Applied %')}
                     {visibleColumns.entry && renderHeaderCell('entry', 'Entry')}
                     {visibleColumns.order && renderHeaderCell('order', 'Order')}
                     {visibleColumns.position && renderHeaderCell('position', 'Position')}
@@ -1823,7 +1823,7 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.volume_percentage != null
                                 ? Number(deal.rawData.volume_percentage).toFixed(2)
@@ -1831,8 +1831,8 @@ const LiveDealingPage = () => {
                             : (deal.rawData?.volume?.toFixed(2) || '-')}
                         </td>
                       )}
-                      {visibleColumns.volumePercentage && (displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                      {visibleColumns.volumePercentage && (
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {deal.rawData?.volume_percentage != null ? Number(deal.rawData.volume_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
@@ -1842,7 +1842,7 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[14px] font-medium ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[13px] font-medium ${
                           (deal.rawData?.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {displayMode === 'percentage'
@@ -1852,15 +1852,15 @@ const LiveDealingPage = () => {
                             : (deal.rawData?.profit?.toFixed(2) || '0.00')}
                         </td>
                       )}
-                      {visibleColumns.profitPercentage && (displayMode === 'both') && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[14px] ${
+                      {visibleColumns.profitPercentage && (
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-[13px] ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {deal.rawData?.profit_percentage != null ? Number(deal.rawData.profit_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.commission_percentage != null
                                 ? Number(deal.rawData.commission_percentage).toFixed(2)
@@ -1868,13 +1868,13 @@ const LiveDealingPage = () => {
                             : (deal.rawData?.commission?.toFixed(2) || '0.00')}
                         </td>
                       )}
-                      {visibleColumns.commissionPercentage && (displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                      {visibleColumns.commissionPercentage && (
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {deal.rawData?.commission_percentage != null ? Number(deal.rawData.commission_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.storage_percentage != null
                                 ? Number(deal.rawData.storage_percentage).toFixed(2)
@@ -1882,13 +1882,13 @@ const LiveDealingPage = () => {
                             : (deal.rawData?.storage?.toFixed(2) || '0.00')}
                         </td>
                       )}
-                      {visibleColumns.storagePercentage && (displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                      {visibleColumns.storagePercentage && (
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           {deal.rawData?.storage_percentage != null ? Number(deal.rawData.storage_percentage).toFixed(2) : '0.00'}
                         </td>
                       )}
-                      {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[14px] text-gray-700">
+                      {visibleColumns.appliedPercentage && (
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[13px] text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
                             {deal.rawData?.applied_percentage != null ? Number(deal.rawData.applied_percentage).toFixed(1) : '0.0'}
                           </span>
