@@ -1152,17 +1152,6 @@ const LiveDealingPage = () => {
                           >
                             Between...
                           </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Custom Filter...
-                          </div>
                         </div>
                       </div>
                     )}
