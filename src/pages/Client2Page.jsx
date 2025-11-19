@@ -123,6 +123,7 @@ const Client2Page = () => {
   const [columnValuesHasMore, setColumnValuesHasMore] = useState({}) // Track hasMore per column
   const [columnValuesCurrentPage, setColumnValuesCurrentPage] = useState({}) // Track current page number per column
   const [columnValuesTotalPages, setColumnValuesTotalPages] = useState({}) // Track total pages per column
+  const [columnValuesUnsupported, setColumnValuesUnsupported] = useState({}) // Fields not supported by /clients/fields API
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [columnValueSearchDebounce, setColumnValueSearchDebounce] = useState({}) // Debounced search queries
@@ -1812,6 +1813,8 @@ const Client2Page = () => {
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
+    // Skip for unsupported fields
+    if (columnValuesUnsupported[columnKey]) return
     
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
@@ -1864,8 +1867,13 @@ const Client2Page = () => {
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
+      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: false }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values with search for ${columnKey}:`, err)
+      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: true }))
+      setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
     }
@@ -1935,8 +1943,14 @@ const Client2Page = () => {
       setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: hasPagesInfo ? pagesNum > 1 : inferredHasMore }))
+      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: false }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
+      // Mark as unsupported to avoid further API calls for this field
+      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: true }))
+      setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
     }
@@ -1944,6 +1958,10 @@ const Client2Page = () => {
 
   // Load more column values when scrolling (fetch next 500)
   const fetchMoreColumnValues = async (columnKey) => {
+    if (columnValuesUnsupported[columnKey]) {
+      console.log(`[Client2] Skipping fetchMore for unsupported field ${columnKey}`)
+      return
+    }
     console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
     console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
     
@@ -4087,98 +4105,107 @@ const Client2Page = () => {
                                                 </div>
 
                                                 {/* Select Visible Checkbox */}
-                                                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                  {(() => {
-                                                    const allVals = columnValues[columnKey] || []
-                                                    const selected = selectedColumnValues[columnKey] || []
-                                                    const allVisibleSelected = allVals.length > 0 && allVals.every(v => selected.includes(v))
-                                                    return (
-                                                      <label className="flex items-center gap-2 cursor-pointer">
-                                                        <input
-                                                          type="checkbox"
-                                                          checked={allVisibleSelected}
-                                                          onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                        />
-                                                        <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
-                                                      </label>
-                                                    )
-                                                  })()}
-                                                </div>
+                                                {columnValuesUnsupported[columnKey] ? null : (
+                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                    {(() => {
+                                                      const allVals = columnValues[columnKey] || []
+                                                      const selected = selectedColumnValues[columnKey] || []
+                                                      const allVisibleSelected = allVals.length > 0 && allVals.every(v => selected.includes(v))
+                                                      return (
+                                                        <label className="flex items-center gap-2 cursor-pointer">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={allVisibleSelected}
+                                                            onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                          />
+                                                          <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
+                                                        </label>
+                                                      )
+                                                    })()}
+                                                  </div>
+                                                )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                <div 
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
-                                                  onScroll={(e) => {
-                                                    const target = e.currentTarget
-                                                    const scrollTop = target.scrollTop
-                                                    const scrollHeight = target.scrollHeight
-                                                    const clientHeight = target.clientHeight
-                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
-                                                    
-                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
-                                                    
-                                                    // Load more when scrolled to 70% of the content
-                                                    if (scrollTop + clientHeight >= scrollHeight * 0.7) {
-                                                      console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
-                                                      if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
-                                                        fetchMoreColumnValues(columnKey)
-                                                      } else {
-                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                {columnValuesUnsupported[columnKey] ? (
+                                                  <div className="flex-1 px-3 py-6 text-xs text-gray-500 text-center">
+                                                    Values not available for this column. Use the filters above.
+                                                  </div>
+                                                ) : (
+                                                  <div 
+                                                    className="flex-1 overflow-y-auto px-3 py-2"
+                                                    onScroll={(e) => {
+                                                      const target = e.currentTarget
+                                                      const scrollTop = target.scrollTop
+                                                      const scrollHeight = target.scrollHeight
+                                                      const clientHeight = target.clientHeight
+                                                      const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
+                                                      
+                                                      console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+                                                      
+                                                      // Load more when scrolled to 70% of the content
+                                                      if (scrollTop + clientHeight >= scrollHeight * 0.7) {
+                                                        console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
+                                                        if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
+                                                          fetchMoreColumnValues(columnKey)
+                                                        } else {
+                                                          console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                        }
                                                       }
-                                                    }
-                                                  }}
-                                                >
-                                                  {columnValuesLoading[columnKey] ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
-                                                    </div>
-                                                  ) : (() => {
-                                                    const allVals = columnValues[columnKey] || []
-                                                    const selected = selectedColumnValues[columnKey] || []
-                                                    // Values are already filtered server-side
-                                                    const filteredVals = allVals
-                                                    
-                                                    return (
-                                                      <>
-                                                        {filteredVals.length > 0 ? (
-                                                          <div className="space-y-1">
-                                                            {filteredVals.map((value) => (
-                                                              <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                                                                <input
-                                                                  type="checkbox"
-                                                                  checked={selected.includes(value)}
-                                                                  onChange={() => toggleColumnValue(columnKey, value)}
-                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                />
-                                                                <span className="text-xs text-gray-700">{value}</span>
-                                                              </label>
-                                                            ))}
-                                                            {/* Loading more indicator */}
-                                                            {columnValuesLoadingMore[columnKey] && (
-                                                              <div className="py-4 text-center">
-                                                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                                <p className="text-xs text-gray-500 mt-1">Loading more...</p>
-                                                              </div>
-                                                            )}
-                                                            {/* No more values indicator */}
-                                                            {!columnValuesHasMore[columnKey] && allVals.length > 0 && (
-                                                              <div className="py-2 text-xs text-gray-400 text-center italic">
-                                                                All values loaded
-                                                              </div>
-                                                            )}
-                                                          </div>
-                                                        ) : (
-                                                          <div className="py-8 text-xs text-gray-500 text-center">
-                                                            {searchQ ? 'No matching values found' : 'No values available'}
-                                                          </div>
-                                                        )}
-                                                      </>
-                                                    )
-                                                  })()}
-                                                </div>
+                                                    }}
+                                                  >
+                                                    {columnValuesLoading[columnKey] ? (
+                                                      <div className="py-8 text-center">
+                                                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                        <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                      </div>
+                                                    ) : (() => {
+                                                      const allVals = columnValues[columnKey] || []
+                                                      const selected = selectedColumnValues[columnKey] || []
+                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                      // Values are already filtered server-side
+                                                      const filteredVals = allVals
+                                                      
+                                                      return (
+                                                        <>
+                                                          {filteredVals.length > 0 ? (
+                                                            <div className="space-y-1">
+                                                              {filteredVals.map((value) => (
+                                                                <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                                  <input
+                                                                    type="checkbox"
+                                                                    checked={selected.includes(value)}
+                                                                    onChange={() => toggleColumnValue(columnKey, value)}
+                                                                    className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                  />
+                                                                  <span className="text-xs text-gray-700">{value}</span>
+                                                                </label>
+                                                              ))}
+                                                              {/* Loading more indicator */}
+                                                              {columnValuesLoadingMore[columnKey] && (
+                                                                <div className="py-4 text-center">
+                                                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                  <p className="text-xs text-gray-500 mt-1">Loading more...</p>
+                                                                </div>
+                                                              )}
+                                                              {/* No more values indicator */}
+                                                              {!columnValuesHasMore[columnKey] && allVals.length > 0 && (
+                                                                <div className="py-2 text-xs text-gray-400 text-center italic">
+                                                                  All values loaded
+                                                                </div>
+                                                              )}
+                                                            </div>
+                                                          ) : (
+                                                            <div className="py-8 text-xs text-gray-500 text-center">
+                                                              {searchQ ? 'No matching values found' : 'No values available'}
+                                                            </div>
+                                                          )}
+                                                        </>
+                                                      )
+                                                    })()}
+                                                  </div>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
@@ -4381,84 +4408,92 @@ const Client2Page = () => {
                                                 </div>
 
                                                 {/* Select Visible Checkbox */}
-                                                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                  <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
-                                                      onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
-                                                  </label>
-                                                </div>
+                                                {columnValuesUnsupported[columnKey] ? null : (
+                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                      <input
+                                                        type="checkbox"
+                                                        checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
+                                                        onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                      />
+                                                      <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
+                                                    </label>
+                                                  </div>
+                                                )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                <div 
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
-                                                  onScroll={(e) => {
-                                                    const target = e.currentTarget
-                                                    const scrollTop = target.scrollTop
-                                                    const scrollHeight = target.scrollHeight
-                                                    const clientHeight = target.clientHeight
-                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
-                                                    
-                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
-                                                    
-                                                    // Load more when scrolled to 70% of the content
-                                                    if (scrollTop + clientHeight >= scrollHeight * 0.7) {
-                                                      console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
-                                                      if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
-                                                        fetchMoreColumnValues(columnKey)
-                                                      } else {
-                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                {columnValuesUnsupported[columnKey] ? (
+                                                  <div className="flex-1 px-3 py-6 text-xs text-gray-500 text-center">
+                                                    Values not available for this column. Use the filters above.
+                                                  </div>
+                                                ) : (
+                                                  <div 
+                                                    className="flex-1 overflow-y-auto px-3 py-2"
+                                                    onScroll={(e) => {
+                                                      const target = e.currentTarget
+                                                      const scrollTop = target.scrollTop
+                                                      const scrollHeight = target.scrollHeight
+                                                      const clientHeight = target.clientHeight
+                                                      const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
+                                                      
+                                                      console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+                                                      
+                                                      // Load more when scrolled to 70% of the content
+                                                      if (scrollTop + clientHeight >= scrollHeight * 0.7) {
+                                                        console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
+                                                        if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
+                                                          fetchMoreColumnValues(columnKey)
+                                                        } else {
+                                                          console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                        }
                                                       }
-                                                    }
-                                                  }}
-                                                >
-                                                  {loading ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
-                                                    </div>
-                                                  ) : (
-                                                    <>
-                                                      {filteredValues.length > 0 ? (
-                                                        <div className="space-y-1">
-                                                          {filteredValues.map((value) => (
-                                                            <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                                                              <input
-                                                                type="checkbox"
-                                                                checked={selected.includes(value)}
-                                                                onChange={() => toggleColumnValue(columnKey, value)}
-                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                              />
-                                                              <span className="text-xs text-gray-700">{value}</span>
-                                                            </label>
-                                                          ))}
-                                                          {/* Loading more indicator */}
-                                                          {columnValuesLoadingMore[columnKey] && (
-                                                            <div className="py-4 text-center">
-                                                              <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                              <p className="text-xs text-gray-500 mt-1">Loading more...</p>
-                                                            </div>
-                                                          )}
-                                                          {/* No more values indicator */}
-                                                          {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
-                                                            <div className="py-2 text-xs text-gray-400 text-center italic">
-                                                              All values loaded
-                                                            </div>
-                                                          )}
-                                                        </div>
-                                                      ) : (
-                                                        <div className="py-8 text-xs text-gray-500 text-center">
-                                                          {searchQuery ? 'No matching values found' : 'No values available'}
-                                                        </div>
-                                                      )}
-                                                    </>
-                                                  )}
-                                                </div>
+                                                    }}
+                                                  >
+                                                    {loading ? (
+                                                      <div className="py-8 text-center">
+                                                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                        <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                      </div>
+                                                    ) : (
+                                                      <>
+                                                        {filteredValues.length > 0 ? (
+                                                          <div className="space-y-1">
+                                                            {filteredValues.map((value) => (
+                                                              <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={selected.includes(value)}
+                                                                  onChange={() => toggleColumnValue(columnKey, value)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs text-gray-700">{value}</span>
+                                                              </label>
+                                                            ))}
+                                                            {/* Loading more indicator */}
+                                                            {columnValuesLoadingMore[columnKey] && (
+                                                              <div className="py-4 text-center">
+                                                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                <p className="text-xs text-gray-500 mt-1">Loading more...</p>
+                                                              </div>
+                                                            )}
+                                                            {/* No more values indicator */}
+                                                            {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
+                                                              <div className="py-2 text-xs text-gray-400 text-center italic">
+                                                                All values loaded
+                                                              </div>
+                                                            )}
+                                                          </div>
+                                                        ) : (
+                                                          <div className="py-8 text-xs text-gray-500 text-center">
+                                                            {searchQuery ? 'No matching values found' : 'No values available'}
+                                                          </div>
+                                                        )}
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
