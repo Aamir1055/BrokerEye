@@ -445,6 +445,12 @@ export const brokerAPI = {
   searchClients: async (payload, options = {}) => {
     const response = await api.post('/api/broker/clients/search', payload, options)
     return response
+  },
+
+  // Get unique field values for column filters with search
+  getClientFields: async (params, options = {}) => {
+    const response = await api.get('/api/broker/clients/fields', { params, ...options })
+    return response
   }
 }
 

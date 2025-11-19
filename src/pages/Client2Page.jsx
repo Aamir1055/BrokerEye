@@ -1830,7 +1830,7 @@ const Client2Page = () => {
     return { payload, multiOrField, multiOrValues, multiOrConflict }
   }
 
-  // Fetch column values with search filter (server-side search)
+  // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
@@ -1839,57 +1839,53 @@ const Client2Page = () => {
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
     
     try {
-      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
-      const BATCH_SIZE = 500
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, BATCH_SIZE)
-
-      // Add search filter if search query exists
-      if (searchQuery && searchQuery.trim()) {
-        payload.filters = [...(payload.filters || []), { 
-          field: columnKey, 
-          operator: 'contains', 
-          value: searchQuery.trim() 
-        }]
+      // Use dedicated fields API endpoint that searches across ALL data
+      const params = {
+        fields: columnKey,
+        search: searchQuery.trim() || undefined,
+        page: 1,
+        limit: 500
       }
 
-      // Inject quick filter constraints
+      // Add quick filter constraints as query params
       if (quickFilters?.hasFloating) {
-        payload.filters = [...(payload.filters || []), { field: 'floating', operator: 'not_equal', value: '0' }]
+        params.hasFloating = true
       }
       if (quickFilters?.hasCredit) {
-        payload.filters = [...(payload.filters || []), { field: 'credit', operator: 'greater_than', value: '0' }]
+        params.hasCredit = true
       }
       if (quickFilters?.noDeposit) {
-        payload.filters = [...(payload.filters || []), { field: 'lifetimeDeposit', operator: 'equal', value: '0' }]
+        params.noDeposit = true
       }
 
-      const buildVariants = (b) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
-        }
-        return [b]
+      // Add group filter if active
+      if (activeGroup?.logins && activeGroup.logins.length > 0) {
+        params.logins = activeGroup.logins.join(',')
       }
 
-      // Fetch first batch with search filter
-      const variants = buildVariants(payload)
-      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-      const setVals = new Set()
-      let maxPages = 1
+      // Add IB filter if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        params.ibAccounts = ibMT5Accounts.join(',')
+      }
+
+      const response = await brokerAPI.getClientFields(params)
+      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+      const data = extract(response)
       
-      responses.forEach(resp => {
-        const d = extract(resp)
-        const rows = d?.clients || []
-        rows.forEach(row => {
-          const v = row?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
-        })
-        maxPages = Math.max(maxPages, Number(d?.pages || 1))
+      // Extract unique values from response
+      const clients = data?.clients || []
+      const setVals = new Set()
+      clients.forEach(client => {
+        const v = client?.[columnKey]
+        if (v !== null && v !== undefined && v !== '') setVals.add(v)
       })
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
+      const totalPages = Math.max(1, Number(data?.pages || 1))
+      
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: maxPages }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: maxPages > 1 }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values with search for ${columnKey}:`, err)
     } finally {
@@ -1897,7 +1893,7 @@ const Client2Page = () => {
     }
   }
 
-  // Fetch column values in batches of 500 (lazy loading)
+  // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
@@ -1908,53 +1904,53 @@ const Client2Page = () => {
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
     
     try {
-      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
-      // Fetch 500 values per batch
-      const BATCH_SIZE = 500
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, BATCH_SIZE)
+      // Use dedicated fields API endpoint
+      const params = {
+        fields: columnKey,
+        page: 1,
+        limit: 500
+      }
 
-      // Inject quick filter constraints so column values reflect current reduced dataset
+      // Add quick filter constraints
       if (quickFilters?.hasFloating) {
-        payload.filters = [...(payload.filters || []), { field: 'floating', operator: 'not_equal', value: '0' }]
+        params.hasFloating = true
       }
       if (quickFilters?.hasCredit) {
-        payload.filters = [...(payload.filters || []), { field: 'credit', operator: 'greater_than', value: '0' }]
+        params.hasCredit = true
       }
       if (quickFilters?.noDeposit) {
-        payload.filters = [...(payload.filters || []), { field: 'lifetimeDeposit', operator: 'equal', value: '0' }]
+        params.noDeposit = true
       }
 
-      // Build payload variants to honor OR semantics for a single field
-      const buildVariants = (b) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
-        }
-        return [b]
+      // Add group filter if active
+      if (activeGroup?.logins && activeGroup.logins.length > 0) {
+        params.logins = activeGroup.logins.join(',')
       }
 
-      // Fetch first batch
-      const variants = buildVariants(payload)
-      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-      const setVals = new Set()
-      let maxPages = 1
-      let totalItems = 0
+      // Add IB filter if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        params.ibAccounts = ibMT5Accounts.join(',')
+      }
+
+      const response = await brokerAPI.getClientFields(params)
+      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+      const data = extract(response)
       
-      responses.forEach(resp => {
-        const d = extract(resp)
-        const rows = d?.clients || []
-        rows.forEach(row => {
-          const v = row?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
-        })
-        maxPages = Math.max(maxPages, Number(d?.pages || 1))
-        totalItems = Math.max(totalItems, Number(d?.total || 0))
+      // Extract unique values from response
+      const clients = data?.clients || []
+      const setVals = new Set()
+      clients.forEach(client => {
+        const v = client?.[columnKey]
+        if (v !== null && v !== undefined && v !== '') setVals.add(v)
       })
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
+      const totalPages = Math.max(1, Number(data?.pages || 1))
+      
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: maxPages }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: maxPages > 1 }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -1980,50 +1976,48 @@ const Client2Page = () => {
     setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
     
     try {
-      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
       const nextPage = currentPage + 1
-      const BATCH_SIZE = 500
-      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, BATCH_SIZE)
-
-      // Add search filter if exists
       const searchQuery = columnValueSearchDebounce[columnKey] || columnValueSearch[columnKey] || ''
-      if (searchQuery && searchQuery.trim()) {
-        payload.filters = [...(payload.filters || []), { 
-          field: columnKey, 
-          operator: 'contains', 
-          value: searchQuery.trim() 
-        }]
+      
+      // Use dedicated fields API endpoint
+      const params = {
+        fields: columnKey,
+        search: searchQuery.trim() || undefined,
+        page: nextPage,
+        limit: 500
       }
 
-      // Inject quick filter constraints
+      // Add quick filter constraints
       if (quickFilters?.hasFloating) {
-        payload.filters = [...(payload.filters || []), { field: 'floating', operator: 'not_equal', value: '0' }]
+        params.hasFloating = true
       }
       if (quickFilters?.hasCredit) {
-        payload.filters = [...(payload.filters || []), { field: 'credit', operator: 'greater_than', value: '0' }]
+        params.hasCredit = true
       }
       if (quickFilters?.noDeposit) {
-        payload.filters = [...(payload.filters || []), { field: 'lifetimeDeposit', operator: 'equal', value: '0' }]
+        params.noDeposit = true
       }
 
-      const buildVariants = (b) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
-        }
-        return [b]
+      // Add group filter if active
+      if (activeGroup?.logins && activeGroup.logins.length > 0) {
+        params.logins = activeGroup.logins.join(',')
       }
 
-      const variants = buildVariants(payload)
-      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
-      const setVals = new Set(columnValues[columnKey] || [])
+      // Add IB filter if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        params.ibAccounts = ibMT5Accounts.join(',')
+      }
+
+      const response = await brokerAPI.getClientFields(params)
+      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+      const data = extract(response)
       
-      responses.forEach(resp => {
-        const d = extract(resp)
-        const rows = d?.clients || []
-        rows.forEach(row => {
-          const v = row?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
-        })
+      // Extract and merge with existing values
+      const clients = data?.clients || []
+      const setVals = new Set(columnValues[columnKey] || [])
+      clients.forEach(client => {
+        const v = client?.[columnKey]
+        if (v !== null && v !== undefined && v !== '') setVals.add(v)
       })
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
