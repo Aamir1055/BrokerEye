@@ -101,6 +101,7 @@ const PositionsPage = () => {
   const [netSearchQuery, setNetSearchQuery] = useState('')
   const [netShowSuggestions, setNetShowSuggestions] = useState(false)
   const netSearchRef = useRef(null)
+  const netCardFilterRef = useRef(null)
   // Card filter for NET summary cards
   const [netCardFilterOpen, setNetCardFilterOpen] = useState(false)
   const [netCardsVisible, setNetCardsVisible] = useState({
@@ -1427,10 +1428,10 @@ const PositionsPage = () => {
       <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700/70 transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
-            className="flex items-center gap-1 cursor-pointer flex-1"
+            className="flex items-center gap-1 cursor-pointer flex-1 text-white"
             onClick={() => handleSort(actualSortKey)}
           >
-            <span>{label}</span>
+            <span className="text-white">{label}</span>
             {sortColumn === actualSortKey ? (
               <svg
                 className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
