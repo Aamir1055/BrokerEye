@@ -947,6 +947,9 @@ const Client2Page = () => {
               return // Don't combine checkbox with text/number for same field
             }
             
+            // Check if there's an active search query for this column
+            const hasActiveSearch = columnValueSearch[uiKey] && columnValueSearch[uiKey].trim().length > 0
+            
             // NOTE: Optimizations disabled because columnValues only contains lazy-loaded subset (500 values)
             // We can't reliably determine if "all values" are selected without full dataset
             // Future: Track if column has loaded all values before applying optimizations
@@ -954,13 +957,22 @@ const Client2Page = () => {
             if (cfg.values.length === 1) {
               // Single selection → simple equality filter
               combinedFilters.push({ field, operator: 'equal', value: cfg.values[0] })
-            } else {
-              // Multiple selections for this field
+            } else if (cfg.values.length <= 10 || hasActiveSearch) {
+              // Allow unlimited values if search is active, otherwise limit to 10 for OR logic
               if (multiOrField && multiOrField !== field) {
                 multiOrConflict = true // More than one field needs OR; we'll fallback to AND behavior
               } else {
                 multiOrField = field
-                multiOrValues = cfg.values
+                multiOrValues = hasActiveSearch ? cfg.values : cfg.values.slice(0, 10)
+              }
+            } else {
+              // Too many values selected (>10) without search → only use first 10 to prevent timeout
+              console.warn(`[Client2] Too many checkbox values selected for ${field} (${cfg.values.length}), limiting to first 10`)
+              if (multiOrField && multiOrField !== field) {
+                multiOrConflict = true
+              } else {
+                multiOrField = field
+                multiOrValues = cfg.values.slice(0, 10) // Limit to 10 values
               }
             }
           }
@@ -4119,16 +4131,24 @@ const Client2Page = () => {
                                                       const allVals = columnValues[columnKey] || []
                                                       const selected = selectedColumnValues[columnKey] || []
                                                       const allVisibleSelected = allVals.length > 0 && allVals.every(v => selected.includes(v))
+                                                      const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                       return (
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                          <input
-                                                            type="checkbox"
-                                                            checked={allVisibleSelected}
-                                                            onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                          />
-                                                          <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
-                                                        </label>
+                                                        <>
+                                                          <label className="flex items-center gap-2 cursor-pointer">
+                                                            <input
+                                                              type="checkbox"
+                                                              checked={allVisibleSelected}
+                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                            />
+                                                            <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
+                                                          </label>
+                                                          {selected.length > 10 && !hasActiveSearch && (
+                                                            <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-300 rounded text-xs text-amber-700">
+                                                              ⚠️ {selected.length} values selected. Only first 10 will be used to prevent timeout.
+                                                            </div>
+                                                          )}
+                                                        </>
                                                       )
                                                     })()}
                                                   </div>
@@ -4433,15 +4453,27 @@ const Client2Page = () => {
                                                 {/* Select Visible Checkbox */}
                                                 {columnValuesUnsupported[columnKey] ? null : (
                                                   <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                    <label className="flex items-center gap-2 cursor-pointer">
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
-                                                        onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                      />
-                                                      <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
-                                                    </label>
+                                                    {(() => {
+                                                      const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
+                                                      return (
+                                                        <>
+                                                          <label className="flex items-center gap-2 cursor-pointer">
+                                                            <input
+                                                              type="checkbox"
+                                                              checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
+                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                            />
+                                                            <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
+                                                          </label>
+                                                          {selected.length > 10 && !hasActiveSearch && (
+                                                            <div className="mt-2 px-2 py-1 bg-amber-50 border border-amber-300 rounded text-xs text-amber-700">
+                                                              ⚠️ {selected.length} values selected. Only first 10 will be used to prevent timeout.
+                                                            </div>
+                                                          )}
+                                                        </>
+                                                      )
+                                                    })()}
                                                   </div>
                                                 )}
 
