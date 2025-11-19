@@ -26,7 +26,18 @@ export const GroupProvider = ({ children }) => {
 
 
   // Track active group per module (e.g., { clients: 'Group1', positions: 'Group2' })
-  const [activeGroupFilters, setActiveGroupFilters] = useState({})
+  // Load from localStorage on initialization
+  const [activeGroupFilters, setActiveGroupFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('activeGroupFilters')
+      const loaded = saved ? JSON.parse(saved) : {}
+      console.log('Loading active group filters from localStorage:', loaded)
+      return loaded
+    } catch (error) {
+      console.error('Failed to load active group filters:', error)
+      return {}
+    }
+  })
 
   // Save to localStorage whenever groups change
   useEffect(() => {
@@ -37,6 +48,16 @@ export const GroupProvider = ({ children }) => {
       console.error('Failed to save unified login groups:', error)
     }
   }, [groups])
+
+  // Save active group filters to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('activeGroupFilters', JSON.stringify(activeGroupFilters))
+      console.log('Saved active group filters to localStorage:', activeGroupFilters)
+    } catch (error) {
+      console.error('Failed to save active group filters:', error)
+    }
+  }, [activeGroupFilters])
 
   // Create a new group
   const createGroup = (groupName, loginIds) => {
@@ -169,11 +190,24 @@ export const GroupProvider = ({ children }) => {
     return true
   }
 
-  // Set active group for a specific module
+  // Set active group for all modules (global filter)
   const setActiveGroupFilter = (moduleName, groupName) => {
+    // Apply the same group filter to all known modules
     setActiveGroupFilters(prev => ({
       ...prev,
-      [moduleName]: groupName
+      clients: groupName,
+      positions: groupName,
+      client2: groupName,
+      pendingorders: groupName,
+      'pending-orders': groupName,
+      marginlevel: groupName,
+      'margin-level': groupName,
+      livedealing: groupName,
+      'live-dealing': groupName,
+      clientpercentage: groupName,
+      'client-percentage': groupName,
+      'ib-commissions': groupName,
+      dashboard: groupName
     }))
   }
 

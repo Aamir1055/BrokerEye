@@ -25,8 +25,8 @@ const getMarginLevelPercent = (obj) => {
 const MarginLevelPage = () => {
   // Use cached data from DataContext
   const { accounts: cachedAccounts, positions: cachedPositions, fetchAccounts, loading, connectionState } = useData()
-  const { filterByActiveGroup } = useGroups()
-  const { filterByActiveIB } = useIB()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {

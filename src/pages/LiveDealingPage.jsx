@@ -16,8 +16,8 @@ const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const LiveDealingPage = () => {
   const { positions: cachedPositions } = useData() // Get positions from DataContext
-  const { filterByActiveGroup } = useGroups()
-  const { filterByActiveIB } = useIB()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const getInitialSidebarOpen = () => {
     try {
       const v = localStorage.getItem('sidebarOpen')

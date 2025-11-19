@@ -13,8 +13,8 @@ import IBSelector from '../components/IBSelector'
 const PendingOrdersPage = () => {
   // Use cached data from DataContext
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
-  const { filterByActiveGroup } = useGroups()
-  const { filterByActiveIB } = useIB()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {

@@ -11,8 +11,8 @@ import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 
 const ClientPercentagePage = () => {
-  const { filterByActiveGroup } = useGroups()
-  const { filterByActiveIB } = useIB()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const { positions: cachedPositions } = useData()
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {

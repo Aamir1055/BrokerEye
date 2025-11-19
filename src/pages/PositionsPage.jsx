@@ -16,8 +16,8 @@ const PositionsPage = () => {
   // Use cached data from DataContext
   const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
-  const { filterByActiveGroup } = useGroups()
-  const { filterByActiveIB } = useIB()
+  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -50,10 +50,10 @@ const PositionsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(() => {
     try {
       const saved = localStorage.getItem('positions_items_per_page')
-      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
-      return 100
+      if (saved && saved !== 'All') return parseInt(saved)
+      return 50
     } catch {
-      return 100
+      return 50
     }
   })
   const [sortColumn, setSortColumn] = useState(null)
@@ -135,6 +135,7 @@ const PositionsPage = () => {
   const [clientNetSearchQuery, setClientNetSearchQuery] = useState('')
   const [clientNetShowSuggestions, setClientNetShowSuggestions] = useState(false)
   const clientNetSearchRef = useRef(null)
+  const clientNetCardFilterRef = useRef(null)
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -552,13 +553,19 @@ const PositionsPage = () => {
       if (clientNetSearchRef.current && !clientNetSearchRef.current.contains(event.target)) {
         setClientNetShowSuggestions(false)
       }
+      if (netCardFilterRef.current && !netCardFilterRef.current.contains(event.target)) {
+        setNetCardFilterOpen(false)
+      }
+      if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(event.target)) {
+        setClientNetCardFilterOpen(false)
+      }
     }
     
-    if (showSuggestions || showColumnSelector || showDisplayMenu || netShowSuggestions || clientNetShowSuggestions) {
+    if (showSuggestions || showColumnSelector || showDisplayMenu || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions, showColumnSelector, showDisplayMenu, netShowSuggestions, clientNetShowSuggestions])
+  }, [showSuggestions, showColumnSelector, showDisplayMenu, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -750,13 +757,8 @@ const PositionsPage = () => {
 
   // Generate pagination options; ensure common sizes always present for stable UI
   const generatePageSizeOptions = () => {
-    const totalCount = cachedPositions.length
     const base = [25, 50, 100, 200]
-    const dynamic = []
-    for (let i = 50; i < totalCount; i += 50) dynamic.push(i)
-    if (totalCount > 0) dynamic.push(totalCount)
-    const nums = Array.from(new Set([...base, ...dynamic])).filter(v => typeof v === 'number').sort((a, b) => a - b)
-    return [...nums, 'All']
+    return base
   }
   
   const pageSizeOptions = generatePageSizeOptions()
@@ -868,7 +870,7 @@ const PositionsPage = () => {
     const sorted = sortPositions(ibFiltered)
     
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
-  }, [cachedPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated])
+  }, [cachedPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
@@ -928,9 +930,9 @@ const PositionsPage = () => {
   }
   
   // Pagination logic
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedPositions.length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? sortedPositions.length : startIndex + itemsPerPage
+  const totalPages = Math.ceil(sortedPositions.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const displayedPositions = sortedPositions.slice(startIndex, endIndex)
   
   // Reset to page 1 when items per page changes
@@ -1410,8 +1412,9 @@ const PositionsPage = () => {
   }
   
   const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(value)
-    try { localStorage.setItem('positions_items_per_page', String(value)) } catch {}
+    const numValue = parseInt(value)
+    setItemsPerPage(numValue)
+    try { localStorage.setItem('positions_items_per_page', String(numValue)) } catch {}
     setCurrentPage(1)
   }
 
@@ -2065,7 +2068,7 @@ const PositionsPage = () => {
                         )}
                       </div>
                       {/* Card Filter */}
-                      <div className="relative">
+                      <div className="relative" ref={netCardFilterRef}>
                         <button onClick={()=>setNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
                           <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                           Card Filter
@@ -2296,21 +2299,21 @@ const PositionsPage = () => {
                               </td>
                             )}
                             {netVisibleColumns.netVolume && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(netPos.netVolume, 2)}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.netVolume, 2)}</td>
                             )}
                             {netVisibleColumns.avgPrice && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(netPos.avgPrice, 5)}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.avgPrice, 5)}</td>
                             )}
                             {netVisibleColumns.totalProfit && (
-                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
+                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(netPos.totalProfit, 2)}</span>
                               </td>
                             )}
                             {netVisibleColumns.loginCount && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{netPos.loginCount}</td>
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{netPos.loginCount}</td>
                             )}
                             {netVisibleColumns.totalPositions && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                                 {netPos.totalPositions}
                                 {groupByBaseSymbol && netPos.variantCount > 1 && netVisibleColumns.symbol && (
                                   <button
@@ -2462,7 +2465,7 @@ const PositionsPage = () => {
                       )}
                     </div>
                     {/* Card Filter */}
-                    <div className="relative">
+                    <div className="relative" ref={clientNetCardFilterRef}>
                       <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
                         <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         Card Filter
@@ -2684,12 +2687,12 @@ const PositionsPage = () => {
                                 {clientNetVisibleColumns.netType && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.netVolume && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(row.netVolume, 2)}</td>)}
-                                {clientNetVisibleColumns.avgPrice && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(row.avgPrice, 5)}</td>)}
-                                {clientNetVisibleColumns.totalProfit && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
+                                {clientNetVisibleColumns.netVolume && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.netVolume, 2)}</td>)}
+                                {clientNetVisibleColumns.avgPrice && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.avgPrice, 5)}</td>)}
+                                {clientNetVisibleColumns.totalProfit && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(row.totalProfit, 2)}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                                {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                                   {row.totalPositions ?? '-'}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <button
@@ -2745,7 +2748,7 @@ const PositionsPage = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               >
                 {pageSizeOptions.map((size) => (
@@ -2759,8 +2762,7 @@ const PositionsPage = () => {
             
             <div className="flex items-center gap-3">
               {/* Page Navigation */}
-              {itemsPerPage !== 'All' && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
@@ -2793,7 +2795,6 @@ const PositionsPage = () => {
                     </svg>
                   </button>
                 </div>
-              )}
               
               {/* Percentage View Dropdown */}
               <div className="relative">
@@ -3036,29 +3037,29 @@ const PositionsPage = () => {
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.action}</td>
                           )}
                           {effectiveCols.volume && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.volume, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.volume, 2)}</td>
                           )}
                           {effectiveCols.volumePercentage && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                               {(p.volume_percentage != null && p.volume_percentage !== '') ? `${formatNumber(p.volume_percentage, 2)}%` : '-'}
                             </td>
                           )}
                           {effectiveCols.priceOpen && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceOpen, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.priceOpen, 5)}</td>
                           )}
                           {effectiveCols.priceCurrent && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                               {formatNumber(p.priceCurrent, 5)}
                             </td>
                           )}
                           {effectiveCols.sl && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceSL, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.priceSL, 5)}</td>
                           )}
                           {effectiveCols.tp && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.priceTP, 5)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.priceTP, 5)}</td>
                           )}
                           {effectiveCols.profit && (
-                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
@@ -3067,7 +3068,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.profitPercentage && (
-                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap text-right">
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                                 (p.profit_percentage || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
@@ -3076,15 +3077,15 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.storage, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.storage, 2)}</td>
                           )}
                           {effectiveCols.storagePercentage && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                               {(p.storage_percentage != null && p.storage_percentage !== '') ? `${formatNumber(p.storage_percentage, 2)}%` : '-'}
                             </td>
                           )}
                           {effectiveCols.appliedPercentage && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
                               {(p.applied_percentage != null && p.applied_percentage !== '') ? `${formatNumber(p.applied_percentage, 2)}%` : '-'}
                             </td>
                           )}
@@ -3105,7 +3106,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap text-right tabular-nums">{formatNumber(p.commission, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.commission, 2)}</td>
                           )}
                         </tr>
                       )
