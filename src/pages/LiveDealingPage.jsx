@@ -1064,7 +1064,7 @@ const LiveDealingPage = () => {
                       </svg>
                     </button>
                     
-                    {/* Number Filter Dropdown - Opens to the right or left based on column position */}
+                    {/* Number/Text Filter Dropdown - Opens to the right or left based on column position */}
                     {showNumberFilterDropdown === columnKey && (
                       <div 
                         className={`absolute top-0 w-40 bg-white border border-gray-300 rounded shadow-lg z-50 ${
@@ -1075,83 +1075,158 @@ const LiveDealingPage = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="text-[10px] text-gray-600 py-0.5">
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('notEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Not Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('between')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Between...
-                          </div>
+                          {/* Text columns show text-specific filters */}
+                          {['login', 'symbol', 'action', 'reason'].includes(columnKey) ? (
+                            <>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('equal')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('notEqual')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Not Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('startsWith')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Starts With...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('endsWith')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Ends With...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('contains')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Contains...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('notContains')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Does Not Contain...
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Numeric columns show number-specific filters */}
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('equal')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('notEqual')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Not Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('lessThan')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Less Than...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('lessThanOrEqual')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Less Than Or Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('greaterThan')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Greater Than...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('greaterThanOrEqual')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Greater Than Or Equal...
+                              </div>
+                              <div 
+                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCustomFilterColumn(columnKey)
+                                  setCustomFilterType('between')
+                                  setShowCustomFilterModal(true)
+                                }}
+                              >
+                                Between...
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}
