@@ -4144,38 +4144,31 @@ const Client2Page = () => {
                                                     className="flex-1 overflow-y-auto px-3 py-2"
                                                     onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                     onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                    onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                     onScroll={(e) => {
                                                       const target = e.currentTarget
                                                       const scrollTop = target.scrollTop
                                                       const scrollHeight = target.scrollHeight
                                                       const clientHeight = target.clientHeight
                                                       const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
-                                                      const lastMeasuredTop = columnLastScrollTopRef.current[columnKey] ?? 0
-                                                      if (scrollTop !== lastMeasuredTop) {
-                                                        if (scrollTop > lastMeasuredTop) {
-                                                          columnScrollUserActionRef.current[columnKey] = true
-                                                        }
-                                                        columnLastScrollTopRef.current[columnKey] = scrollTop
-                                                      }
                                                       
                                                       console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
                                                       
-                                                      // Load more when scrolled to 70% of the content
-                                                      if (scrollTop + clientHeight >= scrollHeight * 0.7) {
-                                                        console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
+                                                      // Load more when scrolled to bottom
+                                                      if (scrollTop + clientHeight >= scrollHeight - 5) {
+                                                        console.log(`[Client2] Reached bottom for ${columnKey}`)
                                                         const userScrolled = !!columnScrollUserActionRef.current[columnKey]
                                                         const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
-                                                        const deltaSinceLast = scrollTop - lastTop
                                                         if (!userScrolled) {
-                                                          console.log(`[Client2] Ignoring threshold: no manual scroll detected`)
+                                                          console.log(`[Client2] Ignoring: no manual scroll detected`)
                                                           return
                                                         }
-                                                        if (deltaSinceLast < 40) {
-                                                          console.log(`[Client2] Waiting for further manual scroll, delta ${deltaSinceLast}px < 40px`)
+                                                        if (scrollTop <= lastTop) {
+                                                          console.log(`[Client2] Waiting for scroll beyond last trigger`)
                                                           return
                                                         }
                                                         if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
+                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
                                                           fetchMoreColumnValues(columnKey)
                                                           columnScrollUserActionRef.current[columnKey] = false
                                                           columnScrollLastTriggerRef.current[columnKey] = scrollTop
@@ -4462,6 +4455,7 @@ const Client2Page = () => {
                                                     className="flex-1 overflow-y-auto px-3 py-2"
                                                     onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                     onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                    onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                     onScroll={(e) => {
                                                       const target = e.currentTarget
                                                       const scrollTop = target.scrollTop
@@ -4471,22 +4465,21 @@ const Client2Page = () => {
                                                       
                                                       console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
                                                       
-                                                      // Load more when scrolled to 70% of the content
-                                                      if (scrollTop + clientHeight >= scrollHeight * 0.7) {
-                                                        console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
+                                                      // Load more when scrolled to bottom
+                                                      if (scrollTop + clientHeight >= scrollHeight - 5) {
+                                                        console.log(`[Client2] Reached bottom for ${columnKey}`)
                                                         const userScrolled = !!columnScrollUserActionRef.current[columnKey]
                                                         const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
-                                                        const deltaSinceLast = scrollTop - lastTop
                                                         if (!userScrolled) {
-                                                          console.log(`[Client2] Ignoring threshold: no manual scroll detected`)
+                                                          console.log(`[Client2] Ignoring: no manual scroll detected`)
                                                           return
                                                         }
-                                                        if (deltaSinceLast < 40) {
-                                                          console.log(`[Client2] Waiting for further manual scroll, delta ${deltaSinceLast}px < 40px`)
+                                                        if (scrollTop <= lastTop) {
+                                                          console.log(`[Client2] Waiting for scroll beyond last trigger`)
                                                           return
                                                         }
                                                         if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
+                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
                                                           fetchMoreColumnValues(columnKey)
                                                           columnScrollUserActionRef.current[columnKey] = false
                                                           columnScrollLastTriggerRef.current[columnKey] = scrollTop
