@@ -1078,11 +1078,7 @@ const ClientPercentagePage = () => {
                         Comment
                       </th>
                     )}
-                    {visibleColumns.updatedAt && (
-                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
-                        Last Updated
-                      </th>
-                    )}
+                    {visibleColumns.updatedAt && renderHeaderCell('updated_at', 'Last Updated', 'updated_at')}
                     {visibleColumns.actions && (
                       <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
                         Actions

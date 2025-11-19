@@ -959,15 +959,15 @@ const PendingOrdersPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4 relative z-0">
             <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Pending Orders</p>
-              <p className="text-sm font-bold text-gray-900">{cachedOrders.length}</p>
+              <p className="text-sm font-bold text-gray-900">{sortedOrders.length}</p>
             </div>
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
               <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
-              <p className="text-sm font-bold text-gray-900">{new Set(cachedOrders.map(o=>o.login)).size}</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(sortedOrders.map(o=>o.login)).size}</p>
             </div>
             <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
               <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Symbols</p>
-              <p className="text-sm font-bold text-gray-900">{new Set(cachedOrders.map(o=>o.symbol)).size}</p>
+              <p className="text-sm font-bold text-gray-900">{new Set(sortedOrders.map(o=>o.symbol)).size}</p>
             </div>
           </div>
 

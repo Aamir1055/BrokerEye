@@ -1493,7 +1493,7 @@ const LiveDealingPage = () => {
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">
                 {timeFilter === '24h' ? 'Deals (24h)' : timeFilter === '7d' ? 'Deals (7d)' : 'Filtered Deals'}
               </p>
-              <p className="text-sm font-bold text-gray-900">{searchedDeals.length}</p>
+              <p className="text-sm font-bold text-gray-900">{sortedDeals.length}</p>
               {searchQuery && (
                 <p className="text-[10px] text-gray-400 mt-0.5">of {trimmedDeals.length} total</p>
               )}
@@ -1513,7 +1513,7 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
               <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
               <p className="text-sm font-bold text-gray-900">
-                {new Set(searchedDeals.map(d => d.login)).size}
+                {new Set(sortedDeals.map(d => d.login)).size}
               </p>
               {searchQuery && (
                 <p className="text-[10px] text-gray-400 mt-0.5">of {new Set(trimmedDeals.map(d => d.login)).size} total</p>

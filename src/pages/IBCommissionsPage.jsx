@@ -537,7 +537,7 @@ const IBCommissionsPage = () => {
                     <thead className="bg-blue-600 sticky top-0 z-10">
                       <tr>
                         {/* Checkbox Column */}
-                        <th className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 w-12">
+                        <th className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 w-12 hover:bg-blue-700/80 transition-colors">
                           <input
                             type="checkbox"
                             checked={sortedCommissions.length > 0 && selectedIBs.length === sortedCommissions.length}
@@ -558,7 +558,7 @@ const IBCommissionsPage = () => {
                           <th 
                             key={col.key}
                             ref={el => { if (el) headerRefs.current[col.key] = el }}
-                            className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 border-r border-blue-500/50 relative group cursor-pointer hover:bg-blue-700 transition-colors"
+                            className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 border-r border-blue-500/50 relative group cursor-pointer hover:bg-blue-700/80 transition-colors"
                             style={{ width: col.width, textAlign: col.align }}
                             onClick={() => col.key !== 'action' && handleSort(col.key)}
                           >
@@ -578,7 +578,7 @@ const IBCommissionsPage = () => {
                             {/* Resize Handle */}
                             {col.key !== 'action' && (
                               <div 
-                                className="absolute right-0 top-0 w-2 h-full cursor-col-resize z-20" /* removed hover shading */
+                                className="absolute right-0 top-0 w-2 h-full cursor-col-resize z-20 hover:bg-blue-700/80" 
                                 onMouseDown={(e) => handleResizeStart(e, col.key)}
                                 onClick={(e) => e.stopPropagation()}
                               >
