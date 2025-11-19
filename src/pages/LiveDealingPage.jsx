@@ -691,6 +691,23 @@ const LiveDealingPage = () => {
     })
   }
 
+  // Format number with Indian comma separator (1,00,000)
+  const formatIndianNumber = (num, decimals = 2) => {
+    if (num === null || num === undefined || num === '') return '-'
+    const number = typeof num === 'string' ? parseFloat(num) : num
+    if (isNaN(number)) return '-'
+    
+    const fixed = number.toFixed(decimals)
+    const [integer, decimal] = fixed.split('.')
+    
+    // Indian number system: last 3 digits, then groups of 2
+    const lastThree = integer.slice(-3)
+    const otherNumbers = integer.slice(0, -3)
+    const formatted = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (otherNumbers ? ',' : '') + lastThree
+    
+    return decimal ? `${formatted}.${decimal}` : formatted
+  }
+
   const handleRefresh = () => {
     console.log('[LiveDealing] 🔄 Refresh: Reloading all deals from API')
     fetchAllDealsOnce()
@@ -1493,7 +1510,7 @@ const LiveDealingPage = () => {
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">
                 {timeFilter === '24h' ? 'Deals (24h)' : timeFilter === '7d' ? 'Deals (7d)' : 'Filtered Deals'}
               </p>
-              <p className="text-sm font-bold text-gray-900">{sortedDeals.length}</p>
+              <p className="text-sm font-bold text-gray-900">{formatIndianNumber(sortedDeals.length, 0)}</p>
               {searchQuery && (
                 <p className="text-[10px] text-gray-400 mt-0.5">of {trimmedDeals.length} total</p>
               )}
@@ -1513,7 +1530,7 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
               <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
               <p className="text-sm font-bold text-gray-900">
-                {new Set(sortedDeals.map(d => d.login)).size}
+                {formatIndianNumber(new Set(sortedDeals.map(d => d.login)).size, 0)}
               </p>
               {searchQuery && (
                 <p className="text-[10px] text-gray-400 mt-0.5">of {new Set(trimmedDeals.map(d => d.login)).size} total</p>
@@ -1826,19 +1843,19 @@ const LiveDealingPage = () => {
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.volume_percentage != null
-                                ? Number(deal.rawData.volume_percentage).toFixed(2)
+                                ? formatIndianNumber(deal.rawData.volume_percentage, 2)
                                 : '0.00')
-                            : (deal.rawData?.volume?.toFixed(2) || '-')}
+                            : formatIndianNumber(deal.rawData?.volume, 2)}
                         </td>
                       )}
                       {visibleColumns.volumePercentage && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
-                          {deal.rawData?.volume_percentage != null ? Number(deal.rawData.volume_percentage).toFixed(2) : '0.00'}
+                          {deal.rawData?.volume_percentage != null ? formatIndianNumber(deal.rawData.volume_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.price && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
-                          {deal.rawData?.price?.toFixed(5) || '-'}
+                          {formatIndianNumber(deal.rawData?.price, 5)}
                         </td>
                       )}
                       {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
@@ -1847,50 +1864,50 @@ const LiveDealingPage = () => {
                         }`}>
                           {displayMode === 'percentage'
                             ? (deal.rawData?.profit_percentage != null
-                                ? Number(deal.rawData.profit_percentage).toFixed(2)
+                                ? formatIndianNumber(deal.rawData.profit_percentage, 2)
                                 : '0.00')
-                            : (deal.rawData?.profit?.toFixed(2) || '0.00')}
+                            : formatIndianNumber(deal.rawData?.profit, 2)}
                         </td>
                       )}
                       {visibleColumns.profitPercentage && (
                         <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {deal.rawData?.profit_percentage != null ? Number(deal.rawData.profit_percentage).toFixed(2) : '0.00'}
+                          {deal.rawData?.profit_percentage != null ? formatIndianNumber(deal.rawData.profit_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.commission_percentage != null
-                                ? Number(deal.rawData.commission_percentage).toFixed(2)
+                                ? formatIndianNumber(deal.rawData.commission_percentage, 2)
                                 : '0.00')
-                            : (deal.rawData?.commission?.toFixed(2) || '0.00')}
+                            : formatIndianNumber(deal.rawData?.commission, 2)}
                         </td>
                       )}
                       {visibleColumns.commissionPercentage && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
-                          {deal.rawData?.commission_percentage != null ? Number(deal.rawData.commission_percentage).toFixed(2) : '0.00'}
+                          {deal.rawData?.commission_percentage != null ? formatIndianNumber(deal.rawData.commission_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.storage_percentage != null
-                                ? Number(deal.rawData.storage_percentage).toFixed(2)
+                                ? formatIndianNumber(deal.rawData.storage_percentage, 2)
                                 : '0.00')
-                            : (deal.rawData?.storage?.toFixed(2) || '0.00')}
+                            : formatIndianNumber(deal.rawData?.storage, 2)}
                         </td>
                       )}
                       {visibleColumns.storagePercentage && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
-                          {deal.rawData?.storage_percentage != null ? Number(deal.rawData.storage_percentage).toFixed(2) : '0.00'}
+                          {deal.rawData?.storage_percentage != null ? formatIndianNumber(deal.rawData.storage_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.appliedPercentage && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
-                            {deal.rawData?.applied_percentage != null ? Number(deal.rawData.applied_percentage).toFixed(1) : '0.0'}
+                            {deal.rawData?.applied_percentage != null ? formatIndianNumber(deal.rawData.applied_percentage, 1) : '0.0'}
                           </span>
                         </td>
                       )}
