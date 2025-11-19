@@ -1866,8 +1866,8 @@ const Client2Page = () => {
       const setVals = new Set()
       
       if (searchQuery && searchQuery.trim()) {
-        // When searching, fetch ALL pages to get complete results (backend caps at 100 per page)
-        const firstParams = { ...baseParams, page: 1, limit: 100 }
+        // When searching, fetch ALL pages to get complete results (backend caps at 500 per page)
+        const firstParams = { ...baseParams, page: 1, limit: 500 }
         const firstResponse = await brokerAPI.getClientFields(firstParams)
         const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
         const firstData = extract(firstResponse)
@@ -1886,7 +1886,7 @@ const Client2Page = () => {
           // Fetch all remaining pages in parallel
           const pagePromises = []
           for (let page = 2; page <= totalPages; page++) {
-            const pageParams = { ...baseParams, page, limit: 100 }
+            const pageParams = { ...baseParams, page, limit: 500 }
             pagePromises.push(brokerAPI.getClientFields(pageParams))
           }
           
