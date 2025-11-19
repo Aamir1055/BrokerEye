@@ -1068,7 +1068,7 @@ const LiveDealingPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div 
                         className={`absolute top-0 w-40 bg-white border border-gray-300 rounded shadow-lg z-50 ${
-                          ['storagePercentage', 'appliedPercentage', 'entry', 'order', 'position', 'reason'].includes(columnKey)
+                          ['commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry', 'order', 'position', 'reason'].includes(columnKey)
                             ? 'right-full mr-1'  // Open to the left for rightmost columns
                             : 'left-full ml-1'   // Open to the right for other columns
                         }`}
