@@ -425,10 +425,15 @@ const ClientPercentagePage = () => {
     const totalItems = sortedClients().length
     const options = []
     
-    // Start from 200 and increment by 200
-    for (let i = 200; i <= Math.max(totalItems, 200); i += 200) {
+    // Start from 200 and increment by 200, dynamically based on total data
+    for (let i = 200; i <= totalItems; i += 200) {
       options.push(i)
       if (options.length >= 10) break // Limit to 10 options
+    }
+    
+    // If no options generated or total is less than 200, add at least one option
+    if (options.length === 0) {
+      options.push(Math.max(200, totalItems))
     }
     
     return options
