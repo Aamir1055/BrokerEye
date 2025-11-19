@@ -1840,8 +1840,12 @@ const Client2Page = () => {
       const params = {
         fields: columnKey,
         search: searchQuery.trim() || undefined,
-        page: 1,
-        limit: 500
+        page: 1
+      }
+      
+      // Only add limit when NOT searching (browsing full list needs pagination)
+      if (!searchQuery || !searchQuery.trim()) {
+        params.limit = 500
       }
 
       // Add quick filter constraints as query params
