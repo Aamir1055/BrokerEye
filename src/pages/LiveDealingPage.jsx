@@ -1064,10 +1064,14 @@ const LiveDealingPage = () => {
                       </svg>
                     </button>
                     
-                    {/* Number Filter Dropdown - Opens to the right */}
+                    {/* Number Filter Dropdown - Opens to the right or left based on column position */}
                     {showNumberFilterDropdown === columnKey && (
                       <div 
-                        className="absolute left-full top-0 ml-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-50"
+                        className={`absolute top-0 w-40 bg-white border border-gray-300 rounded shadow-lg z-50 ${
+                          ['entry', 'order', 'position', 'reason'].includes(columnKey)
+                            ? 'right-full mr-1'  // Open to the left for last columns
+                            : 'left-full ml-1'   // Open to the right for other columns
+                        }`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="text-[10px] text-gray-600 py-0.5">
