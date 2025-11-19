@@ -942,31 +942,9 @@ const Client2Page = () => {
               return // Don't combine checkbox with text/number for same field
             }
             
-            // Get all available values for this column to check if we should optimize the filter
-            const allValues = columnValues[uiKey] || []
-            const selectedValues = cfg.values
-            const unselectedValues = allValues.filter(v => !selectedValues.includes(v))
-            
-            // OPTIMIZATION 1: If ALL values are selected, skip the filter entirely (no need to filter)
-            if (allValues.length > 0 && selectedValues.length === allValues.length) {
-              if (DEBUG_LOGS) console.log(`[Client2] Skipping filter for ${field}: all ${allValues.length} values selected`)
-              return // No filter needed when everything is selected
-            }
-            
-            // OPTIMIZATION 2: Use NOT EQUAL for unselected values if it's more efficient
-            // This prevents creating 1000+ OR queries when user selects most/all items
-            // Use NOT EQUAL if: fewer unselected values AND (unselected < 50 OR unselected < 10% of selected)
-            const shouldUseNotEqual = unselectedValues.length > 0 && 
-                                      unselectedValues.length < selectedValues.length &&
-                                      (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
-            
-            if (shouldUseNotEqual) {
-              if (DEBUG_LOGS) console.log(`[Client2] Using NOT EQUAL filter for ${field}: ${unselectedValues.length} excluded values instead of ${selectedValues.length} OR values`)
-              unselectedValues.forEach(value => {
-                combinedFilters.push({ field, operator: 'not_equal', value })
-              })
-              return
-            }
+            // NOTE: Optimizations disabled because columnValues only contains lazy-loaded subset (500 values)
+            // We can't reliably determine if "all values" are selected without full dataset
+            // Future: Track if column has loaded all values before applying optimizations
             
             if (cfg.values.length === 1) {
               // Single selection → simple equality filter
@@ -1945,12 +1923,18 @@ const Client2Page = () => {
       })
 
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
-      const totalPages = Math.max(1, Number(data?.pages || 1))
+      const pagesNum = Number(data?.pages)
+      const hasPagesInfo = Number.isFinite(pagesNum) && pagesNum > 0
+      const inferredHasMore = clients.length >= 500
+      const totalPages = hasPagesInfo ? pagesNum : null
+      
+      console.log(`[Client2] fetchColumnValues complete for ${columnKey}: ${uniqueValues.length} values, page 1${hasPagesInfo ? ` of ${pagesNum}` : ''}`)
       
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: hasPagesInfo ? pagesNum > 1 : inferredHasMore }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
     } finally {
@@ -1960,19 +1944,32 @@ const Client2Page = () => {
 
   // Load more column values when scrolling (fetch next 500)
   const fetchMoreColumnValues = async (columnKey) => {
+    console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
+    console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+    
     // Don't fetch if already loading more
-    if (columnValuesLoadingMore[columnKey]) return
+    if (columnValuesLoadingMore[columnKey]) {
+      console.log(`[Client2] Already loading more for ${columnKey}, skipping`)
+      return
+    }
     // Don't fetch if no more values
-    if (!columnValuesHasMore[columnKey]) return
+    if (!columnValuesHasMore[columnKey]) {
+      console.log(`[Client2] No more values for ${columnKey}, skipping`)
+      return
+    }
     
     const currentPage = columnValuesCurrentPage[columnKey] || 1
-    const totalPages = columnValuesTotalPages[columnKey] || 1
+    const totalPages = columnValuesTotalPages[columnKey]  // may be null if unknown
     
-    if (currentPage >= totalPages) {
+    console.log(`[Client2] Page info - current: ${currentPage}, total: ${totalPages ?? 'unknown'}`)
+    
+    if (typeof totalPages === 'number' && currentPage >= totalPages) {
+      console.log(`[Client2] Current page ${currentPage} >= total pages ${totalPages}, setting hasMore to false`)
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
       return
     }
     
+    console.log(`[Client2] Fetching page ${currentPage + 1} for ${columnKey}`)
     setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
     
     try {
@@ -2023,7 +2020,8 @@ const Client2Page = () => {
       const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: nextPage }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextPage < totalPages }))
+      const nextHasMore = (typeof totalPages === 'number') ? (nextPage < totalPages) : (clients.length >= 500)
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: nextHasMore }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
     } finally {
@@ -4116,11 +4114,18 @@ const Client2Page = () => {
                                                     const scrollTop = target.scrollTop
                                                     const scrollHeight = target.scrollHeight
                                                     const clientHeight = target.clientHeight
+                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
                                                     
-                                                    // Load more when scrolled to 80% of the content
-                                                    if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+                                                    
+                                                    // Load more when scrolled to 70% of the content
+                                                    if (scrollTop + clientHeight >= scrollHeight * 0.7) {
+                                                      console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
                                                       if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
                                                         fetchMoreColumnValues(columnKey)
+                                                      } else {
+                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
                                                       }
                                                     }
                                                   }}
@@ -4396,11 +4401,18 @@ const Client2Page = () => {
                                                     const scrollTop = target.scrollTop
                                                     const scrollHeight = target.scrollHeight
                                                     const clientHeight = target.clientHeight
+                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
                                                     
-                                                    // Load more when scrolled to 80% of the content
-                                                    if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+                                                    
+                                                    // Load more when scrolled to 70% of the content
+                                                    if (scrollTop + clientHeight >= scrollHeight * 0.7) {
+                                                      console.log(`[Client2] Reached 70% threshold for ${columnKey}`)
                                                       if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey} at ${scrollPercentage.toFixed(1)}% scroll`)
                                                         fetchMoreColumnValues(columnKey)
+                                                      } else {
+                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
                                                       }
                                                     }
                                                   }}
