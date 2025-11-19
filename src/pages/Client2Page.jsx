@@ -260,6 +260,7 @@ const Client2Page = () => {
   // Scroll gating for column value dropdowns
   const columnScrollUserActionRef = useRef({}) // { [columnKey]: boolean }
   const columnScrollLastTriggerRef = useRef({}) // { [columnKey]: number }
+  const columnLastScrollTopRef = useRef({}) // { [columnKey]: number }
 
   // Persist card filter percentage mode
   useEffect(() => {
@@ -1894,6 +1895,7 @@ const Client2Page = () => {
     // Reset scroll gating for this column
     columnScrollUserActionRef.current[columnKey] = false
     columnScrollLastTriggerRef.current[columnKey] = -Infinity
+    columnLastScrollTopRef.current[columnKey] = 0
     
     try {
       // Use dedicated fields API endpoint
@@ -4148,6 +4150,13 @@ const Client2Page = () => {
                                                       const scrollHeight = target.scrollHeight
                                                       const clientHeight = target.clientHeight
                                                       const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
+                                                      const lastMeasuredTop = columnLastScrollTopRef.current[columnKey] ?? 0
+                                                      if (scrollTop !== lastMeasuredTop) {
+                                                        if (scrollTop > lastMeasuredTop) {
+                                                          columnScrollUserActionRef.current[columnKey] = true
+                                                        }
+                                                        columnLastScrollTopRef.current[columnKey] = scrollTop
+                                                      }
                                                       
                                                       console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
                                                       
