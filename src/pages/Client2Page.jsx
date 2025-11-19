@@ -1842,8 +1842,10 @@ const Client2Page = () => {
         search: searchQuery.trim() || undefined
       }
       
-      // Only add page and limit when NOT searching (browsing full list needs pagination)
-      if (!searchQuery || !searchQuery.trim()) {
+      // When searching, use high limit to get all results; when browsing, use pagination
+      if (searchQuery && searchQuery.trim()) {
+        params.limit = 999999 // High limit to get all search results from backend
+      } else {
         params.page = 1
         params.limit = 500
       }
