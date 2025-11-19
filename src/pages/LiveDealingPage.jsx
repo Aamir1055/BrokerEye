@@ -899,9 +899,9 @@ const LiveDealingPage = () => {
     return Array.from(suggestions).slice(0, 10)
   }
   
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedDeals.length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? sortedDeals.length : startIndex + itemsPerPage
+  const totalPages = Math.ceil(sortedDeals.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const displayedDeals = sortedDeals.slice(startIndex, endIndex)
 
   const handleItemsPerPageChange = (value) => {
@@ -1288,10 +1288,11 @@ const LiveDealingPage = () => {
   }
 
   const getAvailableOptions = () => {
-    const options = ['All']
+    const options = []
     const maxOption = Math.ceil(sortedDeals.length / 50) * 50
-    for (let i = 50; i <= maxOption; i += 50) {
+    for (let i = 50; i <= Math.max(maxOption, 50); i += 50) {
       options.push(i)
+      if (options.length >= 10) break
     }
     return options
   }
@@ -1544,7 +1545,7 @@ const LiveDealingPage = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {getAvailableOptions().map(option => (
@@ -1556,8 +1557,7 @@ const LiveDealingPage = () => {
             
             <div className="flex items-center gap-3">
               {/* Page Navigation */}
-              {itemsPerPage !== 'All' && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
@@ -1590,7 +1590,6 @@ const LiveDealingPage = () => {
                     </svg>
                   </button>
                 </div>
-              )}
               
               {/* Module Type Toggle */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
