@@ -1014,7 +1014,7 @@ const LiveDealingPage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5"
+                    className="w-full px-2 py-1 text-left text-[10px] text-gray-700 hover:bg-gray-50 flex items-center gap-1.5"
                   >
                     <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -1027,7 +1027,7 @@ const LiveDealingPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100"
+                    className="w-full px-2 py-1 text-left text-[10px] text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100"
                   >
                     <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
