@@ -2067,19 +2067,32 @@ const LiveDealingPage = () => {
                   onChange={(e) => setCustomFilterType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                 >
-                  <option value="equal">Equal</option>
-                  <option value="notEqual">Not Equal</option>
-                  <option value="lessThan">Less Than</option>
-                  <option value="lessThanOrEqual">Less Than Or Equal</option>
-                  <option value="greaterThan">Greater Than</option>
-                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
-                  <option value="between">Between</option>
+                  {['login', 'symbol', 'action', 'reason'].includes(customFilterColumn) ? (
+                    <>
+                      <option value="equal">Equal</option>
+                      <option value="notEqual">Not Equal</option>
+                      <option value="startsWith">Starts With</option>
+                      <option value="endsWith">Ends With</option>
+                      <option value="contains">Contains</option>
+                      <option value="notContains">Does Not Contain</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="equal">Equal</option>
+                      <option value="notEqual">Not Equal</option>
+                      <option value="lessThan">Less Than</option>
+                      <option value="lessThanOrEqual">Less Than Or Equal</option>
+                      <option value="greaterThan">Greater Than</option>
+                      <option value="greaterThanOrEqual">Greater Than Or Equal</option>
+                      <option value="between">Between</option>
+                    </>
+                  )}
                 </select>
               </div>
 
               <div>
                 <input
-                  type="number"
+                  type={['login', 'symbol', 'action', 'reason'].includes(customFilterColumn) ? 'text' : 'number'}
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
                   placeholder="Enter the value"
@@ -2112,7 +2125,7 @@ const LiveDealingPage = () => {
 
                   <div>
                     <input
-                      type="number"
+                      type={['login', 'symbol', 'action', 'reason'].includes(customFilterColumn) ? 'text' : 'number'}
                       value={customFilterValue2}
                       onChange={(e) => setCustomFilterValue2(e.target.value)}
                       placeholder="Enter the value"
