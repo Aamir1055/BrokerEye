@@ -125,6 +125,7 @@ const Client2Page = () => {
   const [columnValuesTotalPages, setColumnValuesTotalPages] = useState({}) // Track total pages per column
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
+  const [columnValueSearchDebounce, setColumnValueSearchDebounce] = useState({}) // Debounced search queries
   const [quickFilters, setQuickFilters] = useState({
     hasFloating: false,
     hasCredit: false,
@@ -207,6 +208,34 @@ const Client2Page = () => {
   useEffect(() => {
     localStorage.setItem('client2ColumnWidths', JSON.stringify(columnWidths))
   }, [columnWidths])
+
+  // Debounce search input for server-side filtering
+  useEffect(() => {
+    const timers = {}
+    
+    Object.keys(columnValueSearch).forEach(columnKey => {
+      const searchQuery = columnValueSearch[columnKey] || ''
+      const previousQuery = columnValueSearchDebounce[columnKey] || ''
+      
+      // Only trigger if search changed
+      if (searchQuery !== previousQuery) {
+        if (timers[columnKey]) clearTimeout(timers[columnKey])
+        
+        timers[columnKey] = setTimeout(() => {
+          setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: searchQuery }))
+          
+          // Reset and fetch with new search query
+          setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+          setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+          fetchColumnValuesWithSearch(columnKey, searchQuery, true)
+        }, 500) // 500ms debounce
+      }
+    })
+    
+    return () => {
+      Object.values(timers).forEach(timer => clearTimeout(timer))
+    }
+  }, [columnValueSearch])
 
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
@@ -1801,6 +1830,73 @@ const Client2Page = () => {
     return { payload, multiOrField, multiOrValues, multiOrConflict }
   }
 
+  // Fetch column values with search filter (server-side search)
+  const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
+    // Don't fetch if already loading
+    if (columnValuesLoading[columnKey]) return
+    
+    setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
+    setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+    
+    try {
+      const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
+      const BATCH_SIZE = 500
+      const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, 1, BATCH_SIZE)
+
+      // Add search filter if search query exists
+      if (searchQuery && searchQuery.trim()) {
+        payload.filters = [...(payload.filters || []), { 
+          field: columnKey, 
+          operator: 'contains', 
+          value: searchQuery.trim() 
+        }]
+      }
+
+      // Inject quick filter constraints
+      if (quickFilters?.hasFloating) {
+        payload.filters = [...(payload.filters || []), { field: 'floating', operator: 'not_equal', value: '0' }]
+      }
+      if (quickFilters?.hasCredit) {
+        payload.filters = [...(payload.filters || []), { field: 'credit', operator: 'greater_than', value: '0' }]
+      }
+      if (quickFilters?.noDeposit) {
+        payload.filters = [...(payload.filters || []), { field: 'lifetimeDeposit', operator: 'equal', value: '0' }]
+      }
+
+      const buildVariants = (b) => {
+        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+          return multiOrValues.map(val => ({ ...b, filters: [...(b.filters || []), { field: multiOrField, operator: 'equal', value: val }] }))
+        }
+        return [b]
+      }
+
+      // Fetch first batch with search filter
+      const variants = buildVariants(payload)
+      const responses = await Promise.all(variants.map(p => brokerAPI.searchClients(p)))
+      const setVals = new Set()
+      let maxPages = 1
+      
+      responses.forEach(resp => {
+        const d = extract(resp)
+        const rows = d?.clients || []
+        rows.forEach(row => {
+          const v = row?.[columnKey]
+          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+        })
+        maxPages = Math.max(maxPages, Number(d?.pages || 1))
+      })
+
+      const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
+      setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
+      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: maxPages }))
+      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: maxPages > 1 }))
+    } catch (err) {
+      console.error(`[Client2Page] Error fetching column values with search for ${columnKey}:`, err)
+    } finally {
+      setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+    }
+  }
+
   // Fetch column values in batches of 500 (lazy loading)
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
     // Don't fetch if already loading
@@ -1888,6 +1984,16 @@ const Client2Page = () => {
       const nextPage = currentPage + 1
       const BATCH_SIZE = 500
       const { payload, multiOrField, multiOrValues, multiOrConflict } = buildColumnValuesPayload(columnKey, nextPage, BATCH_SIZE)
+
+      // Add search filter if exists
+      const searchQuery = columnValueSearchDebounce[columnKey] || columnValueSearch[columnKey] || ''
+      if (searchQuery && searchQuery.trim()) {
+        payload.filters = [...(payload.filters || []), { 
+          field: columnKey, 
+          operator: 'contains', 
+          value: searchQuery.trim() 
+        }]
+      }
 
       // Inject quick filter constraints
       if (quickFilters?.hasFloating) {
@@ -3992,10 +4098,8 @@ const Client2Page = () => {
                                                 <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                                                   {(() => {
                                                     const allVals = columnValues[columnKey] || []
-                                                    const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                    const visible = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
                                                     const selected = selectedColumnValues[columnKey] || []
-                                                    const allVisibleSelected = visible.length > 0 && visible.every(v => selected.includes(v))
+                                                    const allVisibleSelected = allVals.length > 0 && allVals.every(v => selected.includes(v))
                                                     return (
                                                       <label className="flex items-center gap-2 cursor-pointer">
                                                         <input
@@ -4004,7 +4108,7 @@ const Client2Page = () => {
                                                           onChange={() => toggleSelectVisibleColumnValues(columnKey)}
                                                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                         />
-                                                        <span className="text-xs font-bold text-gray-700">Select visible ({visible.length})</span>
+                                                        <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
                                                       </label>
                                                     )
                                                   })()}
@@ -4034,11 +4138,9 @@ const Client2Page = () => {
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
-                                                    const searchQ = columnValueSearch[columnKey] || ''
                                                     const selected = selectedColumnValues[columnKey] || []
-                                                    const filteredVals = searchQ
-                                                      ? allVals.filter(v => String(v).toLowerCase().includes(searchQ.toLowerCase()))
-                                                      : allVals
+                                                    // Values are already filtered server-side
+                                                    const filteredVals = allVals
                                                     
                                                     return (
                                                       <>
@@ -4115,10 +4217,8 @@ const Client2Page = () => {
                                           const selected = selectedColumnValues[columnKey] || []
                                           const searchQuery = columnValueSearch[columnKey] || ''
                                           
-                                          // Filter values based on search
-                                          const filteredValues = searchQuery
-                                            ? allValues.filter(v => String(v).toLowerCase().includes(searchQuery.toLowerCase()))
-                                            : allValues
+                                          // Values are already filtered server-side based on search
+                                          const filteredValues = allValues
                                           
                                           return (
                                             <>
@@ -4286,11 +4386,11 @@ const Client2Page = () => {
                                                   <label className="flex items-center gap-2 cursor-pointer">
                                                     <input
                                                       type="checkbox"
-                                                      checked={filteredValues.length > 0 && filteredValues.every(v => selected.includes(v))}
+                                                      checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
                                                       onChange={() => toggleSelectVisibleColumnValues(columnKey)}
                                                       className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                     />
-                                                    <span className="text-xs font-bold text-gray-700">Select visible ({filteredValues.length})</span>
+                                                    <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
                                                   </label>
                                                 </div>
 
