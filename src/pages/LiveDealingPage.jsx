@@ -1048,7 +1048,7 @@ const LiveDealingPage = () => {
                   </button>
                 </div>
 
-                {/* Number Filters */}
+                {/* Number/Text Filters */}
                 <div className="border-b border-gray-200">
                   <div className="px-2 py-1 relative group">
                     <button
@@ -1058,7 +1058,7 @@ const LiveDealingPage = () => {
                       }}
                       className="w-full flex items-center justify-between px-2 py-1 text-[10px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                     >
-                      <span>Number Filters</span>
+                      <span>{['login', 'symbol', 'action', 'reason'].includes(columnKey) ? 'Text Filters' : 'Number Filters'}</span>
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
