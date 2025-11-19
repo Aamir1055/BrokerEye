@@ -171,8 +171,10 @@ const LiveDealingPage = () => {
     deals.forEach(deal => {
       // Most deal properties are in rawData, except top-level ones like login, time, dealer, etc.
       let value
-      if (columnKey === 'login' || columnKey === 'time' || columnKey === 'dealer' || columnKey === 'deal') {
+      if (columnKey === 'login' || columnKey === 'time' || columnKey === 'dealer') {
         value = deal[columnKey]
+      } else if (columnKey === 'deal') {
+        value = deal.rawData?.deal || deal.id
       } else {
         // For columns like symbol, action, volume, price, profit, etc., check rawData
         value = deal.rawData?.[columnKey]
@@ -238,7 +240,7 @@ const LiveDealingPage = () => {
 
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
-      const numberFilterKey = `${columnKey}_number`
+      const numberFilterKey = `${columnKey}_custom`
       const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
       return rest
     })
@@ -253,11 +255,11 @@ const LiveDealingPage = () => {
     // Check for regular checkbox filters
     const checkboxCount = columnFilters[columnKey]?.length || 0
     
-    // Check for number filter
-    const numberFilterKey = `${columnKey}_number`
-    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
+    // Check for custom filter (text or number)
+    const customFilterKey = `${columnKey}_custom`
+    const hasCustomFilter = columnFilters[customFilterKey] ? 1 : 0
     
-    return checkboxCount + hasNumberFilter
+    return checkboxCount + hasCustomFilter
   }
 
   const isAllSelected = (columnKey) => {
@@ -270,16 +272,19 @@ const LiveDealingPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
+    const isTextColumn = ['login', 'symbol', 'action', 'reason'].includes(customFilterColumn)
+    
     const filterConfig = {
       type: customFilterType,
-      value1: parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
-      operator: customFilterOperator
+      value1: isTextColumn ? customFilterValue1 : parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? (isTextColumn ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
+      operator: customFilterOperator,
+      isText: isTextColumn
     }
 
     setColumnFilters(prev => ({
       ...prev,
-      [`${customFilterColumn}_number`]: filterConfig
+      [`${customFilterColumn}_custom`]: filterConfig
     }))
 
     // Close modal and dropdown
@@ -317,6 +322,36 @@ const LiveDealingPage = () => {
         return numValue >= value1
       case 'between':
         return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
+  }
+
+  // Check if value matches text filter
+  const matchesTextFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    
+    const strValue = String(value || '')
+    const { type, value1 } = filterConfig
+    const searchValue = String(value1 || '')
+
+    // Convert to lowercase for case-insensitive comparison
+    const strValueLower = strValue.toLowerCase()
+    const searchValueLower = searchValue.toLowerCase()
+
+    switch (type) {
+      case 'equal':
+        return strValueLower === searchValueLower
+      case 'notEqual':
+        return strValueLower !== searchValueLower
+      case 'startsWith':
+        return strValueLower.startsWith(searchValueLower)
+      case 'endsWith':
+        return strValueLower.endsWith(searchValueLower)
+      case 'contains':
+        return strValueLower.includes(searchValueLower)
+      case 'notContains':
+        return !strValueLower.includes(searchValueLower)
       default:
         return true
     }
@@ -759,8 +794,18 @@ const LiveDealingPage = () => {
 
     return [...dealsToSort].sort((a, b) => {
       // Check top-level first, then rawData
-      let aVal = a[sortColumn] !== undefined ? a[sortColumn] : a.rawData?.[sortColumn]
-      let bVal = b[sortColumn] !== undefined ? b[sortColumn] : b.rawData?.[sortColumn]
+      let aVal, bVal
+      
+      if (sortColumn === 'login' || sortColumn === 'time' || sortColumn === 'dealer') {
+        aVal = a[sortColumn]
+        bVal = b[sortColumn]
+      } else if (sortColumn === 'deal') {
+        aVal = a.rawData?.deal || a.id
+        bVal = b.rawData?.deal || b.id
+      } else {
+        aVal = a.rawData?.[sortColumn]
+        bVal = b.rawData?.[sortColumn]
+      }
 
       // Handle time sorting
       if (sortColumn === 'time') {
@@ -848,17 +893,37 @@ const LiveDealingPage = () => {
   
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {
-    if (columnKey.endsWith('_number')) {
-      // Number filter
-      const actualColumnKey = columnKey.replace('_number', '')
+    if (columnKey.endsWith('_custom')) {
+      // Custom filter (text or number)
+      const actualColumnKey = columnKey.replace('_custom', '')
       ibFilteredDeals = ibFilteredDeals.filter(deal => {
-        const dealValue = deal[actualColumnKey] || deal.rawData?.[actualColumnKey]
-        return matchesNumberFilter(dealValue, values)
+        let dealValue
+        if (actualColumnKey === 'login' || actualColumnKey === 'time' || actualColumnKey === 'dealer') {
+          dealValue = deal[actualColumnKey]
+        } else if (actualColumnKey === 'deal') {
+          dealValue = deal.rawData?.deal || deal.id
+        } else {
+          dealValue = deal.rawData?.[actualColumnKey]
+        }
+        
+        if (values.isText) {
+          return matchesTextFilter(dealValue, values)
+        } else {
+          return matchesNumberFilter(dealValue, values)
+        }
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
       ibFilteredDeals = ibFilteredDeals.filter(deal => {
-        let dealValue = deal[columnKey] || deal.rawData?.[columnKey]
+        let dealValue
+        if (columnKey === 'login' || columnKey === 'time' || columnKey === 'dealer') {
+          dealValue = deal[columnKey]
+        } else if (columnKey === 'deal') {
+          dealValue = deal.rawData?.deal || deal.id
+        } else {
+          dealValue = deal.rawData?.[columnKey]
+        }
+        
         // For time column, format to match displayed format in filter
         if (columnKey === 'time' && dealValue) {
           dealValue = formatTime(dealValue)
@@ -1816,28 +1881,6 @@ const LiveDealingPage = () => {
           {/* Table */}
           {loading ? (
             <LoadingSpinner />
-          ) : displayedDeals.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <div className="text-6xl mb-4">⚡</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No deals yet</h3>
-              <p className="text-sm text-gray-500 mb-4">Waiting for live trades...</p>
-              <div className="text-xs text-gray-400">
-                <p className="mb-1">
-                  <span className="inline-flex items-center gap-1">
-                    <span className={connectionState === 'connected' ? 'text-green-600' : 'text-red-600'}>●</span>
-                    Real-time via WebSocket (DEAL_ADDED events)
-                  </span>
-                </p>
-                <p>
-                  <span className="inline-flex items-center gap-1">
-                    {connectionState === 'connected' ? '✅ Connected & Live' : '❌ Disconnected'}
-                  </span>
-                </p>
-                <p className="mt-2">
-                  ✅ Ready! New deals will appear automatically when trades are executed.
-                </p>
-              </div>
-            </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
               <div className="overflow-y-auto flex-1">
@@ -1866,7 +1909,41 @@ const LiveDealingPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y-2 divide-gray-200">
-                  {displayedDeals.map((deal, index) => (
+                  {displayedDeals.length === 0 ? (
+                    <tr>
+                      <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-12 text-center">
+                        <div className="text-6xl mb-4">⚡</div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          {deals.length === 0 ? 'No deals yet' : 'No matching deals found'}
+                        </h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                          {deals.length === 0 
+                            ? 'Waiting for live trades...' 
+                            : 'Try adjusting your filters or search query'
+                          }
+                        </p>
+                        {deals.length === 0 && (
+                          <div className="text-xs text-gray-400">
+                            <p className="mb-1">
+                              <span className="inline-flex items-center gap-1">
+                                <span className={connectionState === 'connected' ? 'text-green-600' : 'text-red-600'}>●</span>
+                                Real-time via WebSocket (DEAL_ADDED events)
+                              </span>
+                            </p>
+                            <p>
+                              <span className="inline-flex items-center gap-1">
+                                {connectionState === 'connected' ? '✅ Connected & Live' : '❌ Disconnected'}
+                              </span>
+                            </p>
+                            <p className="mt-2">
+                              ✅ Ready! New deals will appear automatically when trades are executed.
+                            </p>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ) : (
+                    displayedDeals.map((deal, index) => (
                     <tr key={deal.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {visibleColumns.time && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
@@ -1999,7 +2076,8 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
               </div>
