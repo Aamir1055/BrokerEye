@@ -1839,12 +1839,12 @@ const Client2Page = () => {
       // Use dedicated fields API endpoint that searches across ALL data
       const params = {
         fields: columnKey,
-        search: searchQuery.trim() || undefined,
-        page: 1
+        search: searchQuery.trim() || undefined
       }
       
-      // Only add limit when NOT searching (browsing full list needs pagination)
+      // Only add page and limit when NOT searching (browsing full list needs pagination)
       if (!searchQuery || !searchQuery.trim()) {
+        params.page = 1
         params.limit = 500
       }
 
