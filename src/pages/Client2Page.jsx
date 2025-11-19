@@ -1834,6 +1834,10 @@ const Client2Page = () => {
     
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+    // Reset scroll gating for this column
+    columnScrollUserActionRef.current[columnKey] = false
+    columnScrollLastTriggerRef.current[columnKey] = -Infinity
+    columnLastScrollTopRef.current[columnKey] = 0
     
     try {
       // Use dedicated fields API endpoint that searches across ALL data
@@ -1866,7 +1870,7 @@ const Client2Page = () => {
       const setVals = new Set()
       
       if (searchQuery && searchQuery.trim()) {
-        // When searching, fetch ALL pages to get complete results (backend caps at 500 per page)
+        // When searching, fetch first page only and enable lazy loading for more
         const firstParams = { ...baseParams, page: 1, limit: 500 }
         const firstResponse = await brokerAPI.getClientFields(firstParams)
         const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
@@ -1879,50 +1883,17 @@ const Client2Page = () => {
           if (v !== null && v !== undefined && v !== '') setVals.add(v)
         })
         
-        // Get total pages and fetch remaining pages if needed
+        // Get total pages to determine if there's more data
         const totalPages = Math.max(1, Number(firstData?.pages || firstData?.totalPages || 1))
+        const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
         
-        if (totalPages > 1) {
-          // Fetch all remaining pages in parallel
-          const pagePromises = []
-          for (let page = 2; page <= totalPages; page++) {
-            const pageParams = { ...baseParams, page, limit: 500 }
-            pagePromises.push(brokerAPI.getClientFields(pageParams))
-          }
-          
-          const pageResponses = await Promise.all(pagePromises)
-          pageResponses.forEach(resp => {
-            const data = extract(resp)
-            const clients = data?.clients || []
-            clients.forEach(client => {
-              const v = client?.[columnKey]
-              if (v !== null && v !== undefined && v !== '') setVals.add(v)
-            })
-          })
-        }
-      } else {
-        // When browsing (no search), use regular pagination
-        const params = { ...baseParams, page: 1, limit: 500 }
-        const response = await brokerAPI.getClientFields(params)
-        const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
-        const data = extract(response)
-        
-        const clients = data?.clients || []
-        clients.forEach(client => {
-          const v = client?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
-        })
+        setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
+        setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+        setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
+        setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: totalPages > 1 }))
       }
-
-      const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
-      
-      setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 1 }))
-      setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false })) // All loaded when searching
-      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: false }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values with search for ${columnKey}:`, err)
-      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: true }))
       setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
@@ -1999,11 +1970,8 @@ const Client2Page = () => {
       setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: hasPagesInfo ? pagesNum > 1 : inferredHasMore }))
-      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: false }))
     } catch (err) {
       console.error(`[Client2Page] Error fetching column values for ${columnKey}:`, err)
-      // Mark as unsupported to avoid further API calls for this field
-      setColumnValuesUnsupported(prev => ({ ...prev, [columnKey]: true }))
       setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
@@ -2014,10 +1982,6 @@ const Client2Page = () => {
 
   // Load more column values when scrolling (fetch next 500)
   const fetchMoreColumnValues = async (columnKey) => {
-    if (columnValuesUnsupported[columnKey]) {
-      console.log(`[Client2] Skipping fetchMore for unsupported field ${columnKey}`)
-      return
-    }
     console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
     console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
     
@@ -4191,18 +4155,13 @@ const Client2Page = () => {
                                                 )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                {columnValuesUnsupported[columnKey] ? (
-                                                  <div className="flex-1 px-3 py-6 text-xs text-gray-500 text-center">
-                                                    Values not available for this column. Use the filters above.
-                                                  </div>
-                                                ) : (
-                                                  <div 
-                                                    className="flex-1 overflow-y-auto px-3 py-2"
-                                                    onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onScroll={(e) => {
-                                                      const target = e.currentTarget
+                                                <div 
+                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                  onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onScroll={(e) => {
+                                                    const target = e.currentTarget
                                                       const scrollTop = target.scrollTop
                                                       const scrollHeight = target.scrollHeight
                                                       const clientHeight = target.clientHeight
@@ -4284,7 +4243,6 @@ const Client2Page = () => {
                                                       )
                                                     })()}
                                                   </div>
-                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
@@ -4514,18 +4472,13 @@ const Client2Page = () => {
                                                 )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                {columnValuesUnsupported[columnKey] ? (
-                                                  <div className="flex-1 px-3 py-6 text-xs text-gray-500 text-center">
-                                                    Values not available for this column. Use the filters above.
-                                                  </div>
-                                                ) : (
-                                                  <div 
-                                                    className="flex-1 overflow-y-auto px-3 py-2"
-                                                    onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
-                                                    onScroll={(e) => {
-                                                      const target = e.currentTarget
+                                                <div 
+                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                  onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
+                                                  onScroll={(e) => {
+                                                    const target = e.currentTarget
                                                       const scrollTop = target.scrollTop
                                                       const scrollHeight = target.scrollHeight
                                                       const clientHeight = target.clientHeight
@@ -4599,7 +4552,6 @@ const Client2Page = () => {
                                                       </>
                                                     )}
                                                   </div>
-                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
