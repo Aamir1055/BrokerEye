@@ -37,7 +37,7 @@ const ClientPercentagePage = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(50)
+  const [itemsPerPage, setItemsPerPage] = useState(200)
   
   // Search states
   const [searchQuery, setSearchQuery] = useState('')
@@ -423,22 +423,26 @@ const ClientPercentagePage = () => {
 
   const getAvailableOptions = () => {
     const totalItems = sortedClients().length
-    const options = [10, 25, 50, 100, 200]
+    const options = []
     
-    return options.filter(opt => opt <= totalItems || opt === 50).concat(['All'])
+    // Start from 200 and increment by 200
+    for (let i = 200; i <= Math.max(totalItems, 200); i += 200) {
+      options.push(i)
+      if (options.length >= 10) break // Limit to 10 options
+    }
+    
+    return options
   }
 
   const paginatedClients = () => {
     const sorted = sortedClients()
-    if (itemsPerPage === 'All') return sorted
-    
     const startIndex = (currentPage - 1) * itemsPerPage
     return sorted.slice(startIndex, startIndex + itemsPerPage)
   }
 
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedClients().length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? sortedClients().length : startIndex + itemsPerPage
+  const totalPages = Math.ceil(sortedClients().length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const displayedClients = paginatedClients()
 
   // Close filter dropdown when clicking outside
@@ -907,7 +911,7 @@ const ClientPercentagePage = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {getAvailableOptions().map(option => (
@@ -915,45 +919,46 @@ const ClientPercentagePage = () => {
                 ))}
               </select>
               <span className="text-sm text-gray-600">entries</span>
+              
+              {/* Navigation Buttons next to dropdown */}
+              <div className="flex items-center gap-1 ml-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    currentPage === 1
+                      ? 'text-gray-300 cursor-not-allowed bg-gray-100'
+                      : 'text-gray-600 hover:bg-blue-100 cursor-pointer border border-gray-300'
+                  }`}
+                  title="Previous page"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    currentPage === totalPages
+                      ? 'text-gray-300 cursor-not-allowed bg-gray-100'
+                      : 'text-gray-600 hover:bg-blue-100 cursor-pointer border border-gray-300'
+                  }`}
+                  title="Next page"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Page Navigation */}
-              {itemsPerPage !== 'All' && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      currentPage === 1
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <span className="text-sm text-gray-700 font-medium px-2">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      currentPage === totalPages
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+              {/* Page Navigation Info */}
+              <span className="text-sm text-gray-700 font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
               
               {/* Module Type Filter removed per request (belongs to Live Dealing) */}
 
