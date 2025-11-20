@@ -964,8 +964,12 @@ const Client2Page = () => {
                 // Single value: simple equal filter
                 combinedFilters.push({ field, operator: 'equal', value: selectedValues[0] })
                 console.log(`[Client2] 🔍 Checkbox ${columnKey}: single value equal filter`)
+              } else if (selectedValues.length > 50) {
+                // Too many values for multi-request approach - skip filtering with warning
+                console.warn(`[Client2] ⚠️ Checkbox ${columnKey}: ${selectedValues.length} values selected (limit: 50). Filter skipped to prevent network overload. Please use fewer selections or apply manually.`)
+                setError(`Too many ${columnKey} values selected (${selectedValues.length}). Please select 50 or fewer values, or use the inverse selection.`)
               } else {
-                // Multiple values: use multi-request OR approach
+                // Multiple values (2-50): use multi-request OR approach
                 if (multiOrField && multiOrField !== field) {
                   multiOrConflict = true
                 } else {
@@ -1079,6 +1083,14 @@ const Client2Page = () => {
     // Create payload variants for multi-value checkbox filters
     const normalPayloads = buildPayloadVariants(payloadNormal, false)
     const percentPayloads = shouldFetchPercentage ? buildPayloadVariants(payloadPercent, true) : []
+    
+    // Safety check: prevent excessive parallel requests
+    if (normalPayloads.length > 50) {
+      console.error(`[Client2] ❌ Too many requests: ${normalPayloads.length} variants. Aborting to prevent network overload.`)
+      setError(`Too many filter values selected (${normalPayloads.length} requests needed). Please reduce your selection to 50 or fewer values.`)
+      if (!silent) setLoading(false)
+      return
+    }
     
     if (normalPayloads.length > 1) {
       console.log(`[Client2] 🔄 Multi-value OR: fetching ${normalPayloads.length} variants for ${multiOrField}`)
