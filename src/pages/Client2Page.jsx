@@ -4184,8 +4184,10 @@ const Client2Page = () => {
                                                   <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                                                     {(() => {
                                                       const allVals = columnValues[columnKey] || []
+                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                      const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
                                                       const selected = selectedColumnValues[columnKey] || []
-                                                      const allVisibleSelected = allVals.length > 0 && allVals.every(v => selected.includes(v))
+                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
                                                       const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                       return (
                                                         <>
@@ -4196,7 +4198,7 @@ const Client2Page = () => {
                                                               onChange={() => toggleSelectVisibleColumnValues(columnKey)}
                                                               className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                             />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({allVals.length})</span>
+                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
                                                           </label>
                                                         </>
                                                       )
@@ -4498,17 +4500,20 @@ const Client2Page = () => {
                                                 {columnValuesUnsupported[columnKey] ? null : (
                                                   <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                                                     {(() => {
+                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                      const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
                                                       const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
                                                       return (
                                                         <>
                                                           <label className="flex items-center gap-2 cursor-pointer">
                                                             <input
                                                               type="checkbox"
-                                                              checked={allValues.length > 0 && allValues.every(v => selected.includes(v))}
+                                                              checked={allVisibleSelected}
                                                               onChange={() => toggleSelectVisibleColumnValues(columnKey)}
                                                               className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                             />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({allValues.length})</span>
+                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
                                                           </label>
                                                         </>
                                                       )
