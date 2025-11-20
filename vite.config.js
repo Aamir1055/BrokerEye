@@ -58,7 +58,7 @@ export default defineConfig({
       '/api': {
         target: 'https://api.brokereye.work.gd',
         changeOrigin: true,
-        secure: true, // Enable SSL verification for HTTPS
+        secure: false, // Disable SSL verification for development (avoid certificate issues)
         ws: true, // Enable WebSocket proxying
         rewrite: (path) => path,
         configure: (proxy, options) => {
