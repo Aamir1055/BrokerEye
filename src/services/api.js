@@ -22,9 +22,13 @@ const rawApi = axios.create({
   timeout: 30000,
 })
 
-// Dev-only proxy for IB endpoints to avoid CORS during development while keeping prod strict
+// Base URL for IB endpoints — uses the same domain as main API
+const IB_BASE = import.meta?.env?.VITE_IB_BASE_URL || (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd')
+if (DEBUG_LOGS) console.log('[API] IB Base URL:', IB_BASE, '(empty = use proxy)')
+
+// Dev-only relative base lets Vite proxy route to proper upstream; prod uses IB_BASE domain
 const ibApi = axios.create({
-  baseURL: import.meta?.env?.DEV ? '' : BASE_URL,
+  baseURL: IB_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -526,19 +530,25 @@ export const brokerAPI = {
 
   // Get IB commission totals
   getIBCommissionTotals: async () => {
+    if (DEBUG_LOGS) console.log('[API] Fetching IB commission totals from:', ibApi.defaults.baseURL + '/api/amari/ib/commissions/total')
     const response = await ibApi.get('/api/amari/ib/commissions/total')
+    if (DEBUG_LOGS) console.log('[API] IB commission totals response:', response.data)
     return response.data
   },
 
   // Get all IB emails
   getIBEmails: async () => {
+    if (DEBUG_LOGS) console.log('[API] Fetching IB emails from:', ibApi.defaults.baseURL + '/api/amari/ib/emails')
     const response = await ibApi.get('/api/amari/ib/emails')
+    if (DEBUG_LOGS) console.log('[API] IB emails response:', response.data)
     return response.data
   },
 
   // Get MT5 accounts for a specific IB
   getIBMT5Accounts: async (email) => {
+    if (DEBUG_LOGS) console.log('[API] Fetching MT5 accounts for:', email)
     const response = await ibApi.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
+    if (DEBUG_LOGS) console.log('[API] MT5 accounts response:', response.data)
     return response.data
   },
 

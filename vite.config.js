@@ -55,9 +55,9 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3001,
     proxy: {
-      // Route IB endpoints to brokereye (no api. subdomain)
+      // IB endpoints use the same API domain as other broker endpoints
       '/api/amari/ib': {
-        target: 'https://brokereye.work.gd',
+        target: 'https://api.brokereye.work.gd',
         changeOrigin: true,
         secure: false,
         ws: false,
