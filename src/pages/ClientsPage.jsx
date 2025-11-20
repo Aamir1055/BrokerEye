@@ -580,7 +580,7 @@ const ClientsPage = () => {
       try {
         console.log('Fetching IB Commission Totals...')
         const response = await brokerAPI.getIBCommissionTotals()
-        let data = response?.data || null
+        let data = response?.data?.data || response?.data || null
         // Backend handles USC normalization; use values as-is
         console.log('Commission Totals (normalized if USC):', data)
         setCommissionTotals(data)
@@ -606,7 +606,7 @@ const ClientsPage = () => {
       const fetchCommissions = async () => {
         try {
           const response = await brokerAPI.getIBCommissionTotals()
-          let data = response?.data || null
+          let data = response?.data?.data || response?.data || null
           // Backend handles USC normalization; use values as-is
           setCommissionTotals(data)
         } catch (err) {
