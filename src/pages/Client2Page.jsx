@@ -951,15 +951,21 @@ const Client2Page = () => {
               const field = columnKeyToAPIField(columnKey)
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
               
-              // Optimization: skip if ALL values are selected (no filtering needed)
+              // When there's a search active, only consider the visible (filtered) values for optimization logic
               const allValues = columnValues[columnKey] || []
-              if (allValues.length > 0 && selectedValues.length === allValues.length) {
+              const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+              const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+              
+              // Optimization: skip if ALL visible values are selected (no filtering needed)
+              // Only apply this optimization when no search is active (to avoid skipping when user searched and selected)
+              if (!searchQ && visibleValues.length > 0 && selectedValues.length === visibleValues.length) {
                 console.log(`[Client2] 🔍 Checkbox ${columnKey}: all values selected, skipping filter`)
                 return
               }
               
               // Smart optimization: use not_equal for unselected values if more efficient
-              const unselectedValues = allValues.filter(v => !selectedValues.includes(String(v).trim()))
+              // Use visibleValues for comparison when search is active
+              const unselectedValues = visibleValues.filter(v => !selectedValues.includes(String(v).trim()))
               const shouldUseNotEqual = unselectedValues.length > 0 && 
                                        unselectedValues.length < selectedValues.length &&
                                        (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
