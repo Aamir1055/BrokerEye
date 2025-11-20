@@ -1252,7 +1252,9 @@ const Client2Page = () => {
   const fetchRebateTotals = useCallback(async () => {
     try {
       const response = await brokerAPI.getIBCommissionTotals()
-      const data = response?.data || {}
+      // API returns nested structure: response.data.data
+      const data = response?.data?.data || response?.data || {}
+      console.log('[Client2] Rebate totals received:', data)
       setRebateTotals({
         availableRebate: data.total_available_commission || 0,
         availableRebatePercent: data.total_available_commission_percentage || 0,
@@ -2193,7 +2195,11 @@ const Client2Page = () => {
       return updated
     })
     
-    console.log('[Client2] ✅ Checkbox filter set - fetchClients will be triggered by useEffect')
+    // Explicitly trigger fetch with new filter (in addition to useEffect)
+    setTimeout(() => {
+      console.log('[Client2] 🔄 Explicitly calling fetchClients after checkbox filter')
+      fetchClients(false)
+    }, 100)
   }
   
   const applySortToColumn = (columnKey, direction) => {
