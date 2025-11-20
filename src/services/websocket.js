@@ -40,12 +40,13 @@ class WebSocketService {
         dwarn('[WebSocket] No access token found in localStorage')
         return null
       }
-      // Determine environment: in production always use hardcoded SSL domain.
-      // In development we prefer relative host so the Vite proxy can handle upgrading
-      // and bypass certificate / network restrictions.
-        const base = (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
-        const wsBase = base.startsWith('http') ? base.replace(/^http/, 'ws') : `wss://${base}`
-        return `${wsBase}/api/broker/ws?token=${encodeURIComponent(token)}`
+      // Always use secure WebSocket (wss://) for production
+      const base = (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
+      // Force wss:// for any https:// base, or if base is relative/empty and we're on https
+      const wsProtocol = (base.startsWith('https') || window.location.protocol === 'https:') ? 'wss' : 'ws'
+      const wsHost = base.replace(/^https?:\/\//, '')
+      const wsBase = wsHost ? `${wsProtocol}://${wsHost}` : `${wsProtocol}://${window.location.host}`
+      return `${wsBase}/api/broker/ws?token=${encodeURIComponent(token)}`
     } catch (error) {
       console.error('[WebSocket] Error getting WebSocket URL:', error)
       return null
