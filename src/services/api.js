@@ -56,6 +56,18 @@ api.interceptors.request.use(
   }
 )
 
+// Mirror auth header for IB API
+ibApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
@@ -140,6 +152,76 @@ api.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error)
+  }
+)
+
+// Reuse the same refresh logic for IB API
+ibApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (DEBUG_LOGS) {
+      const errInfo = {
+        message: error.message,
+        code: error.code,
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+        status: error.response?.status,
+        responseDataSnippet: typeof error.response?.data === 'string' ? error.response.data.slice(0,200) : error.response?.data
+      }
+      console.warn('[IB API] Axios error captured:', errInfo)
+    }
+    const originalRequest = error.config
+    const status = error?.response?.status
+    const hasRefresh = !!localStorage.getItem('refresh_token')
+    const alreadyRetried = originalRequest?._retry
+
+    if (status === 401 && hasRefresh && !alreadyRetried) {
+      originalRequest._retry = true
+      try {
+        if (!isRefreshing) {
+          isRefreshing = true
+          const refresh_token = localStorage.getItem('refresh_token')
+          refreshPromise = rawApi
+            .post('/api/auth/broker/refresh', { refresh_token })
+            .then((res) => res.data)
+            .then((data) => {
+              const newAccess = data?.data?.access_token || data?.access_token
+              if (!newAccess) throw new Error('No access_token in refresh response')
+              localStorage.setItem('access_token', newAccess)
+              api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
+              ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
+              broadcastTokenRefreshed(newAccess)
+              requestQueue.forEach((resolve) => resolve(newAccess))
+              requestQueue = []
+              return newAccess
+            })
+            .finally(() => { isRefreshing = false })
+        }
+        const token = await new Promise((resolve, reject) => {
+          if (refreshPromise) {
+            requestQueue.push(resolve)
+          } else {
+            reject(new Error('No refresh promise available'))
+          }
+        })
+        originalRequest.headers = originalRequest.headers || {}
+        originalRequest.headers['Authorization'] = `Bearer ${token}`
+        return ibApi(originalRequest)
+      } catch (refreshErr) {
+        try {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('user_data')
+        } catch {}
+        if (typeof window !== 'undefined') {
+          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshErr)
+      }
+    }
     return Promise.reject(error)
   }
 )
