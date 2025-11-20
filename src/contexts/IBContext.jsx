@@ -58,26 +58,66 @@ export const IBProvider = ({ children }) => {
 
   const fetchIBList = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      const response = await api.get('/api/amari/ib/emails');
-      
-      if (response.data.status === 'success') {
-        // Sort by percentage in ascending order
-        const sortedEmails = (response.data.data.emails || []).sort((a, b) => {
-          const percentA = parseFloat(a.percentage || 0)
-          const percentB = parseFloat(b.percentage || 0)
-          return percentA - percentB
-        });
-        setIBList(sortedEmails);
-      } else {
-        setError(response.data.message || 'Failed to fetch IB list');
+      setIsLoading(true)
+      setError(null)
+
+      // Multiple potential endpoints / shapes in case backend differs
+      const endpoints = [
+        '/api/amari/ib/emails',
+        '/api/ib/emails',
+        '/api/amari/ib/list',
+      ]
+
+      let emails = []
+      let lastMessage = null
+      for (let i = 0; i < endpoints.length; i++) {
+        const ep = endpoints[i]
+        try {
+          const response = await api.get(ep)
+          const d = response?.data
+          if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+            console.log(`[IB] Endpoint ${ep} raw response:`, d)
+          }
+          // Accept multiple possible success indicators
+          const statusOk = d?.status === 'success' || d?.success === true || d?.ok === true
+          // Extract emails array from several possible nesting patterns
+          const extracted = 
+            d?.data?.emails ||
+            d?.data?.data?.emails ||
+            d?.emails ||
+            d?.data?.items ||
+            []
+          if (statusOk && Array.isArray(extracted) && extracted.length) {
+            emails = extracted
+            break
+          }
+          // If status OK but empty, keep looking at next endpoint
+          lastMessage = d?.message || lastMessage
+        } catch (innerErr) {
+          if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+            console.warn(`[IB] Endpoint failed ${ep}:`, innerErr?.response?.status || innerErr?.code || innerErr?.message)
+          }
+        }
       }
+
+      if (!emails.length) {
+        setIBList([])
+        setError(lastMessage || 'No IBs available or endpoints returned empty list')
+        return
+      }
+
+      // Sort if percentage field exists; otherwise leave order as provided
+      const hasPercentage = emails.some(e => e?.percentage != null)
+      const sortedEmails = hasPercentage
+        ? emails.sort((a, b) => parseFloat(a.percentage || 0) - parseFloat(b.percentage || 0))
+        : emails
+      setIBList(sortedEmails)
     } catch (err) {
-      console.error('Error fetching IB list:', err);
-      setError(err.message || 'Failed to fetch IB list');
+      console.error('[IB] Error fetching IB list:', err)
+      setError(err?.message || 'Failed to fetch IB list')
+      setIBList([])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   };
 
