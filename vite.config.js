@@ -55,6 +55,25 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3001,
     proxy: {
+      // Route IB endpoints to brokereye (no api. subdomain)
+      '/api/amari/ib': {
+        target: 'https://brokereye.work.gd',
+        changeOrigin: true,
+        secure: false,
+        ws: false,
+        rewrite: (path) => path,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('IB Proxy error:', err)
+          })
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('IB Proxying request:', req.method, req.url)
+          })
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('IB Proxy response:', proxyRes.statusCode, req.url)
+          })
+        }
+      },
       '/api': {
         target: 'https://api.brokereye.work.gd',
         changeOrigin: true,

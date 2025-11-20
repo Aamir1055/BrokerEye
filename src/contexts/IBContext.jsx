@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import { brokerAPI } from '../services/api';
 
 const IBContext = createContext();
 
@@ -61,48 +61,20 @@ export const IBProvider = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      // Multiple potential endpoints / shapes in case backend differs
-      const endpoints = [
-        '/api/amari/ib/emails',
-        '/api/ib/emails',
-        '/api/amari/ib/list',
-      ]
-
-      let emails = []
-      let lastMessage = null
-      for (let i = 0; i < endpoints.length; i++) {
-        const ep = endpoints[i]
-        try {
-          const response = await api.get(ep)
-          const d = response?.data
-          if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
-            console.log(`[IB] Endpoint ${ep} raw response:`, d)
-          }
-          // Accept multiple possible success indicators
-          const statusOk = d?.status === 'success' || d?.success === true || d?.ok === true
-          // Extract emails array from several possible nesting patterns
-          const extracted = 
-            d?.data?.emails ||
-            d?.data?.data?.emails ||
-            d?.emails ||
-            d?.data?.items ||
-            []
-          if (statusOk && Array.isArray(extracted) && extracted.length) {
-            emails = extracted
-            break
-          }
-          // If status OK but empty, keep looking at next endpoint
-          lastMessage = d?.message || lastMessage
-        } catch (innerErr) {
-          if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
-            console.warn(`[IB] Endpoint failed ${ep}:`, innerErr?.response?.status || innerErr?.code || innerErr?.message)
-          }
-        }
+      const d = await brokerAPI.getIBEmails()
+      if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+        console.log('[IB] getIBEmails response:', d)
       }
+      const statusOk = d?.status === 'success' || d?.success === true || d?.ok === true
+      const emails = (
+        d?.data?.emails ||
+        d?.emails ||
+        []
+      )
 
-      if (!emails.length) {
+      if (!statusOk || !Array.isArray(emails)) {
         setIBList([])
-        setError(lastMessage || 'No IBs available or endpoints returned empty list')
+        setError(d?.message || 'Failed to fetch IB emails')
         return
       }
 
@@ -125,15 +97,14 @@ export const IBProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await api.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`);
-      
-      if (response.data.status === 'success') {
-        const accounts = response.data.data.mt5_accounts || [];
+      const d = await brokerAPI.getIBMT5Accounts(email);
+      if (d?.status === 'success') {
+        const accounts = d?.data?.mt5_accounts || [];
         // Extract just the mt5_id (login numbers) from the accounts
         const mt5Ids = accounts.map(acc => acc.mt5_id);
         setIBMT5Accounts(mt5Ids);
       } else {
-        setError(response.data.message || 'Failed to fetch MT5 accounts');
+        setError(d?.message || 'Failed to fetch MT5 accounts');
         setIBMT5Accounts([]);
       }
     } catch (err) {
