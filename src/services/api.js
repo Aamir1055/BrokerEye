@@ -530,7 +530,7 @@ export const brokerAPI = {
     if (DEBUG_LOGS) console.log('[API] Fetching IB commission totals from:', api.defaults.baseURL + '/api/amari/ib/commissions/total')
     const response = await api.get('/api/amari/ib/commissions/total')
     if (DEBUG_LOGS) console.log('[API] IB commission totals response:', response.data)
-    return response.data
+    return response
   },
 
   // Get all IB emails
@@ -538,7 +538,7 @@ export const brokerAPI = {
     if (DEBUG_LOGS) console.log('[API] Fetching IB emails from:', api.defaults.baseURL + '/api/amari/ib/emails')
     const response = await api.get('/api/amari/ib/emails')
     if (DEBUG_LOGS) console.log('[API] IB emails response:', response.data)
-    return response.data
+    return response
   },
 
   // Get MT5 accounts for a specific IB
@@ -546,7 +546,7 @@ export const brokerAPI = {
     if (DEBUG_LOGS) console.log('[API] Fetching MT5 accounts for:', email)
     const response = await api.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
     if (DEBUG_LOGS) console.log('[API] MT5 accounts response:', response.data)
-    return response.data
+    return response
   },
 
   // Search clients with advanced filtering, pagination, and sorting

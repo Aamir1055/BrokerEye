@@ -61,7 +61,8 @@ export const IBProvider = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      const d = await brokerAPI.getIBEmails()
+      const response = await brokerAPI.getIBEmails()
+      const d = response?.data
       if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
         console.log('[IB] getIBEmails response:', d)
       }
@@ -97,7 +98,9 @@ export const IBProvider = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      const d = await brokerAPI.getIBMT5Accounts(email);
+      const response = await brokerAPI.getIBMT5Accounts(email);
+      const d = response?.data;
+      
       if (d?.status === 'success') {
         const accounts = d?.data?.mt5_accounts || [];
         // Extract just the mt5_id (login numbers) from the accounts
