@@ -1,9 +1,9 @@
 import axios from 'axios'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
-// Base URL configuration
-// Hardcoded SSL API URL for production
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.brokereye.work.gd'
+// Enforced SSL base URL (no local/dev fallback). If env overrides, use that; else hardcoded.
+const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd'
+if (DEBUG_LOGS) console.log('[API] Base URL (enforced SSL):', BASE_URL)
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -53,6 +53,18 @@ api.interceptors.response.use(
     return response
   },
   async (error) => {
+    if (DEBUG_LOGS) {
+      const errInfo = {
+        message: error.message,
+        code: error.code,
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+        status: error.response?.status,
+        responseDataSnippet: typeof error.response?.data === 'string' ? error.response.data.slice(0,200) : error.response?.data
+      }
+      console.warn('[API] Axios error captured:', errInfo)
+    }
     const originalRequest = error.config
     const status = error?.response?.status
 
