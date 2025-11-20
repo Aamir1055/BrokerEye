@@ -869,7 +869,19 @@ const LiveDealingPage = () => {
 
   // Module filter: Deal (buy/sell) vs Money transactions (others) vs Both
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal' | 'money' | 'both'
-  const isTradeAction = (label) => label === 'buy' || label === 'sell'
+  // Treat all trading operations (open/close/cancel/stop/tp/sl) as "deal" module
+  const isTradeAction = (label) => {
+    const l = String(label || '').toLowerCase()
+    return (
+      l === 'buy' ||
+      l === 'sell' ||
+      l === 'cancel buy' ||
+      l === 'cancel sell' ||
+      l === 'stop out' ||
+      l === 'tp close' ||
+      l === 'sl close'
+    )
+  }
   const filterByModule = (list) => {
     if (moduleFilter === 'both') return list
     return list.filter((d) => {

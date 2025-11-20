@@ -1,7 +1,7 @@
 import axios from 'axios'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
-// Enforced SSL base URL (no local/dev fallback). If env overrides, use that; else hardcoded.
+// Enforced SSL base URL (no local/proxy fallback for core broker endpoints).
 const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd'
 if (DEBUG_LOGS) console.log('[API] Base URL (enforced SSL):', BASE_URL)
 
@@ -16,6 +16,15 @@ const api = axios.create({
 // A raw axios instance without interceptors, used for token refresh to avoid loops
 const rawApi = axios.create({
   baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 30000,
+})
+
+// Dev-only proxy for IB endpoints to avoid CORS during development while keeping prod strict
+const ibApi = axios.create({
+  baseURL: import.meta?.env?.DEV ? '' : BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -435,19 +444,19 @@ export const brokerAPI = {
 
   // Get IB commission totals
   getIBCommissionTotals: async () => {
-    const response = await api.get('/api/amari/ib/commissions/total')
+    const response = await ibApi.get('/api/amari/ib/commissions/total')
     return response.data
   },
 
   // Get all IB emails
   getIBEmails: async () => {
-    const response = await api.get('/api/amari/ib/emails')
+    const response = await ibApi.get('/api/amari/ib/emails')
     return response.data
   },
 
   // Get MT5 accounts for a specific IB
   getIBMT5Accounts: async (email) => {
-    const response = await api.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
+    const response = await ibApi.get(`/api/amari/ib/mt5-accounts?ib_email=${encodeURIComponent(email)}`)
     return response.data
   },
 
