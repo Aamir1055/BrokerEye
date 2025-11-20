@@ -1266,7 +1266,8 @@ const Client2Page = () => {
 
   // Initial fetch and refetch on dependency changes
   useEffect(() => {
-    console.log('[Client2] useEffect triggered - fetching clients')
+    console.log('[Client2] ⚡ useEffect triggered - fetchClients dependency changed')
+    console.log('[Client2] Current columnFilters:', JSON.stringify(columnFilters, null, 2))
     fetchClients()
     fetchRebateTotals()
   }, [fetchClients, fetchRebateTotals])
@@ -2183,12 +2184,16 @@ const Client2Page = () => {
     setCurrentPage(1)
     
     // Store filter in state - will be sent to API via fetchClients
-    setColumnFilters(prev => ({
-      ...prev,
-      [`${columnKey}_checkbox`]: { values: selected }
-    }))
+    setColumnFilters(prev => {
+      const updated = {
+        ...prev,
+        [`${columnKey}_checkbox`]: { values: selected }
+      }
+      console.log('[Client2] ✅ Checkbox filter updated:', JSON.stringify(updated, null, 2))
+      return updated
+    })
     
-    console.log('[Client2] ✅ Checkbox filter set - will be sent to API')
+    console.log('[Client2] ✅ Checkbox filter set - fetchClients will be triggered by useEffect')
   }
   
   const applySortToColumn = (columnKey, direction) => {
