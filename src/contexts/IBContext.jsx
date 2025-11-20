@@ -87,6 +87,12 @@ export const IBProvider = ({ children }) => {
       setIBList(sortedEmails)
     } catch (err) {
       console.error('[IB] Error fetching IB list:', err)
+      console.error('[IB] Error details:', {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status,
+        code: err?.code
+      })
       setError(err?.message || 'Failed to fetch IB list')
       setIBList([])
     } finally {
