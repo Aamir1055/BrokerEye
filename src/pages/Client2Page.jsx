@@ -900,6 +900,7 @@ const Client2Page = () => {
         if (key.endsWith('_text') && cfg) {
           const uiKey = key.replace('_text', '')
           const field = columnKeyToAPIField(uiKey)
+          textFilteredFields.add(field) // Track that this field has a text filter
           const opMap = { equal: 'equal', notEqual: 'not_equal', contains: 'contains', doesNotContain: 'not_contains', startsWith: 'starts_with', endsWith: 'ends_with' }
           const op = opMap[cfg.operator] || cfg.operator
           const val = cfg.value
@@ -913,6 +914,7 @@ const Client2Page = () => {
         if (key.endsWith('_number') && cfg) {
           const uiKey = key.replace('_number', '')
           const field = columnKeyToAPIField(uiKey)
+          numberFilteredFields.add(field) // Track that this field has a number filter
           const op = cfg.operator
           const v1 = cfg.value1
           const v2 = cfg.value2
@@ -933,6 +935,14 @@ const Client2Page = () => {
           const filterValues = columnFilters[filterKey]?.values || []
           
           if (filterValues.length > 0) {
+            const field = columnKeyToAPIField(columnKey)
+            
+            // Skip checkbox filter if text or number filter is already active for this field
+            if (textFilteredFields.has(field) || numberFilteredFields.has(field)) {
+              console.log(`[Client2] 🔍 Checkbox ${columnKey}: skipped (text/number filter active)`)
+              return
+            }
+            
             // Special-case: login filters should use mt5Accounts for proper OR semantics
             if (columnKey === 'login') {
               checkboxLoginIds = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
@@ -966,8 +976,8 @@ const Client2Page = () => {
                 console.log(`[Client2] 🔍 Checkbox ${columnKey}: single value equal filter`)
               } else if (selectedValues.length > 50) {
                 // Too many values for multi-request approach - skip filtering with warning
-                console.warn(`[Client2] ⚠️ Checkbox ${columnKey}: ${selectedValues.length} values selected (limit: 50). Filter skipped to prevent network overload. Please use fewer selections or apply manually.`)
-                setError(`Too many ${columnKey} values selected (${selectedValues.length}). Please select 50 or fewer values, or use the inverse selection.`)
+                console.warn(`[Client2] ⚠️ Checkbox ${columnKey}: ${selectedValues.length} values selected (limit: 50). Checkbox filter ignored. Use text/number filter instead.`)
+                // Don't set error here - let the text filter work if present
               } else {
                 // Multiple values (2-50): use multi-request OR approach
                 if (multiOrField && multiOrField !== field) {
