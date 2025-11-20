@@ -22,15 +22,15 @@ const rawApi = axios.create({
   timeout: 30000,
 })
 
-// IB endpoints use hardcoded SSL domain (always https://api.brokereye.work.gd)
+// IB endpoints use different domain (https://brokereye.work.gd without api. subdomain)
 const ibApi = axios.create({
-  baseURL: 'https://api.brokereye.work.gd',
+  baseURL: 'https://brokereye.work.gd',
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
 })
-if (DEBUG_LOGS) console.log('[API] IB Base URL (hardcoded):', 'https://api.brokereye.work.gd')
+if (DEBUG_LOGS) console.log('[API] IB Base URL (hardcoded):', 'https://brokereye.work.gd')
 
 // Refresh handling state
 let isRefreshing = false
