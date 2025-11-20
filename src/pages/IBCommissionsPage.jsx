@@ -80,8 +80,8 @@ const IBCommissionsPage = () => {
     try {
       setTotalsLoading(true)
       const response = await brokerAPI.getIBCommissionTotals()
-      if (response.status === 'success' && response.data) {
-        const data = { ...response.data }
+      if (response?.data?.status === 'success' && response?.data?.data) {
+        const data = response.data.data
         // Backend handles USC normalization; use values as-is
         setTotalCommission(data.total_commission || 0)
         setTotalAvailableCommission(data.total_available_commission || 0)
@@ -122,9 +122,9 @@ const IBCommissionsPage = () => {
       setError('')
       const response = await brokerAPI.getIBCommissions(currentPage, itemsPerPage, searchQuery, sortColumn, sortDirection)
       
-      if (response.status === 'success' && response.data) {
-        setCommissions(response.data.records || [])
-        const pagination = response.data.pagination || {}
+      if (response?.data?.status === 'success' && response?.data?.data) {
+        setCommissions(response.data.data.records || [])
+        const pagination = response.data.data.pagination || {}
         setTotalPages(pagination.total_pages || 1)
         setTotalRecords(pagination.total_records || 0)
       } else {
