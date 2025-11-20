@@ -122,9 +122,9 @@ const IBCommissionsPage = () => {
       setError('')
       const response = await brokerAPI.getIBCommissions(currentPage, itemsPerPage, searchQuery, sortColumn, sortDirection)
       
-      if (response?.data?.data) {
-        setCommissions(response.data.data.records || [])
-        const pagination = response.data.data.pagination || {}
+      if (response?.data) {
+        setCommissions(response.data.records || [])
+        const pagination = response.data.pagination || {}
         setTotalPages(pagination.total_pages || 1)
         setTotalRecords(pagination.total_records || 0)
       } else {
