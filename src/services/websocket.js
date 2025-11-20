@@ -40,9 +40,8 @@ class WebSocketService {
         dwarn('[WebSocket] No access token found in localStorage')
         return null
       }
-      // Connect directly to backend WebSocket server (bypassing Apache proxy issues)
-      // Backend is on port 8080, WebSocket endpoint is the same
-      return `ws://185.136.159.142:8080/api/broker/ws?token=${token}`
+      // Use secure WebSocket with SSL domain
+      return `wss://api.brokereye.work.gd/api/broker/ws?token=${token}`
     } catch (error) {
       console.error('[WebSocket] Error getting WebSocket URL:', error)
       return null

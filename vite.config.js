@@ -56,9 +56,9 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://185.136.159.142:8080',
+        target: 'https://api.brokereye.work.gd',
         changeOrigin: true,
-        secure: false,
+        secure: true, // Enable SSL verification for HTTPS
         ws: true, // Enable WebSocket proxying
         rewrite: (path) => path,
         configure: (proxy, options) => {
