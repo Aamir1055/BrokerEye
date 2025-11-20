@@ -1981,8 +1981,8 @@ const ClientsPage = () => {
       // Commission metrics: amounts from API, percentage cards from column sums
       totalCommission: commissionTotals?.total_commission || 0,
       availableCommission: commissionTotals?.total_available_commission || 0,
-      totalCommissionPercent: sum('applied_percentage'),
-      availableCommissionPercent: sum('applied_percentage'),
+      totalCommissionPercent: commissionTotals?.total_commission_percentage || 0,
+      availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
       blockedCommission: sum('blockedCommission'),
       // Bonus metrics
       dailyBonusIn,
