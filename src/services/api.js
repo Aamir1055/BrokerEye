@@ -22,13 +22,9 @@ const rawApi = axios.create({
   timeout: 30000,
 })
 
-// Base URL for IB endpoints — uses the same domain as main API
-const IB_BASE = import.meta?.env?.VITE_IB_BASE_URL || (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd')
-if (DEBUG_LOGS) console.log('[API] IB Base URL:', IB_BASE, '(empty = use proxy)')
-
-// Dev-only relative base lets Vite proxy route to proper upstream; prod uses IB_BASE domain
+// IB endpoints use the same base URL as main API (same domain for all broker endpoints)
 const ibApi = axios.create({
-  baseURL: IB_BASE,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
