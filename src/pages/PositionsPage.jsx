@@ -44,6 +44,8 @@ const PositionsPage = () => {
   const searchRef = useRef(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const netColumnSelectorRef = useRef(null)
+  const clientNetColumnSelectorRef = useRef(null)
   
   // Pagination and sorting for Positions view
   const [currentPage, setCurrentPage] = useState(1)
@@ -212,25 +214,27 @@ const PositionsPage = () => {
     const effective = { ...visibleColumns }
     
     if (displayMode === 'value') {
-      // Hide all percentage columns
+      // Without Percentage: Hide all percentage columns
       effective.volumePercentage = false
       effective.profitPercentage = false
       effective.storagePercentage = false
     } else if (displayMode === 'percentage') {
-      // Hide value columns that have percentage equivalents, show percentage columns
+      // Show My Percentage: Hide value columns, show only percentage columns
       effective.volume = false
       effective.profit = false
       effective.storage = false
-      // Respect user toggle for percentage columns instead of forcing them on
-      effective.volumePercentage = !!visibleColumns.volumePercentage
-      effective.profitPercentage = !!visibleColumns.profitPercentage
-      effective.storagePercentage = !!visibleColumns.storagePercentage
+      // Show percentage columns
+      effective.volumePercentage = true
+      effective.profitPercentage = true
+      effective.storagePercentage = true
     } else if (displayMode === 'both') {
-      // Show both value and percentage columns for metrics
-      // Respect individual toggles; do not auto-enable percentage columns
-      effective.volumePercentage = !!visibleColumns.volumePercentage
-      effective.profitPercentage = !!visibleColumns.profitPercentage
-      effective.storagePercentage = !!visibleColumns.storagePercentage
+      // Both: Show value and percentage columns side by side
+      effective.volume = true
+      effective.volumePercentage = true
+      effective.profit = true
+      effective.profitPercentage = true
+      effective.storage = true
+      effective.storagePercentage = true
     }
     
     return effective
@@ -561,13 +565,19 @@ const PositionsPage = () => {
       if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(event.target)) {
         setClientNetCardFilterOpen(false)
       }
+      if (netColumnSelectorRef.current && !netColumnSelectorRef.current.contains(event.target)) {
+        setNetShowColumnSelector(false)
+      }
+      if (clientNetColumnSelectorRef.current && !clientNetColumnSelectorRef.current.contains(event.target)) {
+        setClientNetShowColumnSelector(false)
+      }
     }
     
-    if (showSuggestions || showColumnSelector || showDisplayMenu || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen) {
+    if (showSuggestions || showColumnSelector || showDisplayMenu || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions, showColumnSelector, showDisplayMenu, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen])
+  }, [showSuggestions, showColumnSelector, showDisplayMenu, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -764,6 +774,48 @@ const PositionsPage = () => {
   }
   
   const pageSizeOptions = generatePageSizeOptions()
+  
+  // Generate NET Position page size options based on data count
+  const generateNetPageSizeOptions = () => {
+    const base = [25, 50, 100, 200]
+    const totalCount = netFilteredPositions.length
+    
+    // Only include options that are less than or equal to total count
+    const validOptions = base.filter(size => size < totalCount)
+    
+    // If total count is greater than 0 and not already in the list, add it
+    if (totalCount > 0 && !base.includes(totalCount)) {
+      validOptions.push(totalCount)
+    } else if (totalCount > 0 && totalCount <= 200) {
+      // If total is a base number, include it
+      if (!validOptions.includes(totalCount)) {
+        validOptions.push(totalCount)
+      }
+    }
+    
+    return validOptions.length > 0 ? validOptions.sort((a, b) => a - b) : [25]
+  }
+  
+  // Generate Client NET page size options based on data count
+  const generateClientNetPageSizeOptions = () => {
+    const base = [25, 50, 100, 200]
+    const totalCount = clientNetFilteredPositions.length
+    
+    // Only include options that are less than or equal to total count
+    const validOptions = base.filter(size => size < totalCount)
+    
+    // If total count is greater than 0 and not already in the list, add it
+    if (totalCount > 0 && !base.includes(totalCount)) {
+      validOptions.push(totalCount)
+    } else if (totalCount > 0 && totalCount <= 200) {
+      // If total is a base number, include it
+      if (!validOptions.includes(totalCount)) {
+        validOptions.push(totalCount)
+      }
+    }
+    
+    return validOptions.length > 0 ? validOptions.sort((a, b) => a - b) : [25]
+  }
   
   // Search function
   const searchPositions = (positionsToSearch) => {
@@ -1426,7 +1478,7 @@ const PositionsPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700/70 transition-all select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1 text-white"
@@ -1919,7 +1971,7 @@ const PositionsPage = () => {
           </div>
 
           {/* Stats Summary */}
-          <div className={`grid gap-2 sm:gap-3 mb-4 ${displayMode === 'both' ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
             <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
               <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Positions</p>
               {isInitialPositionsLoading ? (
@@ -2017,11 +2069,10 @@ const PositionsPage = () => {
                     <div className="flex items-center flex-wrap gap-2">
                       <span className="text-xs text-gray-600">Show:</span>
                       <select value={netItemsPerPage} onChange={(e)=>handleNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        {['All',25,50,100,200].map(o=> <option key={o} value={o}>{o}</option>)}
+                        {generateNetPageSizeOptions().map(o=> <option key={o} value={o}>{o}</option>)}
                       </select>
                       <span className="text-xs text-gray-600">entries</span>
-                      {netItemsPerPage !== 'All' && (
-                        <div className="flex items-center gap-2 ml-3">
+                      <div className="flex items-center gap-2 ml-3">
                           <button
                             onClick={()=>handleNetPageChange(netCurrentPage-1)}
                             disabled={netCurrentPage===1}
@@ -2042,7 +2093,6 @@ const PositionsPage = () => {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                           </button>
                         </div>
-                      )}
                       <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -2052,7 +2102,7 @@ const PositionsPage = () => {
                         Export CSV
                       </button>
                       {/* Columns selector next to Export */}
-                      <div className="relative">
+                      <div className="relative" ref={netColumnSelectorRef}>
                         <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide NET columns">
                           <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                           Columns
@@ -2406,11 +2456,10 @@ const PositionsPage = () => {
                   <div className="flex items-center flex-wrap gap-2">
                     <span className="text-xs text-gray-600">Show:</span>
                     <select value={clientNetItemsPerPage} onChange={(e)=>handleClientNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      {['All',25,50,100,200].map(o=> <option key={o} value={o}>{o}</option>)}
+                      {generateClientNetPageSizeOptions().map(o=> <option key={o} value={o}>{o}</option>)}
                     </select>
                     <span className="text-xs text-gray-600">entries</span>
-                    {clientNetItemsPerPage !== 'All' && (
-                      <div className="flex items-center gap-2 ml-3">
+                    <div className="flex items-center gap-2 ml-3">
                         <button
                           onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
                           disabled={clientNetCurrentPage===1}
@@ -2431,7 +2480,6 @@ const PositionsPage = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                       </div>
-                    )}
                     <span className="text-[11px] text-gray-500 ml-2">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
                   </div>
                   {/* Right: actions */}
@@ -2442,7 +2490,7 @@ const PositionsPage = () => {
                     </button>
                     
                     {/* Columns selector */}
-                    <div className="relative">
+                    <div className="relative" ref={clientNetColumnSelectorRef}>
                       <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
                         <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                         Columns

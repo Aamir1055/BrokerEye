@@ -284,22 +284,11 @@ const MarginLevelPage = () => {
     window.dispatchEvent(new Event('marginLevelCountChanged'))
   }, [filtered.length])
 
-  // Generate dynamic pagination options based on data count
+  // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
-    const options = ['All']
+    const baseSizes = [25, 50, 100, 200]
     const totalCount = filtered.length
-    
-    // Generate options incrementing by 50, up to total count
-    for (let i = 50; i < totalCount; i += 50) {
-      options.push(i)
-    }
-    
-    // Always show total count as an option if it's not already included
-    if (totalCount > 0 && totalCount % 50 !== 0 && !options.includes(totalCount)) {
-      options.push(totalCount)
-    }
-    
-    return options
+    return baseSizes.filter(size => size <= totalCount)
   }
   
   const pageSizeOptions = generatePageSizeOptions()
@@ -435,9 +424,9 @@ const MarginLevelPage = () => {
   }
   
   // Pagination logic
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedAccounts.length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? sortedAccounts.length : startIndex + itemsPerPage
+  const totalPages = Math.ceil(sortedAccounts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const displayedAccounts = sortedAccounts.slice(startIndex, endIndex)
   
   // Reset to page 1 when items per page changes
@@ -896,17 +885,18 @@ const MarginLevelPage = () => {
             </div>
           </div>
 
-          {/* Pagination Controls - Always visible */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+          {/* Pagination Controls - Only show when there is data */}
+          {displayedAccounts.length > 0 && (
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3 relative z-50">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               >
                 {pageSizeOptions.map((size) => (
-                  <option key={size} value={size}>
+                  <option key={size} value={size} className="text-gray-900 bg-white">
                     {size}
                   </option>
                 ))}
@@ -916,9 +906,8 @@ const MarginLevelPage = () => {
             
             <div className="flex items-center gap-3">
               {/* Page Navigation */}
-              {itemsPerPage !== 'All' && (
-                <div className="flex items-center gap-2">
-                  <button
+              <div className="flex items-center gap-2">
+                <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className={`p-1.5 rounded-md transition-colors ${
@@ -950,7 +939,6 @@ const MarginLevelPage = () => {
                     </svg>
                   </button>
                 </div>
-              )}
               
               {/* Columns Button */}
               <div className="relative">
@@ -1050,6 +1038,7 @@ const MarginLevelPage = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Table - Show skeleton while loading */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>

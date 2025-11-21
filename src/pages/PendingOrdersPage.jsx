@@ -310,22 +310,11 @@ const PendingOrdersPage = () => {
     }
   }
 
-  // Generate dynamic pagination options based on data count
+  // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
-    const options = ['All']
+    const baseSizes = [25, 50, 100, 200]
     const totalCount = cachedOrders.length
-    
-    // Generate options incrementing by 50, up to total count
-    for (let i = 50; i < totalCount; i += 50) {
-      options.push(i)
-    }
-    
-    // Always show total count as an option if it's not already included
-    if (totalCount > 0 && totalCount % 50 !== 0 && !options.includes(totalCount)) {
-      options.push(totalCount)
-    }
-    
-    return options
+    return baseSizes.filter(size => size <= totalCount)
   }
   
   const pageSizeOptions = generatePageSizeOptions()
@@ -461,9 +450,9 @@ const PendingOrdersPage = () => {
   }
   
   // Pagination logic
-  const totalPages = itemsPerPage === 'All' ? 1 : Math.ceil(sortedOrders.length / itemsPerPage)
-  const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-  const endIndex = itemsPerPage === 'All' ? sortedOrders.length : startIndex + itemsPerPage
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
   const displayedOrders = sortedOrders.slice(startIndex, endIndex)
   
   // Reset to page 1 when items per page changes
@@ -502,7 +491,7 @@ const PendingOrdersPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700/70 transition-all select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider transition-all select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1"
@@ -972,12 +961,12 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Pagination Controls - Top */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
+          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3 relative z-50">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
               >
                 {pageSizeOptions.map((size) => (
