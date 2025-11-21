@@ -2056,14 +2056,11 @@ const ClientsPage = () => {
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      // PnL percentage calculations: compute from aggregated totals to avoid USC inflation
-      dailyPnLPercent: previousEquity !== 0 ? (sum('dailyPnL') / previousEquity) * 100 : 0,
-      thisWeekPnLPercent: weekPreviousEquity !== 0 ? (sum('thisWeekPnL') / weekPreviousEquity) * 100 : 0,
-      thisMonthPnLPercent: monthPreviousEquity !== 0 ? (sum('thisMonthPnL') / monthPreviousEquity) * 100 : 0,
-      lifetimePnLPercent: (() => {
-        const netDep = lifetimeDeposit - lifetimeWithdrawal
-        return netDep !== 0 ? (sum('lifetimePnL') / netDep) * 100 : 0
-      })()
+      // PnL percentage: sum individual client percentages (already normalized by backend)
+      dailyPnLPercent: sum('dailyPnL_percentage'),
+      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
+      thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
+      lifetimePnLPercent: sum('lifetimePnL_percentage')
     }
     
     return totals
