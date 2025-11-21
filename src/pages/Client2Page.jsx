@@ -825,6 +825,48 @@ const Client2Page = () => {
     }
   }, [columnWidths])
 
+  // Apply client-side checkbox filters to fetched clients
+  const applyClientSideCheckboxFilters = (clients, filters) => {
+    if (!clients || clients.length === 0) return clients
+
+    return clients.filter(client => {
+      // Check each checkbox filter
+      for (const [filterKey, filterData] of Object.entries(filters)) {
+        if (!filterKey.endsWith('_checkbox')) continue
+        
+        const columnKey = filterKey.replace('_checkbox', '')
+        if (columnKey === 'login') continue // login is handled server-side
+        
+        const selectedValues = filterData?.values || []
+        if (selectedValues.length === 0) continue
+
+        // Get client value for this column
+        let clientValue = client[columnKey]
+        
+        // Handle nested properties (e.g., 'group.name')
+        if (columnKey.includes('.')) {
+          const parts = columnKey.split('.')
+          clientValue = client
+          for (const part of parts) {
+            clientValue = clientValue?.[part]
+            if (clientValue === undefined) break
+          }
+        }
+
+        // Convert to string for comparison
+        const clientValueStr = String(clientValue || '').trim()
+        const selectedValuesStr = selectedValues.map(v => String(v).trim())
+
+        // Check if client value matches any selected value
+        if (!selectedValuesStr.includes(clientValueStr)) {
+          return false // Exclude this client
+        }
+      }
+
+      return true // Include this client
+    })
+  }
+
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
     console.log('[Client2] fetchClients called - silent:', silent, 'columnFilters:', columnFilters)
