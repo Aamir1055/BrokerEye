@@ -2056,10 +2056,29 @@ const ClientsPage = () => {
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      dailyPnLPercent: sum('dailyPnL_percentage'),
-      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
-      thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
-      lifetimePnLPercent: sum('lifetimePnL_percentage')
+      // Corrected PnL percentage aggregation: compute from global totals rather than summing per-client percentages
+      dailyPnLPercent: (() => {
+        const totalDaily = sum('dailyPnL')
+        const totalPrevEq = sum('previousEquity')
+        return totalPrevEq !== 0 ? (totalDaily / totalPrevEq) * 100 : 0
+      })(),
+      thisWeekPnLPercent: (() => {
+        const totalWeekPnl = sum('thisWeekPnL')
+        const totalWeekPrevEq = sum('thisWeekPreviousEquity')
+        return totalWeekPrevEq !== 0 ? (totalWeekPnl / totalWeekPrevEq) * 100 : 0
+      })(),
+      thisMonthPnLPercent: (() => {
+        const totalMonthPnl = sum('thisMonthPnL')
+        const totalMonthPrevEq = sum('thisMonthPreviousEquity')
+        return totalMonthPrevEq !== 0 ? (totalMonthPnl / totalMonthPrevEq) * 100 : 0
+      })(),
+      lifetimePnLPercent: (() => {
+        const totalLifePnl = sum('lifetimePnL')
+        const totalLifeDep = sum('lifetimeDeposit')
+        const totalLifeWith = sum('lifetimeWithdrawal')
+        const netDeposit = totalLifeDep - totalLifeWith
+        return netDeposit !== 0 ? (totalLifePnl / netDeposit) * 100 : 0
+      })()
     }
     
     return totals
