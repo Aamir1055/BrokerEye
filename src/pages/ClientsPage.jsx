@@ -2059,6 +2059,7 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
+      // Daily PnL % derived from ratio of total daily PnL vs previous equity snapshot
       dailyPnLPercent: (() => {
         let totalWeight = 0
         let weighted = 0
@@ -2066,7 +2067,8 @@ const ClientsPage = () => {
         for (const c of list) {
           if (!c) continue
           const pct = Number(c?.dailyPnL_percentage)
-          const w = Number(c?.equity)
+          // Weight by previousEquity (baseline for daily %), not current equity
+          const w = Number(c?.previousEquity)
           if (Number.isFinite(pct)) {
             count++
             if (Number.isFinite(w) && w > 0) {
@@ -2075,13 +2077,18 @@ const ClientsPage = () => {
             }
           }
         }
+        // Prefer aggregated ratio if we have both totals
+        if (previousEquity > 0) {
+          const rawDaily = Number(sum('dailyPnL'))
+          if (Number.isFinite(rawDaily)) return (rawDaily / previousEquity) * 100
+        }
         if (totalWeight > 0) return weighted / totalWeight
-        // Fallback: simple average of available percentages
         if (count === 0) return 0
         let simpleSum = 0
         for (const c of list) simpleSum += Number(c?.dailyPnL_percentage) || 0
         return simpleSum / count
       })(),
+      // This Week PnL % derived from total thisWeekPnL vs weekPreviousEquity when available
       thisWeekPnLPercent: (() => {
         let totalWeight = 0
         let weighted = 0
@@ -2089,7 +2096,8 @@ const ClientsPage = () => {
         for (const c of list) {
           if (!c) continue
           const pct = Number(c?.thisWeekPnL_percentage)
-          const w = Number(c?.equity)
+          // Weight by thisWeekPreviousEquity baseline if present
+          const w = Number(c?.thisWeekPreviousEquity)
           if (Number.isFinite(pct)) {
             count++
             if (Number.isFinite(w) && w > 0) {
@@ -2097,6 +2105,10 @@ const ClientsPage = () => {
               totalWeight += w
             }
           }
+        }
+        if (weekPreviousEquity > 0) {
+          const rawWeek = Number(sum('thisWeekPnL'))
+          if (Number.isFinite(rawWeek)) return (rawWeek / weekPreviousEquity) * 100
         }
         if (totalWeight > 0) return weighted / totalWeight
         if (count === 0) return 0
@@ -2108,6 +2120,7 @@ const ClientsPage = () => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
       })(),
+      // Lifetime PnL %: use weighted average; aggregated ratio not reliable without initial equity baseline
       lifetimePnLPercent: (() => {
         let totalWeight = 0
         let weighted = 0
