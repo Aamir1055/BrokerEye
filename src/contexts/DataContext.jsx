@@ -1074,34 +1074,37 @@ export const DataProvider = ({ children }) => {
               }
             }
             
-            // Recalculate percentage fields if base values changed
-            // Note: These recalculated percentages are already in correct 0-100 scale,
-            // so we mark them to prevent double-normalization for USC currency
+            // Recalculate percentage fields ONLY if not provided by backend
+            // Backend sends accurate percentage values, only calculate as fallback
             const recalculatedPercentages = new Set()
             
-            // Daily PnL %
-            if (updatedAccount.dailyPnL !== undefined || updatedAccount.previousEquity !== undefined) {
+            // Daily PnL % - only calculate if backend didn't send it
+            if (updatedAccount.dailyPnL_percentage === undefined && 
+                (updatedAccount.dailyPnL !== undefined || updatedAccount.previousEquity !== undefined)) {
               const dailyPnL = toNum(merged.dailyPnL)
               const prevEquity = toNum(merged.previousEquity)
               merged.dailyPnL_percentage = prevEquity !== 0 ? (dailyPnL / prevEquity) * 100 : 0
               recalculatedPercentages.add('dailyPnL_percentage')
             }
-            // Weekly PnL %
-            if (updatedAccount.thisWeekPnL !== undefined || updatedAccount.thisWeekPreviousEquity !== undefined) {
+            // Weekly PnL % - only calculate if backend didn't send it
+            if (updatedAccount.thisWeekPnL_percentage === undefined &&
+                (updatedAccount.thisWeekPnL !== undefined || updatedAccount.thisWeekPreviousEquity !== undefined)) {
               const weekPnL = toNum(merged.thisWeekPnL)
               const weekPrevEquity = toNum(merged.thisWeekPreviousEquity)
               merged.thisWeekPnL_percentage = weekPrevEquity !== 0 ? (weekPnL / weekPrevEquity) * 100 : 0
               recalculatedPercentages.add('thisWeekPnL_percentage')
             }
-            // Monthly PnL %
-            if (updatedAccount.thisMonthPnL !== undefined || updatedAccount.thisMonthPreviousEquity !== undefined) {
+            // Monthly PnL % - only calculate if backend didn't send it
+            if (updatedAccount.thisMonthPnL_percentage === undefined &&
+                (updatedAccount.thisMonthPnL !== undefined || updatedAccount.thisMonthPreviousEquity !== undefined)) {
               const monthPnL = toNum(merged.thisMonthPnL)
               const monthPrevEquity = toNum(merged.thisMonthPreviousEquity)
               merged.thisMonthPnL_percentage = monthPrevEquity !== 0 ? (monthPnL / monthPrevEquity) * 100 : 0
               recalculatedPercentages.add('thisMonthPnL_percentage')
             }
-            // Lifetime PnL %
-            if (updatedAccount.lifetimePnL !== undefined || updatedAccount.lifetimeDeposit !== undefined || updatedAccount.lifetimeWithdrawal !== undefined) {
+            // Lifetime PnL % - only calculate if backend didn't send it
+            if (updatedAccount.lifetimePnL_percentage === undefined &&
+                (updatedAccount.lifetimePnL !== undefined || updatedAccount.lifetimeDeposit !== undefined || updatedAccount.lifetimeWithdrawal !== undefined)) {
               const lifetimePnL = toNum(merged.lifetimePnL)
               const lifetimeDeposit = toNum(merged.lifetimeDeposit)
               const lifetimeWithdrawal = toNum(merged.lifetimeWithdrawal)
