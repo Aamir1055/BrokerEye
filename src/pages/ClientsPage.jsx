@@ -2059,10 +2059,25 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL %: align with other percent cards (sum of percentage column)
-      dailyPnLPercent: sum('dailyPnL_percentage'),
-      // This Week PnL %: align with other percent cards (sum of percentage column)
-      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
+      // Daily PnL %: use portfolio ratio for reactivity instead of inflated static sum.
+      // Summing per-client percentages produces a large mostly-static number; ratio reflects real movement.
+      dailyPnLPercent: (() => {
+        const totalDailyPnL = sum('dailyPnL')
+        const totalEquity = sum('equity')
+        if (totalEquity > 0 && Number.isFinite(totalDailyPnL)) {
+          return (totalDailyPnL / totalEquity) * 100
+        }
+        return 0
+      })(),
+      // This Week PnL %: same rationale – show portfolio weekly performance as percent of current equity.
+      thisWeekPnLPercent: (() => {
+        const totalWeekPnL = sum('thisWeekPnL')
+        const totalEquity = sum('equity')
+        if (totalEquity > 0 && Number.isFinite(totalWeekPnL)) {
+          return (totalWeekPnL / totalEquity) * 100
+        }
+        return 0
+      })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
