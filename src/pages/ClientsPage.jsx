@@ -2059,24 +2059,65 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL %: use portfolio ratio for reactivity instead of inflated static sum.
-      // Summing per-client percentages produces a large mostly-static number; ratio reflects real movement.
+      // Daily PnL %: derive using estimated start-of-day equity baseline to avoid distorted ratios.
+      // baseline ~= current equity - dailyPnL - (net deposits) - (net bonus). Credit flows not tracked daily here.
       dailyPnLPercent: (() => {
         const totalDailyPnL = sum('dailyPnL')
-        const totalEquity = sum('equity')
-        if (totalEquity > 0 && Number.isFinite(totalDailyPnL)) {
-          return (totalDailyPnL / totalEquity) * 100
+        const equityCurrent = sum('equity')
+        const dailyDepositTotal = sum('dailyDeposit')
+        const dailyWithdrawalTotal = sum('dailyWithdrawal')
+        const dailyBonusInTotal = sum('dailyBonusIn')
+        const dailyBonusOutTotal = sum('dailyBonusOut')
+        const netDW = dailyDepositTotal - dailyWithdrawalTotal
+        const netBonus = dailyBonusInTotal - dailyBonusOutTotal
+        const baselineEst = equityCurrent - totalDailyPnL - netDW - netBonus
+        if (baselineEst > 0 && Number.isFinite(totalDailyPnL)) {
+          const ratio = (totalDailyPnL / baselineEst) * 100
+          if (Number.isFinite(ratio)) return ratio
         }
-        return 0
+        // Fallback: equity-weighted average of client percentages
+        let weighted = 0, wSum = 0, count = 0, simpleSum = 0
+        for (const c of list) {
+          const pct = Number(c?.dailyPnL_percentage)
+          const eq = Number(c?.equity)
+          if (Number.isFinite(pct)) {
+            simpleSum += pct; count++
+            if (Number.isFinite(eq) && eq > 0) { weighted += pct * eq; wSum += eq }
+          }
+        }
+        if (wSum > 0) return weighted / wSum
+        return count > 0 ? (simpleSum / count) : 0
       })(),
-      // This Week PnL %: same rationale – show portfolio weekly performance as percent of current equity.
+      // This Week PnL %: baseline ~= current equity - weekPnL - netDW(week) - netBonus(week) - netCredit(week).
       thisWeekPnLPercent: (() => {
         const totalWeekPnL = sum('thisWeekPnL')
-        const totalEquity = sum('equity')
-        if (totalEquity > 0 && Number.isFinite(totalWeekPnL)) {
-          return (totalWeekPnL / totalEquity) * 100
+        const equityCurrent = sum('equity')
+        const weekDepositTotal = sum('thisWeekDeposit')
+        const weekWithdrawalTotal = sum('thisWeekWithdrawal')
+        const weekBonusInTotal = sum('thisWeekBonusIn')
+        const weekBonusOutTotal = sum('thisWeekBonusOut')
+        const weekCreditInTotal = sum('thisWeekCreditIn')
+        const weekCreditOutTotal = sum('thisWeekCreditOut')
+        const netDW = weekDepositTotal - weekWithdrawalTotal
+        const netBonus = weekBonusInTotal - weekBonusOutTotal
+        const netCredit = weekCreditInTotal - weekCreditOutTotal
+        const baselineEst = equityCurrent - totalWeekPnL - netDW - netBonus - netCredit
+        if (baselineEst > 0 && Number.isFinite(totalWeekPnL)) {
+          const ratio = (totalWeekPnL / baselineEst) * 100
+          if (Number.isFinite(ratio)) return ratio
         }
-        return 0
+        // Fallback to equity-weighted average then simple average
+        let weighted = 0, wSum = 0, count = 0, simpleSum = 0
+        for (const c of list) {
+          const pct = Number(c?.thisWeekPnL_percentage)
+          const eq = Number(c?.equity)
+          if (Number.isFinite(pct)) {
+            simpleSum += pct; count++
+            if (Number.isFinite(eq) && eq > 0) { weighted += pct * eq; wSum += eq }
+          }
+        }
+        if (wSum > 0) return weighted / wSum
+        return count > 0 ? (simpleSum / count) : 0
       })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
