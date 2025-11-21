@@ -88,15 +88,7 @@ const LiveDealingPage = () => {
   
   // Load visible columns from localStorage or use defaults
   const getInitialVisibleColumns = () => {
-    const saved = localStorage.getItem('liveDealingPageVisibleColumns')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Failed to parse saved columns:', e)
-      }
-    }
-    return {
+    const defaults = {
       deal: true,
       time: true,
       login: true,
@@ -117,6 +109,18 @@ const LiveDealingPage = () => {
       position: false,
       reason: false
     }
+    
+    const saved = localStorage.getItem('liveDealingPageVisibleColumns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Merge saved with defaults to ensure new columns appear even if localStorage is old
+        return { ...defaults, ...parsed }
+      } catch (e) {
+        console.error('Failed to parse saved columns:', e)
+      }
+    }
+    return defaults
   }
   
   const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
