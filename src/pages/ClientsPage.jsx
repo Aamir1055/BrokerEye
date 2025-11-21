@@ -2059,27 +2059,10 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL % (Consistent aggregation): simple average of client dailyPnL_percentage values.
-      // Avoid sum (inflates) and ratio (diverges from other percentage cards approach).
-      dailyPnLPercent: (() => {
-        let sumPct = 0
-        let count = 0
-        for (const c of list) {
-          const v = Number(c?.dailyPnL_percentage)
-          if (Number.isFinite(v)) { sumPct += v; count++ }
-        }
-        return count > 0 ? (sumPct / count) : 0
-      })(),
-      // This Week PnL %: simple average of client thisWeekPnL_percentage values for consistency.
-      thisWeekPnLPercent: (() => {
-        let sumPct = 0
-        let count = 0
-        for (const c of list) {
-          const v = Number(c?.thisWeekPnL_percentage)
-          if (Number.isFinite(v)) { sumPct += v; count++ }
-        }
-        return count > 0 ? (sumPct / count) : 0
-      })(),
+      // Daily PnL %: align with other percent cards (sum of percentage column)
+      dailyPnLPercent: sum('dailyPnL_percentage'),
+      // This Week PnL %: align with other percent cards (sum of percentage column)
+      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
