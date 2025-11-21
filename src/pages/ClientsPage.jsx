@@ -2059,62 +2059,41 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL % derived from ratio of total daily PnL vs previous equity snapshot
+      // Daily PnL %: Derive from portfolio ratio when equity data available, else average client percentages.
       dailyPnLPercent: (() => {
-        let totalWeight = 0
-        let weighted = 0
+        console.log('[AGG] dailyPnLPercent ratio path check')
+        const totalEquityForRatio = sum('equity')
+        const totalDailyPnL = sum('dailyPnL')
+        if (totalEquityForRatio > 0 && Number.isFinite(totalDailyPnL)) {
+          const v = (totalDailyPnL / totalEquityForRatio) * 100
+          console.log('[AGG] dailyPnLPercent ratio=', v, 'totalDailyPnL=', totalDailyPnL, 'totalEquity=', totalEquityForRatio)
+          return (totalDailyPnL / totalEquityForRatio) * 100
+        }
         let count = 0
+        let sumPct = 0
         for (const c of list) {
-          if (!c) continue
           const pct = Number(c?.dailyPnL_percentage)
-          // Weight by previousEquity (baseline for daily %), not current equity
-          const w = Number(c?.previousEquity)
-          if (Number.isFinite(pct)) {
-            count++
-            if (Number.isFinite(w) && w > 0) {
-              weighted += pct * w
-              totalWeight += w
-            }
-          }
+            if (Number.isFinite(pct)) { sumPct += pct; count++ }
         }
-        // Prefer aggregated ratio if we have both totals
-        if (previousEquity > 0) {
-          const rawDaily = Number(sum('dailyPnL'))
-          if (Number.isFinite(rawDaily)) return (rawDaily / previousEquity) * 100
-        }
-        if (totalWeight > 0) return weighted / totalWeight
-        if (count === 0) return 0
-        let simpleSum = 0
-        for (const c of list) simpleSum += Number(c?.dailyPnL_percentage) || 0
-        return simpleSum / count
+        return count > 0 ? (sumPct / count) : 0
       })(),
-      // This Week PnL % derived from total thisWeekPnL vs weekPreviousEquity when available
+      // This Week PnL %: Use portfolio ratio or average of client week percentages.
       thisWeekPnLPercent: (() => {
-        let totalWeight = 0
-        let weighted = 0
+        console.log('[AGG] thisWeekPnLPercent ratio path check')
+        const totalEquityForRatio = sum('equity')
+        const totalWeekPnL = sum('thisWeekPnL')
+        if (totalEquityForRatio > 0 && Number.isFinite(totalWeekPnL)) {
+          const v = (totalWeekPnL / totalEquityForRatio) * 100
+          console.log('[AGG] thisWeekPnLPercent ratio=', v, 'totalWeekPnL=', totalWeekPnL, 'totalEquity=', totalEquityForRatio)
+          return (totalWeekPnL / totalEquityForRatio) * 100
+        }
         let count = 0
+        let sumPct = 0
         for (const c of list) {
-          if (!c) continue
           const pct = Number(c?.thisWeekPnL_percentage)
-          // Weight by thisWeekPreviousEquity baseline if present
-          const w = Number(c?.thisWeekPreviousEquity)
-          if (Number.isFinite(pct)) {
-            count++
-            if (Number.isFinite(w) && w > 0) {
-              weighted += pct * w
-              totalWeight += w
-            }
-          }
+          if (Number.isFinite(pct)) { sumPct += pct; count++ }
         }
-        if (weekPreviousEquity > 0) {
-          const rawWeek = Number(sum('thisWeekPnL'))
-          if (Number.isFinite(rawWeek)) return (rawWeek / weekPreviousEquity) * 100
-        }
-        if (totalWeight > 0) return weighted / totalWeight
-        if (count === 0) return 0
-        let simpleSum = 0
-        for (const c of list) simpleSum += Number(c?.thisWeekPnL_percentage) || 0
-        return simpleSum / count
+        return count > 0 ? (sumPct / count) : 0
       })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
