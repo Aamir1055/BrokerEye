@@ -2074,39 +2074,29 @@ const ClientsPage = () => {
         }
         return count > 0 ? (sumPct / count) : 0
       })(),
-      // This Week PnL %: per request revert to raw SUM of client weekly PnL percentage column
-      // This Week PnL %: use equity-weighted average of client weekly percentages for smoother movement;
-      // fallback to simple average if no valid weights.
+      // This Week PnL %: compute portfolio ratio if previous-week equity proxy available, else robust outlier-trimmed average.
       thisWeekPnLPercent: (() => {
-        // DEBUG: remove after verification
-        let debugFirst = null
-        let weighted = 0
-        let totalEquity = 0
-        let count = 0
+        // Attempt ratio using total weekly PnL and aggregate equity at start of week (approximate with current if no baseline)
+        const totalWeekPnL = sum('thisWeekPnL')
+        const totalEquity = sum('equity')
+        if (totalEquity > 0 && Number.isFinite(totalWeekPnL)) {
+          const ratio = (totalWeekPnL / totalEquity) * 100
+          // Guard against extreme spikes caused by transient equity glitches
+          if (Number.isFinite(ratio) && Math.abs(ratio) < 1000) return ratio
+        }
+        // Fallback: trimmed mean of client weekly percentages (drop top/bottom 2% outliers)
+        const values = []
         for (const c of list) {
-          if (!c) continue
-            const pct = Number(c?.thisWeekPnL_percentage)
-            const eq = Number(c?.equity)
-            if (Number.isFinite(pct)) {
-              count++
-              if (debugFirst == null) debugFirst = {pct, eq}
-              if (Number.isFinite(eq) && eq > 0) {
-                weighted += pct * eq
-                totalEquity += eq
-              }
-            }
+          const v = Number(c?.thisWeekPnL_percentage)
+          if (Number.isFinite(v)) values.push(v)
         }
-        if (totalEquity > 0) {
-          const val = weighted / totalEquity
-          console.log('[Weekly%] weighted', {val, totalEquity, weighted, count, sample: debugFirst})
-          return val
-        }
-        if (count === 0) return 0
-        let sumPct = 0
-        for (const c of list) sumPct += Number(c?.thisWeekPnL_percentage) || 0
-        const avg = sumPct / count
-        console.log('[Weekly%] avg', {avg, count})
-        return avg
+        if (values.length === 0) return 0
+        values.sort((a,b)=>a-b)
+        const trimCount = Math.max(1, Math.floor(values.length * 0.02))
+        const trimmed = values.slice(trimCount, values.length - trimCount)
+        const arr = trimmed.length > 5 ? trimmed : values // ensure we don't drop almost everything
+        const sum = arr.reduce((a,b)=>a+b,0)
+        return sum / arr.length
       })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
