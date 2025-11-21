@@ -2059,66 +2059,10 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL %: derive using estimated start-of-day equity baseline to avoid distorted ratios.
-      // baseline ~= current equity - dailyPnL - (net deposits) - (net bonus). Credit flows not tracked daily here.
-      dailyPnLPercent: (() => {
-        const totalDailyPnL = sum('dailyPnL')
-        const equityCurrent = sum('equity')
-        const dailyDepositTotal = sum('dailyDeposit')
-        const dailyWithdrawalTotal = sum('dailyWithdrawal')
-        const dailyBonusInTotal = sum('dailyBonusIn')
-        const dailyBonusOutTotal = sum('dailyBonusOut')
-        const netDW = dailyDepositTotal - dailyWithdrawalTotal
-        const netBonus = dailyBonusInTotal - dailyBonusOutTotal
-        const baselineEst = equityCurrent - totalDailyPnL - netDW - netBonus
-        if (baselineEst > 0 && Number.isFinite(totalDailyPnL)) {
-          const ratio = (totalDailyPnL / baselineEst) * 100
-          if (Number.isFinite(ratio)) return ratio
-        }
-        // Fallback: equity-weighted average of client percentages
-        let weighted = 0, wSum = 0, count = 0, simpleSum = 0
-        for (const c of list) {
-          const pct = Number(c?.dailyPnL_percentage)
-          const eq = Number(c?.equity)
-          if (Number.isFinite(pct)) {
-            simpleSum += pct; count++
-            if (Number.isFinite(eq) && eq > 0) { weighted += pct * eq; wSum += eq }
-          }
-        }
-        if (wSum > 0) return weighted / wSum
-        return count > 0 ? (simpleSum / count) : 0
-      })(),
-      // This Week PnL %: baseline ~= current equity - weekPnL - netDW(week) - netBonus(week) - netCredit(week).
-      thisWeekPnLPercent: (() => {
-        const totalWeekPnL = sum('thisWeekPnL')
-        const equityCurrent = sum('equity')
-        const weekDepositTotal = sum('thisWeekDeposit')
-        const weekWithdrawalTotal = sum('thisWeekWithdrawal')
-        const weekBonusInTotal = sum('thisWeekBonusIn')
-        const weekBonusOutTotal = sum('thisWeekBonusOut')
-        const weekCreditInTotal = sum('thisWeekCreditIn')
-        const weekCreditOutTotal = sum('thisWeekCreditOut')
-        const netDW = weekDepositTotal - weekWithdrawalTotal
-        const netBonus = weekBonusInTotal - weekBonusOutTotal
-        const netCredit = weekCreditInTotal - weekCreditOutTotal
-        const baselineEst = equityCurrent - totalWeekPnL - netDW - netBonus - netCredit
-        if (baselineEst > 0 && Number.isFinite(totalWeekPnL)) {
-          const ratio = (totalWeekPnL / baselineEst) * 100
-          if (Number.isFinite(ratio)) return ratio
-        }
-        // Fallback to equity-weighted average then simple average
-        let weighted = 0, wSum = 0, count = 0, simpleSum = 0
-        for (const c of list) {
-          const pct = Number(c?.thisWeekPnL_percentage)
-          const eq = Number(c?.equity)
-          if (Number.isFinite(pct)) {
-            simpleSum += pct; count++
-            if (Number.isFinite(eq) && eq > 0) { weighted += pct * eq; wSum += eq }
-          }
-        }
-        if (wSum > 0) return weighted / wSum
-        return count > 0 ? (simpleSum / count) : 0
-      })(),
+      // Daily PnL %: per request show raw SUM of client dailyPnL_percentage values.
+      dailyPnLPercent: sum('dailyPnL_percentage'),
+      // This Week PnL %: per request show raw SUM of client thisWeekPnL_percentage values.
+      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
