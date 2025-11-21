@@ -2059,54 +2059,26 @@ const ClientsPage = () => {
       // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
-      // Daily PnL %: Derive from portfolio ratio when equity data available, else average client percentages.
+      // Daily PnL % (Consistent aggregation): simple average of client dailyPnL_percentage values.
+      // Avoid sum (inflates) and ratio (diverges from other percentage cards approach).
       dailyPnLPercent: (() => {
-        const totalEquityForRatio = sum('equity')
-        const totalDailyPnL = sum('dailyPnL')
-        if (totalEquityForRatio > 0 && Number.isFinite(totalDailyPnL)) {
-          return (totalDailyPnL / totalEquityForRatio) * 100
-        }
-        let count = 0
         let sumPct = 0
+        let count = 0
         for (const c of list) {
-          const pct = Number(c?.dailyPnL_percentage)
-          if (Number.isFinite(pct)) { sumPct += pct; count++ }
+          const v = Number(c?.dailyPnL_percentage)
+          if (Number.isFinite(v)) { sumPct += v; count++ }
         }
         return count > 0 ? (sumPct / count) : 0
       })(),
-      // This Week PnL %: per request revert to raw SUM of client weekly PnL percentage column
-      // This Week PnL %: use equity-weighted average of client weekly percentages for smoother movement;
-      // fallback to simple average if no valid weights.
+      // This Week PnL %: simple average of client thisWeekPnL_percentage values for consistency.
       thisWeekPnLPercent: (() => {
-        // DEBUG: remove after verification
-        let debugFirst = null
-        let weighted = 0
-        let totalEquity = 0
+        let sumPct = 0
         let count = 0
         for (const c of list) {
-          if (!c) continue
-            const pct = Number(c?.thisWeekPnL_percentage)
-            const eq = Number(c?.equity)
-            if (Number.isFinite(pct)) {
-              count++
-              if (debugFirst == null) debugFirst = {pct, eq}
-              if (Number.isFinite(eq) && eq > 0) {
-                weighted += pct * eq
-                totalEquity += eq
-              }
-            }
+          const v = Number(c?.thisWeekPnL_percentage)
+          if (Number.isFinite(v)) { sumPct += v; count++ }
         }
-        if (totalEquity > 0) {
-          const val = weighted / totalEquity
-          console.log('[Weekly%] weighted', {val, totalEquity, weighted, count, sample: debugFirst})
-          return val
-        }
-        if (count === 0) return 0
-        let sumPct = 0
-        for (const c of list) sumPct += Number(c?.thisWeekPnL_percentage) || 0
-        const avg = sumPct / count
-        console.log('[Weekly%] avg', {avg, count})
-        return avg
+        return count > 0 ? (sumPct / count) : 0
       })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
