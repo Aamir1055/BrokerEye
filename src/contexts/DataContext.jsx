@@ -260,21 +260,21 @@ export const DataProvider = ({ children }) => {
         thisWeekPnL: toNum(client.thisWeekPnL) / 100,
         thisMonthPnL: toNum(client.thisMonthPnL) / 100,
         lifetimePnL: toNum(client.lifetimePnL) / 100,
-        // Percentage fields also need to be divided by 100 for USC
-        balance_percentage: client.balance_percentage != null ? toNum(client.balance_percentage) / 100 : client.balance_percentage,
-        credit_percentage: client.credit_percentage != null ? toNum(client.credit_percentage) / 100 : client.credit_percentage,
-        equity_percentage: client.equity_percentage != null ? toNum(client.equity_percentage) / 100 : client.equity_percentage,
-        pnl_percentage: client.pnl_percentage != null ? toNum(client.pnl_percentage) / 100 : client.pnl_percentage,
-        profit_percentage: client.profit_percentage != null ? toNum(client.profit_percentage) / 100 : client.profit_percentage,
-        margin_percentage: client.margin_percentage != null ? toNum(client.margin_percentage) / 100 : client.margin_percentage,
-        marginFree_percentage: client.marginFree_percentage != null ? toNum(client.marginFree_percentage) / 100 : client.marginFree_percentage,
-        dailyPnL_percentage: client.dailyPnL_percentage != null ? toNum(client.dailyPnL_percentage) / 100 : client.dailyPnL_percentage,
-        thisWeekPnL_percentage: client.thisWeekPnL_percentage != null ? toNum(client.thisWeekPnL_percentage) / 100 : client.thisWeekPnL_percentage,
-        thisMonthPnL_percentage: client.thisMonthPnL_percentage != null ? toNum(client.thisMonthPnL_percentage) / 100 : client.thisMonthPnL_percentage,
-        lifetimePnL_percentage: client.lifetimePnL_percentage != null ? toNum(client.lifetimePnL_percentage) / 100 : client.lifetimePnL_percentage,
-        storage_percentage: client.storage_percentage != null ? toNum(client.storage_percentage) / 100 : client.storage_percentage,
-        dailyDeposit_percentage: client.dailyDeposit_percentage != null ? toNum(client.dailyDeposit_percentage) / 100 : client.dailyDeposit_percentage,
-        dailyWithdrawal_percentage: client.dailyWithdrawal_percentage != null ? toNum(client.dailyWithdrawal_percentage) / 100 : client.dailyWithdrawal_percentage
+        // Percentage fields - keep as-is from backend (already in correct format)
+        balance_percentage: client.balance_percentage != null ? toNum(client.balance_percentage) : client.balance_percentage,
+        credit_percentage: client.credit_percentage != null ? toNum(client.credit_percentage) : client.credit_percentage,
+        equity_percentage: client.equity_percentage != null ? toNum(client.equity_percentage) : client.equity_percentage,
+        pnl_percentage: client.pnl_percentage != null ? toNum(client.pnl_percentage) : client.pnl_percentage,
+        profit_percentage: client.profit_percentage != null ? toNum(client.profit_percentage) : client.profit_percentage,
+        margin_percentage: client.margin_percentage != null ? toNum(client.margin_percentage) : client.margin_percentage,
+        marginFree_percentage: client.marginFree_percentage != null ? toNum(client.marginFree_percentage) : client.marginFree_percentage,
+        dailyPnL_percentage: client.dailyPnL_percentage != null ? toNum(client.dailyPnL_percentage) : client.dailyPnL_percentage,
+        thisWeekPnL_percentage: client.thisWeekPnL_percentage != null ? toNum(client.thisWeekPnL_percentage) : client.thisWeekPnL_percentage,
+        thisMonthPnL_percentage: client.thisMonthPnL_percentage != null ? toNum(client.thisMonthPnL_percentage) : client.thisMonthPnL_percentage,
+        lifetimePnL_percentage: client.lifetimePnL_percentage != null ? toNum(client.lifetimePnL_percentage) : client.lifetimePnL_percentage,
+        storage_percentage: client.storage_percentage != null ? toNum(client.storage_percentage) : client.storage_percentage,
+        dailyDeposit_percentage: client.dailyDeposit_percentage != null ? toNum(client.dailyDeposit_percentage) : client.dailyDeposit_percentage,
+        dailyWithdrawal_percentage: client.dailyWithdrawal_percentage != null ? toNum(client.dailyWithdrawal_percentage) : client.dailyWithdrawal_percentage
       }
       return normalized
     }
@@ -664,6 +664,19 @@ export const DataProvider = ({ children }) => {
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
           const normalized = rawClients.map(normalizeUSCValues)
+          
+          // Debug: Check if percentage fields are present in first client
+          if (normalized.length > 0 && normalized[0]) {
+            const sample = normalized[0]
+            console.log('[DataContext] WebSocket client sample - percentage fields:', {
+              login: sample.login,
+              dailyPnL: sample.dailyPnL,
+              dailyPnL_percentage: sample.dailyPnL_percentage,
+              thisWeekPnL_percentage: sample.thisWeekPnL_percentage,
+              lifetimePnL_percentage: sample.lifetimePnL_percentage
+            })
+          }
+          
           const map = new Map()
           normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
           const snapshot = Array.from(map.values())
@@ -683,14 +696,16 @@ export const DataProvider = ({ children }) => {
                 const ts = toMs(tsRaw)
                 if (c.login && ts) lastClientTimestampRef.current.set(c.login, ts)
               })
-              // Signatures
+              // Signatures (including percentage fields)
               lastClientStateRef.current.clear()
               snapshot.forEach(c => {
                 if (!c?.login) return
                 const sig = [
                   toNum(c.balance), toNum(c.credit), toNum(c.equity), toNum(c.pnl), toNum(c.profit),
                   toNum(c.dailyDeposit), toNum(c.dailyWithdrawal), toNum(c.dailyPnL), toNum(c.thisWeekPnL),
-                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate)
+                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate),
+                  toNum(c.dailyPnL_percentage), toNum(c.thisWeekPnL_percentage), toNum(c.thisMonthPnL_percentage),
+                  toNum(c.lifetimePnL_percentage), toNum(c.dailyDeposit_percentage), toNum(c.dailyWithdrawal_percentage)
                 ].join('_')
                 lastClientStateRef.current.set(c.login, sig)
               })
@@ -721,8 +736,11 @@ export const DataProvider = ({ children }) => {
                 return
               }
               const existingClient = updated[idx]
-              // Determine if any tracked numeric field changed
-              const fields = ['balance','credit','equity','pnl','profit','dailyDeposit','dailyWithdrawal','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL']
+              // Determine if any tracked numeric field changed (including percentage fields)
+              const fields = ['balance','credit','equity','pnl','profit','dailyDeposit','dailyWithdrawal','dailyPnL','thisWeekPnL','thisMonthPnL','lifetimePnL',
+                'balance_percentage','credit_percentage','equity_percentage','pnl_percentage','profit_percentage',
+                'dailyPnL_percentage','thisWeekPnL_percentage','thisMonthPnL_percentage','lifetimePnL_percentage',
+                'dailyDeposit_percentage','dailyWithdrawal_percentage']
               let changed = false
               for (const f of fields) {
                 if (toNum(existingClient[f]) !== toNum(incoming[f])) { changed = true; break }
@@ -741,14 +759,16 @@ export const DataProvider = ({ children }) => {
               if (hasMeaningfulDiff) {
                 lowPriority(() => setClientStats(snapStats))
               }
-              // Rebuild signatures for changed clients only (or all for simplicity)
+              // Rebuild signatures for changed clients only (or all for simplicity, including percentage fields)
               lastClientStateRef.current.clear()
               updated.forEach(c => {
                 if (!c?.login) return
                 const sig = [
                   toNum(c.balance), toNum(c.credit), toNum(c.equity), toNum(c.pnl), toNum(c.profit),
                   toNum(c.dailyDeposit), toNum(c.dailyWithdrawal), toNum(c.dailyPnL), toNum(c.thisWeekPnL),
-                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate)
+                  toNum(c.thisMonthPnL), toNum(c.lifetimePnL), toNum(c.lastUpdate),
+                  toNum(c.dailyPnL_percentage), toNum(c.thisWeekPnL_percentage), toNum(c.thisMonthPnL_percentage),
+                  toNum(c.lifetimePnL_percentage), toNum(c.dailyDeposit_percentage), toNum(c.dailyWithdrawal_percentage)
                 ].join('_')
                 lastClientStateRef.current.set(c.login, sig)
               })

@@ -257,6 +257,7 @@ const ClientsPage = () => {
     8,   // Daily Deposit
     9,   // Daily Withdrawal
     10,  // Daily PNL
+    61,  // Daily PnL %
     
     // Period PNL
     11,  // This Week PNL
@@ -370,7 +371,7 @@ const ClientsPage = () => {
     { key: 'dailyWithdrawal', label: 'Daily Withdrawal' },
     
     { key: 'lifetimePnL', label: 'Lifetime PnL' },
-    { key: 'dailyPnL', label: 'Daily PnL' },
+    // dailyPnL removed - using percentage display column only
     { key: 'thisMonthPnL', label: 'This Month PnL' },
     { key: 'thisWeekPnL', label: 'This Week PnL' }
   ]
@@ -386,13 +387,16 @@ const ClientsPage = () => {
     storage: 'storage_percentage',
     pnl: 'pnl_percentage',
     lifetimePnL: 'lifetimePnL_percentage',
-    dailyPnL: 'dailyPnL_percentage',
+    dailyPnL: 'dailyPnL_percentage',  // Keep for checksum tracking
     thisMonthPnL: 'thisMonthPnL_percentage',
     thisWeekPnL: 'thisWeekPnL_percentage'
     // Removed dailyDeposit and dailyWithdrawal - they have separate percentage cards
   }
 
   const isMetricColumn = (key) => Object.prototype.hasOwnProperty.call(percentageFieldMap, key)
+  
+  // Metrics that should NOT show virtual percentage display columns (raw % column already visible)
+  const metricsWithoutVirtualPercentage = new Set([])
 
   // Define string/text columns (no number filters)
   const stringColumns = [
@@ -405,6 +409,20 @@ const ClientsPage = () => {
   // Dynamically detect all columns from API data
   const dynamicColumns = useMemo(() => {
     if (!clients || clients.length === 0) return allColumns
+
+    // Exclude raw percentage fields that are already surfaced via display modes
+    const excludedAutoColumns = new Set([
+      ...Object.values(percentageFieldMap),
+      // Also exclude DW percent helpers from appearing as standalone columns
+      'dailyDeposit_percentage',
+      'dailyWithdrawal_percentage',
+      // Exclude dailyPnL base column and any duplicate percentage columns
+      'dailyPnL',
+      'DAILY_PN_L_PERCENTAGE',
+      'Daily_Pn_L_percentage',
+      'Daily_Pn_L_Percentage',
+      'dailyPnLPercentage' // Backend sends both dailyPnL_percentage and dailyPnLPercentage
+    ])
 
     // Get all unique keys from the actual data
     const allKeys = new Set()
@@ -420,16 +438,22 @@ const ClientsPage = () => {
     )
 
     // Combine predefined columns with dynamically detected ones
-    const detectedColumns = Array.from(allKeys).map(key => {
-      if (existingColumnsMap.has(key)) {
-        return existingColumnsMap.get(key)
-      }
-      // Create a new column entry for keys not in allColumns
-      return {
-        key: key,
-        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()
-      }
-    })
+    const detectedColumns = Array.from(allKeys)
+      .filter(key => !excludedAutoColumns.has(key))
+      .map(key => {
+        if (existingColumnsMap.has(key)) {
+          return existingColumnsMap.get(key)
+        }
+        // Create a new column entry for keys not in allColumns
+        return {
+          key: key,
+          label: key
+            .replace(/_/g, ' ')
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim()
+        }
+      })
 
     // Sort columns: predefined ones first (in order), then alphabetically
     return detectedColumns.sort((a, b) => {
@@ -479,7 +503,7 @@ const ClientsPage = () => {
       return sum + (typeof w === 'number' && w > 0 ? w : 150)
     }, 0)
     if (displayMode === 'both') {
-      const extra = visibleColumnsList.filter(c => isMetricColumn(c.key)).reduce((sum, col) => {
+      const extra = visibleColumnsList.filter(c => isMetricColumn(c.key) && !metricsWithoutVirtualPercentage.has(c.key)).reduce((sum, col) => {
         const vw = columnWidths[col.key + '_percentage_display']
         return sum + (typeof vw === 'number' && vw > 0 ? vw : 120)
       }, 0)
@@ -1313,7 +1337,8 @@ const ClientsPage = () => {
     }
 
     let sumBalance = 0, sumCredit = 0, sumEquity = 0, sumProfit = 0, sumPnl = 0,
-      sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0
+      sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0,
+      sumDailyPct = 0, sumWeekPct = 0, sumMonthPct = 0, sumLifePct = 0
     for (let i = 0; i < filteredClients.length; i++) {
       const c = filteredClients[i]
       if (!c) continue
@@ -1327,8 +1352,13 @@ const ClientsPage = () => {
       sumWeek += toNum(c.thisWeekPnL)
       sumMonth += toNum(c.thisMonthPnL)
       sumLife += toNum(c.lifetimePnL)
+      // Include percentage buckets to ensure percent face cards react immediately
+      sumDailyPct += toNum(c.dailyPnL_percentage)
+      sumWeekPct += toNum(c.thisWeekPnL_percentage)
+      sumMonthPct += toNum(c.thisMonthPnL_percentage)
+      sumLifePct += toNum(c.lifetimePnL_percentage)
     }
-    return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife]
+    return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife, sumDailyPct, sumWeekPct, sumMonthPct, sumLifePct]
       .map(v => Math.round(v * 100))
       .join('|')
   }, [filteredClients])
@@ -1811,8 +1841,8 @@ const ClientsPage = () => {
   14: { id: 14, title: 'Daily Net D/W', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
       15: { id: 15, title: 'Total Rebate', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
       16: { id: 16, title: 'Available Rebate', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
-      17: { id: 17, title: 'Total Rebate %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalCommissionPercent || 0).toFixed(2))}`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
-      18: { id: 18, title: 'Available Rebate %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.availableCommissionPercent || 0).toFixed(2))}`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      17: { id: 17, title: 'Total Rebate %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalCommissionPercent || 0).toFixed(4))}`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Rebate %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.availableCommissionPercent || 0).toFixed(4))}`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
       19: { id: 19, title: 'Blocked Rebate', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
       // Daily Bonus
       20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
@@ -1858,24 +1888,24 @@ const ClientsPage = () => {
   50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' },
   // Book PnL (Lifetime PnL + Floating Profit)
   53: { id: 53, title: 'Book PnL', value: (stats.lifetimePnL || 0) + (stats.totalProfit || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) + (stats.totalProfit || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: ((stats.lifetimePnL || 0) + (stats.totalProfit || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700' },
-  // Daily Deposit & Withdrawal % of total D/W
-  54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositSharePercent || 0, simple: true, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyDepositSharePercent || 0).toFixed(2))}`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
-  55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalSharePercent || 0, simple: true, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyWithdrawalSharePercent || 0).toFixed(2))}`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
+  // Daily Deposit & Withdrawal % (sum of percentage columns)
+  54: { id: 54, title: 'Daily Deposit %', value: stats.dailyDepositPercent || 0, simple: true, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyDepositPercent || 0).toFixed(4))}`, borderColor: 'border-green-300', textColor: 'text-green-700', valueColor: 'text-green-800' },
+  55: { id: 55, title: 'Daily Withdrawal %', value: stats.dailyWithdrawalPercent || 0, simple: true, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyWithdrawalPercent || 0).toFixed(4))}`, borderColor: 'border-red-300', textColor: 'text-red-700', valueColor: 'text-red-800' },
       
       // Percentage variants for main metrics
-      56: { id: 56, title: 'Total Balance %', value: stats.totalBalancePercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalBalancePercent || 0).toFixed(2))}`, simple: true, borderColor: 'border-indigo-300', textColor: 'text-indigo-700' },
-      57: { id: 57, title: 'Total Credit %', value: stats.totalCreditPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalCreditPercent || 0).toFixed(2))}`, simple: true, borderColor: 'border-emerald-300', textColor: 'text-emerald-700' },
-      58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalEquityPercent || 0).toFixed(2))}`, simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
-      59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalPnlPercent || 0).toFixed(2))}` },
-      60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalProfitPercent || 0).toFixed(2))}`, iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
-      61: { id: 61, title: 'Daily PnL %', value: stats.dailyPnLPercent || 0, withArrow: true, isPositive: (stats.dailyPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyPnLPercent || 0).toFixed(2))}`, borderColor: (stats.dailyPnLPercent || 0) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
-      62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisWeekPnLPercent || 0).toFixed(2))}`, borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
-      63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisMonthPnLPercent || 0).toFixed(2))}`, borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
-      64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.lifetimePnLPercent || 0).toFixed(2))}`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
-      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(2))}`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
+      56: { id: 56, title: 'Total Balance %', value: stats.totalBalancePercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalBalancePercent || 0).toFixed(4))}`, simple: true, borderColor: 'border-indigo-300', textColor: 'text-indigo-700' },
+      57: { id: 57, title: 'Total Credit %', value: stats.totalCreditPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalCreditPercent || 0).toFixed(4))}`, simple: true, borderColor: 'border-emerald-300', textColor: 'text-emerald-700' },
+      58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalEquityPercent || 0).toFixed(4))}`, simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
+      59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalPnlPercent || 0).toFixed(4))}` },
+      60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalProfitPercent || 0).toFixed(4))}`, iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
+      61: { id: 61, title: 'Daily PnL %', value: stats.dailyPnLPercent || 0, withArrow: true, isPositive: (stats.dailyPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyPnLPercent || 0).toFixed(4))}`, borderColor: (stats.dailyPnLPercent || 0) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
+      62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisWeekPnLPercent || 0).toFixed(4))}`, borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
+      63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisMonthPnLPercent || 0).toFixed(4))}`, borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
+      64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.lifetimePnLPercent || 0).toFixed(4))}`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
+      65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(4))}`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
       // Net Lifetime PnL (Lifetime PnL - Total Rebate)
       66: { id: 66, title: 'Net Lifetime PnL', value: (stats.lifetimePnL || 0) - (stats.totalCommission || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalCommission || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'border-green-200' : 'border-red-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-700' : 'text-red-700' },
-      67: { id: 67, title: 'Net Lifetime PnL %', value: (stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)).toFixed(2))}`, borderColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'border-green-300' : 'border-red-300', textColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-700' : 'text-red-700', valueColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-800' : 'text-red-800' }
+      67: { id: 67, title: 'Net Lifetime PnL %', value: (stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)).toFixed(4))}`, borderColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'border-green-300' : 'border-red-300', textColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-700' : 'text-red-700', valueColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-800' : 'text-red-800' }
     }
     return configs[cardId]
   }
@@ -1888,9 +1918,9 @@ const ClientsPage = () => {
   // Face cards derive from ALL filtered data (ignores pagination and column visibility).
   // This ensures face cards always show global sums over the filtered dataset, and still show
   // metrics even if their columns are hidden in the table.
-  // (removed memoized faceCardTotals)
-  // Compute face card totals without memoization to avoid stale or drifting aggregates.
-  const faceCardTotals = (() => {
+  // Memoized to ensure reactivity when filteredClients changes
+  const faceCardTotals = useMemo(() => {
+    try {
     // Always derive from the same list the table uses to prevent drift/flicker under load
     const list = Array.isArray(filteredClients) ? filteredClients : []
 
@@ -1961,7 +1991,7 @@ const ClientsPage = () => {
       return acc + fallback
     }, 0)
 
-    return {
+    const totals = {
       totalClients: list.length,
       totalBalance: sum('balance'),
       totalCredit: sum('credit'),
@@ -2025,12 +2055,30 @@ const ClientsPage = () => {
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
+      // Daily PnL % – sum the dailyPnL_percentage field
       dailyPnLPercent: sum('dailyPnL_percentage'),
       thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
       thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
       lifetimePnLPercent: sum('lifetimePnL_percentage')
     }
-  })()
+    
+    return totals
+    } catch (error) {
+      console.error('[ClientsPage] ❌ Error calculating face card totals:', error)
+      return {
+        totalClients: 0,
+        totalBalance: 0,
+        totalCredit: 0,
+        totalEquity: 0,
+        totalPnl: 0,
+        totalProfit: 0,
+        dailyPnLPercent: 0,
+        thisWeekPnLPercent: 0,
+        thisMonthPnLPercent: 0,
+        lifetimePnLPercent: 0
+      }
+    }
+  }, [filteredClients, commissionTotals, filteredClientsChecksum])
 
   // Removed totals helpers (no longer needed)
 
@@ -3337,7 +3385,7 @@ const ClientsPage = () => {
                       const baseVisible = visibleColumnsList
                       const renderCols = []
                       baseVisible.forEach(col => {
-                        const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key)).length : 0)
+                        const widthBaseTotal = baseVisible.length + (displayMode === 'both' ? baseVisible.filter(c => isMetricColumn(c.key) && !metricsWithoutVirtualPercentage.has(c.key)).length : 0)
                         const defaultWidth = 100 / widthBaseTotal
 
                         // For base column header, adjust label if percentage mode and metric
@@ -3346,7 +3394,8 @@ const ClientsPage = () => {
 
                         renderCols.push({ key: col.key, label: headerLabel, width: defaultWidth, baseKey: col.key })
 
-                        if (displayMode === 'both' && isMetric) {
+                        // Add virtual percentage column in 'both' mode, but skip metrics with raw % columns
+                        if (displayMode === 'both' && isMetric && !metricsWithoutVirtualPercentage.has(col.key)) {
                           // Add a virtual percentage column next to it
                           const virtKey = `${col.key}_percentage_display`
                           renderCols.push({ key: virtKey, label: `${col.label} %`, width: defaultWidth, baseKey: col.key })
@@ -3887,7 +3936,8 @@ const ClientsPage = () => {
 
                       renderCols.push({ key: col.key, width: defaultWidth, value: displayVal, title: titleVal })
 
-                      if (displayMode === 'both' && isMetric) {
+                      // Add virtual percentage column in 'both' mode, but skip metrics with raw % columns
+                      if (displayMode === 'both' && isMetric && !metricsWithoutVirtualPercentage.has(col.key)) {
                         const virtKey = `${col.key}_percentage_display`
                         const percKey = percentageFieldMap[col.key]
                         // SAFETY: Use optional chaining

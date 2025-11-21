@@ -34,18 +34,18 @@ const Client2Page = () => {
   const [columnValuesBatchSize, setColumnValuesBatchSize] = useState(getInitialColumnValuesBatchSize)
 
   useEffect(() => {
-    try { localStorage.setItem('client2ColumnValuesBatchSize', String(columnValuesBatchSize)) } catch {}
+    try { localStorage.setItem('client2ColumnValuesBatchSize', String(columnValuesBatchSize)) } catch { }
   }, [columnValuesBatchSize])
   // Group context
   const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
-  
+
   // Get active group for this module
   const activeGroupName = getActiveGroupFilter('client2')
   const activeGroup = groups.find(g => g.name === activeGroupName)
-  
+
   // IB context
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
-  
+
   const getInitialSidebarOpen = () => {
     try {
       const v = localStorage.getItem('sidebarOpen')
@@ -58,19 +58,19 @@ const Client2Page = () => {
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
+
   // Data state
   const [clients, setClients] = useState([])
   const [totalClients, setTotalClients] = useState(0)
   const [totals, setTotals] = useState({})
   const [rebateTotals, setRebateTotals] = useState({})
   const [totalsPercent, setTotalsPercent] = useState({}) // Percent totals (server response when percentage:true)
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(50)
   const [totalPages, setTotalPages] = useState(1)
-  
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
@@ -78,13 +78,13 @@ const Client2Page = () => {
   const [mt5Accounts, setMt5Accounts] = useState([])
   const [accountRangeMin, setAccountRangeMin] = useState('')
   const [accountRangeMax, setAccountRangeMax] = useState('')
-  
+
   // Sorting state
   const [sortBy, setSortBy] = useState('')
   const [sortOrder, setSortOrder] = useState('asc')
   const [animationKey, setAnimationKey] = useState(0)
   const [initialLoad, setInitialLoad] = useState(true)
-  
+
   // UI state
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
@@ -136,14 +136,14 @@ const Client2Page = () => {
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
   const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
-  
+
   // Define default face card order for Client2 (matching all available cards in the actual rendering)
   const defaultClient2FaceCardOrder = [
     'totalClients', 'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
-    'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyPnL',
-    'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal',
+    'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyDepositPercent', 'dailyPnL',
+    'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal', 'dailyWithdrawalPercent',
     'equity', 'floating', 'liabilities',
-    'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL',
+    'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL', 'lifetimePnLPercent',
     'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeWithdrawal',
     'margin', 'marginFree', 'marginInitial', 'marginLevel', 'marginMaintenance',
     'soEquity', 'soLevel', 'soMargin', 'pnl', 'previousEquity', 'profit', 'storage',
@@ -154,7 +154,7 @@ const Client2Page = () => {
     'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent',
     'netLifetimePnL', 'netLifetimePnLPercent', 'bookPnL', 'bookPnLPercent'
   ]
-  
+
   const getInitialClient2FaceCardOrder = () => {
     try {
       const saved = localStorage.getItem('client2FaceCardOrder')
@@ -176,9 +176,9 @@ const Client2Page = () => {
     }
     return defaultClient2FaceCardOrder
   }
-  
+
   const [faceCardOrder, setFaceCardOrder] = useState(getInitialClient2FaceCardOrder)
-  
+
   // Column ordering state
   const getInitialColumnOrder = () => {
     const saved = localStorage.getItem('client2ColumnOrder')
@@ -191,11 +191,11 @@ const Client2Page = () => {
     }
     return null // Will use default order from allColumns
   }
-  
+
   const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
   const [draggedColumn, setDraggedColumn] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
-  
+
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState(() => {
     try {
@@ -213,18 +213,18 @@ const Client2Page = () => {
   // Debounce search input for server-side filtering
   useEffect(() => {
     const timers = {}
-    
+
     Object.keys(columnValueSearch).forEach(columnKey => {
       const searchQuery = columnValueSearch[columnKey] || ''
       const previousQuery = columnValueSearchDebounce[columnKey] || ''
-      
+
       // Only trigger if search changed
       if (searchQuery !== previousQuery) {
         if (timers[columnKey]) clearTimeout(timers[columnKey])
-        
+
         timers[columnKey] = setTimeout(() => {
           setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: searchQuery }))
-          
+
           // Reset and fetch with new search query
           setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
           setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
@@ -232,7 +232,7 @@ const Client2Page = () => {
         }, 500) // 500ms debounce
       }
     })
-    
+
     return () => {
       Object.values(timers).forEach(timer => clearTimeout(timer))
     }
@@ -270,7 +270,7 @@ const Client2Page = () => {
       // ignore
     }
   }, [cardFilterPercentMode])
-  
+
   // Face card visibility state
   const getInitialCardVisibility = () => {
     const saved = localStorage.getItem('client2CardVisibility')
@@ -412,7 +412,7 @@ const Client2Page = () => {
       bookPnLPercent: true
     }
   }
-  
+
   const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
   // Global percentage view disabled; use per-field % cards instead
   const showPercentage = false
@@ -420,17 +420,17 @@ const Client2Page = () => {
   // Percentage mode now ONLY controlled by explicit toggle (cardFilterPercentMode)
   // Face card visibility no longer auto-triggers percentage API calls to avoid unintended requests.
   const percentModeActive = cardFilterPercentMode === true
-  
+
   // Filter modal state
   const [newFilterField, setNewFilterField] = useState('balance')
   const [newFilterOperator, setNewFilterOperator] = useState('greater_than')
   const [newFilterValue, setNewFilterValue] = useState('')
-  
+
   // Account filter modal state
   const [accountInputText, setAccountInputText] = useState('')
   const [tempAccountRangeMin, setTempAccountRangeMin] = useState('')
   const [tempAccountRangeMax, setTempAccountRangeMax] = useState('')
-  
+
   // Column visibility state
   const getInitialVisibleColumns = () => {
     const saved = localStorage.getItem('client2PageVisibleColumns')
@@ -472,16 +472,16 @@ const Client2Page = () => {
       lifetimePnL: false
     }
   }
-  
+
   const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns)
-  
+
   // Save column order to localStorage
   useEffect(() => {
     if (columnOrder) {
       localStorage.setItem('client2ColumnOrder', JSON.stringify(columnOrder))
     }
   }, [columnOrder])
-  
+
   // Auto-focus filter dropdown when it opens for keyboard navigation
   useEffect(() => {
     if (showFilterDropdown && filterPanelRef.current) {
@@ -490,7 +490,7 @@ const Client2Page = () => {
       }, 0)
     }
   }, [showFilterDropdown])
-  
+
   // Calculate dynamic table height based on available space and changing UI above the table
   const visibleCardCount = useMemo(() => {
     try {
@@ -501,7 +501,7 @@ const Client2Page = () => {
   }, [faceCardOrder, cardVisibility])
 
 
-  
+
   // All available columns
   const allColumns = [
     { key: 'login', label: 'Login', type: 'integer' },
@@ -553,6 +553,7 @@ const Client2Page = () => {
     { key: 'soLevel', label: 'SO Level', type: 'float' },
     { key: 'soMargin', label: 'SO Margin', type: 'float' },
     { key: 'dailyPnL', label: 'Daily PnL', type: 'float' },
+    { key: 'dailyPnL_percentage', label: 'Daily PnL %', type: 'float' },
     { key: 'dailyDeposit', label: 'Daily Deposit', type: 'float' },
     { key: 'dailyWithdrawal', label: 'Daily Withdrawal', type: 'float' },
     { key: 'dailyCreditIn', label: 'Daily Credit In', type: 'float' },
@@ -610,7 +611,6 @@ const Client2Page = () => {
     { key: 'storage_percentage', label: 'Storage %', type: 'float' },
     { key: 'blockedCommission_percentage', label: 'Blocked Commission %', type: 'float' },
     { key: 'blockedProfit_percentage', label: 'Blocked Profit %', type: 'float' },
-    { key: 'dailyPnL_percentage', label: 'Daily PnL %', type: 'float' },
     { key: 'dailyDeposit_percentage', label: 'Daily Deposit %', type: 'float' },
     { key: 'dailyWithdrawal_percentage', label: 'Daily Withdrawal %', type: 'float' },
     { key: 'dailyCreditIn_percentage', label: 'Daily Credit In %', type: 'float' },
@@ -647,11 +647,11 @@ const Client2Page = () => {
     { key: 'lifetimeSOCompensationIn_percentage', label: 'Lifetime SO Compensation In %', type: 'float' },
     { key: 'lifetimeSOCompensationOut_percentage', label: 'Lifetime SO Compensation Out %', type: 'float' }
   ]
-  
+
   // Get visible columns list (moved here before being used in useEffect dependencies)
   const visibleColumnsList = useMemo(() => {
     const visible = allColumns.filter(c => visibleColumns[c.key] === true)
-    
+
     // Apply column ordering if exists
     if (columnOrder && Array.isArray(columnOrder)) {
       const ordered = []
@@ -668,10 +668,10 @@ const Client2Page = () => {
       })
       return ordered
     }
-    
+
     return visible
   }, [allColumns, visibleColumns, columnOrder])
-  
+
   // Sync horizontal scrollbars (robust, loop-guarded)
   useEffect(() => {
     const mainScroll = hScrollRef.current
@@ -719,57 +719,57 @@ const Client2Page = () => {
       if (raf) cancelAnimationFrame(raf)
     }
   }, [clients.length, visibleColumnsList.length])
-  
+
   // Get smart default width for a column based on its type and key
   const getDefaultColumnWidth = useCallback((col) => {
     // Check if we have a saved width
     if (columnWidths[col.key]) {
       return columnWidths[col.key]
     }
-    
+
     // Smart defaults based on column key and type
     const key = col.key.toLowerCase()
-    
+
     // Very narrow columns
     if (key === 'login' || key === 'id') return 130
     if (key === 'leverage') return 110
-    
+
     // Email needs more space
     if (key === 'email') return 240
-    
+
     // Phone numbers - need more space for international format
     if (key === 'phone') return 170
-    
+
     // Names
     if (key === 'name' || key === 'lastname' || key === 'middlename') return 160
-    
+
     // Long text fields
     if (key === 'address' || key === 'comment') return 280
-    
+
     // Country, city, state, company
     if (key === 'country' || key === 'city' || key === 'state' || key === 'company') return 150
-    
+
     // Group
     if (key === 'group') return 170
-    
+
     // Date/datetime columns - need more space for full timestamp
     if (col.type === 'date' || key.includes('registration') || key.includes('access') || key.includes('update') || key.includes('date') || key.includes('time')) return 200
-    
+
     // Percentage columns
     if (key.includes('percentage') || key.includes('_percentage')) return 140
-    
+
     // Float/number columns - medium width
     if (col.type === 'float' || col.type === 'integer') return 150
-    
+
     // Default for text
     return 160
   }, [columnWidths])
-  
+
   // Calculate total table width based on all visible columns
   const totalTableWidth = useMemo(() => {
     return visibleColumnsList.reduce((sum, col) => sum + getDefaultColumnWidth(col), 0)
   }, [visibleColumnsList, columnWidths, getDefaultColumnWidth])
-  
+
   // Filter operators by type
   const numberOperators = [
     { value: 'equal', label: 'Equal to (=)' },
@@ -780,7 +780,7 @@ const Client2Page = () => {
     { value: 'less_than_equal', label: 'Less than or equal (≤)' },
     { value: 'between', label: 'Between' }
   ]
-  
+
   const textOperators = [
     { value: 'equal', label: 'Equal to' },
     { value: 'not_equal', label: 'Not equal to' },
@@ -789,18 +789,18 @@ const Client2Page = () => {
     { value: 'starts_with', label: 'Starts with' },
     { value: 'ends_with', label: 'Ends with' }
   ]
-  
+
   const dateOperators = [
     { value: 'equal', label: 'Equal to' },
     { value: 'greater_than', label: 'After' },
     { value: 'less_than', label: 'Before' }
   ]
-  
+
   // Get operators for selected field
   const getOperatorsForField = (fieldKey) => {
     const column = allColumns.find(col => col.key === fieldKey)
     if (!column) return numberOperators
-    
+
     switch (column.type) {
       case 'text':
         return textOperators
@@ -810,7 +810,7 @@ const Client2Page = () => {
         return numberOperators
     }
   }
-  
+
   // Save visible columns to localStorage
   useEffect(() => {
     localStorage.setItem('client2PageVisibleColumns', JSON.stringify(visibleColumns))
@@ -824,7 +824,7 @@ const Client2Page = () => {
       // ignore
     }
   }, [columnWidths])
-  
+
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
     console.log('[Client2] fetchClients called - silent:', silent, 'columnFilters:', columnFilters)
@@ -832,30 +832,30 @@ const Client2Page = () => {
       if (!silent) {
         setLoading(true)
       }
-  setError('')
-  // Normalize axios response shapes: some backends return data under data.data
-  const extractData = (resp) => (resp?.data?.data) || (resp?.data) || resp
-      
+      setError('')
+      // Normalize axios response shapes: some backends return data under data.data
+      const extractData = (resp) => (resp?.data?.data) || (resp?.data) || resp
+
       // Build request payload - simple pagination (column filters handled by /fields endpoint)
       const payload = {
         page: Number(currentPage) || 1,
         limit: Number(itemsPerPage) || 100
       }
-      
+
       // Add search query if present
       if (searchQuery && searchQuery.trim()) {
         payload.search = searchQuery.trim()
       }
-      
-  // Add filters if present
-  const combinedFilters = []
-  // Capture login checkbox selections to apply via mt5Accounts (OR semantics)
-  let checkboxLoginIds = []
-  // Track multi-value checkbox selections for OR handling via multiple requests
-  let multiOrField = null
-  let multiOrValues = []
-  let multiOrConflict = false
-  
+
+      // Add filters if present
+      const combinedFilters = []
+      // Capture login checkbox selections to apply via mt5Accounts (OR semantics)
+      let checkboxLoginIds = []
+      // Track multi-value checkbox selections for OR handling via multiple requests
+      let multiOrField = null
+      let multiOrValues = []
+      let multiOrConflict = false
+
       // Inject server-side quick filters (full dataset filtering)
       if (quickFilters?.hasFloating) {
         // Has Floating: exclude rows where floating == 0 (allow negative or positive)
@@ -869,9 +869,9 @@ const Client2Page = () => {
         // No Deposit: lifetimeDeposit == 0
         combinedFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
       }
-  // Track fields that already have text/number filters to avoid mixing with checkbox filters for same field
-  const textFilteredFields = new Set()
-  const numberFilteredFields = new Set()
+      // Track fields that already have text/number filters to avoid mixing with checkbox filters for same field
+      const textFilteredFields = new Set()
+      const numberFilteredFields = new Set()
       if (filters && filters.length > 0) {
         combinedFilters.push(...filters)
       }
@@ -933,16 +933,16 @@ const Client2Page = () => {
         if (filterKey.endsWith('_checkbox')) {
           const columnKey = filterKey.replace('_checkbox', '')
           const filterValues = columnFilters[filterKey]?.values || []
-          
+
           if (filterValues.length > 0) {
             const field = columnKeyToAPIField(columnKey)
-            
+
             // Skip checkbox filter if text or number filter is already active for this field
             if (textFilteredFields.has(field) || numberFilteredFields.has(field)) {
               console.log(`[Client2] 🔍 Checkbox ${columnKey}: skipped (text/number filter active)`)
               return
             }
-            
+
             // Special-case: login filters should use mt5Accounts for proper OR semantics
             if (columnKey === 'login') {
               checkboxLoginIds = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
@@ -950,26 +950,26 @@ const Client2Page = () => {
             } else {
               const field = columnKeyToAPIField(columnKey)
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
-              
+
               // When there's a search active, only consider the visible (filtered) values for optimization logic
               const allValues = columnValues[columnKey] || []
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
-              
+
               // Optimization: skip if ALL visible values are selected (no filtering needed)
               // Only apply this optimization when no search is active (to avoid skipping when user searched and selected)
               if (!searchQ && visibleValues.length > 0 && selectedValues.length === visibleValues.length) {
                 console.log(`[Client2] 🔍 Checkbox ${columnKey}: all values selected, skipping filter`)
                 return
               }
-              
+
               // Smart optimization: use not_equal for unselected values if more efficient
               // Use visibleValues for comparison when search is active
               const unselectedValues = visibleValues.filter(v => !selectedValues.includes(String(v).trim()))
-              const shouldUseNotEqual = unselectedValues.length > 0 && 
-                                       unselectedValues.length < selectedValues.length &&
-                                       (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
-              
+              const shouldUseNotEqual = unselectedValues.length > 0 &&
+                unselectedValues.length < selectedValues.length &&
+                (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
+
               if (shouldUseNotEqual) {
                 // More efficient to exclude few unselected values than include many selected
                 unselectedValues.forEach(value => {
@@ -1003,14 +1003,14 @@ const Client2Page = () => {
         payload.filters = combinedFilters
         console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
-      
+
       // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
       let mt5AccountsFilter = []
       // From Account Filter modal
       if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) {
         mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
       }
-      
+
       // Add account range filter if present
       if (accountRangeMin && accountRangeMin.trim()) {
         payload.accountRangeMin = parseInt(accountRangeMin.trim())
@@ -1018,7 +1018,7 @@ const Client2Page = () => {
       if (accountRangeMax && accountRangeMax.trim()) {
         payload.accountRangeMax = parseInt(accountRangeMax.trim())
       }
-      
+
       // Add active group filter if present - use API filtering
       if (activeGroup) {
         if (activeGroup.range) {
@@ -1064,7 +1064,7 @@ const Client2Page = () => {
       if (mt5AccountsFilter.length > 0) {
         payload.mt5Accounts = mt5AccountsFilter
       }
-      
+
       // Add sorting if present
       if (sortBy) {
         payload.sortBy = sortBy
@@ -1074,49 +1074,120 @@ const Client2Page = () => {
       // ALWAYS fetch normal data for table display
       const shouldFetchPercentage = percentModeActive
 
-      // Build payload for normal and percentage requests
+      // Check if there are any active checkbox filters (excluding login which is handled server-side)
+      const hasActiveCheckboxFilters = Object.keys(columnFilters).some(key => {
+        if (!key.endsWith('_checkbox')) return false
+        const columnKey = key.replace('_checkbox', '')
+        if (columnKey === 'login') return false // login is handled via mt5Accounts
+        const values = columnFilters[key]?.values || []
+        return values.length > 0
+      })
+
+      // If checkbox filters are active, we need to fetch ALL pages to apply client-side filtering
+      let allClients = []
+      let apiTotalCount = 0
+
+      if (hasActiveCheckboxFilters) {
+        console.log('[Client2] 📊 Checkbox filters detected - fetching ALL pages for client-side filtering')
+
+        // Fetch first page to get total count
+        const firstPagePayload = { ...payload, page: 1, limit: itemsPerPage }
+        const firstResponse = await brokerAPI.searchClients(firstPagePayload)
+        const firstData = extractData(firstResponse)
+        apiTotalCount = Number(firstData?.total || 0)
+        const totalPages = Math.ceil(apiTotalCount / itemsPerPage)
+
+        console.log(`[Client2] 📊 Total: ${apiTotalCount} clients across ${totalPages} pages - fetching all...`)
+
+        // Collect clients from first page
+        const firstPageClients = (firstData?.clients || []).filter(c => c != null && c.login != null)
+        allClients.push(...firstPageClients)
+
+        // Fetch remaining pages in parallel
+        if (totalPages > 1) {
+          const remainingPagePromises = []
+          for (let page = 2; page <= totalPages; page++) {
+            remainingPagePromises.push(brokerAPI.searchClients({ ...payload, page, limit: itemsPerPage }))
+          }
+
+          const remainingResponses = await Promise.all(remainingPagePromises)
+          remainingResponses.forEach(response => {
+            const data = extractData(response)
+            const clients = (data?.clients || []).filter(c => c != null && c.login != null)
+            allClients.push(...clients)
+          })
+        }
+
+        // Deduplicate by login
+        const seenLogins = new Set()
+        allClients = allClients.filter(client => {
+          if (seenLogins.has(client.login)) return false
+          seenLogins.add(client.login)
+          return true
+        })
+
+        console.log(`[Client2] 📊 Fetched ${allClients.length} total clients, now applying client-side filters...`)
+
+        // Apply client-side checkbox filters
+        const filteredClients = applyClientSideCheckboxFilters(allClients, columnFilters)
+
+        // Get totals from first response
+        const totals = firstData?.totals || {}
+
+        setClients(filteredClients)
+        setTotalClients(apiTotalCount) // Use original API total, not filtered count
+        setTotalPages(Math.ceil(apiTotalCount / itemsPerPage))
+        setTotals(totals)
+        setTotalsPercent({})
+        setError('')
+
+        console.log(`[Client2] ✅ Showing ${filteredClients.length} filtered clients out of ${apiTotalCount} total`)
+        return // Exit early - we're done
+      }
+
+      // Build payload for normal and percentage requests (only if no checkbox filters)
       const payloadNormal = { ...payload }
       const payloadPercent = shouldFetchPercentage ? { ...payload, percentage: true } : null
 
-    // Helper: build payload variants for multi-value OR filtering
-    const buildPayloadVariants = (basePayload, isPercentage) => {
-      if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-        // Create separate request for each value (OR semantics)
-        return multiOrValues.map(val => {
-          const filters = Array.isArray(basePayload.filters) ? [...basePayload.filters] : []
-          filters.push({ field: multiOrField, operator: 'equal', value: val })
-          const variant = { ...basePayload, filters }
-          if (isPercentage) variant.percentage = true
-          return variant
-        })
+      // Helper: build payload variants for multi-value OR filtering
+      const buildPayloadVariants = (basePayload, isPercentage) => {
+        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
+          // Create separate request for each value (OR semantics)
+          return multiOrValues.map(val => {
+            const filters = Array.isArray(basePayload.filters) ? [...basePayload.filters] : []
+            filters.push({ field: multiOrField, operator: 'equal', value: val })
+            const variant = { ...basePayload, filters }
+            if (isPercentage) variant.percentage = true
+            return variant
+          })
+        }
+        // No multi-OR needed
+        const single = { ...basePayload }
+        if (isPercentage) single.percentage = true
+        return [single]
       }
-      // No multi-OR needed
-      const single = { ...basePayload }
-      if (isPercentage) single.percentage = true
-      return [single]
-    }
 
-    // Create payload variants for multi-value checkbox filters
-    const normalPayloads = buildPayloadVariants(payloadNormal, false)
-    const percentPayloads = shouldFetchPercentage ? buildPayloadVariants(payloadPercent, true) : []
-    
-    // Safety check: prevent excessive parallel requests
-    if (normalPayloads.length > 50) {
-      console.error(`[Client2] ❌ Too many requests: ${normalPayloads.length} variants. Aborting to prevent network overload.`)
-      setError(`Too many filter values selected (${normalPayloads.length} requests needed). Please reduce your selection to 50 or fewer values.`)
-      if (!silent) setLoading(false)
-      return
-    }
-    
-    if (normalPayloads.length > 1) {
-      console.log(`[Client2] 🔄 Multi-value OR: fetching ${normalPayloads.length} variants for ${multiOrField}`)
-    }
+      // Create payload variants for multi-value checkbox filters
+      const normalPayloads = buildPayloadVariants(payloadNormal, false)
+      const percentPayloads = shouldFetchPercentage ? buildPayloadVariants(payloadPercent, true) : []
 
-    // Always log payload when filters are present to debug filtering issues
-    if (payload.filters && payload.filters.length > 0) {
-      console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(normalPayloads[0], null, 2))
-    }
-    if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', normalPayloads.length, 'Percent:', shouldFetchPercentage ? percentPayloads.length : 'SKIPPED')
+      // Safety check: prevent excessive parallel requests
+      if (normalPayloads.length > 50) {
+        console.error(`[Client2] ❌ Too many requests: ${normalPayloads.length} variants. Aborting to prevent network overload.`)
+        setError(`Too many filter values selected (${normalPayloads.length} requests needed). Please reduce your selection to 50 or fewer values.`)
+        if (!silent) setLoading(false)
+        return
+      }
+
+      if (normalPayloads.length > 1) {
+        console.log(`[Client2] 🔄 Multi-value OR: fetching ${normalPayloads.length} variants for ${multiOrField}`)
+      }
+
+      // Always log payload when filters are present to debug filtering issues
+      if (payload.filters && payload.filters.length > 0) {
+        console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(normalPayloads[0], null, 2))
+      }
+      if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', normalPayloads.length, 'Percent:', shouldFetchPercentage ? percentPayloads.length : 'SKIPPED')
 
       // Fetch data: if multi-value OR, fetch all variants and merge results
       if (shouldFetchPercentage) {
@@ -1125,7 +1196,7 @@ const Client2Page = () => {
           Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p))),
           Promise.all(percentPayloads.map(p => brokerAPI.searchClients(p)))
         ])
-        
+
         // Merge normal responses (deduplicate by login)
         const allNormalClients = []
         const seenLogins = new Set()
@@ -1141,14 +1212,14 @@ const Client2Page = () => {
             }
           })
         })
-        
+
         // Use first response for metadata
         const normalData = extractData(normalResponses[0])
         const normalTotals = normalData?.totals || {}
         // For multi-request: use sum of totals; for single request: use API total
         const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allNormalClients.length || 0)
         const pages = normalPayloads.length > 1 ? Math.ceil(allNormalClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
-        
+
         setClients(allNormalClients)
         setTotalClients(normalTotal)
         setTotalPages(pages)
@@ -1162,7 +1233,7 @@ const Client2Page = () => {
       } else {
         // Normal only - fetch all variants and merge
         const normalResponses = await Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p)))
-        
+
         // Merge results (deduplicate by login)
         const allClients = []
         const seenLogins = new Set()
@@ -1178,14 +1249,14 @@ const Client2Page = () => {
             }
           })
         })
-        
+
         // Use first response for metadata
         const normalData = extractData(normalResponses[0])
         const normalTotals = normalData?.totals || {}
         // For multi-request: use sum of totals; for single request: use API total
         const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allClients.length || 0)
         const pages = normalPayloads.length > 1 ? Math.ceil(allClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
-        
+
         setClients(allClients)
         setTotalClients(normalTotal)
         setTotalPages(pages)
@@ -1197,7 +1268,7 @@ const Client2Page = () => {
       // Ignore request cancellations caused by in-flight aborts
       const isCanceled = err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(err?.message || '')
       if (isCanceled) {
-  try { if (DEBUG_LOGS) console.debug('[Client2] fetchClients canceled (expected on fast refresh)') } catch {}
+        try { if (DEBUG_LOGS) console.debug('[Client2] fetchClients canceled (expected on fast refresh)') } catch { }
         return
       }
       console.error('[Client2] Error fetching clients:', err)
@@ -1235,25 +1306,42 @@ const Client2Page = () => {
       setIsSorting(false)
     }
   }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
-  
+
   // Clear cached column values when filters change (IB, group, accounts, filters, search)
   // This ensures column value dropdowns always fetch fresh data from API
   useEffect(() => {
     setColumnValues({})
     setSelectedColumnValues({})
   }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery, quickFilters])
-  
+
   // Refetch when any percent face card visibility toggles
   useEffect(() => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
-  
+
   // Pass-through - filtering done by API
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
     return clients.filter(c => c != null && c.login != null)
   }, [clients])
-  
+
+  // Compute percentage totals by summing percentage columns from client data
+  const computedPercentageTotals = useMemo(() => {
+    if (!Array.isArray(sortedClients) || sortedClients.length === 0) {
+      return {
+        dailyDeposit: 0,
+        dailyWithdrawal: 0,
+        lifetimePnL: 0
+      }
+    }
+    
+    return {
+      dailyDeposit: sortedClients.reduce((sum, client) => sum + (parseFloat(client.dailyDeposit_percentage) || 0), 0),
+      dailyWithdrawal: sortedClients.reduce((sum, client) => sum + (parseFloat(client.dailyWithdrawal_percentage) || 0), 0),
+      lifetimePnL: sortedClients.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
+    }
+  }, [sortedClients])
+
   // Fetch rebate totals from API
   const fetchRebateTotals = useCallback(async () => {
     try {
@@ -1279,7 +1367,7 @@ const Client2Page = () => {
     fetchClients()
     fetchRebateTotals()
   }, [fetchClients, fetchRebateTotals])
-  
+
   // Auto-refresh rebate totals every 1 hour
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -1287,11 +1375,11 @@ const Client2Page = () => {
     }, 3600000) // 3600000ms = 1 hour
     return () => clearInterval(intervalId)
   }, [fetchRebateTotals])
-  
+
   // Removed server-side quick filter refetch; quick filters now apply client-side to current page only
-  
+
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
-  
+
   // Auto-refresh every 3 seconds (silent update) with in-flight cancellation
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -1299,21 +1387,21 @@ const Client2Page = () => {
     }, 3000)
     return () => clearInterval(intervalId)
   }, [fetchClients])
-  
+
   // Handle search
   const handleSearch = () => {
     setSearchQuery(searchInput)
     setCurrentPage(1)
   }
-  
+
   // Handle sort
   const handleSort = (columnKey) => {
     // Set sorting loading state
     setIsSorting(true)
-    
+
     // Increment animation key to force re-render and re-trigger animations
     setAnimationKey(prev => prev + 1)
-    
+
     if (sortBy === columnKey) {
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
@@ -1338,14 +1426,14 @@ const Client2Page = () => {
 
   const handleResizeMove = useCallback((e) => {
     if (!resizingColumn) return
-    
+
     // Auto-scroll when dragging near edges of scroll container
     const scrollContainer = hScrollRef.current
     if (scrollContainer) {
       const rect = scrollContainer.getBoundingClientRect()
       const scrollEdgeThreshold = 50 // pixels from edge to trigger scroll
       const scrollSpeed = 10 // pixels to scroll per frame
-      
+
       // Check if mouse is near left edge
       if (e.clientX < rect.left + scrollEdgeThreshold && scrollContainer.scrollLeft > 0) {
         scrollContainer.scrollLeft -= scrollSpeed
@@ -1355,7 +1443,7 @@ const Client2Page = () => {
         scrollContainer.scrollLeft += scrollSpeed
       }
     }
-    
+
     // Use requestAnimationFrame for smooth rendering
     if (resizeRAF.current) {
       cancelAnimationFrame(resizeRAF.current)
@@ -1364,7 +1452,7 @@ const Client2Page = () => {
       const diff = e.clientX - resizeStartX.current
       // Allow both directions with min width 50px
       const newWidth = Math.max(50, resizeStartWidth.current + diff)
-      
+
       // Simply update the column width - table will expand/contract accordingly
       setColumnWidths(prev => ({ ...prev, [resizingColumn]: newWidth }))
     })
@@ -1418,28 +1506,28 @@ const Client2Page = () => {
     try {
       const headerText = visibleColumnsList.find(c => c.key === columnKey)?.label || ''
       const headerWidth = measureText(headerText) + 60 // +60 for padding, icons, etc
-      
+
       let maxCellWidth = headerWidth
       // Guard: filter out null/undefined clients
       const columnData = (clients || []).filter(row => row != null).map(row => row[baseKey || columnKey])
-      
+
       columnData.forEach(val => {
         const cellWidth = measureText(val) + 40 // +40 for padding
         if (cellWidth > maxCellWidth) maxCellWidth = cellWidth
       })
-      
+
       const finalWidth = Math.max(50, Math.min(600, Math.ceil(maxCellWidth)))
       setColumnWidths(prev => ({ ...prev, [columnKey]: finalWidth }))
     } catch (err) {
       console.error('[Client2Page] Auto-fit error:', err)
     }
   }
-  
+
   // Column drag and drop handlers for reordering
   const handleColumnDragStart = (e, columnKey) => {
     setDraggedColumn(columnKey)
     e.dataTransfer.effectAllowed = 'move'
-    
+
     // Create custom drag image showing the full column header
     const headerElement = headerRefs.current[columnKey]
     if (headerElement) {
@@ -1457,7 +1545,7 @@ const Client2Page = () => {
       setTimeout(() => document.body.removeChild(clone), 0)
     }
   }
-  
+
   const handleColumnDragOver = (e, columnKey) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -1465,62 +1553,62 @@ const Client2Page = () => {
       setDragOverColumn(columnKey)
     }
   }
-  
+
   const handleColumnDragLeave = () => {
     setDragOverColumn(null)
   }
-  
+
   const handleColumnDrop = (e, targetColumnKey) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!draggedColumn || draggedColumn === targetColumnKey) {
       setDraggedColumn(null)
       setDragOverColumn(null)
       return
     }
-    
+
     // Get current order from visibleColumnsList
     const currentOrder = visibleColumnsList.map(col => col.key)
     const draggedIndex = currentOrder.indexOf(draggedColumn)
     const targetIndex = currentOrder.indexOf(targetColumnKey)
-    
+
     if (draggedIndex === -1 || targetIndex === -1) {
       setDraggedColumn(null)
       setDragOverColumn(null)
       return
     }
-    
+
     // Create new order array
     const newOrder = [...currentOrder]
     const [removed] = newOrder.splice(draggedIndex, 1)
     newOrder.splice(targetIndex, 0, removed)
-    
+
     setColumnOrder(newOrder)
     setDraggedColumn(null)
     setDragOverColumn(null)
   }
-  
+
   const handleColumnDragEnd = () => {
     setDraggedColumn(null)
     setDragOverColumn(null)
   }
-  
+
   // Column filter functions
   const getUniqueColumnValues = useMemo(() => {
     // Create a cache object for all columns
     const cache = {}
-    
+
     return (columnKey) => {
       // Return cached result if search query hasn't changed
       const cacheKey = `${columnKey}_${filterSearchQuery[columnKey] || ''}`
       if (cache[cacheKey]) {
         return cache[cacheKey]
       }
-      
+
       const values = new Set()
       if (!Array.isArray(clients)) return []
-      
+
       clients.forEach(client => {
         if (!client) return // Guard: skip null/undefined clients
         const value = client[columnKey]
@@ -1528,44 +1616,44 @@ const Client2Page = () => {
           values.add(value)
         }
       })
-      
+
       const sortedValues = Array.from(values).sort((a, b) => {
         if (typeof a === 'number' && typeof b === 'number') {
           return a - b
         }
         return String(a).localeCompare(String(b))
       })
-      
+
       // Filter by search query if exists
       const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
       const result = searchQuery
-        ? sortedValues.filter(value => 
-            String(value).toLowerCase().includes(searchQuery)
-          )
+        ? sortedValues.filter(value =>
+          String(value).toLowerCase().includes(searchQuery)
+        )
         : sortedValues
-      
+
       // Cache the result
       cache[cacheKey] = result
       return result
     }
   }, [clients, filterSearchQuery])
-  
+
   const toggleColumnFilter = (columnKey, value) => {
     setColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
       const newFilters = currentFilters.includes(value)
         ? currentFilters.filter(v => v !== value)
         : [...currentFilters, value]
-      
+
       if (newFilters.length === 0) {
         const { [columnKey]: _, ...rest } = prev
         return rest
       }
-      
+
       return { ...prev, [columnKey]: newFilters }
     })
   }
-  
+
   const selectAllFilters = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
     setColumnFilters(prev => ({
@@ -1573,14 +1661,14 @@ const Client2Page = () => {
       [columnKey]: allValues
     }))
   }
-  
+
   const deselectAllFilters = (columnKey) => {
     setColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
   }
-  
+
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
@@ -1604,46 +1692,46 @@ const Client2Page = () => {
     setShowFilterDropdown(null)
     console.log('[Client2] ✅ Checkbox filter cleared (client-side filtering updated)')
   }
-  
+
   const getActiveFilterCount = (columnKey) => {
     // Check for regular checkbox filters
     const checkboxCount = columnFilters[columnKey]?.length || 0
-    
+
     // Check for number filter
     const numberFilterKey = `${columnKey}_number`
     const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
-    
+
     // Check for text filter
     const textFilterKey = `${columnKey}_text`
     const hasTextFilter = columnFilters[textFilterKey] ? 1 : 0
-    
+
     // Check for checkbox value filter
     const checkboxFilterKey = `${columnKey}_checkbox`
     const hasCheckboxFilter = columnFilters[checkboxFilterKey] ? 1 : 0
-    
+
     return checkboxCount + hasNumberFilter + hasTextFilter + hasCheckboxFilter
   }
-  
+
   const isAllSelected = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
     const selectedValues = columnFilters[columnKey] || []
     return allValues.length > 0 && selectedValues.length === allValues.length
   }
-  
+
   const applyNumberFilter = (columnKey) => {
     const temp = numericFilterTemp[columnKey]
     if (!temp || temp.value1 === '' || temp.value1 == null) return
-    
+
     if (temp.operator === 'between' && (temp.value2 === '' || temp.value2 == null)) return
-    
+
     const filterConfig = {
       operator: temp.operator,
       value1: parseFloat(temp.value1),
       value2: temp.value2 ? parseFloat(temp.value2) : null
     }
-    
+
     console.log('[Client2] applyNumberFilter called for', columnKey, 'with config:', filterConfig)
-    
+
     setColumnFilters(prev => {
       const updated = {
         ...prev,
@@ -1652,16 +1740,16 @@ const Client2Page = () => {
       console.log('[Client2] Updated columnFilters:', updated)
       return updated
     })
-    
+
     setShowFilterDropdown(null)
     setCurrentPage(1)
-    
+
     // Immediately fetch full dataset with new filter
     setTimeout(() => {
       fetchClients(false)
     }, 0)
   }
-  
+
   const initNumericFilterTemp = (columnKey) => {
     if (!numericFilterTemp[columnKey]) {
       setNumericFilterTemp(prev => ({
@@ -1670,7 +1758,7 @@ const Client2Page = () => {
       }))
     }
   }
-  
+
   const updateNumericFilterTemp = (columnKey, field, value) => {
     setNumericFilterTemp(prev => ({
       ...prev,
@@ -1680,7 +1768,7 @@ const Client2Page = () => {
       }
     }))
   }
-  
+
   const initTextFilterTemp = (columnKey) => {
     if (!textFilterTemp[columnKey]) {
       setTextFilterTemp(prev => ({
@@ -1689,7 +1777,7 @@ const Client2Page = () => {
       }))
     }
   }
-  
+
   const updateTextFilterTemp = (columnKey, field, value) => {
     setTextFilterTemp(prev => ({
       ...prev,
@@ -1699,19 +1787,19 @@ const Client2Page = () => {
       }
     }))
   }
-  
+
   const applyTextFilter = (columnKey) => {
     const temp = textFilterTemp[columnKey]
     if (!temp || !temp.value) return
-    
+
     const filterConfig = {
       operator: temp.operator,
       value: temp.value,
       caseSensitive: temp.caseSensitive
     }
-    
+
     console.log('[Client2] applyTextFilter called for', columnKey, 'with config:', filterConfig)
-    
+
     setColumnFilters(prev => {
       const updated = {
         ...prev,
@@ -1720,10 +1808,10 @@ const Client2Page = () => {
       console.log('[Client2] Updated columnFilters:', updated)
       return updated
     })
-    
+
     setShowFilterDropdown(null)
     setCurrentPage(1)
-    
+
     // Immediately fetch full dataset with new filter
     setTimeout(() => {
       fetchClients(false)
@@ -1867,19 +1955,19 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 0 }))
       return
     }
-    
+
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
     // Skip for unsupported fields
     if (columnValuesUnsupported[columnKey]) return
-    
+
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
     // Reset scroll gating for this column
     columnScrollUserActionRef.current[columnKey] = false
     columnScrollLastTriggerRef.current[columnKey] = -Infinity
     columnLastScrollTopRef.current[columnKey] = 0
-    
+
     try {
       // Use dedicated fields API endpoint that searches across ALL data
       const baseParams = {
@@ -1909,25 +1997,25 @@ const Client2Page = () => {
       }
 
       const setVals = new Set()
-      
+
       if (searchQuery && searchQuery.trim()) {
         // When searching, fetch first page only and enable lazy loading for more
         const firstParams = { ...baseParams, page: 1, limit: 500 }
         const firstResponse = await brokerAPI.getClientFields(firstParams)
         const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
         const firstData = extract(firstResponse)
-        
+
         // Extract values from first page
         const firstClients = firstData?.clients || []
         firstClients.forEach(client => {
           const v = client?.[columnKey]
           if (v !== null && v !== undefined && v !== '') setVals.add(v)
         })
-        
+
         // Get total pages to determine if there's more data
         const totalPages = Math.max(1, Number(firstData?.pages || firstData?.totalPages || 1))
         const uniqueValues = Array.from(setVals).sort((a, b) => String(a).localeCompare(String(b)))
-        
+
         setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
         setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
         setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
@@ -1958,19 +2046,19 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: 0 }))
       return
     }
-    
+
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
     // Don't fetch if already loaded (unless forcing refresh)
     if (!forceRefresh && columnValues[columnKey]) return
-    
+
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
     // Reset scroll gating for this column
     columnScrollUserActionRef.current[columnKey] = false
     columnScrollLastTriggerRef.current[columnKey] = -Infinity
     columnLastScrollTopRef.current[columnKey] = 0
-    
+
     try {
       // Use dedicated fields API endpoint
       const params = {
@@ -2003,7 +2091,7 @@ const Client2Page = () => {
       const response = await brokerAPI.getClientFields(params)
       const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
       const data = extract(response)
-      
+
       // Extract unique values from response
       const clients = data?.clients || []
       const setVals = new Set()
@@ -2017,9 +2105,9 @@ const Client2Page = () => {
       const hasPagesInfo = Number.isFinite(pagesNum) && pagesNum > 0
       const inferredHasMore = clients.length >= 500
       const totalPages = hasPagesInfo ? pagesNum : null
-      
+
       console.log(`[Client2] fetchColumnValues complete for ${columnKey}: ${uniqueValues.length} values, page 1${hasPagesInfo ? ` of ${pagesNum}` : ''}`)
-      
+
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
       setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
@@ -2039,7 +2127,7 @@ const Client2Page = () => {
   const fetchMoreColumnValues = async (columnKey) => {
     console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
     console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
-    
+
     // Don't fetch if already loading more
     if (columnValuesLoadingMore[columnKey]) {
       console.log(`[Client2] Already loading more for ${columnKey}, skipping`)
@@ -2050,25 +2138,25 @@ const Client2Page = () => {
       console.log(`[Client2] No more values for ${columnKey}, skipping`)
       return
     }
-    
+
     const currentPage = columnValuesCurrentPage[columnKey] || 1
     const totalPages = columnValuesTotalPages[columnKey]  // may be null if unknown
-    
+
     console.log(`[Client2] Page info - current: ${currentPage}, total: ${totalPages ?? 'unknown'}`)
-    
+
     if (typeof totalPages === 'number' && currentPage >= totalPages) {
       console.log(`[Client2] Current page ${currentPage} >= total pages ${totalPages}, setting hasMore to false`)
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: false }))
       return
     }
-    
+
     console.log(`[Client2] Fetching page ${currentPage + 1} for ${columnKey}`)
     setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: true }))
-    
+
     try {
       const nextPage = currentPage + 1
       const searchQuery = columnValueSearchDebounce[columnKey] || columnValueSearch[columnKey] || ''
-      
+
       // Use dedicated fields API endpoint
       const params = {
         fields: columnKey,
@@ -2101,7 +2189,7 @@ const Client2Page = () => {
       const response = await brokerAPI.getClientFields(params)
       const extract = (resp) => (resp?.data?.data) || (resp?.data) || resp
       const data = extract(response)
-      
+
       // Extract and merge with existing values
       const clients = data?.clients || []
       const setVals = new Set(columnValues[columnKey] || [])
@@ -2127,7 +2215,7 @@ const Client2Page = () => {
     setSelectedColumnValues(prev => {
       const currentSelected = prev[columnKey] || []
       const isSelected = currentSelected.includes(value)
-      
+
       if (isSelected) {
         return { ...prev, [columnKey]: currentSelected.filter(v => v !== value) }
       } else {
@@ -2140,7 +2228,7 @@ const Client2Page = () => {
   const toggleSelectAllColumnValues = (columnKey) => {
     const allValues = columnValues[columnKey] || []
     const currentSelected = selectedColumnValues[columnKey] || []
-    
+
     if (currentSelected.length === allValues.length) {
       // Deselect all
       setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
@@ -2174,23 +2262,23 @@ const Client2Page = () => {
   // Apply checkbox filter - builds server-side filters using proper API format
   const applyCheckboxFilter = (columnKey) => {
     const selected = selectedColumnValues[columnKey] || []
-    
+
     console.log('[Client2] ========================================')
     console.log('[Client2] applyCheckboxFilter called')
     console.log('[Client2] columnKey:', columnKey)
     console.log('[Client2] selected values:', selected)
     console.log('[Client2] selected count:', selected.length)
     console.log('[Client2] ========================================')
-    
+
     if (selected.length === 0) {
       console.log('[Client2] No values selected, clearing filter')
       clearColumnFilter(columnKey)
       return
     }
-    
+
     setShowFilterDropdown(null)
     setCurrentPage(1)
-    
+
     // Store filter in state - will be sent to API via fetchClients
     setColumnFilters(prev => {
       const updated = {
@@ -2200,36 +2288,36 @@ const Client2Page = () => {
       console.log('[Client2] ✅ Checkbox filter updated:', JSON.stringify(updated, null, 2))
       return updated
     })
-    
+
     // Explicitly trigger fetch with new filter (in addition to useEffect)
     setTimeout(() => {
       console.log('[Client2] 🔄 Explicitly calling fetchClients after checkbox filter')
       fetchClients(false)
     }, 100)
   }
-  
+
   const applySortToColumn = (columnKey, direction) => {
     // Update the columnSortOrder state for UI indication
     setColumnSortOrder({
       [columnKey]: direction // Only one column can be sorted at a time
     })
-    
+
     // Update sortBy and sortOrder to trigger API call
     setSortBy(columnKey)
     setSortOrder(direction)
-    
+
     // Reset to first page when sorting changes
     setCurrentPage(1)
-    
+
     setShowFilterDropdown(null)
   }
-  
+
   const clearSort = (columnKey) => {
     setColumnSortOrder(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
-    
+
     // Clear the API sort states if this was the active sort column
     if (sortBy === columnKey) {
       setSortBy('')
@@ -2237,25 +2325,25 @@ const Client2Page = () => {
       setCurrentPage(1)
     }
   }
-  
+
   const getColumnType = (columnKey) => {
     const column = allColumns.find(col => col.key === columnKey)
     return column?.type || 'text'
   }
-  
+
   // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
     // Trigger immediate fetch for the new page
     // Don't wait for scroll; data fetch happens via useEffect dependency on currentPage
   }
-  
+
   // Handle items per page change
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value === 'All' ? 10000 : parseInt(value))
     setCurrentPage(1)
   }
-  
+
   // Toggle column visibility
   const toggleColumn = (columnKey) => {
     setVisibleColumns(prev => ({
@@ -2263,38 +2351,38 @@ const Client2Page = () => {
       [columnKey]: !prev[columnKey]
     }))
   }
-  
+
   // Add filter
   const handleAddFilter = () => {
     if (!newFilterValue.trim()) {
       alert('Please enter a filter value')
       return
     }
-    
+
     const newFilter = {
       field: newFilterField,
       operator: newFilterOperator,
       value: newFilterValue.trim()
     }
-    
+
     setFilters(prev => [...prev, newFilter])
     setNewFilterValue('')
     setShowFilterModal(false)
     setCurrentPage(1)
   }
-  
+
   // Remove filter
   const handleRemoveFilter = (index) => {
     setFilters(prev => prev.filter((_, i) => i !== index))
     setCurrentPage(1)
   }
-  
+
   // Clear all filters
   const handleClearAllFilters = () => {
     setFilters([])
     setCurrentPage(1)
   }
-  
+
   // Apply account filters
   const handleApplyAccountFilters = () => {
     // Parse MT5 accounts from text input
@@ -2308,15 +2396,15 @@ const Client2Page = () => {
     } else {
       setMt5Accounts([])
     }
-    
+
     // Set account range
     setAccountRangeMin(tempAccountRangeMin)
     setAccountRangeMax(tempAccountRangeMax)
-    
+
     setShowAccountFilterModal(false)
     setCurrentPage(1)
   }
-  
+
   // Clear account filters
   const handleClearAccountFilters = () => {
     setMt5Accounts([])
@@ -2327,27 +2415,27 @@ const Client2Page = () => {
     setTempAccountRangeMax('')
     setCurrentPage(1)
   }
-  
+
   // Export to CSV
   const handleExportToCSV = () => {
     if (!clients || clients.length === 0) {
       alert('No data to export')
       return
     }
-    
+
     // Get headers
     const headers = visibleColumnsList.map(col => col.label).join(',')
-    
+
     // Get rows - filter out null/undefined clients
     const rows = (clients || []).filter(client => client != null).map(client => {
       return visibleColumnsList.map(col => {
         let value = client[col.key]
-        
+
         // Format value
         if (value === null || value === undefined || value === '') {
           return ''
         }
-        
+
         // Escape quotes and commas
         if (typeof value === 'string') {
           value = value.replace(/"/g, '""')
@@ -2355,13 +2443,13 @@ const Client2Page = () => {
             value = `"${value}"`
           }
         }
-        
+
         return value
       }).join(',')
     }).join('\n')
-    
+
     const csvContent = headers + '\n' + rows
-    
+
     // Create and download file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -2373,7 +2461,7 @@ const Client2Page = () => {
     link.click()
     document.body.removeChild(link)
   }
-  
+
   // Manual refresh handler
   const handleManualRefresh = async () => {
     setIsRefreshing(true)
@@ -2383,37 +2471,37 @@ const Client2Page = () => {
       setTimeout(() => setIsRefreshing(false), 500)
     }
   }
-  
+
   // Face card drag and drop handlers
   const handleCardDragStart = (e, cardKey) => {
     setDraggedCard(cardKey)
     e.dataTransfer.effectAllowed = 'move'
   }
-  
+
   const handleCardDragOver = (e) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
   }
-  
+
   const handleCardDrop = (e, targetCardKey) => {
     e.preventDefault()
-    
+
     if (draggedCard && draggedCard !== targetCardKey) {
       const newOrder = [...faceCardOrder]
       const draggedIndex = newOrder.indexOf(draggedCard)
       const targetIndex = newOrder.indexOf(targetCardKey)
-      
+
       if (draggedIndex !== -1 && targetIndex !== -1) {
         // Swap the positions - matching ClientsPage approach
         newOrder[draggedIndex] = targetCardKey
         newOrder[targetIndex] = draggedCard
-        
+
         setFaceCardOrder(newOrder)
         localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
       }
     }
   }
-  
+
   const handleCardDragEnd = () => {
     setDraggedCard(null)
   }
@@ -2430,14 +2518,14 @@ const Client2Page = () => {
         setFaceCardOrder(merged)
         localStorage.setItem('client2FaceCardOrder', JSON.stringify(merged))
       }
-    } catch {}
+    } catch { }
   }, [faceCardOrder])
 
   const resetClient2FaceCardOrder = () => {
     setFaceCardOrder(defaultClient2FaceCardOrder)
     localStorage.setItem('client2FaceCardOrder', JSON.stringify(defaultClient2FaceCardOrder))
   }
-  
+
   // Get comprehensive card configuration for dynamic rendering - matches all 57 cards
   const getClient2CardConfig = useCallback((cardKey, totals) => {
     const configs = {
@@ -2445,36 +2533,38 @@ const Client2Page = () => {
       totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => totalClients || 0 },
       // A
       assets: { label: 'Assets', color: 'blue', getValue: () => totals?.assets || 0 },
-      
+
       // B
       balance: { label: 'Balance', color: 'indigo', getValue: () => totals?.balance || 0 },
       blockedCommission: { label: 'Blocked Commission', color: 'gray', getValue: () => totals?.blockedCommission || 0 },
       blockedProfit: { label: 'Blocked Profit', color: 'orange', getValue: () => totals?.blockedProfit || 0, colorCheck: true },
-      
+
       // C
       commission: { label: 'Commission', color: 'amber', getValue: () => totals?.commission || 0 },
       credit: { label: 'Credit', color: 'emerald', getValue: () => totals?.credit || 0 },
-      
+
       // D - Daily
       dailyBonusIn: { label: 'Daily Bonus In', color: 'teal', getValue: () => totals?.dailyBonusIn || 0 },
       dailyBonusOut: { label: 'Daily Bonus Out', color: 'red', getValue: () => totals?.dailyBonusOut || 0 },
       dailyCreditIn: { label: 'Daily Credit In', color: 'emerald', getValue: () => totals?.dailyCreditIn || 0 },
       dailyCreditOut: { label: 'Daily Credit Out', color: 'red', getValue: () => totals?.dailyCreditOut || 0 },
       dailyDeposit: { label: 'Daily Deposit', color: 'green', getValue: () => totals?.dailyDeposit || 0 },
+      dailyDepositPercent: { label: 'Daily Deposit %', color: 'emerald', getValue: () => computedPercentageTotals?.dailyDeposit || 0 },
       dailyPnL: { label: 'Daily P&L', color: 'cyan', getValue: () => totals?.dailyPnL || 0, colorCheck: true },
       dailySOCompensationIn: { label: 'Daily SO Compensation In', color: 'purple', getValue: () => totals?.dailySOCompensationIn || 0 },
       dailySOCompensationOut: { label: 'Daily SO Compensation Out', color: 'orange', getValue: () => totals?.dailySOCompensationOut || 0 },
       dailyWithdrawal: { label: 'Daily Withdrawal', color: 'red', getValue: () => totals?.dailyWithdrawal || 0 },
-      
+      dailyWithdrawalPercent: { label: 'Daily Withdrawal %', color: 'rose', getValue: () => computedPercentageTotals?.dailyWithdrawal || 0 },
+
       // E
       equity: { label: 'Equity', color: 'purple', getValue: () => totals?.equity || 0 },
-      
+
       // F
       floating: { label: 'Floating P/L', color: 'cyan', getValue: () => totals?.floating || 0, colorCheck: true },
-      
+
       // L
       liabilities: { label: 'Liabilities', color: 'red', getValue: () => totals?.liabilities || 0 },
-      
+
       // L - Lifetime
       lifetimeBonusIn: { label: 'Lifetime Bonus In', color: 'teal', getValue: () => totals?.lifetimeBonusIn || 0 },
       lifetimeBonusOut: { label: 'Lifetime Bonus Out', color: 'red', getValue: () => totals?.lifetimeBonusOut || 0 },
@@ -2482,28 +2572,29 @@ const Client2Page = () => {
       lifetimeCreditOut: { label: 'Lifetime Credit Out', color: 'red', getValue: () => totals?.lifetimeCreditOut || 0 },
       lifetimeDeposit: { label: 'Lifetime Deposit', color: 'green', getValue: () => totals?.lifetimeDeposit || 0 },
       lifetimePnL: { label: 'Lifetime P&L', color: 'indigo', getValue: () => totals?.lifetimePnL || 0, colorCheck: true },
+      lifetimePnLPercent: { label: 'Lifetime PnL %', color: 'violet', getValue: () => computedPercentageTotals?.lifetimePnL || 0, colorCheck: true },
       lifetimeSOCompensationIn: { label: 'Lifetime SO Compensation In', color: 'purple', getValue: () => totals?.lifetimeSOCompensationIn || 0 },
       lifetimeSOCompensationOut: { label: 'Lifetime SO Compensation Out', color: 'orange', getValue: () => totals?.lifetimeSOCompensationOut || 0 },
       lifetimeWithdrawal: { label: 'Lifetime Withdrawal', color: 'red', getValue: () => totals?.lifetimeWithdrawal || 0 },
-      
+
       // M
       margin: { label: 'Margin', color: 'yellow', getValue: () => totals?.margin || 0 },
       marginFree: { label: 'Margin Free', color: 'lime', getValue: () => totals?.marginFree || 0 },
       marginInitial: { label: 'Margin Initial', color: 'sky', getValue: () => totals?.marginInitial || 0 },
       marginLevel: { label: 'Margin Level', color: 'pink', getValue: () => totals?.marginLevel || 0 },
       marginMaintenance: { label: 'Margin Maintenance', color: 'violet', getValue: () => totals?.marginMaintenance || 0 },
-      
+
       // P
       pnl: { label: 'P&L', color: 'cyan', getValue: () => totals?.pnl || 0, colorCheck: true },
       previousEquity: { label: 'Previous Equity', color: 'slate', getValue: () => totals?.previousEquity || 0 },
       profit: { label: 'Profit', color: 'green', getValue: () => totals?.profit || 0, colorCheck: true },
-      
+
       // S
       soEquity: { label: 'SO Equity', color: 'fuchsia', getValue: () => totals?.soEquity || 0 },
       soLevel: { label: 'SO Level', color: 'rose', getValue: () => totals?.soLevel || 0 },
       soMargin: { label: 'SO Margin', color: 'amber', getValue: () => totals?.soMargin || 0 },
       storage: { label: 'Storage', color: 'gray', getValue: () => totals?.storage || 0 },
-      
+
       // T - This Month
       thisMonthBonusIn: { label: 'This Month Bonus In', color: 'teal', getValue: () => totals?.thisMonthBonusIn || 0 },
       thisMonthBonusOut: { label: 'This Month Bonus Out', color: 'red', getValue: () => totals?.thisMonthBonusOut || 0 },
@@ -2514,7 +2605,7 @@ const Client2Page = () => {
       thisMonthSOCompensationIn: { label: 'This Month SO Compensation In', color: 'purple', getValue: () => totals?.thisMonthSOCompensationIn || 0 },
       thisMonthSOCompensationOut: { label: 'This Month SO Compensation Out', color: 'orange', getValue: () => totals?.thisMonthSOCompensationOut || 0 },
       thisMonthWithdrawal: { label: 'This Month Withdrawal', color: 'red', getValue: () => totals?.thisMonthWithdrawal || 0 },
-      
+
       // T - This Week
       thisWeekBonusIn: { label: 'This Week Bonus In', color: 'teal', getValue: () => totals?.thisWeekBonusIn || 0 },
       thisWeekBonusOut: { label: 'This Week Bonus Out', color: 'red', getValue: () => totals?.thisWeekBonusOut || 0 },
@@ -2525,23 +2616,23 @@ const Client2Page = () => {
       thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
       thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
       thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 },
-      
+
       // Rebate cards
       availableRebate: { label: 'Available Rebate', color: 'teal', getValue: () => rebateTotals?.availableRebate || 0 },
       availableRebatePercent: { label: 'Available Rebate %', color: 'cyan', getValue: () => rebateTotals?.availableRebatePercent || 0 },
       totalRebate: { label: 'Total Rebate', color: 'emerald', getValue: () => rebateTotals?.totalRebate || 0 },
       totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 },
-      
+
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
-      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totalsPercent?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
+      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (computedPercentageTotals?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
       bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
       bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0), colorCheck: true }
     }
-    
+
     return configs[cardKey] || null
-  }, [totalClients, rebateTotals, totals, totalsPercent])
-  
+  }, [totalClients, rebateTotals, totals, totalsPercent, computedPercentageTotals])
+
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
     // Base payload mirrors current filters/search/sort
@@ -2705,7 +2796,7 @@ const Client2Page = () => {
       console.log('[Client2Page] Building export payload variants...')
       const variants = buildExportPayloadVariants(false)
       console.log('[Client2Page] Payload variants:', variants.length, variants)
-      
+
       // Fetch and merge unique by login
       const clientMap = new Map()
       for (let i = 0; i < variants.length; i++) {
@@ -2715,16 +2806,16 @@ const Client2Page = () => {
         console.log(`[Client2Page] Got ${rows?.length || 0} rows for variant ${i + 1}`)
         // Guard: filter out null/undefined rows
         if (Array.isArray(rows)) {
-          rows.filter(c => c != null).forEach(c => { 
-            if (c && c.login) clientMap.set(c.login, c) 
+          rows.filter(c => c != null).forEach(c => {
+            if (c && c.login) clientMap.set(c.login, c)
           })
         }
       }
       let rows = Array.from(clientMap.values())
       console.log('[Client2Page] Merged unique clients:', rows.length)
-      
+
       // IB filter is applied server-side via mt5Accounts in payload variants
-      
+
       // Apply table sort if set
       if (sortBy) {
         const dir = sortOrder === 'asc' ? 1 : -1
@@ -2742,7 +2833,7 @@ const Client2Page = () => {
         })
         console.log('[Client2Page] Sorted by', sortBy, sortOrder)
       }
-      
+
       console.log('[Client2Page] Final export dataset:', rows.length, 'rows')
       return rows
     } catch (err) {
@@ -2758,19 +2849,19 @@ const Client2Page = () => {
       try {
         console.log('[Client2Page] Export started, type:', type)
         setShowExportMenu(false)
-        
+
         console.log('[Client2Page] Gathering export dataset...')
         const allRows = await gatherExportDataset()
         console.log('[Client2Page] Export dataset gathered:', allRows?.length, 'rows')
-        
+
         if (!allRows || allRows.length === 0) {
           alert('No data to export. Please check your filters and try again.')
           return
         }
-        
+
         // For "all" export, only include columns that have data in the fetched rows
         let columns = type === 'all' ? allColumns : visibleColumnsList
-        
+
         if (type === 'all' && allRows.length > 0) {
           // Check which columns actually have data in the first row (sample)
           const sampleRow = allRows[0]
@@ -2781,9 +2872,9 @@ const Client2Page = () => {
           console.log('[Client2Page] Filtered columns with data:', columnsWithData.length, 'out of', columns.length)
           columns = columnsWithData
         }
-        
+
         console.log('[Client2Page] Exporting', columns.length, 'columns for', allRows.length, 'rows')
-        
+
         const headers = columns.map(col => col.label).join(',')
         // Guard: filter out null/undefined clients before mapping
         const rows = (allRows || []).filter(client => client != null).map(client => {
@@ -2818,39 +2909,39 @@ const Client2Page = () => {
       }
     })()
   }
-  
+
   // View client details
   const handleViewClientDetails = (client) => {
     setSelectedClient(client)
     setShowClientDetailModal(true)
   }
-  
+
   // Format value for display
   const formatValue = (key, value) => {
     if (value === null || value === undefined || value === '') {
       return '-'
     }
-    
+
     // Format numbers with Indian style
-    if (['balance', 'credit', 'equity', 'margin', 'marginFree', 'profit', 'floating', 
-         'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
+    if (['balance', 'credit', 'equity', 'margin', 'marginFree', 'profit', 'floating',
+      'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value)
       if (isNaN(num)) return '-'
       return formatIndianNumber(num.toFixed(2))
     }
-    
+
     // Format margin level as percentage
     if (key === 'marginLevel') {
       const num = parseFloat(value)
       if (isNaN(num)) return '-'
       return `${num.toFixed(2)}%`
     }
-    
+
     // Format leverage
     if (key === 'leverage') {
       return `1:${value}`
     }
-    
+
     // Format dates
     if (key === 'registration' || key === 'lastAccess') {
       if (!value) return '-'
@@ -2859,7 +2950,7 @@ const Client2Page = () => {
       const date = new Date(timestamp * 1000)
       return date.toLocaleString()
     }
-    
+
     // Format epoch timestamps (userLastUpdate, accountLastUpdate)
     if (key === 'userLastUpdate' || key === 'accountLastUpdate') {
       if (!value) return '-'
@@ -2874,16 +2965,16 @@ const Client2Page = () => {
       const seconds = String(date.getSeconds()).padStart(2, '0')
       return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
     }
-    
+
     return value
   }
-  
+
   // Get color class for numeric values
   const getValueColorClass = (key, value) => {
     if (value === null || value === undefined || value === '') {
       return ''
     }
-    
+
     // Color code profit/loss fields
     if (['profit', 'floating', 'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value)
@@ -2891,7 +2982,7 @@ const Client2Page = () => {
       if (num > 0) return 'text-green-600 font-semibold'
       if (num < 0) return 'text-red-600 font-semibold'
     }
-    
+
     // Color code margin level
     if (key === 'marginLevel') {
       const num = parseFloat(value)
@@ -2900,31 +2991,31 @@ const Client2Page = () => {
       if (num < 200) return 'text-orange-600 font-semibold'
       return 'text-green-600'
     }
-    
+
     return ''
   }
-  
+
   // Format numbers in Indian style
   const formatIndianNumber = (num) => {
     const numStr = num.toString()
     const [integerPart, decimalPart] = numStr.split('.')
-    
+
     const isNegative = integerPart.startsWith('-')
     const absoluteInteger = isNegative ? integerPart.substring(1) : integerPart
-    
+
     if (absoluteInteger.length <= 3) {
       return decimalPart ? `${integerPart}.${decimalPart}` : integerPart
     }
-    
+
     const lastThree = absoluteInteger.substring(absoluteInteger.length - 3)
     const otherNumbers = absoluteInteger.substring(0, absoluteInteger.length - 3)
     const formattedOther = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
     const formatted = `${formattedOther},${lastThree}`
-    
+
     const result = (isNegative ? '-' : '') + formatted
     return decimalPart ? `${result}.${decimalPart}` : result
   }
-  
+
   // Percentage mode: just append a percent sign to the normal formatted number
   const formatPercentageValue = (value) => {
     if (value == null || value === '') return ''
@@ -2936,7 +3027,7 @@ const Client2Page = () => {
   useEffect(() => {
     localStorage.setItem('client2CardVisibility', JSON.stringify(cardVisibility))
   }, [cardVisibility])
-  
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -2961,32 +3052,32 @@ const Client2Page = () => {
         }
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown])
-  
+
   return (
     <div className="min-h-screen flex overflow-x-hidden overflow-y-auto relative">
       {/* Clean White Background */}
       <div className="absolute inset-0 bg-white"></div>
-      
+
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => {
           setSidebarOpen(false)
-          try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {}
+          try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch { }
         }}
         onToggle={() => {
           setSidebarOpen(v => {
             const next = !v
-            try { localStorage.setItem('sidebarOpen', JSON.stringify(next)) } catch {}
+            try { localStorage.setItem('sidebarOpen', JSON.stringify(next)) } catch { }
             return next
           })
         }}
       />
-      
-  <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -3003,7 +3094,7 @@ const Client2Page = () => {
                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">Client 2</h1>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {/* Filter Button (Green/Emerald Theme) */}
               <div className="relative" ref={filterMenuRef}>
@@ -3027,7 +3118,7 @@ const Client2Page = () => {
                     )}
                   </span>
                 </button>
-                
+
                 {showFilterMenu && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border-2 border-emerald-300 z-50">
                     <div className="p-3">
@@ -3086,7 +3177,7 @@ const Client2Page = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Card Filter Button (Pink Theme) */}
               <div className="relative" ref={cardFilterMenuRef}>
                 <div className="flex items-center gap-2">
@@ -3100,27 +3191,25 @@ const Client2Page = () => {
                     </svg>
                     Card Filter
                   </button>
-                  
+
                   {/* Percentage Toggle - Now outside the menu */}
                   <div className="flex items-center gap-2 bg-white border-2 border-pink-300 rounded-lg px-2 h-9">
                     <span className="text-xs font-medium text-pink-700">%</span>
                     <button
                       onClick={() => setCardFilterPercentMode(v => !v)}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
-                        cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
-                      }`}
+                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
+                        }`}
                       title="Toggle percentage cards"
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
+                          }`}
                       />
                     </button>
                     <span className="text-xs font-medium text-pink-700">Mode</span>
                   </div>
                 </div>
-                
+
                 {showCardFilterMenu && (
                   <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
                     scrollbarWidth: 'thin',
@@ -3244,7 +3333,7 @@ const Client2Page = () => {
                           })()}
                         </button>
                       </div>
-                      
+
                       <input
                         type="text"
                         placeholder="Search cards..."
@@ -3252,7 +3341,7 @@ const Client2Page = () => {
                         onChange={(e) => setCardFilterSearchQuery(e.target.value)}
                         className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg mb-3 focus:outline-none focus:border-pink-300 text-gray-900 bg-white"
                       />
-                      
+
                       <div className="space-y-1">
                         {(() => {
                           const baseLabels = {
@@ -3349,35 +3438,32 @@ const Client2Page = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Groups Button */}
-              <GroupSelector 
+              <GroupSelector
                 onCreateClick={() => setShowGroupModal(true)}
                 onEditClick={() => setShowGroupModal(true)}
                 moduleName="client2"
               />
-              
+
               {/* IB Filter Button */}
               <IBSelector />
-              
+
               {/* Cards Toggle Button */}
               <button
                 onClick={() => setShowFaceCards(v => !v)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
-                  showFaceCards 
-                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${showFaceCards
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
                     : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
                 <span>Cards</span>
-                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
-                  showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
-                }`}>
+                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
+                  }`}>
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showFaceCards ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </div>
               </button>
@@ -3454,7 +3540,7 @@ const Client2Page = () => {
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
-                  
+
                   // Switch to percentage variants when in percentage mode
                   if (cardFilterPercentMode) {
                     if (cardKey === 'availableRebate') displayCardKey = 'availableRebatePercent'
@@ -3462,20 +3548,20 @@ const Client2Page = () => {
                     if (cardKey === 'netLifetimePnL') displayCardKey = 'netLifetimePnLPercent'
                     if (cardKey === 'bookPnL') displayCardKey = 'bookPnLPercent'
                   }
-                  
+
                   // Skip percentage variants in card order (they're accessed via switching above)
                   if (cardKey.endsWith('Percent')) return null
-                  
+
                   // Use totalsPercent when in percentage mode, otherwise use totals
                   const dataSource = cardFilterPercentMode ? totalsPercent : totals
                   const card = getClient2CardConfig(displayCardKey, dataSource)
                   if (!card || cardVisibility[cardKey] === false) return null
-                  
+
                   // Add % to label when in percentage mode (except for cards that already have it)
-                  const displayLabel = cardFilterPercentMode && !card.label.includes('%') 
-                    ? `${card.label} %` 
+                  const displayLabel = cardFilterPercentMode && !card.label.includes('%')
+                    ? `${card.label} %`
                     : card.label
-                  
+
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
                   // Colors
@@ -3518,164 +3604,162 @@ const Client2Page = () => {
               </div>
             </div>
           )}
-        
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Pagination Controls - Top */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-blue-700">Show:</span>
-              <select
-                value={itemsPerPage === 10000 ? 'All' : itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
-              >
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200">200</option>
-                <option value="500">500</option>
-                <option value="All">All</option>
-              </select>
-              <span className="text-xs font-semibold text-blue-700">entries</span>
-            </div>
-            
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Page Navigation */}
-              {itemsPerPage !== 'All' && itemsPerPage !== 10000 && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 rounded-md transition-all shadow-sm ${
-                      currentPage === 1
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-md transition-all shadow-sm ${
-                      currentPage === totalPages
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
 
-              {/* Columns Selector Button */}
-              <div className="relative" ref={columnSelectorRef}>
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
-                  title="Show/Hide Columns"
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Pagination Controls - Top */}
+            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-blue-700">Show:</span>
+                <select
+                  value={itemsPerPage === 10000 ? 'All' : itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
-                  </svg>
-                  Columns
-                </button>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="500">500</option>
+                  <option value="All">All</option>
+                </select>
+                <span className="text-xs font-semibold text-blue-700">entries</span>
               </div>
 
-              {/* Search Bar */}
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="Search login, name, email..."
-                    className="w-64 pl-3 pr-8 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-                  />
-                  {/* Inline Clear X Icon */}
-                  {searchInput && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Page Navigation */}
+                {itemsPerPage !== 'All' && itemsPerPage !== 10000 && (
+                  <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => {
-                        setSearchInput('')
-                        setSearchQuery('')
-                        setCurrentPage(1)
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Clear search"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === 1
+                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                        }`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
-                  )}
+
+                    <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
+                      Page {currentPage} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === totalPages
+                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                        }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Columns Selector Button */}
+                <div className="relative" ref={columnSelectorRef}>
+                  <button
+                    onClick={() => setShowColumnSelector(!showColumnSelector)}
+                    className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                    title="Show/Hide Columns"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+                    </svg>
+                    Columns
+                  </button>
                 </div>
-                
-                {/* Search Button */}
-                <button
-                  onClick={handleSearch}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-xs font-medium"
-                  title="Search"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <span>Search</span>
-                </button>
+
+                {/* Search Bar */}
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="Search login, name, email..."
+                      className="w-64 pl-3 pr-8 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                    />
+                    {/* Inline Clear X Icon */}
+                    {searchInput && (
+                      <button
+                        onClick={() => {
+                          setSearchInput('')
+                          setSearchQuery('')
+                          setCurrentPage(1)
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Clear search"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search Button */}
+                  <button
+                    onClick={handleSearch}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-xs font-medium"
+                    title="Search"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Search</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Column Selector Dropdown */}
-          {showColumnSelector && (
-            <div 
-              ref={columnSelectorRef}
-              className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col" 
-              style={{ 
-                top: '15%',
-                right: '10px',
-                width: '300px',
-                maxHeight: '70vh',
-                zIndex: 20000000
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-3 py-2 border-b border-amber-200 flex items-center justify-between">
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
-                <button
-                  onClick={() => setShowColumnSelector(false)}
-                  className="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-100"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="px-3 py-2 border-b border-amber-200">
-                <input
-                  type="text"
-                  placeholder="Search columns..."
-                  value={columnSearchQuery}
-                  onChange={(e) => setColumnSearchQuery(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs text-gray-700 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
-                />
-              </div>
-              
-              <div className="overflow-y-auto flex-1 px-2 py-2" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#9ca3af #f3f4f6'
-              }}>
-                <style>{`
+            {/* Column Selector Dropdown */}
+            {showColumnSelector && (
+              <div
+                ref={columnSelectorRef}
+                className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col"
+                style={{
+                  top: '15%',
+                  right: '10px',
+                  width: '300px',
+                  maxHeight: '70vh',
+                  zIndex: 20000000
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-3 py-2 border-b border-amber-200 flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
+                  <button
+                    onClick={() => setShowColumnSelector(false)}
+                    className="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-100"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="px-3 py-2 border-b border-amber-200">
+                  <input
+                    type="text"
+                    placeholder="Search columns..."
+                    value={columnSearchQuery}
+                    onChange={(e) => setColumnSearchQuery(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs text-gray-700 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
+                  />
+                </div>
+
+                <div className="overflow-y-auto flex-1 px-2 py-2" style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #f3f4f6'
+                }}>
+                  <style>{`
                   .overflow-y-auto::-webkit-scrollbar {
                     width: 8px;
                   }
@@ -3690,44 +3774,44 @@ const Client2Page = () => {
                     background: #6b7280;
                   }
                 `}</style>
-                {allColumns
-                  .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
-                  .map(col => (
-                    <label
-                      key={col.key}
-                      className="flex items-center gap-2 text-xs text-gray-700 hover:bg-amber-100 p-2 rounded-md cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={visibleColumns[col.key] || false}
-                        onChange={() => toggleColumn(col.key)}
-                        className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
-                      />
-                      <span className="font-semibold">{col.label}</span>
-                    </label>
-                  ))}
+                  {allColumns
+                    .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
+                    .map(col => (
+                      <label
+                        key={col.key}
+                        className="flex items-center gap-2 text-xs text-gray-700 hover:bg-amber-100 p-2 rounded-md cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[col.key] || false}
+                          onChange={() => toggleColumn(col.key)}
+                          className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
+                        />
+                        <span className="font-semibold">{col.label}</span>
+                      </label>
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
-          
-          
-          {/* Error Message */}
-          {error && error !== 'Success' && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
-          
-          {/* Table - Show table with progress bar for all loading states */}
-          {(clients.length > 0 || (initialLoad && loading)) && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '470px' : '650px' }}>
-              {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
-              <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{ 
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#9ca3af #e5e7eb',
-                position: 'relative'
-              }}>
-                <style>{`
+            )}
+
+
+            {/* Error Message */}
+            {error && error !== 'Success' && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                {error}
+              </div>
+            )}
+
+            {/* Table - Show table with progress bar for all loading states */}
+            {(clients.length > 0 || (initialLoad && loading)) && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '470px' : '650px' }}>
+                {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
+                <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #e5e7eb',
+                  position: 'relative'
+                }}>
+                  <style>{`
                   /* Table cell boundary enforcement */
                   table {
                     border-collapse: separate;
@@ -3851,10 +3935,10 @@ const Client2Page = () => {
                     animation: headerSlide 0.9s linear infinite;
                   }
                 `}</style>
-                
-                {/* Table */}
-                  <table ref={tableRef} className="divide-y divide-gray-200" style={{ 
-                    tableLayout: 'fixed', 
+
+                  {/* Table */}
+                  <table ref={tableRef} className="divide-y divide-gray-200" style={{
+                    tableLayout: 'fixed',
                     width: `${totalTableWidth}px`,
                     minWidth: '100%'
                   }}>
@@ -3874,14 +3958,13 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${
-                                isDragging ? 'opacity-50' : ''
-                              } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
+                              className={`px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
+                                } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
                               onClick={() => handleSort(col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
                               onDragLeave={handleColumnDragLeave}
                               onDrop={(e) => handleColumnDrop(e, col.key)}
-                              style={{ 
+                              style={{
                                 minWidth: '80px',
                                 overflow: 'hidden',
                                 backgroundColor: '#2563eb',
@@ -3903,15 +3986,15 @@ const Client2Page = () => {
                                     onClick={(e) => e.stopPropagation()}
                                     title="Drag to reorder column"
                                   >
-                                    <svg 
-                                      className="w-3 h-3 text-white/60 flex-shrink-0" 
-                                      fill="currentColor" 
+                                    <svg
+                                      className="w-3 h-3 text-white/60 flex-shrink-0"
+                                      fill="currentColor"
                                       viewBox="0 0 20 20"
                                     >
                                       <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
                                     </svg>
                                   </div>
-                                  <span 
+                                  <span
                                     className="truncate"
                                     title={col.label}
                                   >
@@ -3931,7 +4014,7 @@ const Client2Page = () => {
                                     </div>
                                   </div>
                                 )}
-                                
+
                                 {/* Filter Icon - Just icon, no box */}
                                 <div className="relative" ref={el => {
                                   if (!filterRefs.current) filterRefs.current = {}
@@ -3951,11 +4034,11 @@ const Client2Page = () => {
                                         const dropdownWidth = 280
                                         const spaceOnRight = window.innerWidth - rect.right
                                         const spaceOnLeft = rect.left
-                                        
+
                                         // Open to the left for last 3 columns OR if there's not enough space on the right
                                         const isLastThreeColumns = columnIndex >= totalColumns - 3
                                         const shouldOpenLeft = isLastThreeColumns || (spaceOnRight < dropdownWidth + 20 && spaceOnLeft > dropdownWidth + 20)
-                                        
+
                                         setFilterPosition({
                                           top: rect.top,
                                           left: rect.left,
@@ -3964,7 +4047,7 @@ const Client2Page = () => {
                                           shouldOpenLeft
                                         })
                                         setShowFilterDropdown(col.key)
-                                        
+
                                         // Fetch column values for ALL columns (including login)
                                         const columnType = getColumnType(col.key)
                                         // Always fetch values for checkbox filtering
@@ -3994,15 +4077,15 @@ const Client2Page = () => {
                                     const columnType = getColumnType(columnKey)
                                     const isNumeric = columnType === 'float' || columnType === 'integer'
                                     const isInteger = columnType === 'integer'
-                                    
+
                                     // Initialize temp state for numeric filter if needed
                                     if (isNumeric && !numericFilterTemp[columnKey]) {
                                       initNumericFilterTemp(columnKey)
                                     }
                                     const tempFilter = numericFilterTemp[columnKey] || { operator: 'equal', value1: '', value2: '' }
-                                    
+
                                     return createPortal(
-                                      <div 
+                                      <div
                                         ref={filterPanelRef}
                                         tabIndex={0}
                                         className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl flex flex-col text-[11px]"
@@ -4024,8 +4107,8 @@ const Client2Page = () => {
                                         style={{
                                           top: '50%',
                                           transform: 'translateY(-50%)',
-                                          left: filterPosition.shouldOpenLeft 
-                                            ? `${filterPosition.left - 290}px` 
+                                          left: filterPosition.shouldOpenLeft
+                                            ? `${filterPosition.left - 290}px`
                                             : `${filterPosition.right + 10}px`,
                                           width: '280px',
                                           maxHeight: '80vh',
@@ -4051,7 +4134,7 @@ const Client2Page = () => {
                                         {isNumeric && (() => {
                                           const hasNumberFilter = columnFilters[`${columnKey}_number`]
                                           const currentSort = columnSortOrder[columnKey]
-                                          
+
                                           return (
                                             <>
                                               {/* Sort Options */}
@@ -4095,7 +4178,7 @@ const Client2Page = () => {
                                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                     </svg>
                                                   </button>
-                                                  
+
                                                   {/* Number Filter Submenu */}
                                                   <div
                                                     id={`number-filter-menu-${columnKey}`}
@@ -4224,94 +4307,94 @@ const Client2Page = () => {
                                                 )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                <div 
+                                                <div
                                                   className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onScroll={(e) => {
                                                     const target = e.currentTarget
-                                                      const scrollTop = target.scrollTop
-                                                      const scrollHeight = target.scrollHeight
-                                                      const clientHeight = target.clientHeight
-                                                      const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
-                                                      
-                                                      console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
-                                                      
-                                                      // Load more when scrolled to bottom
-                                                      if (scrollTop + clientHeight >= scrollHeight - 5) {
-                                                        console.log(`[Client2] Reached bottom for ${columnKey}`)
-                                                        const userScrolled = !!columnScrollUserActionRef.current[columnKey]
-                                                        const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
-                                                        if (!userScrolled) {
-                                                          console.log(`[Client2] Ignoring: no manual scroll detected`)
-                                                          return
-                                                        }
-                                                        if (scrollTop <= lastTop) {
-                                                          console.log(`[Client2] Waiting for scroll beyond last trigger`)
-                                                          return
-                                                        }
-                                                        if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
-                                                          fetchMoreColumnValues(columnKey)
-                                                          columnScrollUserActionRef.current[columnKey] = false
-                                                          columnScrollLastTriggerRef.current[columnKey] = scrollTop
-                                                        } else {
-                                                          console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
-                                                        }
+                                                    const scrollTop = target.scrollTop
+                                                    const scrollHeight = target.scrollHeight
+                                                    const clientHeight = target.clientHeight
+                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
+
+                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+
+                                                    // Load more when scrolled to bottom
+                                                    if (scrollTop + clientHeight >= scrollHeight - 5) {
+                                                      console.log(`[Client2] Reached bottom for ${columnKey}`)
+                                                      const userScrolled = !!columnScrollUserActionRef.current[columnKey]
+                                                      const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
+                                                      if (!userScrolled) {
+                                                        console.log(`[Client2] Ignoring: no manual scroll detected`)
+                                                        return
                                                       }
-                                                    }}
-                                                  >
-                                                    {columnValuesLoading[columnKey] ? (
-                                                      <div className="py-8 text-center">
-                                                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                        <p className="text-xs text-gray-500 mt-2">Loading values...</p>
-                                                      </div>
-                                                    ) : (() => {
-                                                      const allVals = columnValues[columnKey] || []
-                                                      const selected = selectedColumnValues[columnKey] || []
-                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                      // Values are already filtered server-side
-                                                      const filteredVals = allVals
-                                                      
-                                                      return (
-                                                        <>
-                                                          {filteredVals.length > 0 ? (
-                                                            <div className="space-y-1">
-                                                              {filteredVals.map((value) => (
-                                                                <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                                                                  <input
-                                                                    type="checkbox"
-                                                                    checked={selected.includes(value)}
-                                                                    onChange={() => toggleColumnValue(columnKey, value)}
-                                                                    className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                  />
-                                                                  <span className="text-xs text-gray-700">{value}</span>
-                                                                </label>
-                                                              ))}
-                                                              {/* Loading more indicator */}
-                                                              {columnValuesLoadingMore[columnKey] && (
-                                                                <div className="py-4 text-center">
-                                                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                                  <p className="text-xs text-gray-500 mt-1">Loading more...</p>
-                                                                </div>
-                                                              )}
-                                                              {/* No more values indicator */}
-                                                              {!columnValuesHasMore[columnKey] && allVals.length > 0 && (
-                                                                <div className="py-2 text-xs text-gray-400 text-center italic">
-                                                                  All values loaded
-                                                                </div>
-                                                              )}
-                                                            </div>
-                                                          ) : (
-                                                            <div className="py-8 text-xs text-gray-500 text-center">
-                                                              {searchQ ? 'No matching values found' : 'No values available'}
-                                                            </div>
-                                                          )}
-                                                        </>
-                                                      )
-                                                    })()}
-                                                  </div>
+                                                      if (scrollTop <= lastTop) {
+                                                        console.log(`[Client2] Waiting for scroll beyond last trigger`)
+                                                        return
+                                                      }
+                                                      if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
+                                                        fetchMoreColumnValues(columnKey)
+                                                        columnScrollUserActionRef.current[columnKey] = false
+                                                        columnScrollLastTriggerRef.current[columnKey] = scrollTop
+                                                      } else {
+                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                      }
+                                                    }
+                                                  }}
+                                                >
+                                                  {columnValuesLoading[columnKey] ? (
+                                                    <div className="py-8 text-center">
+                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                    </div>
+                                                  ) : (() => {
+                                                    const allVals = columnValues[columnKey] || []
+                                                    const selected = selectedColumnValues[columnKey] || []
+                                                    const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                    // Values are already filtered server-side
+                                                    const filteredVals = allVals
+
+                                                    return (
+                                                      <>
+                                                        {filteredVals.length > 0 ? (
+                                                          <div className="space-y-1">
+                                                            {filteredVals.map((value) => (
+                                                              <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={selected.includes(value)}
+                                                                  onChange={() => toggleColumnValue(columnKey, value)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs text-gray-700">{value}</span>
+                                                              </label>
+                                                            ))}
+                                                            {/* Loading more indicator */}
+                                                            {columnValuesLoadingMore[columnKey] && (
+                                                              <div className="py-4 text-center">
+                                                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                                <p className="text-xs text-gray-500 mt-1">Loading more...</p>
+                                                              </div>
+                                                            )}
+                                                            {/* No more values indicator */}
+                                                            {!columnValuesHasMore[columnKey] && allVals.length > 0 && (
+                                                              <div className="py-2 text-xs text-gray-400 text-center italic">
+                                                                All values loaded
+                                                              </div>
+                                                            )}
+                                                          </div>
+                                                        ) : (
+                                                          <div className="py-8 text-xs text-gray-500 text-center">
+                                                            {searchQ ? 'No matching values found' : 'No values available'}
+                                                          </div>
+                                                        )}
+                                                      </>
+                                                    )
+                                                  })()}
+                                                </div>
                                               </div>
 
                                               {/* OK/Close Buttons */}
@@ -4341,17 +4424,17 @@ const Client2Page = () => {
                                           const currentSort = columnSortOrder[columnKey]
                                           const checkboxFilterKey = `${columnKey}_checkbox`
                                           const hasCheckboxFilter = columnFilters[checkboxFilterKey]
-                                          
+
                                           const allValues = columnValues[columnKey] || []
                                           const loading = columnValuesLoading[columnKey]
                                           const loadingMore = columnValuesLoadingMore[columnKey]
                                           const hasMore = columnValuesHasMore[columnKey]
                                           const selected = selectedColumnValues[columnKey] || []
                                           const searchQuery = columnValueSearch[columnKey] || ''
-                                          
+
                                           // Values are already filtered server-side based on search
                                           const filteredValues = allValues
-                                          
+
                                           return (
                                             <>
                                               {/* Sort Options */}
@@ -4395,7 +4478,7 @@ const Client2Page = () => {
                                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                     </svg>
                                                   </button>
-                                                  
+
                                                   {/* Keep existing text filter submenu for advanced filtering */}
                                                   <div
                                                     id={`text-filter-menu-${columnKey}`}
@@ -4539,86 +4622,86 @@ const Client2Page = () => {
                                                 )}
 
                                                 {/* Values List - Lazy loading with scroll detection */}
-                                                <div 
+                                                <div
                                                   className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onScroll={(e) => {
                                                     const target = e.currentTarget
-                                                      const scrollTop = target.scrollTop
-                                                      const scrollHeight = target.scrollHeight
-                                                      const clientHeight = target.clientHeight
-                                                      const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
-                                                      
-                                                      console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
-                                                      
-                                                      // Load more when scrolled to bottom
-                                                      if (scrollTop + clientHeight >= scrollHeight - 5) {
-                                                        console.log(`[Client2] Reached bottom for ${columnKey}`)
-                                                        const userScrolled = !!columnScrollUserActionRef.current[columnKey]
-                                                        const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
-                                                        if (!userScrolled) {
-                                                          console.log(`[Client2] Ignoring: no manual scroll detected`)
-                                                          return
-                                                        }
-                                                        if (scrollTop <= lastTop) {
-                                                          console.log(`[Client2] Waiting for scroll beyond last trigger`)
-                                                          return
-                                                        }
-                                                        if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
-                                                          console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
-                                                          fetchMoreColumnValues(columnKey)
-                                                          columnScrollUserActionRef.current[columnKey] = false
-                                                          columnScrollLastTriggerRef.current[columnKey] = scrollTop
-                                                        } else {
-                                                          console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
-                                                        }
+                                                    const scrollTop = target.scrollTop
+                                                    const scrollHeight = target.scrollHeight
+                                                    const clientHeight = target.clientHeight
+                                                    const scrollPercentage = ((scrollTop + clientHeight) / scrollHeight) * 100
+
+                                                    console.log(`[Client2] Scroll event - ${columnKey}: ${scrollPercentage.toFixed(1)}%, hasMore: ${columnValuesHasMore[columnKey]}, loading: ${columnValuesLoadingMore[columnKey]}`)
+
+                                                    // Load more when scrolled to bottom
+                                                    if (scrollTop + clientHeight >= scrollHeight - 5) {
+                                                      console.log(`[Client2] Reached bottom for ${columnKey}`)
+                                                      const userScrolled = !!columnScrollUserActionRef.current[columnKey]
+                                                      const lastTop = columnScrollLastTriggerRef.current[columnKey] ?? -Infinity
+                                                      if (!userScrolled) {
+                                                        console.log(`[Client2] Ignoring: no manual scroll detected`)
+                                                        return
                                                       }
-                                                    }}
-                                                  >
-                                                    {loading ? (
-                                                      <div className="py-8 text-center">
-                                                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                        <p className="text-xs text-gray-500 mt-2">Loading values...</p>
-                                                      </div>
-                                                    ) : (
-                                                      <>
-                                                        {filteredValues.length > 0 ? (
-                                                          <div className="space-y-1">
-                                                            {filteredValues.map((value) => (
-                                                              <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                                                                <input
-                                                                  type="checkbox"
-                                                                  checked={selected.includes(value)}
-                                                                  onChange={() => toggleColumnValue(columnKey, value)}
-                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                />
-                                                                <span className="text-xs text-gray-700">{value}</span>
-                                                              </label>
-                                                            ))}
-                                                            {/* Loading more indicator */}
-                                                            {columnValuesLoadingMore[columnKey] && (
-                                                              <div className="py-4 text-center">
-                                                                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                                <p className="text-xs text-gray-500 mt-1">Loading more...</p>
-                                                              </div>
-                                                            )}
-                                                            {/* No more values indicator */}
-                                                            {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
-                                                              <div className="py-2 text-xs text-gray-400 text-center italic">
-                                                                All values loaded
-                                                              </div>
-                                                            )}
-                                                          </div>
-                                                        ) : (
-                                                          <div className="py-8 text-xs text-gray-500 text-center">
-                                                            {searchQuery ? 'No matching values found' : 'No values available'}
-                                                          </div>
-                                                        )}
-                                                      </>
-                                                    )}
-                                                  </div>
+                                                      if (scrollTop <= lastTop) {
+                                                        console.log(`[Client2] Waiting for scroll beyond last trigger`)
+                                                        return
+                                                      }
+                                                      if (!columnValuesLoadingMore[columnKey] && columnValuesHasMore[columnKey]) {
+                                                        console.log(`[Client2] Triggering fetchMore for ${columnKey}`)
+                                                        fetchMoreColumnValues(columnKey)
+                                                        columnScrollUserActionRef.current[columnKey] = false
+                                                        columnScrollLastTriggerRef.current[columnKey] = scrollTop
+                                                      } else {
+                                                        console.log(`[Client2] NOT triggering - loadingMore: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
+                                                      }
+                                                    }
+                                                  }}
+                                                >
+                                                  {loading ? (
+                                                    <div className="py-8 text-center">
+                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                    </div>
+                                                  ) : (
+                                                    <>
+                                                      {filteredValues.length > 0 ? (
+                                                        <div className="space-y-1">
+                                                          {filteredValues.map((value) => (
+                                                            <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                              <input
+                                                                type="checkbox"
+                                                                checked={selected.includes(value)}
+                                                                onChange={() => toggleColumnValue(columnKey, value)}
+                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                              />
+                                                              <span className="text-xs text-gray-700">{value}</span>
+                                                            </label>
+                                                          ))}
+                                                          {/* Loading more indicator */}
+                                                          {columnValuesLoadingMore[columnKey] && (
+                                                            <div className="py-4 text-center">
+                                                              <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                              <p className="text-xs text-gray-500 mt-1">Loading more...</p>
+                                                            </div>
+                                                          )}
+                                                          {/* No more values indicator */}
+                                                          {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
+                                                            <div className="py-2 text-xs text-gray-400 text-center italic">
+                                                              All values loaded
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      ) : (
+                                                        <div className="py-8 text-xs text-gray-500 text-center">
+                                                          {searchQuery ? 'No matching values found' : 'No values available'}
+                                                        </div>
+                                                      )}
+                                                    </>
+                                                  )}
+                                                </div>
                                               </div>
 
                                               {/* OK/Close Buttons */}
@@ -4654,8 +4737,8 @@ const Client2Page = () => {
                                 onDoubleClick={(e) => { e.stopPropagation(); handleAutoFit(col.key, col.baseKey) }}
                                 onClick={(e) => e.stopPropagation()}
                                 className="absolute top-0 right-0 h-full w-4 cursor-col-resize select-none z-30 hover:bg-blue-400/40 active:bg-blue-600/60 transition-colors"
-                                style={{ 
-                                  userSelect: 'none', 
+                                style={{
+                                  userSelect: 'none',
                                   touchAction: 'none',
                                   pointerEvents: 'auto',
                                   marginRight: '-2px'
@@ -4670,7 +4753,7 @@ const Client2Page = () => {
                         })}
                       </tr>
                     </thead>
-                    
+
                     {/* YouTube-style Loading Progress Bar - Below table header */}
                     {(loading || isRefreshing) && (
                       <thead className="sticky z-40" style={{ top: '48px' }}>
@@ -4695,125 +4778,125 @@ const Client2Page = () => {
                         </tr>
                       </thead>
                     )}
-                    
+
                     <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
-                          <tr 
-                            key={`${client.login}-${animationKey}-${idx}`}
-                            className="hover:bg-blue-50 transition-colors"
-                            style={{
-                              opacity: 0,
-                              animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
-                            }}
-                          >
-                            {visibleColumnsList.map(col => {
-                              const cellValue = formatValue(col.key, client?.[col.key])
-                              const rawValue = client?.[col.key]
-                              
-                              // Special handling for login column - make it blue
-                              if (col.key === 'login') {
-                                return (
-                                  <td 
-                                    key={col.key} 
-                                    className="px-4 py-3 text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
-                                    style={{
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap'
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleViewClientDetails(client)
-                                    }}
-                                    title={`${cellValue} - Click to view details`}
-                                  >
-                                    {cellValue}
-                                  </td>
-                                )
-                              }
-                              
-                              // Regular columns
+                        <tr
+                          key={`${client.login}-${animationKey}-${idx}`}
+                          className="hover:bg-blue-50 transition-colors"
+                          style={{
+                            opacity: 0,
+                            animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
+                          }}
+                        >
+                          {visibleColumnsList.map(col => {
+                            const cellValue = formatValue(col.key, client?.[col.key])
+                            const rawValue = client?.[col.key]
+
+                            // Special handling for login column - make it blue
+                            if (col.key === 'login') {
                               return (
-                                <td 
-                                  key={col.key} 
-                                  className={`px-4 py-3 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
-                                  data-col={col.key}
+                                <td
+                                  key={col.key}
+                                  className="px-4 py-3 text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap'
                                   }}
-                                  title={cellValue}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleViewClientDetails(client)
+                                  }}
+                                  title={`${cellValue} - Click to view details`}
                                 >
                                   {cellValue}
                                 </td>
                               )
-                            })}
-                          </tr>
-                        ))}
+                            }
+
+                            // Regular columns
+                            return (
+                              <td
+                                key={col.key}
+                                className={`px-4 py-3 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
+                                data-col={col.key}
+                                style={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                                title={cellValue}
+                              >
+                                {cellValue}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Removed duplicate sticky horizontal scrollbar to keep a single native scrollbar */}
               </div>
-              
-              {/* Removed duplicate sticky horizontal scrollbar to keep a single native scrollbar */}
-            </div>
-          )}
-          
-          {/* Active Filters Display */}
-          {filters.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700">Active Filters:</h3>
-                <button
-                  onClick={handleClearAllFilters}
-                  className="text-xs text-red-600 hover:text-red-700 font-medium"
-                >
-                  Clear All
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {filters.map((filter, idx) => {
-                  const column = allColumns.find(col => col.key === filter.field)
-                  const operator = getOperatorsForField(filter.field).find(op => op.value === filter.operator)
-                  return (
-                    <div
-                      key={idx}
-                      className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                    >
-                      <span className="font-medium">{column?.label || filter.field}</span>
-                      <span className="text-blue-600">{operator?.label || filter.operator}</span>
-                      <span className="font-semibold">{filter.value}</span>
-                      <button
-                        onClick={() => handleRemoveFilter(idx)}
-                        className="ml-1 text-blue-600 hover:text-blue-800"
+            )}
+
+            {/* Active Filters Display */}
+            {filters.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Active Filters:</h3>
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="text-xs text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {filters.map((filter, idx) => {
+                    const column = allColumns.find(col => col.key === filter.field)
+                    const operator = getOperatorsForField(filter.field).find(op => op.value === filter.operator)
+                    return (
+                      <div
+                        key={idx}
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
                       >
-                        ×
-                      </button>
-                    </div>
-                  )
-                })}
+                        <span className="font-medium">{column?.label || filter.field}</span>
+                        <span className="text-blue-600">{operator?.label || filter.operator}</span>
+                        <span className="font-semibold">{filter.value}</span>
+                        <button
+                          onClick={() => handleRemoveFilter(idx)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-          
-          {/* No Results */}
-          {!loading && !initialLoad && clients.length === 0 && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <p className="text-gray-600">No clients found</p>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* No Results */}
+            {!loading && !initialLoad && clients.length === 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <p className="text-gray-600">No clients found</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
-      
+
       {/* Filter Modal */}
       {showFilterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Add Filter</h2>
-            
+
             {/* Field Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4829,7 +4912,7 @@ const Client2Page = () => {
                 ))}
               </select>
             </div>
-            
+
             {/* Operator Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4845,7 +4928,7 @@ const Client2Page = () => {
                 ))}
               </select>
             </div>
-            
+
             {/* Value Input */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4859,7 +4942,7 @@ const Client2Page = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
               />
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
@@ -4881,13 +4964,13 @@ const Client2Page = () => {
           </div>
         </div>
       )}
-      
+
       {/* Account Filter Modal */}
       {showAccountFilterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Account Filters</h2>
-            
+
             {/* MT5 Accounts */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4904,7 +4987,7 @@ const Client2Page = () => {
                 Currently filtered: {mt5Accounts.length > 0 ? mt5Accounts.join(', ') : 'None'}
               </p>
             </div>
-            
+
             {/* Account Range */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4936,7 +5019,7 @@ const Client2Page = () => {
                 </p>
               )}
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
@@ -4961,7 +5044,7 @@ const Client2Page = () => {
           </div>
         </div>
       )}
-      
+
       {/* Client Positions Modal */}
       {showClientDetailModal && selectedClient && (
         <ClientPositionsModal
@@ -4976,7 +5059,7 @@ const Client2Page = () => {
           onCacheUpdate={() => { /* Positions managed by DataContext; no local update needed */ }}
         />
       )}
-      
+
       {/* Group Modal */}
       <GroupModal
         isOpen={showGroupModal}
