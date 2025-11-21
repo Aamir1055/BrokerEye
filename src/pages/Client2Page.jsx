@@ -829,6 +829,21 @@ const Client2Page = () => {
   const applyClientSideCheckboxFilters = (clients, filters) => {
     if (!clients || clients.length === 0) return clients
 
+    // Track fields that have text/number filters (skip checkbox filters for these fields)
+    const textFilteredFields = new Set()
+    const numberFilteredFields = new Set()
+    
+    Object.entries(filters || {}).forEach(([key, cfg]) => {
+      if (key.endsWith('_text') && cfg?.value != null && String(cfg.value).length > 0) {
+        const columnKey = key.replace('_text', '')
+        textFilteredFields.add(columnKey)
+      }
+      if (key.endsWith('_number') && cfg?.value1 != null) {
+        const columnKey = key.replace('_number', '')
+        numberFilteredFields.add(columnKey)
+      }
+    })
+
     return clients.filter(client => {
       // Check each checkbox filter
       for (const [filterKey, filterData] of Object.entries(filters)) {
@@ -836,6 +851,11 @@ const Client2Page = () => {
         
         const columnKey = filterKey.replace('_checkbox', '')
         if (columnKey === 'login') continue // login is handled server-side
+        
+        // Skip checkbox filter if text or number filter is active for this field
+        if (textFilteredFields.has(columnKey) || numberFilteredFields.has(columnKey)) {
+          continue
+        }
         
         const selectedValues = filterData?.values || []
         if (selectedValues.length === 0) continue
