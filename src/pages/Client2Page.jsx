@@ -74,6 +74,11 @@ const Client2Page = () => {
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
+  // CSV multi-field filters using simplified backend search format
+  // Each holds a comma-separated list matching the backend style: { filters: [ { email: "a@b.com,x@y.com" } ] }
+  const [emailFilterList, setEmailFilterList] = useState('')
+  const [nameFilterList, setNameFilterList] = useState('')
+  const [phoneFilterList, setPhoneFilterList] = useState('')
   const [filters, setFilters] = useState([])
   const [mt5Accounts, setMt5Accounts] = useState([])
   const [accountRangeMin, setAccountRangeMin] = useState('')
@@ -1066,6 +1071,9 @@ const Client2Page = () => {
         console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
 
+      // Email, name, and phone filters are now applied client-side in sortedClients useMemo
+      // This allows filtering the current page data without additional API calls
+
       // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
       let mt5AccountsFilter = []
       // From Account Filter modal
@@ -1381,11 +1389,68 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
 
-  // Pass-through - filtering done by API
+  // Client-side filtering for email, name, and phone
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    return clients.filter(c => c != null && c.login != null)
-  }, [clients])
+    
+    let filtered = clients.filter(c => c != null && c.login != null)
+    
+    // Track if any client-side filters are active
+    const hasEmailFilter = emailFilterList && emailFilterList.trim()
+    const hasNameFilter = nameFilterList && nameFilterList.trim()
+    const hasPhoneFilter = phoneFilterList && phoneFilterList.trim()
+    const hasAnyFilter = hasEmailFilter || hasNameFilter || hasPhoneFilter
+    
+    // Apply email filter (client-side)
+    if (hasEmailFilter) {
+      const emailList = emailFilterList.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0)
+      if (emailList.length > 0) {
+        filtered = filtered.filter(client => {
+          const clientEmail = (client.email || '').toLowerCase()
+          return emailList.some(email => clientEmail.includes(email))
+        })
+        console.log(`[Client2] 📧 Email filter: ${emailList.length} values → ${filtered.length} matches`)
+      }
+    }
+    
+    // Apply name filter (client-side)
+    if (hasNameFilter) {
+      const nameList = nameFilterList.split(',').map(n => n.trim().toLowerCase()).filter(n => n.length > 0)
+      if (nameList.length > 0) {
+        filtered = filtered.filter(client => {
+          const clientName = (client.name || '').toLowerCase()
+          return nameList.some(name => clientName.includes(name))
+        })
+        console.log(`[Client2] 👤 Name filter: ${nameList.length} values → ${filtered.length} matches`)
+      }
+    }
+    
+    // Apply phone filter (client-side)
+    if (hasPhoneFilter) {
+      const phoneList = phoneFilterList.split(',').map(p => p.trim()).filter(p => p.length > 0)
+      if (phoneList.length > 0) {
+        filtered = filtered.filter(client => {
+          const clientPhone = (client.phone || '').toString()
+          return phoneList.some(phone => clientPhone.includes(phone))
+        })
+        console.log(`[Client2] 📞 Phone filter: ${phoneList.length} values → ${filtered.length} matches`)
+      }
+    }
+    
+    if (hasAnyFilter) {
+      console.log(`[Client2] ✅ Client-side filtering complete: ${clients.length} → ${filtered.length} clients`)
+    }
+    
+    return filtered
+  }, [clients, emailFilterList, nameFilterList, phoneFilterList])
+  
+  // Computed display count (shows filtered count when client-side filters are active)
+  const displayedClientCount = useMemo(() => {
+    const hasClientSideFilters = (emailFilterList && emailFilterList.trim()) || 
+                                  (nameFilterList && nameFilterList.trim()) || 
+                                  (phoneFilterList && phoneFilterList.trim())
+    return hasClientSideFilters ? sortedClients.length : totalClients
+  }, [sortedClients, totalClients, emailFilterList, nameFilterList, phoneFilterList])
 
   // Compute percentage totals by summing percentage columns from client data
   const computedPercentageTotals = useMemo(() => {
@@ -1442,11 +1507,11 @@ const Client2Page = () => {
 
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
 
-  // Auto-refresh every 3 seconds (silent update) with in-flight cancellation
+  // Auto-refresh every 30 seconds (reduced from 3 seconds to minimize API calls)
   useEffect(() => {
     const intervalId = setInterval(() => {
       fetchClients(true) // silent = true, no loading spinner
-    }, 3000)
+    }, 30000) // 30 seconds instead of 3 seconds
     return () => clearInterval(intervalId)
   }, [fetchClients])
 
@@ -2591,8 +2656,8 @@ const Client2Page = () => {
   // Get comprehensive card configuration for dynamic rendering - matches all 57 cards
   const getClient2CardConfig = useCallback((cardKey, totals) => {
     const configs = {
-      // COUNT
-      totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => totalClients || 0 },
+      // COUNT (shows filtered count when client-side filters are active)
+      totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => displayedClientCount || 0 },
       // A
       assets: { label: 'Assets', color: 'blue', getValue: () => totals?.assets || 0 },
 
@@ -2693,7 +2758,7 @@ const Client2Page = () => {
     }
 
     return configs[cardKey] || null
-  }, [totalClients, rebateTotals, totals, totalsPercent, computedPercentageTotals])
+  }, [displayedClientCount, rebateTotals, totals, totalsPercent, computedPercentageTotals])
 
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
@@ -3170,19 +3235,19 @@ const Client2Page = () => {
                   </svg>
                   <span className="relative flex items-center">
                     Filter
-                    {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
+                    {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0) + (emailFilterList ? 1 : 0) + (nameFilterList ? 1 : 0) + (phoneFilterList ? 1 : 0)) > 0 && (
                       <span
                         className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none shadow-sm"
-                        title="Active quick filters count"
+                        title="Active filters count"
                       >
-                        {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
+                        {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0) + (emailFilterList ? 1 : 0) + (nameFilterList ? 1 : 0) + (phoneFilterList ? 1 : 0)}
                       </span>
                     )}
                   </span>
                 </button>
 
                 {showFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border-2 border-emerald-300 z-50">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border-2 border-emerald-300 z-50">
                     <div className="p-3">
                       <div className="text-xs font-semibold text-gray-700 mb-3">Quick Filters</div>
                       <div className="space-y-2">
@@ -3234,6 +3299,91 @@ const Client2Page = () => {
                           />
                           <span className="text-sm text-gray-700">No Deposit</span>
                         </label>
+                      </div>
+
+                      {/* CSV List Filters Section */}
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="text-xs font-semibold text-gray-700 mb-3">Multi-Value Filters (comma-separated)</div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., user1@email.com,user2@email.com"
+                              value={emailFilterList}
+                              onChange={(e) => setEmailFilterList(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  setCurrentPage(1)
+                                  fetchClients()
+                                  setShowFilterMenu(false)
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., John Doe,Jane Smith"
+                              value={nameFilterList}
+                              onChange={(e) => setNameFilterList(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  setCurrentPage(1)
+                                  fetchClients()
+                                  setShowFilterMenu(false)
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 1234567890,9876543210"
+                              value={phoneFilterList}
+                              onChange={(e) => setPhoneFilterList(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  setCurrentPage(1)
+                                  fetchClients()
+                                  setShowFilterMenu(false)
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => {
+                              setCurrentPage(1)
+                              fetchClients()
+                              setShowFilterMenu(false)
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700"
+                          >
+                            Apply
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEmailFilterList('')
+                              setNameFilterList('')
+                              setPhoneFilterList('')
+                              setCurrentPage(1)
+                              fetchClients()
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                          >
+                            Clear
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -1945,6 +1945,20 @@ const ClientsPage = () => {
       return acc + (Number.isFinite(n) ? n : 0)
     }, 0)
 
+    // Lightweight numeric coercion helper for weighted percentage calculations
+    const toNum = (v) => {
+      if (v == null) return 0
+      if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+      if (typeof v === 'string') {
+        const cleaned = v.replace(/,/g, '').trim()
+        if (cleaned === '' || cleaned === '-') return 0
+        const n = Number(cleaned)
+        return Number.isFinite(n) ? n : 0
+      }
+      const n = Number(v)
+      return Number.isFinite(n) ? n : 0
+    }
+
     // Bonus calculations
     const dailyBonusIn = sum('dailyBonusIn')
     const dailyBonusOut = sum('dailyBonusOut')
@@ -2056,11 +2070,47 @@ const ClientsPage = () => {
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      // PnL percentage: sum individual client percentages (already normalized by backend)
-      dailyPnLPercent: sum('dailyPnL_percentage'),
-      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
-      thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
-      lifetimePnLPercent: sum('lifetimePnL_percentage')
+      // Weighted PnL percentage cards: (Σ PnL) / (Σ previous equity) * 100
+      // This avoids inflation from summing heterogeneous per‑client percentages.
+      dailyPnLPercent: (() => {
+        let totalPnl = 0, totalEq = 0
+        for (let i = 0; i < filteredClients.length; i++) {
+          const c = filteredClients[i]; if (!c) continue
+          totalPnl += toNum(c.dailyPnL)
+          totalEq += toNum(c.previousEquity)
+        }
+        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
+      })(),
+      thisWeekPnLPercent: (() => {
+        let totalPnl = 0, totalEq = 0
+        for (let i = 0; i < filteredClients.length; i++) {
+          const c = filteredClients[i]; if (!c) continue
+          totalPnl += toNum(c.thisWeekPnL)
+          totalEq += toNum(c.thisWeekPreviousEquity)
+        }
+        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
+      })(),
+      thisMonthPnLPercent: (() => {
+        let totalPnl = 0, totalEq = 0
+        for (let i = 0; i < filteredClients.length; i++) {
+          const c = filteredClients[i]; if (!c) continue
+          totalPnl += toNum(c.thisMonthPnL)
+          totalEq += toNum(c.thisMonthPreviousEquity)
+        }
+        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
+      })(),
+      // Lifetime: keep existing backend lifetime percentage sum behavior, or compute weighted if needed later
+      lifetimePnLPercent: (() => {
+        // Prefer weighted lifetime if deposit data available
+        let totalPnl = 0, totalNetDeposit = 0
+        for (let i = 0; i < filteredClients.length; i++) {
+          const c = filteredClients[i]; if (!c) continue
+          totalPnl += toNum(c.lifetimePnL)
+          const netDep = toNum(c.lifetimeDeposit) - toNum(c.lifetimeWithdrawal)
+          totalNetDeposit += netDep > 0 ? netDep : 0
+        }
+        return totalNetDeposit !== 0 ? (totalPnl / totalNetDeposit) * 100 : 0
+      })()
     }
     
     return totals
@@ -2082,6 +2132,31 @@ const ClientsPage = () => {
   }, [filteredClients, commissionTotals, filteredClientsChecksum])
 
   console.log('📊 [faceCardTotals] Current value:', faceCardTotals.dailyPnLPercent)
+  // Extra debug: show average vs sum for Daily/Week/Month percentages
+  if (filteredClients && filteredClients.length > 0) {
+    const toNumDbg = v => (v == null || v === '' || isNaN(v)) ? 0 : Number(v)
+    let sumDailyPct = 0, sumWeekPct = 0, sumMonthPct = 0
+    let sumDailyPnl = 0, sumWeekPnl = 0, sumMonthPnl = 0
+    let sumPrevEqDaily = 0, sumPrevEqWeek = 0, sumPrevEqMonth = 0
+    for (let i = 0; i < filteredClients.length; i++) {
+      const c = filteredClients[i]; if (!c) continue
+      sumDailyPct += toNumDbg(c.dailyPnL_percentage)
+      sumWeekPct += toNumDbg(c.thisWeekPnL_percentage)
+      sumMonthPct += toNumDbg(c.thisMonthPnL_percentage)
+      sumDailyPnl += toNumDbg(c.dailyPnL)
+      sumWeekPnl += toNumDbg(c.thisWeekPnL)
+      sumMonthPnl += toNumDbg(c.thisMonthPnL)
+      sumPrevEqDaily += toNumDbg(c.previousEquity)
+      sumPrevEqWeek += toNumDbg(c.thisWeekPreviousEquity)
+      sumPrevEqMonth += toNumDbg(c.thisMonthPreviousEquity)
+    }
+    const weightedDaily = sumPrevEqDaily !== 0 ? (sumDailyPnl / sumPrevEqDaily) * 100 : 0
+    const weightedWeek = sumPrevEqWeek !== 0 ? (sumWeekPnl / sumPrevEqWeek) * 100 : 0
+    const weightedMonth = sumPrevEqMonth !== 0 ? (sumMonthPnl / sumPrevEqMonth) * 100 : 0
+    console.log('[faceCardTotals][debug] rawSumsPercent:', { sumDailyPct, sumWeekPct, sumMonthPct })
+    console.log('[faceCardTotals][debug] weightedComputed:', { weightedDaily, weightedWeek, weightedMonth })
+    console.log('[faceCardTotals][debug] components:', { sumDailyPnl, sumPrevEqDaily, sumWeekPnl, sumPrevEqWeek, sumMonthPnl, sumPrevEqMonth })
+  }
 
   // Removed totals helpers (no longer needed)
 
@@ -2150,6 +2225,23 @@ const ClientsPage = () => {
     // Percentage fields
     if (key === 'marginLevel' || key === 'applied_percentage' || key === 'soLevel') {
       return value != null && value !== '' ? `${parseFloat(value).toFixed(2)}%` : '-'
+    }
+    
+    // PnL percentage fields (Daily, Weekly, Monthly, Lifetime)
+    if (key.includes('PnL_percentage') || key.includes('pnL_percentage') || 
+        ['dailyPnL_percentage', 'thisWeekPnL_percentage', 'thisMonthPnL_percentage', 'lifetimePnL_percentage'].includes(key)) {
+      if (value == null || value === '') return '-'
+      const num = parseFloat(value)
+      if (!Number.isFinite(num)) return '-'
+      return `${num.toFixed(4)}%`
+    }
+    
+    // Other percentage fields (balance, credit, equity, pnl, profit, etc.)
+    if (key.includes('_percentage') || key.includes('Percentage')) {
+      if (value == null || value === '') return '-'
+      const num = parseFloat(value)
+      if (!Number.isFinite(num)) return '-'
+      return `${num.toFixed(4)}%`
     }
     
     // Integer fields
@@ -3946,6 +4038,16 @@ const ClientsPage = () => {
                         // SAFETY: Use optional chaining for property access
                         titleVal = formatValue(col.key, client?.[col.key], client)
                         displayVal = formatValue(col.key, client?.[col.key], client)
+                        
+                        // Debug: Log percentage column values
+                        if (col.key.includes('percentage') || col.key.includes('PnL')) {
+                          if (globalIndex === 0) { // Only log first row to avoid spam
+                            console.log(`[Table Cell] ${col.key} for login ${client?.login}:`, {
+                              rawValue: client?.[col.key],
+                              formatted: displayVal
+                            })
+                          }
+                        }
                       }
 
                       renderCols.push({ key: col.key, width: defaultWidth, value: displayVal, title: titleVal })
