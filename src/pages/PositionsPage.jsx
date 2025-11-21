@@ -221,15 +221,16 @@ const PositionsPage = () => {
       effective.volume = false
       effective.profit = false
       effective.storage = false
-      // Show percentage columns
-      effective.volumePercentage = true
-      effective.profitPercentage = true
-      effective.storagePercentage = true
+      // Respect user toggle for percentage columns instead of forcing them on
+      effective.volumePercentage = !!visibleColumns.volumePercentage
+      effective.profitPercentage = !!visibleColumns.profitPercentage
+      effective.storagePercentage = !!visibleColumns.storagePercentage
     } else if (displayMode === 'both') {
       // Show both value and percentage columns for metrics
-      if (visibleColumns.volume) effective.volumePercentage = true
-      if (visibleColumns.profit) effective.profitPercentage = true
-      if (visibleColumns.storage) effective.storagePercentage = true
+      // Respect individual toggles; do not auto-enable percentage columns
+      effective.volumePercentage = !!visibleColumns.volumePercentage
+      effective.profitPercentage = !!visibleColumns.profitPercentage
+      effective.storagePercentage = !!visibleColumns.storagePercentage
     }
     
     return effective
