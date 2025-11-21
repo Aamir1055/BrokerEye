@@ -2061,40 +2061,21 @@ const ClientsPage = () => {
       // Falls back to simple average if no equity weights are available.
       // Daily PnL %: Derive from portfolio ratio when equity data available, else average client percentages.
       dailyPnLPercent: (() => {
-        console.log('[AGG] dailyPnLPercent ratio path check')
         const totalEquityForRatio = sum('equity')
         const totalDailyPnL = sum('dailyPnL')
         if (totalEquityForRatio > 0 && Number.isFinite(totalDailyPnL)) {
-          const v = (totalDailyPnL / totalEquityForRatio) * 100
-          console.log('[AGG] dailyPnLPercent ratio=', v, 'totalDailyPnL=', totalDailyPnL, 'totalEquity=', totalEquityForRatio)
           return (totalDailyPnL / totalEquityForRatio) * 100
         }
         let count = 0
         let sumPct = 0
         for (const c of list) {
           const pct = Number(c?.dailyPnL_percentage)
-            if (Number.isFinite(pct)) { sumPct += pct; count++ }
-        }
-        return count > 0 ? (sumPct / count) : 0
-      })(),
-      // This Week PnL %: Use portfolio ratio or average of client week percentages.
-      thisWeekPnLPercent: (() => {
-        console.log('[AGG] thisWeekPnLPercent ratio path check')
-        const totalEquityForRatio = sum('equity')
-        const totalWeekPnL = sum('thisWeekPnL')
-        if (totalEquityForRatio > 0 && Number.isFinite(totalWeekPnL)) {
-          const v = (totalWeekPnL / totalEquityForRatio) * 100
-          console.log('[AGG] thisWeekPnLPercent ratio=', v, 'totalWeekPnL=', totalWeekPnL, 'totalEquity=', totalEquityForRatio)
-          return (totalWeekPnL / totalEquityForRatio) * 100
-        }
-        let count = 0
-        let sumPct = 0
-        for (const c of list) {
-          const pct = Number(c?.thisWeekPnL_percentage)
           if (Number.isFinite(pct)) { sumPct += pct; count++ }
         }
         return count > 0 ? (sumPct / count) : 0
       })(),
+      // This Week PnL %: per request revert to raw SUM of client weekly PnL percentage column
+      thisWeekPnLPercent: list.reduce((acc, c) => acc + (Number(c?.thisWeekPnL_percentage) || 0), 0),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
