@@ -1920,6 +1920,7 @@ const ClientsPage = () => {
   // metrics even if their columns are hidden in the table.
   // Memoized to ensure reactivity when filteredClients changes
   const faceCardTotals = useMemo(() => {
+    console.log('🔄 [faceCardTotals] Recalculating...')
     try {
     // Always derive from the same list the table uses to prevent drift/flicker under load
     const list = Array.isArray(filteredClients) ? filteredClients : []
@@ -2049,17 +2050,86 @@ const ClientsPage = () => {
       weekPreviousEquity,
       monthPreviousEquity,
       previousEquity,
-      // Percentage values
+      // Percentage values (raw sums preserved for existing cards except PnL progression percentages)
       totalBalancePercent: sum('balance_percentage'),
       totalCreditPercent: sum('credit_percentage'),
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      // Daily PnL % – sum the dailyPnL_percentage field
-      dailyPnLPercent: sum('dailyPnL_percentage'),
-      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
-      thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
-      lifetimePnLPercent: sum('lifetimePnL_percentage')
+      // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
+      // Switch to equity-weighted average so movements are visible and comparable.
+      // Falls back to simple average if no equity weights are available.
+      dailyPnLPercent: (() => {
+        let totalWeight = 0
+        let weighted = 0
+        let count = 0
+        for (const c of list) {
+          if (!c) continue
+          const pct = Number(c?.dailyPnL_percentage)
+          const w = Number(c?.equity)
+          if (Number.isFinite(pct)) {
+            count++
+            if (Number.isFinite(w) && w > 0) {
+              weighted += pct * w
+              totalWeight += w
+            }
+          }
+        }
+        if (totalWeight > 0) return weighted / totalWeight
+        // Fallback: simple average of available percentages
+        if (count === 0) return 0
+        let simpleSum = 0
+        for (const c of list) simpleSum += Number(c?.dailyPnL_percentage) || 0
+        return simpleSum / count
+      })(),
+      thisWeekPnLPercent: (() => {
+        let totalWeight = 0
+        let weighted = 0
+        let count = 0
+        for (const c of list) {
+          if (!c) continue
+          const pct = Number(c?.thisWeekPnL_percentage)
+          const w = Number(c?.equity)
+          if (Number.isFinite(pct)) {
+            count++
+            if (Number.isFinite(w) && w > 0) {
+              weighted += pct * w
+              totalWeight += w
+            }
+          }
+        }
+        if (totalWeight > 0) return weighted / totalWeight
+        if (count === 0) return 0
+        let simpleSum = 0
+        for (const c of list) simpleSum += Number(c?.thisWeekPnL_percentage) || 0
+        return simpleSum / count
+      })(),
+      thisMonthPnLPercent: (() => {
+        // Keep existing sum behavior for month to revisit later if needed
+        return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
+      })(),
+      lifetimePnLPercent: (() => {
+        let totalWeight = 0
+        let weighted = 0
+        let count = 0
+        for (const c of list) {
+          if (!c) continue
+          const pct = Number(c?.lifetimePnL_percentage)
+          const w = Number(c?.equity)
+          if (Number.isFinite(pct)) {
+            count++
+            if (Number.isFinite(w) && w > 0) {
+              weighted += pct * w
+              totalWeight += w
+            }
+          }
+        }
+        if (totalWeight > 0) return weighted / totalWeight
+        if (count === 0) return 0
+        let simpleSum = 0
+        for (const c of list) simpleSum += Number(c?.lifetimePnL_percentage) || 0
+        return simpleSum / count
+      })()
     }
     
     return totals
@@ -2079,6 +2149,8 @@ const ClientsPage = () => {
       }
     }
   }, [filteredClients, commissionTotals, filteredClientsChecksum])
+
+  console.log('📊 [faceCardTotals] Current value:', faceCardTotals.dailyPnLPercent)
 
   // Removed totals helpers (no longer needed)
 
@@ -2432,7 +2504,7 @@ const ClientsPage = () => {
                       // Render each option with robust toggle
                       .map(card => (
                         <label
-                          key={card.id}
+                          key={`${card.id}-${card.value}`}
                           className="flex items-center px-3 py-2 hover:bg-pink-100 cursor-pointer transition-colors rounded-md mx-2"
                         >
                           <input
@@ -2679,6 +2751,11 @@ const ClientsPage = () => {
                   }
                   
                   const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
+                  
+                  // Debug log when rendering Daily PnL card
+                  if (effectiveCardId === 10 || cardId === 61) {
+                    console.log('🎨 [Render] Daily PnL face card - value:', card?.value)
+                  }
                   if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
@@ -2688,7 +2765,7 @@ const ClientsPage = () => {
                   if (card.simple) {
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
@@ -2709,7 +2786,7 @@ const ClientsPage = () => {
                     const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
@@ -2746,7 +2823,7 @@ const ClientsPage = () => {
                   if (card.withArrow) {
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
@@ -2804,6 +2881,12 @@ const ClientsPage = () => {
                   }
                   
                   const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
+                  
+                  // Debug log when rendering Daily PnL % card
+                  if (effectiveCardId === 61 || cardId === 61) {
+                    console.log('🎨 [Render] Daily PnL % face card - value:', card?.value)
+                  }
+                  
                   if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
@@ -2813,7 +2896,7 @@ const ClientsPage = () => {
                   if (card.simple) {
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
@@ -2834,7 +2917,7 @@ const ClientsPage = () => {
                     const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
@@ -2871,7 +2954,7 @@ const ClientsPage = () => {
                   if (card.withArrow) {
                     return (
                       <div
-                        key={card.id}
+                        key={`${card.id}-${card.value}`}
                         draggable
                         onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
                         onDragEnd={handleFaceCardDragEnd}
