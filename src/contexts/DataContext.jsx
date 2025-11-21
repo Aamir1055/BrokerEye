@@ -251,15 +251,48 @@ export const DataProvider = ({ children }) => {
         floating: toNum(client.floating) / 100,
         margin: toNum(client.margin) / 100,
         marginFree: toNum(client.marginFree) / 100,
+        marginInitial: toNum(client.marginInitial) / 100,
+        marginMaintenance: toNum(client.marginMaintenance) / 100,
+        assets: toNum(client.assets) / 100,
+        liabilities: toNum(client.liabilities) / 100,
+        storage: toNum(client.storage) / 100,
+        blockedCommission: toNum(client.blockedCommission) / 100,
+        blockedProfit: toNum(client.blockedProfit) / 100,
+        soEquity: toNum(client.soEquity) / 100,
+        soMargin: toNum(client.soMargin) / 100,
         pnl: toNum(client.pnl) / 100,
         dailyPnL: toNum(client.dailyPnL) / 100,
         lifetimeDeposit: toNum(client.lifetimeDeposit) / 100,
         lifetimeWithdrawal: toNum(client.lifetimeWithdrawal) / 100,
         dailyDeposit: toNum(client.dailyDeposit) / 100,
         dailyWithdrawal: toNum(client.dailyWithdrawal) / 100,
+        thisWeekDeposit: toNum(client.thisWeekDeposit) / 100,
+        thisWeekWithdrawal: toNum(client.thisWeekWithdrawal) / 100,
+        thisMonthDeposit: toNum(client.thisMonthDeposit) / 100,
+        thisMonthWithdrawal: toNum(client.thisMonthWithdrawal) / 100,
         thisWeekPnL: toNum(client.thisWeekPnL) / 100,
         thisMonthPnL: toNum(client.thisMonthPnL) / 100,
         lifetimePnL: toNum(client.lifetimePnL) / 100,
+        // Bonus fields
+        dailyBonusIn: toNum(client.dailyBonusIn) / 100,
+        dailyBonusOut: toNum(client.dailyBonusOut) / 100,
+        thisWeekBonusIn: toNum(client.thisWeekBonusIn) / 100,
+        thisWeekBonusOut: toNum(client.thisWeekBonusOut) / 100,
+        thisMonthBonusIn: toNum(client.thisMonthBonusIn) / 100,
+        thisMonthBonusOut: toNum(client.thisMonthBonusOut) / 100,
+        lifetimeBonusIn: toNum(client.lifetimeBonusIn) / 100,
+        lifetimeBonusOut: toNum(client.lifetimeBonusOut) / 100,
+        // Credit IN/OUT fields
+        thisWeekCreditIn: toNum(client.thisWeekCreditIn) / 100,
+        thisWeekCreditOut: toNum(client.thisWeekCreditOut) / 100,
+        thisMonthCreditIn: toNum(client.thisMonthCreditIn) / 100,
+        thisMonthCreditOut: toNum(client.thisMonthCreditOut) / 100,
+        lifetimeCreditIn: toNum(client.lifetimeCreditIn) / 100,
+        lifetimeCreditOut: toNum(client.lifetimeCreditOut) / 100,
+        // Previous equity fields (needed for percentage calculations)
+        previousEquity: toNum(client.previousEquity) / 100,
+        thisWeekPreviousEquity: toNum(client.thisWeekPreviousEquity) / 100,
+        thisMonthPreviousEquity: toNum(client.thisMonthPreviousEquity) / 100,
         // Percentage fields - keep as-is from backend (already in correct format)
         balance_percentage: client.balance_percentage != null ? toNum(client.balance_percentage) : client.balance_percentage,
         credit_percentage: client.credit_percentage != null ? toNum(client.credit_percentage) : client.credit_percentage,
@@ -1032,6 +1065,34 @@ export const DataProvider = ({ children }) => {
               if (updatedAccount[key] !== undefined) {
                 merged[key] = updatedAccount[key]
               }
+            }
+            
+            // Recalculate percentage fields if base values changed
+            // Daily PnL %
+            if (updatedAccount.dailyPnL !== undefined || updatedAccount.previousEquity !== undefined) {
+              const dailyPnL = toNum(merged.dailyPnL)
+              const prevEquity = toNum(merged.previousEquity)
+              merged.dailyPnL_percentage = prevEquity !== 0 ? (dailyPnL / prevEquity) * 100 : 0
+            }
+            // Weekly PnL %
+            if (updatedAccount.thisWeekPnL !== undefined || updatedAccount.thisWeekPreviousEquity !== undefined) {
+              const weekPnL = toNum(merged.thisWeekPnL)
+              const weekPrevEquity = toNum(merged.thisWeekPreviousEquity)
+              merged.thisWeekPnL_percentage = weekPrevEquity !== 0 ? (weekPnL / weekPrevEquity) * 100 : 0
+            }
+            // Monthly PnL %
+            if (updatedAccount.thisMonthPnL !== undefined || updatedAccount.thisMonthPreviousEquity !== undefined) {
+              const monthPnL = toNum(merged.thisMonthPnL)
+              const monthPrevEquity = toNum(merged.thisMonthPreviousEquity)
+              merged.thisMonthPnL_percentage = monthPrevEquity !== 0 ? (monthPnL / monthPrevEquity) * 100 : 0
+            }
+            // Lifetime PnL %
+            if (updatedAccount.lifetimePnL !== undefined || updatedAccount.lifetimeDeposit !== undefined || updatedAccount.lifetimeWithdrawal !== undefined) {
+              const lifetimePnL = toNum(merged.lifetimePnL)
+              const lifetimeDeposit = toNum(merged.lifetimeDeposit)
+              const lifetimeWithdrawal = toNum(merged.lifetimeWithdrawal)
+              const netDeposit = lifetimeDeposit - lifetimeWithdrawal
+              merged.lifetimePnL_percentage = netDeposit !== 0 ? (lifetimePnL / netDeposit) * 100 : 0
             }
             
             updateStatsIncremental(oldClient, merged)

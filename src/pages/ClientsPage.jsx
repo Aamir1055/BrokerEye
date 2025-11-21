@@ -2050,54 +2050,16 @@ const ClientsPage = () => {
       weekPreviousEquity,
       monthPreviousEquity,
       previousEquity,
-      // Percentage values (raw sums preserved for existing cards except PnL progression percentages)
+      // Percentage values (raw sums for consistency across all percentage cards)
       totalBalancePercent: sum('balance_percentage'),
       totalCreditPercent: sum('credit_percentage'),
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      // For Daily / Week / Lifetime PnL % cards a SUM across all clients produced huge, mostly static numbers.
-      // Switch to equity-weighted average so movements are visible and comparable.
-      // Falls back to simple average if no equity weights are available.
-      // Daily PnL %: per request show raw SUM of client dailyPnL_percentage values.
-      dailyPnLPercent: (() => {
-        const val = sum('dailyPnL_percentage')
-        console.log('[FaceCard] Daily PnL % recalculated:', val.toFixed(4), 'clients:', list.length)
-        return val
-      })(),
-      // This Week PnL %: per request show raw SUM of client thisWeekPnL_percentage values.
-      thisWeekPnLPercent: (() => {
-        const val = sum('thisWeekPnL_percentage')
-        console.log('[FaceCard] Weekly PnL % recalculated:', val.toFixed(4), 'clients:', list.length)
-        return val
-      })(),
-      thisMonthPnLPercent: (() => {
-        // Keep existing sum behavior for month to revisit later if needed
-        return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
-      })(),
-      // Lifetime PnL %: use weighted average; aggregated ratio not reliable without initial equity baseline
-      lifetimePnLPercent: (() => {
-        let totalWeight = 0
-        let weighted = 0
-        let count = 0
-        for (const c of list) {
-          if (!c) continue
-          const pct = Number(c?.lifetimePnL_percentage)
-          const w = Number(c?.equity)
-          if (Number.isFinite(pct)) {
-            count++
-            if (Number.isFinite(w) && w > 0) {
-              weighted += pct * w
-              totalWeight += w
-            }
-          }
-        }
-        if (totalWeight > 0) return weighted / totalWeight
-        if (count === 0) return 0
-        let simpleSum = 0
-        for (const c of list) simpleSum += Number(c?.lifetimePnL_percentage) || 0
-        return simpleSum / count
-      })()
+      dailyPnLPercent: sum('dailyPnL_percentage'),
+      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
+      thisMonthPnLPercent: sum('thisMonthPnL_percentage'),
+      lifetimePnLPercent: sum('lifetimePnL_percentage')
     }
     
     return totals
