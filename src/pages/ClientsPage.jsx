@@ -2075,7 +2075,39 @@ const ClientsPage = () => {
         return count > 0 ? (sumPct / count) : 0
       })(),
       // This Week PnL %: per request revert to raw SUM of client weekly PnL percentage column
-      thisWeekPnLPercent: list.reduce((acc, c) => acc + (Number(c?.thisWeekPnL_percentage) || 0), 0),
+      // This Week PnL %: use equity-weighted average of client weekly percentages for smoother movement;
+      // fallback to simple average if no valid weights.
+      thisWeekPnLPercent: (() => {
+        // DEBUG: remove after verification
+        let debugFirst = null
+        let weighted = 0
+        let totalEquity = 0
+        let count = 0
+        for (const c of list) {
+          if (!c) continue
+            const pct = Number(c?.thisWeekPnL_percentage)
+            const eq = Number(c?.equity)
+            if (Number.isFinite(pct)) {
+              count++
+              if (debugFirst == null) debugFirst = {pct, eq}
+              if (Number.isFinite(eq) && eq > 0) {
+                weighted += pct * eq
+                totalEquity += eq
+              }
+            }
+        }
+        if (totalEquity > 0) {
+          const val = weighted / totalEquity
+          console.log('[Weekly%] weighted', {val, totalEquity, weighted, count, sample: debugFirst})
+          return val
+        }
+        if (count === 0) return 0
+        let sumPct = 0
+        for (const c of list) sumPct += Number(c?.thisWeekPnL_percentage) || 0
+        const avg = sumPct / count
+        console.log('[Weekly%] avg', {avg, count})
+        return avg
+      })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
