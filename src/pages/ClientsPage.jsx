@@ -2060,9 +2060,17 @@ const ClientsPage = () => {
       // Switch to equity-weighted average so movements are visible and comparable.
       // Falls back to simple average if no equity weights are available.
       // Daily PnL %: per request show raw SUM of client dailyPnL_percentage values.
-      dailyPnLPercent: sum('dailyPnL_percentage'),
+      dailyPnLPercent: (() => {
+        const val = sum('dailyPnL_percentage')
+        console.log('[FaceCard] Daily PnL % recalculated:', val.toFixed(4), 'clients:', list.length)
+        return val
+      })(),
       // This Week PnL %: per request show raw SUM of client thisWeekPnL_percentage values.
-      thisWeekPnLPercent: sum('thisWeekPnL_percentage'),
+      thisWeekPnLPercent: (() => {
+        const val = sum('thisWeekPnL_percentage')
+        console.log('[FaceCard] Weekly PnL % recalculated:', val.toFixed(4), 'clients:', list.length)
+        return val
+      })(),
       thisMonthPnLPercent: (() => {
         // Keep existing sum behavior for month to revisit later if needed
         return list.reduce((acc, c) => acc + (Number(c?.thisMonthPnL_percentage) || 0), 0)
