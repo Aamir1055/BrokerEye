@@ -293,21 +293,21 @@ export const DataProvider = ({ children }) => {
         previousEquity: toNum(client.previousEquity) / 100,
         thisWeekPreviousEquity: toNum(client.thisWeekPreviousEquity) / 100,
         thisMonthPreviousEquity: toNum(client.thisMonthPreviousEquity) / 100,
-        // Percentage fields - keep as-is from backend (already in correct format)
-        balance_percentage: client.balance_percentage != null ? toNum(client.balance_percentage) : client.balance_percentage,
-        credit_percentage: client.credit_percentage != null ? toNum(client.credit_percentage) : client.credit_percentage,
-        equity_percentage: client.equity_percentage != null ? toNum(client.equity_percentage) : client.equity_percentage,
-        pnl_percentage: client.pnl_percentage != null ? toNum(client.pnl_percentage) : client.pnl_percentage,
-        profit_percentage: client.profit_percentage != null ? toNum(client.profit_percentage) : client.profit_percentage,
-        margin_percentage: client.margin_percentage != null ? toNum(client.margin_percentage) : client.margin_percentage,
-        marginFree_percentage: client.marginFree_percentage != null ? toNum(client.marginFree_percentage) : client.marginFree_percentage,
-        dailyPnL_percentage: client.dailyPnL_percentage != null ? toNum(client.dailyPnL_percentage) : client.dailyPnL_percentage,
-        thisWeekPnL_percentage: client.thisWeekPnL_percentage != null ? toNum(client.thisWeekPnL_percentage) : client.thisWeekPnL_percentage,
-        thisMonthPnL_percentage: client.thisMonthPnL_percentage != null ? toNum(client.thisMonthPnL_percentage) : client.thisMonthPnL_percentage,
-        lifetimePnL_percentage: client.lifetimePnL_percentage != null ? toNum(client.lifetimePnL_percentage) : client.lifetimePnL_percentage,
-        storage_percentage: client.storage_percentage != null ? toNum(client.storage_percentage) : client.storage_percentage,
-        dailyDeposit_percentage: client.dailyDeposit_percentage != null ? toNum(client.dailyDeposit_percentage) : client.dailyDeposit_percentage,
-        dailyWithdrawal_percentage: client.dailyWithdrawal_percentage != null ? toNum(client.dailyWithdrawal_percentage) : client.dailyWithdrawal_percentage
+        // Percentage fields - also need to be divided by 100 for USC
+        balance_percentage: client.balance_percentage != null ? toNum(client.balance_percentage) / 100 : client.balance_percentage,
+        credit_percentage: client.credit_percentage != null ? toNum(client.credit_percentage) / 100 : client.credit_percentage,
+        equity_percentage: client.equity_percentage != null ? toNum(client.equity_percentage) / 100 : client.equity_percentage,
+        pnl_percentage: client.pnl_percentage != null ? toNum(client.pnl_percentage) / 100 : client.pnl_percentage,
+        profit_percentage: client.profit_percentage != null ? toNum(client.profit_percentage) / 100 : client.profit_percentage,
+        margin_percentage: client.margin_percentage != null ? toNum(client.margin_percentage) / 100 : client.margin_percentage,
+        marginFree_percentage: client.marginFree_percentage != null ? toNum(client.marginFree_percentage) / 100 : client.marginFree_percentage,
+        dailyPnL_percentage: client.dailyPnL_percentage != null ? toNum(client.dailyPnL_percentage) / 100 : client.dailyPnL_percentage,
+        thisWeekPnL_percentage: client.thisWeekPnL_percentage != null ? toNum(client.thisWeekPnL_percentage) / 100 : client.thisWeekPnL_percentage,
+        thisMonthPnL_percentage: client.thisMonthPnL_percentage != null ? toNum(client.thisMonthPnL_percentage) / 100 : client.thisMonthPnL_percentage,
+        lifetimePnL_percentage: client.lifetimePnL_percentage != null ? toNum(client.lifetimePnL_percentage) / 100 : client.lifetimePnL_percentage,
+        storage_percentage: client.storage_percentage != null ? toNum(client.storage_percentage) / 100 : client.storage_percentage,
+        dailyDeposit_percentage: client.dailyDeposit_percentage != null ? toNum(client.dailyDeposit_percentage) / 100 : client.dailyDeposit_percentage,
+        dailyWithdrawal_percentage: client.dailyWithdrawal_percentage != null ? toNum(client.dailyWithdrawal_percentage) / 100 : client.dailyWithdrawal_percentage
       }
       return normalized
     }
