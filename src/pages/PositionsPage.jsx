@@ -2175,9 +2175,7 @@ const PositionsPage = () => {
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
-                  {isInitialPositionsLoading ? (
-                    <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
-                  ) : netDisplayedPositions.length === 0 ? (
+                  {netDisplayedPositions.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -2333,6 +2331,32 @@ const PositionsPage = () => {
                           )}
                         </tr>
                       </thead>
+
+                      {/* YouTube-style Loading Progress Bar */}
+                      {isInitialPositionsLoading && (
+                        <thead className="sticky z-40" style={{ top: '48px' }}>
+                          <tr>
+                            <th colSpan={Object.values(netVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
+                              <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                                <style>{`
+                                  @keyframes shimmerSlide {
+                                    0% { transform: translateX(-100%); }
+                                    100% { transform: translateX(400%); }
+                                  }
+                                  .shimmer-loading-bar {
+                                    width: 30%;
+                                    height: 100%;
+                                    background: #2563eb;
+                                    animation: shimmerSlide 0.9s linear infinite;
+                                  }
+                                `}</style>
+                                <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                      )}
+
                       <tbody className="bg-white divide-y divide-gray-100">
                         {netDisplayedPositions.map((netPos, idx) => (
                           <Fragment key={netPos.symbol || idx}>
@@ -2573,9 +2597,7 @@ const PositionsPage = () => {
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
-                  {isInitialPositionsLoading ? (
-                    <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
-                  ) : clientNetPositionsData.length === 0 ? (
+                  {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -2721,6 +2743,32 @@ const PositionsPage = () => {
                           )}
                         </tr>
                       </thead>
+
+                      {/* YouTube-style Loading Progress Bar */}
+                      {isInitialPositionsLoading && (
+                        <thead className="sticky z-40" style={{ top: '48px' }}>
+                          <tr>
+                            <th colSpan={Object.values(clientNetVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
+                              <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                                <style>{`
+                                  @keyframes shimmerSlideClient {
+                                    0% { transform: translateX(-100%); }
+                                    100% { transform: translateX(400%); }
+                                  }
+                                  .shimmer-loading-bar-client {
+                                    width: 30%;
+                                    height: 100%;
+                                    background: #2563eb;
+                                    animation: shimmerSlideClient 0.9s linear infinite;
+                                  }
+                                `}</style>
+                                <div className="shimmer-loading-bar-client absolute top-0 left-0 h-full" />
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                      )}
+
                       <tbody className="bg-white divide-y divide-gray-100">
                         {clientNetDisplayedPositions.map((row, idx) => {
                           const key = `${row.login}|${row.symbol}`
@@ -3015,9 +3063,7 @@ const PositionsPage = () => {
           {/* Positions Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
-              {isInitialPositionsLoading ? (
-                <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
-              ) : displayedPositions.length === 0 ? (
+              {displayedPositions.length === 0 && !isInitialPositionsLoading ? (
                 <div className="text-center py-12">
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -3056,6 +3102,32 @@ const PositionsPage = () => {
                       })()}
                     </tr>
                   </thead>
+
+                  {/* YouTube-style Loading Progress Bar */}
+                  {isInitialPositionsLoading && (
+                    <thead className="sticky z-40" style={{ top: '48px' }}>
+                      <tr>
+                        <th colSpan={Object.values(getEffectiveVisibleColumns()).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
+                          <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                            <style>{`
+                              @keyframes shimmerSlidePos {
+                                0% { transform: translateX(-100%); }
+                                100% { transform: translateX(400%); }
+                              }
+                              .shimmer-loading-bar-pos {
+                                width: 30%;
+                                height: 100%;
+                                background: #2563eb;
+                                animation: shimmerSlidePos 0.9s linear infinite;
+                              }
+                            `}</style>
+                            <div className="shimmer-loading-bar-pos absolute top-0 left-0 h-full" />
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                  )}
+
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.map((p) => {
                       const effectiveCols = getEffectiveVisibleColumns()
