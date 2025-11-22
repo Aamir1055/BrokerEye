@@ -2957,7 +2957,7 @@ const Client2Page = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Client 2</h1>
+                <h1 className="text-2xl font-bold text-blue-600 tracking-tight">Client 2</h1>
                 <p className="text-xs text-slate-500 mt-0.5">Advanced client management & analytics</p>
               </div>
             </div>
@@ -3327,7 +3327,7 @@ const Client2Page = () => {
               <button
                 onClick={() => setShowFaceCards(v => !v)}
                 className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shadow-sm text-sm font-semibold h-10 ${showFaceCards
-                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400 text-blue-700 hover:border-blue-500'
+                    ? 'bg-blue-50 border-blue-400 text-blue-700 hover:border-blue-500 hover:shadow-md'
                     : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
                   }`}
                 title={showFaceCards ? "Hide cards" : "Show cards"}
@@ -3492,7 +3492,7 @@ const Client2Page = () => {
           <div className="flex-1">
             {/* Pagination Controls - Top - Only show when there's data */}
             {clients && clients.length > 0 && (
-            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl shadow-sm border-2 border-slate-200 p-2.5">
+            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 rounded-xl shadow-sm border-2 border-slate-200 p-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-600">Show:</span>
                 <select
@@ -3524,7 +3524,7 @@ const Client2Page = () => {
                       </svg>
                     </button>
 
-                    <span className="text-xs font-bold text-white px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
+                    <span className="text-xs font-bold text-white px-3 py-1 bg-blue-600 rounded-lg shadow-md">
                       Page {currentPage} of {totalPages}
                     </span>
 
@@ -3588,7 +3588,7 @@ const Client2Page = () => {
                   {/* Search Button */}
                   <button
                     onClick={handleSearch}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-xs font-semibold"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-xs font-semibold"
                     title="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
