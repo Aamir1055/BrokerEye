@@ -3465,7 +3465,18 @@ const Client2Page = () => {
                       <div className={`text-[10px] font-semibold ${labelColorClass} mb-1.5 uppercase tracking-wide`}>
                         {displayLabel}
                       </div>
-                      <div className={`text-base font-bold ${textColorClass}`}>
+                      <div className={`text-base font-bold ${textColorClass} flex items-center gap-1`}>
+                        {card.colorCheck && (
+                          rawValue >= 0 ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                          )
+                        )}
                         {card.format === 'integer'
                           ? formatIndianNumber(String(Math.round(rawValue || 0)))
                           : formatIndianNumber((rawValue || 0).toFixed(2))}
@@ -3481,51 +3492,51 @@ const Client2Page = () => {
           <div className="flex-1">
             {/* Pagination Controls - Top - Only show when there's data */}
             {clients && clients.length > 0 && (
-            <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl shadow-sm border-2 border-slate-200 p-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-slate-600">Show:</span>
+            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl shadow-sm border-2 border-slate-200 p-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Show:</span>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                  className="px-3 py-2 text-sm font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm"
+                  className="px-2 py-1 text-xs font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm"
                 >
                   <option value="50">50</option>
                   <option value="100">100</option>
                   <option value="200">200</option>
                   <option value="500">500</option>
                 </select>
-                <span className="text-sm font-semibold text-slate-600">entries</span>
+                <span className="text-xs font-semibold text-slate-600">entries</span>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {/* Page Navigation */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === 1
+                      className={`p-1.5 rounded-lg transition-all shadow-sm ${currentPage === 1
                           ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
                           : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
 
-                    <span className="text-sm font-bold text-white px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
+                    <span className="text-xs font-bold text-white px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
                       Page {currentPage} of {totalPages}
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === totalPages
+                      className={`p-1.5 rounded-lg transition-all shadow-sm ${currentPage === totalPages
                           ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
                           : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -3535,10 +3546,10 @@ const Client2Page = () => {
                 <div className="relative" ref={columnSelectorRef}>
                   <button
                     onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="text-amber-700 hover:text-amber-800 px-4 py-2 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm"
+                    className="text-amber-700 hover:text-amber-800 px-2.5 py-1 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
                     title="Show/Hide Columns"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
                     </svg>
                     Columns
@@ -3546,7 +3557,7 @@ const Client2Page = () => {
                 </div>
 
                 {/* Search Bar */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <div className="relative">
                     <input
                       type="text"
@@ -3554,7 +3565,7 @@ const Client2Page = () => {
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search login, name, email..."
-                      className="w-72 pl-4 pr-10 py-2 text-sm font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400"
+                      className="w-64 pl-3 pr-8 py-1 text-xs font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400"
                     />
                     {/* Inline Clear X Icon */}
                     {searchInput && (
@@ -3564,10 +3575,10 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         title="Clear search"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
@@ -3577,7 +3588,7 @@ const Client2Page = () => {
                   {/* Search Button */}
                   <button
                     onClick={handleSearch}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-sm font-semibold"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-xs font-semibold"
                     title="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
