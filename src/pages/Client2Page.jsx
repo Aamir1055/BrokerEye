@@ -3438,25 +3438,23 @@ const Client2Page = () => {
 
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
-                  // Colors
-                  let textColorClass = `text-${card.color}-700`
-                  let borderColorClass = `border-${card.color}-200`
-                  let labelColorClass = `text-${card.color}-600`
+                  // Clean, professional color scheme
+                  let textColorClass = 'text-slate-700'
+                  let labelColorClass = 'text-slate-500'
+                  
                   if (card.colorCheck) {
                     if (rawValue >= 0) {
-                      textColorClass = 'text-green-700'
-                      borderColorClass = 'border-green-200'
-                      labelColorClass = 'text-green-600'
+                      textColorClass = 'text-emerald-600'
+                      labelColorClass = 'text-emerald-500'
                     } else {
-                      textColorClass = 'text-red-700'
-                      borderColorClass = 'border-red-200'
-                      labelColorClass = 'text-red-600'
+                      textColorClass = 'text-rose-600'
+                      labelColorClass = 'text-rose-500'
                     }
                   }
                   return (
                     <div
                       key={cardKey}
-                      className={`bg-white rounded-lg shadow-sm border-2 ${borderColorClass} p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
+                      className={`bg-white rounded-xl shadow-sm border border-slate-200 p-3 hover:shadow-md transition-all duration-200 cursor-move hover:border-slate-300 hover:-translate-y-0.5`}
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragOver={handleCardDragOver}
@@ -3464,10 +3462,10 @@ const Client2Page = () => {
                       onDragEnd={handleCardDragEnd}
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
-                      <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
+                      <div className={`text-[10px] font-semibold ${labelColorClass} mb-1.5 uppercase tracking-wide`}>
                         {displayLabel}
                       </div>
-                      <div className={`text-sm font-bold ${textColorClass}`}>
+                      <div className={`text-base font-bold ${textColorClass}`}>
                         {card.format === 'integer'
                           ? formatIndianNumber(String(Math.round(rawValue || 0)))
                           : formatIndianNumber((rawValue || 0).toFixed(2))}
