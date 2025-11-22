@@ -517,9 +517,7 @@ const IBCommissionsPage = () => {
 
             {/* Table Container */}
             <div className="flex-1 overflow-auto p-4">
-              {loading ? (
-                <LoadingSpinner />
-              ) : commissions.length === 0 ? (
+              {commissions.length === 0 && !loading ? (
                 <div className="text-center py-16">
                   <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -590,8 +588,41 @@ const IBCommissionsPage = () => {
                       </tr>
                       {/* Filter Panel removed */}
                     </thead>
+
+                    {/* YouTube-style Loading Progress Bar */}
+                    {loading && (
+                      <thead className="sticky z-40" style={{ top: '48px' }}>
+                        <tr>
+                          <th colSpan="9" className="p-0" style={{ height: '3px' }}>
+                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                              <style>{`
+                                @keyframes shimmerSlideIB {
+                                  0% { transform: translateX(-100%); }
+                                  100% { transform: translateX(400%); }
+                                }
+                                .shimmer-loading-bar-ib {
+                                  width: 30%;
+                                  height: 100%;
+                                  background: #2563eb;
+                                  animation: shimmerSlideIB 0.9s linear infinite;
+                                }
+                              `}</style>
+                              <div className="shimmer-loading-bar-ib absolute top-0 left-0 h-full" />
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                    )}
+
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {sortedCommissions.map((ib) => (
+                      {loading ? (
+                        <tr>
+                          <td colSpan="9" className="px-6 py-8 text-center text-sm text-gray-400">
+                            Loading IB commissions...
+                          </td>
+                        </tr>
+                      ) : (
+                      sortedCommissions.map((ib) => (
                         <tr key={ib.id} className={`hover:bg-blue-50 transition-colors ${selectedIBs.includes(ib.id) ? 'bg-blue-100' : ''}`}>
                           {/* Checkbox Cell */}
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -636,7 +667,7 @@ const IBCommissionsPage = () => {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                      )))}
                     </tbody>
                   </table>
                 </div>
