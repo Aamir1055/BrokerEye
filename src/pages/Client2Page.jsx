@@ -1092,32 +1092,24 @@ const Client2Page = () => {
         console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(payload, null, 2))
       }
 
-      // Fetch data with single API call
+      // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
-        // Fetch both normal and percentage data
-        const [normalResponse, percentResponse] = await Promise.all([
-          brokerAPI.searchClients(payload),
-          brokerAPI.searchClients({ ...payload, percentage: true })
-        ])
-
-        const normalData = extractData(normalResponse)
-        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
-        const normalTotals = normalData?.totals || {}
-        const normalTotal = Number(normalData?.total || normalClients.length || 0)
-        const pages = Math.max(1, Number(normalData?.pages || 1))
-
-        setClients(normalClients)
-        setTotalClients(normalTotal)
-        setTotalPages(pages)
-        setTotals(normalTotals)
-        setError('')
-
-        // Set percentage data
+        // Fetch only percentage data
+        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
         const percentData = extractData(percentResponse)
+        const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
+        const percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const pages = Math.max(1, Number(percentData?.pages || 1))
+
+        setClients(percentClients)
+        setTotalClients(percentTotal)
+        setTotalPages(pages)
+        setTotals({}) // Clear normal totals
         setTotalsPercent(percentTotals)
+        setError('')
       } else {
-        // Normal only
+        // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload)
         const normalData = extractData(normalResponse)
         const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)

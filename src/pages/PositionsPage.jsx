@@ -241,7 +241,7 @@ const PositionsPage = () => {
   }
 
   // Define string columns that should not show number filters
-  const stringColumns = ['login', 'symbol', 'action', 'reason', 'comment']
+  const stringColumns = ['symbol', 'action', 'reason', 'comment']
   const isStringColumn = (key) => stringColumns.includes(key)
 
   // Column filter states
@@ -589,6 +589,16 @@ const PositionsPage = () => {
     const num = Number(n)
     if (Number.isNaN(num)) return '-'
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  }
+
+  // Helper function to adjust value for USC symbols (divide by 100)
+  const adjustValueForSymbol = (value, symbol) => {
+    if (!symbol || value === null || value === undefined) return value
+    const symbolStr = String(symbol).toUpperCase()
+    if (symbolStr.includes('USC')) {
+      return Number(value) / 100
+    }
+    return value
   }
 
   const formatTime = (ts) => {
@@ -3159,7 +3169,7 @@ const PositionsPage = () => {
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.action}</td>
                           )}
                           {effectiveCols.volume && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.volume, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.volume, p.symbol), 2)}</td>
                           )}
                           {effectiveCols.volumePercentage && (
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
@@ -3185,7 +3195,7 @@ const PositionsPage = () => {
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
-                                {formatNumber(p.profit, 2)}
+                                {formatNumber(adjustValueForSymbol(p.profit, p.symbol), 2)}
                               </span>
                             </td>
                           )}
@@ -3199,7 +3209,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.storage, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.storage, p.symbol), 2)}</td>
                           )}
                           {effectiveCols.storagePercentage && (
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
@@ -3228,7 +3238,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(p.commission, 2)}</td>
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.commission, p.symbol), 2)}</td>
                           )}
                         </tr>
                       )
