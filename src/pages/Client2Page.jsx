@@ -3326,17 +3326,17 @@ const Client2Page = () => {
               {/* Cards Toggle Button */}
               <button
                 onClick={() => setShowFaceCards(v => !v)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${showFaceCards
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shadow-sm text-sm font-semibold h-10 ${showFaceCards
+                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400 text-blue-700 hover:border-blue-500'
+                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
                   }`}
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
                 <span>Cards</span>
-                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
+                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-400'
                   }`}>
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0'
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0.5'
                       }`}
                   />
                 </div>
@@ -3346,10 +3346,10 @@ const Client2Page = () => {
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className={`text-blue-600 hover:text-blue-700 p-2 rounded-lg border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`text-blue-600 hover:text-blue-700 p-2 rounded-xl border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh clients data"
               >
-                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -3358,31 +3358,31 @@ const Client2Page = () => {
               <div className="relative" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="text-green-600 hover:text-green-700 p-2 rounded-lg border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                  className="text-emerald-600 hover:text-emerald-700 p-2 rounded-xl border-2 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center"
                   title="Download as Excel (CSV)"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border-2 border-green-300 z-50 overflow-hidden">
-                    <div className="py-1">
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border-2 border-emerald-300 z-50 overflow-hidden">
+                    <div className="py-1.5">
                       <button
                         onClick={() => handleExportToExcel('table')}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Export Table View
                       </button>
                       <button
                         onClick={() => handleExportToExcel('all')}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                         Export All Data
@@ -3481,52 +3481,52 @@ const Client2Page = () => {
           <div className="flex-1">
             {/* Pagination Controls - Top - Only show when there's data */}
             {clients && clients.length > 0 && (
-            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-blue-700">Show:</span>
+            <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl shadow-sm border-2 border-slate-200 p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-slate-600">Show:</span>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
+                  className="px-3 py-2 text-sm font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm"
                 >
                   <option value="50">50</option>
                   <option value="100">100</option>
                   <option value="200">200</option>
                   <option value="500">500</option>
                 </select>
-                <span className="text-xs font-semibold text-blue-700">entries</span>
+                <span className="text-sm font-semibold text-slate-600">entries</span>
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Page Navigation */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === 1
-                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === 1
+                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
+                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
 
-                    <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
+                    <span className="text-sm font-bold text-white px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
                       Page {currentPage} of {totalPages}
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === totalPages
-                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === totalPages
+                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
+                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </div>
@@ -3535,7 +3535,7 @@ const Client2Page = () => {
                 <div className="relative" ref={columnSelectorRef}>
                   <button
                     onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                    className="text-amber-700 hover:text-amber-800 px-4 py-2 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm"
                     title="Show/Hide Columns"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3554,7 +3554,7 @@ const Client2Page = () => {
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search login, name, email..."
-                      className="w-64 pl-3 pr-8 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                      className="w-72 pl-4 pr-10 py-2 text-sm font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400"
                     />
                     {/* Inline Clear X Icon */}
                     {searchInput && (
@@ -3564,7 +3564,7 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         title="Clear search"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3577,7 +3577,7 @@ const Client2Page = () => {
                   {/* Search Button */}
                   <button
                     onClick={handleSearch}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-xs font-medium"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-sm font-semibold"
                     title="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
