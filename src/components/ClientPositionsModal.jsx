@@ -2345,7 +2345,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </svg>
                           </button>
                         </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -2363,9 +2362,60 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               )}
 
               {dealsLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
+                <>
+                  {/* Show table structure with loading bar */}
+                  <div className="overflow-x-auto max-h-96">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
+                        <tr>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Time</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Deal</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Order</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Position</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Symbol</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Action</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Volume</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Price</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Commission</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Storage</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Profit</th>
+                          <th className="px-3 py-3 text-left text-xs font-bold text-white uppercase">Comment</th>
+                        </tr>
+                      </thead>
+
+                      {/* YouTube-style Loading Progress Bar */}
+                      <thead className="sticky z-40" style={{ top: '48px' }}>
+                        <tr>
+                          <th colSpan="12" className="p-0" style={{ height: '3px' }}>
+                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                              <style>{`
+                                @keyframes shimmerSlideDeals {
+                                  0% { transform: translateX(-100%); }
+                                  100% { transform: translateX(400%); }
+                                }
+                                .shimmer-loading-bar-deals {
+                                  width: 30%;
+                                  height: 100%;
+                                  background: #2563eb;
+                                  animation: shimmerSlideDeals 0.9s linear infinite;
+                                }
+                              `}</style>
+                              <div className="shimmer-loading-bar-deals absolute top-0 left-0 h-full" />
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody className="bg-white">
+                        <tr>
+                          <td colSpan="12" className="px-6 py-8 text-center text-sm text-gray-400">
+                            Loading deals...
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : !hasAppliedFilter ? (
                 <div className="text-center py-12">
                   <svg className="w-16 h-16 mx-auto text-blue-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
