@@ -1433,18 +1433,22 @@ const ClientsPage = () => {
   
   // Generate dynamic pagination options based on data count
   const generatePageSizeOptions = () => {
-    const options = ['All']
     const totalCount = filteredClients.length
     
-    // Generate options incrementing by 50, up to total count
-    for (let i = 50; i < totalCount; i += 50) {
-      options.push(i)
-    }
+    if (totalCount === 0) return [50]
     
-    // Always show total count as an option if it's not already included
-    if (totalCount > 0 && totalCount % 50 !== 0 && !options.includes(totalCount)) {
-      options.push(totalCount)
-    }
+    const options = []
+    
+    // Add standard options that are less than or equal to total count
+    const standardSizes = [50, 100, 150, 200, 250, 300]
+    standardSizes.forEach(size => {
+      if (size < totalCount) {
+        options.push(size)
+      }
+    })
+    
+    // Always add the total count as the last option (acts as "All")
+    options.push(totalCount)
     
     return options
   }
@@ -1453,15 +1457,15 @@ const ClientsPage = () => {
   
   // Pagination logic - optimized (deduplication already done in filteredClients)
   const { totalPages, displayedClients } = useMemo(() => {
-    const total = itemsPerPage === 'All' ? 1 : Math.ceil(filteredClients.length / itemsPerPage)
-    const startIndex = itemsPerPage === 'All' ? 0 : (currentPage - 1) * itemsPerPage
-    const endIndex = itemsPerPage === 'All' ? filteredClients.length : startIndex + itemsPerPage
+    const total = Math.ceil(filteredClients.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
     
     // Simple slice - deduplication already handled in filteredClients useMemo
     const sliced = filteredClients.slice(startIndex, endIndex)
     
     return {
-      totalPages: total,
+      totalPages: total || 1,
       displayedClients: sliced
     }
   }, [filteredClients, itemsPerPage, currentPage])
@@ -1647,7 +1651,7 @@ const ClientsPage = () => {
   }
   
   const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(value)
+    setItemsPerPage(parseInt(value))
     setCurrentPage(1)
   }
 
@@ -3022,12 +3026,12 @@ const ClientsPage = () => {
               <span className="text-xs font-semibold text-blue-700">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                onChange={(e) => handleItemsPerPageChange(e.target.value)}
                 className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
               >
                 {pageSizeOptions.map((size) => (
                   <option key={size} value={size}>
-                    {size}
+                    {size === filteredClients.length ? `All (${size})` : size}
                   </option>
                 ))}
               </select>
@@ -3036,7 +3040,7 @@ const ClientsPage = () => {
             
             <div className="flex items-center gap-3">
               {/* Page Navigation */}
-              {itemsPerPage !== 'All' && (
+              {totalPages > 1 && (
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
