@@ -2987,7 +2987,7 @@ const Client2Page = () => {
                 </button>
 
                 {showFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-emerald-400 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-emerald-400 z-50">
                     <div className="p-4">
                       <div className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
                         <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3085,7 +3085,7 @@ const Client2Page = () => {
                 </div>
 
                 {showCardFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#9ca3af #f3f4f6'
                   }}>
