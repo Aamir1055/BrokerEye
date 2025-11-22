@@ -2964,7 +2964,7 @@ const Client2Page = () => {
 
             <div className="flex items-center gap-2">
               {/* Filter Button (Green/Emerald Theme) */}
-              <div className="relative" ref={filterMenuRef}>
+              <div className="relative flex items-center" ref={filterMenuRef}>
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
                   className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:border-emerald-500"
@@ -3053,7 +3053,7 @@ const Client2Page = () => {
               </div>
 
               {/* Card Filter Button (Pink Theme) */}
-              <div className="relative" ref={cardFilterMenuRef}>
+              <div className="relative flex items-center" ref={cardFilterMenuRef}>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
@@ -4682,7 +4682,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline transition-all"
+                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -4703,7 +4703,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-2 py-1.5 text-base ${getValueColorClass(col.key, rawValue) || 'text-slate-700'} font-medium`}
+                                className={`px-2 py-1.5 text-base ${getValueColorClass(col.key, rawValue) || 'text-slate-700'}`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
