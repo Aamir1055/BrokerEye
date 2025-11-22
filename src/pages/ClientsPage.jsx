@@ -189,7 +189,21 @@ const ClientsPage = () => {
   const [filterByPositions, setFilterByPositions] = useState(false)
   const [filterByCredit, setFilterByCredit] = useState(false)
   const [filterNoDeposit, setFilterNoDeposit] = useState(false)
-  const [columnFilters, setColumnFilters] = useState({})
+  
+  // Initialize columnFilters from localStorage
+  const getInitialColumnFilters = () => {
+    try {
+      const saved = localStorage.getItem('clientsColumnFilters')
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    } catch (e) {
+      console.error('Failed to load column filters:', e)
+    }
+    return {}
+  }
+  
+  const [columnFilters, setColumnFilters] = useState(getInitialColumnFilters)
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
   const getInitialDisplayMode = () => {
@@ -524,6 +538,15 @@ const ClientsPage = () => {
   useEffect(() => {
     localStorage.setItem('clientsPageDisplayMode', displayMode)
   }, [displayMode])
+
+  // Save column filters to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('clientsColumnFilters', JSON.stringify(columnFilters))
+    } catch (e) {
+      console.error('Failed to save column filters:', e)
+    }
+  }, [columnFilters])
 
   // Remove page-level initial fetch to avoid duplicate REST calls; DataContext handles initial sync
 
@@ -1439,16 +1462,18 @@ const ClientsPage = () => {
     
     const options = []
     
-    // Add standard options that are less than or equal to total count
-    const standardSizes = [50, 100, 150, 200, 250, 300]
+    // Add standard options up to 500 max
+    const standardSizes = [50, 100, 200, 500]
     standardSizes.forEach(size => {
-      if (size < totalCount) {
+      if (size <= totalCount) {
         options.push(size)
       }
     })
     
-    // Always add the total count as the last option (acts as "All")
-    options.push(totalCount)
+    // If no options were added (totalCount < 50), add at least one option
+    if (options.length === 0) {
+      options.push(Math.min(50, totalCount))
+    }
     
     return options
   }

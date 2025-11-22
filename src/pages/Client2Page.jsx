@@ -2190,7 +2190,7 @@ const Client2Page = () => {
 
   // Handle items per page change
   const handleItemsPerPageChange = (value) => {
-    setItemsPerPage(value === 'All' ? 10000 : parseInt(value))
+    setItemsPerPage(parseInt(value))
     setCurrentPage(1)
   }
 
@@ -3464,7 +3464,7 @@ const Client2Page = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-blue-700">Show:</span>
                 <select
-                  value={itemsPerPage === 10000 ? 'All' : itemsPerPage}
+                  value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(e.target.value)}
                   className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
                 >
@@ -3472,15 +3472,13 @@ const Client2Page = () => {
                   <option value="100">100</option>
                   <option value="200">200</option>
                   <option value="500">500</option>
-                  <option value="All">All</option>
                 </select>
                 <span className="text-xs font-semibold text-blue-700">entries</span>
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Page Navigation */}
-                {itemsPerPage !== 'All' && itemsPerPage !== 10000 && (
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -3511,7 +3509,6 @@ const Client2Page = () => {
                       </svg>
                     </button>
                   </div>
-                )}
 
                 {/* Columns Selector Button */}
                 <div className="relative" ref={columnSelectorRef}>
