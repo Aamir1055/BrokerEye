@@ -4074,7 +4074,7 @@ const Client2Page = () => {
                                                         <select
                                                           value={tempFilter.operator}
                                                           onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                         >
                                                           <option value="equal">Equal...</option>
                                                           <option value="not_equal">Not Equal...</option>
@@ -4103,7 +4103,7 @@ const Client2Page = () => {
                                                               if (menu) menu.classList.add('hidden')
                                                             }
                                                           }}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                         />
                                                       </div>
 
@@ -4125,7 +4125,7 @@ const Client2Page = () => {
                                                                 if (menu) menu.classList.add('hidden')
                                                               }
                                                             }}
-                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                           />
                                                         </div>
                                                       )}
@@ -4157,7 +4157,7 @@ const Client2Page = () => {
                                                     placeholder="Search values..."
                                                     value={columnValueSearch[columnKey] || ''}
                                                     onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                   />
                                                 </div>
 
@@ -4397,7 +4397,7 @@ const Client2Page = () => {
                                                                     setShowFilterDropdown(null)
                                                                   }
                                                                 }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                               >
                                                                 <option value="equal">Equal...</option>
                                                                 <option value="notEqual">Not Equal...</option>
@@ -4423,7 +4423,7 @@ const Client2Page = () => {
                                                                     setShowFilterDropdown(null)
                                                                   }
                                                                 }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                               />
                                                             </div>
                                                             <div>
