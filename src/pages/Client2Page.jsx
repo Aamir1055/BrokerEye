@@ -4682,7 +4682,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-2 py-1.5 text-sm text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline transition-all"
+                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline transition-all"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -4703,7 +4703,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-2 py-1.5 text-sm ${getValueColorClass(col.key, rawValue) || 'text-slate-700'} font-medium`}
+                                className={`px-2 py-1.5 text-base ${getValueColorClass(col.key, rawValue) || 'text-slate-700'} font-medium`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
