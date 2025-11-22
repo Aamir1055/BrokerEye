@@ -427,6 +427,15 @@ const ClientPercentagePage = () => {
         // Apply checkbox filter
         ibFiltered = ibFiltered.filter(client => {
           const clientValue = client[columnKey]
+          // Special handling for is_custom field - compare boolean/number values
+          if (columnKey === 'is_custom') {
+            // Convert clientValue to comparable format
+            const normalizedClientValue = clientValue === true || clientValue === 1 || clientValue === '1'
+            return values.some(filterValue => {
+              const normalizedFilterValue = filterValue === true || filterValue === 1 || filterValue === '1'
+              return normalizedClientValue === normalizedFilterValue
+            })
+          }
           return values.includes(clientValue)
         })
       }
