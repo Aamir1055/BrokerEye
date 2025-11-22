@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
 import { formatTime } from '../utils/dateFormatter'
@@ -1033,17 +1033,24 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   // Apply search and filters to positions
-  const filteredPositions = (() => {
+  const filteredPositions = useMemo(() => {
     let filtered = [...positions]
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
+      // Strip # prefix if present for numeric field matching
+      const numericQuery = query.startsWith('#') ? query.slice(1) : query
+      
       filtered = filtered.filter(pos => {
         return (
           pos.symbol?.toLowerCase().includes(query) ||
-          String(pos.position).includes(query) ||
+          String(pos.position).includes(numericQuery) ||
+          String(pos.deal).includes(numericQuery) ||
           getActionLabel(pos.action).toLowerCase().includes(query) ||
-          String(pos.volume).includes(query)
+          String(pos.volume).includes(query) ||
+          String(pos.priceOpen).includes(query) ||
+          String(pos.priceCurrent).includes(query) ||
+          pos.comment?.toLowerCase().includes(query)
         )
       })
     }
@@ -1139,7 +1146,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
 
     return filtered
-  })()
+  }, [positions, searchQuery, columnFilters, positionsSortColumn, positionsSortDirection])
 
   // Pagination logic for positions
   const positionsTotalPages = Math.ceil(filteredPositions.length / positionsItemsPerPage)
@@ -1170,11 +1177,15 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
     if (dealsSearchQuery.trim()) {
       const query = dealsSearchQuery.toLowerCase()
+      // Strip # prefix if present for numeric field matching
+      const numericQuery = query.startsWith('#') ? query.slice(1) : query
+      
       filtered = filtered.filter(deal => {
         return (
           deal.symbol?.toLowerCase().includes(query) ||
-          String(deal.deal).includes(query) ||
-          String(deal.position).includes(query) ||
+          String(deal.deal).includes(numericQuery) ||
+          String(deal.position).includes(numericQuery) ||
+          String(deal.order || '').includes(numericQuery) ||
           getDealActionLabel(deal.action).toLowerCase().includes(query) ||
           String(deal.volume).includes(query)
         )
@@ -1683,7 +1694,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       
                       {/* Search Suggestions Dropdown */}
                       {showSearchSuggestions && getPositionSearchSuggestions().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-40 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-[60] max-h-40 overflow-y-auto">
                           {getPositionSearchSuggestions().map((suggestion, index) => (
                             <button
                               key={index}
@@ -2407,7 +2418,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
                       {/* Search Suggestions Dropdown */}
                       {showDealsSearchSuggestions && dealsSearchQuery && getDealsSearchSuggestions().length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-[60] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {getDealsSearchSuggestions().map((suggestion, index) => (
                             <button
                               key={index}
