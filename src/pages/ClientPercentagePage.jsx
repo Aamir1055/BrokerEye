@@ -923,7 +923,6 @@ const ClientPercentagePage = () => {
                           <span className="text-[9px] text-gray-700 font-medium truncate">
                             {value === true || value === 1 ? 'Custom' : value === false || value === 0 ? 'Default' : value}
                           </span>
-                          </span>
                         </label>
                       ))
                     )}
