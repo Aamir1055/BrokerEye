@@ -1895,49 +1895,55 @@ const LiveDealingPage = () => {
           </div>
 
           {/* Table */}
-          {loading ? (
-            <LoadingSpinner />
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
-              <div className="overflow-y-auto flex-1">
-                <table className="min-w-full divide-y divide-gray-200 text-xs">
-                <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
+            <div className="overflow-y-auto flex-1">
+              <table className="min-w-full divide-y divide-gray-200 text-xs">
+              <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
+                <tr>
+                  {visibleColumns.time && renderHeaderCell('time', 'Time')}
+                  {visibleColumns.deal && renderHeaderCell('deal', 'Deal')}
+                  {visibleColumns.login && renderHeaderCell('login', 'Login')}
+                  {visibleColumns.action && renderHeaderCell('action', 'Action')}
+                  {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
+                  {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volume', displayMode === 'percentage' ? 'Volume %' : 'Volume')}
+                  {visibleColumns.volumePercentage && renderHeaderCell('volumePercentage', 'Volume %')}
+                  {visibleColumns.price && renderHeaderCell('price', 'Price')}
+                  {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profit', displayMode === 'percentage' ? 'Profit %' : 'Profit')}
+                  {visibleColumns.profitPercentage && renderHeaderCell('profitPercentage', 'Profit %')}
+                  {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commission', displayMode === 'percentage' ? 'Commission %' : 'Commission')}
+                  {visibleColumns.commissionPercentage && renderHeaderCell('commissionPercentage', 'Commission %')}
+                  {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storage', displayMode === 'percentage' ? 'Storage %' : 'Storage')}
+                  {visibleColumns.storagePercentage && renderHeaderCell('storagePercentage', 'Storage %')}
+                  {visibleColumns.appliedPercentage && renderHeaderCell('appliedPercentage', 'Applied %')}
+                  {visibleColumns.entry && renderHeaderCell('entry', 'Entry')}
+                  {visibleColumns.order && renderHeaderCell('order', 'Order')}
+                  {visibleColumns.position && renderHeaderCell('position', 'Position')}
+                  {visibleColumns.reason && renderHeaderCell('reason', 'Reason')}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y-2 divide-gray-200">
+                {loading ? (
                   <tr>
-                    {visibleColumns.time && renderHeaderCell('time', 'Time')}
-                    {visibleColumns.deal && renderHeaderCell('deal', 'Deal')}
-                    {visibleColumns.login && renderHeaderCell('login', 'Login')}
-                    {visibleColumns.action && renderHeaderCell('action', 'Action')}
-                    {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
-                    {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volume', displayMode === 'percentage' ? 'Volume %' : 'Volume')}
-                    {visibleColumns.volumePercentage && renderHeaderCell('volumePercentage', 'Volume %')}
-                    {visibleColumns.price && renderHeaderCell('price', 'Price')}
-                    {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profit', displayMode === 'percentage' ? 'Profit %' : 'Profit')}
-                    {visibleColumns.profitPercentage && renderHeaderCell('profitPercentage', 'Profit %')}
-                    {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commission', displayMode === 'percentage' ? 'Commission %' : 'Commission')}
-                    {visibleColumns.commissionPercentage && renderHeaderCell('commissionPercentage', 'Commission %')}
-                    {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storage', displayMode === 'percentage' ? 'Storage %' : 'Storage')}
-                    {visibleColumns.storagePercentage && renderHeaderCell('storagePercentage', 'Storage %')}
-                    {visibleColumns.appliedPercentage && renderHeaderCell('appliedPercentage', 'Applied %')}
-                    {visibleColumns.entry && renderHeaderCell('entry', 'Entry')}
-                    {visibleColumns.order && renderHeaderCell('order', 'Order')}
-                    {visibleColumns.position && renderHeaderCell('position', 'Position')}
-                    {visibleColumns.reason && renderHeaderCell('reason', 'Reason')}
+                    <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-12">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                        <p className="mt-3 text-sm text-gray-600">Loading deals...</p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y-2 divide-gray-200">
-                  {displayedDeals.length === 0 ? (
-                    <tr>
-                      <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-12 text-center">
-                        <div className="text-6xl mb-4">⚡</div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          {deals.length === 0 ? 'No deals yet' : 'No matching deals found'}
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          {deals.length === 0 
-                            ? 'Waiting for live trades...' 
-                            : 'Try adjusting your filters or search query'
-                          }
-                        </p>
+                ) : displayedDeals.length === 0 ? (
+                  <tr>
+                    <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-12 text-center">
+                      <div className="text-6xl mb-4">⚡</div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {deals.length === 0 ? 'No deals yet' : 'No matching deals found'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        {deals.length === 0 
+                          ? 'Waiting for live trades...' 
+                          : 'Try adjusting your filters or search query'
+                        }
+                      </p>
                         {deals.length === 0 && (
                           <div className="text-xs text-gray-400">
                             <p className="mb-1">
@@ -2098,7 +2104,6 @@ const LiveDealingPage = () => {
               </table>
               </div>
             </div>
-          )}
 
           {/* Pagination - Bottom */}
         </div>
