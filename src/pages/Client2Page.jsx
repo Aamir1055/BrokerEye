@@ -3465,15 +3465,15 @@ const Client2Page = () => {
                       <div className={`text-[10px] font-semibold ${labelColorClass} mb-1.5 uppercase tracking-wide`}>
                         {displayLabel}
                       </div>
-                      <div className={`text-base font-bold ${textColorClass} flex items-center gap-1`}>
+                      <div className={`text-base font-bold ${textColorClass} flex items-center gap-1.5`}>
                         {card.colorCheck && (
                           rawValue >= 0 ? (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
+                              <path d="M6 2L11 10H1z" />
                             </svg>
                           ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
+                              <path d="M6 10L1 2h10z" />
                             </svg>
                           )
                         )}
@@ -3686,7 +3686,7 @@ const Client2Page = () => {
 
             {/* Table - Show table with progress bar for all loading states */}
             {(clients.length > 0 || (initialLoad && loading)) && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '470px' : '650px' }}>
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '550px' : '750px' }}>
                 {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
                 <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
                   scrollbarWidth: 'thin',
@@ -3819,7 +3819,7 @@ const Client2Page = () => {
                 `}</style>
 
                   {/* Table */}
-                  <table ref={tableRef} className="divide-y divide-gray-200" style={{
+                  <table ref={tableRef} className="divide-y divide-slate-200" style={{
                     tableLayout: 'fixed',
                     width: `${totalTableWidth}px`,
                     minWidth: '100%'
@@ -3840,7 +3840,7 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
+                              className={`px-2 py-2 text-left text-[10px] font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
                                 } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
                               onClick={() => handleSort(col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
@@ -4661,13 +4661,13 @@ const Client2Page = () => {
                       </thead>
                     )}
 
-                    <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
+                    <tbody className="bg-white divide-y divide-slate-100" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                         <tr
                           key={`${client.login}-${animationKey}-${idx}`}
-                          className="hover:bg-blue-50 transition-colors"
+                          className={`hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
                           style={{
                             opacity: 0,
                             animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
@@ -4682,7 +4682,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-4 py-3 text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
+                                  className="px-2 py-1.5 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer hover:underline transition-all"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -4703,7 +4703,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-4 py-3 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
+                                className={`px-2 py-1.5 text-xs ${getValueColorClass(col.key, rawValue) || 'text-slate-700'} font-medium`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
