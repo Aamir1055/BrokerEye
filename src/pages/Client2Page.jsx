@@ -2139,11 +2139,7 @@ const Client2Page = () => {
       return updated
     })
 
-    // Explicitly trigger fetch with new filter (in addition to useEffect)
-    setTimeout(() => {
-      console.log('[Client2] 🔄 Explicitly calling fetchClients after checkbox filter')
-      fetchClients(false)
-    }, 100)
+    // No need to explicitly call fetchClients - useEffect will handle it when columnFilters changes
   }
 
   const applySortToColumn = (columnKey, direction) => {

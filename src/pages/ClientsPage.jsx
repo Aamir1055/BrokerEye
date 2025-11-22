@@ -114,7 +114,6 @@ const ClientsPage = () => {
     marginFree: false,
     marginLevel: false,
     leverage: false,
-    floating: false,
     currency: false,
     registration: false,
     lastAccess: false,
@@ -349,7 +348,6 @@ const ClientsPage = () => {
     { key: 'leverage', label: 'Leverage' },
     { key: 'profit', label: 'Floating Profit' },
     { key: 'pnl', label: 'PNL' },
-    { key: 'floating', label: 'Floating' },
     { key: 'currency', label: 'Currency' },
     { key: 'currencyDigits', label: 'Currency Digits' },
     { key: 'applied_percentage', label: 'Applied %' },
@@ -1912,7 +1910,6 @@ const ClientsPage = () => {
       58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalEquityPercent || 0).toFixed(4))}`, simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
       59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalPnlPercent || 0).toFixed(4))}` },
       60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalProfitPercent || 0).toFixed(4))}`, iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
-      64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.lifetimePnLPercent || 0).toFixed(4))}`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
       65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(4))}`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
       // Net Lifetime PnL (Lifetime PnL - Total Rebate)
       66: { id: 66, title: 'Net Lifetime PnL', value: (stats.lifetimePnL || 0) - (stats.totalCommission || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalCommission || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'border-green-200' : 'border-red-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-700' : 'text-red-700' }
@@ -2081,17 +2078,7 @@ const ClientsPage = () => {
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
       // Lifetime: keep existing backend lifetime percentage sum behavior
-      lifetimePnLPercent: (() => {
-        // Prefer weighted lifetime if deposit data available
-        let totalPnl = 0, totalNetDeposit = 0
-        for (let i = 0; i < filteredClients.length; i++) {
-          const c = filteredClients[i]; if (!c) continue
-          totalPnl += toNum(c.lifetimePnL)
-          const netDep = toNum(c.lifetimeDeposit) - toNum(c.lifetimeWithdrawal)
-          totalNetDeposit += netDep > 0 ? netDep : 0
-        }
-        return totalNetDeposit !== 0 ? (totalPnl / totalNetDeposit) * 100 : 0
-      })()
+      lifetimePnLPercent: sum('lifetimePnL_percentage')
     }
     
     return totals
@@ -2819,15 +2806,22 @@ const ClientsPage = () => {
                     4: 58, // Total Equity -> Total Equity %
                     5: 59, // PNL -> PNL %
                     6: 60, // Floating Profit -> Floating Profit %
-                    13: 64, // Lifetime PnL -> Lifetime PnL %
                     53: 65, // Book PnL -> Book PnL %
                     15: 17, // Total Rebate -> Total Rebate %
                     16: 18, // Available Rebate -> Available Rebate %
                     8: 54, // Daily Deposit -> Daily Deposit %
                     9: 55  // Daily Withdrawal -> Daily Withdrawal %
                   }
+                  
+                  // List of percentage card IDs that exist
+                  const percentageCardIds = [56, 57, 58, 59, 60, 65, 17, 18, 54, 55]
+                  
+                  // In percentage mode, only show cards that have percentage equivalents or are already percentage cards
                   if (normalToPercentMap[cardId]) {
                     effectiveCardId = normalToPercentMap[cardId]
+                  } else if (!percentageCardIds.includes(cardId)) {
+                    // Skip cards that don't have percentage equivalents
+                    return null
                   }
                   
                   const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
@@ -2925,7 +2919,7 @@ const ClientsPage = () => {
               <>
                 {faceCardOrder.map((cardId) => {
                   // Skip percentage variant cards - they'll be shown with their normal counterparts
-                  const percentCardIds = [56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 17, 18, 54, 55]
+                  const percentCardIds = [56, 57, 58, 59, 60, 61, 62, 63, 65, 17, 18, 54, 55]
                   if (percentCardIds.includes(cardId)) {
                     return null
                   }
@@ -2941,7 +2935,7 @@ const ClientsPage = () => {
                   
                   // Check if this card has a percentage variant
                   const normalToPercentMap = {
-                    2: 56, 3: 57, 4: 58, 5: 59, 6: 60, 10: 61, 11: 62, 12: 63, 13: 64, 53: 65,
+                    2: 56, 3: 57, 4: 58, 5: 59, 6: 60, 10: 61, 11: 62, 12: 63, 53: 65,
                     66: 67, 15: 17, 16: 18, 8: 54, 9: 55
                   }
                   const percentCardId = normalToPercentMap[cardId]
@@ -3223,30 +3217,6 @@ const ClientsPage = () => {
                       </button>
                     </div>
                     
-                    {/* Reset Buttons */}
-                    <div className="px-3 py-2 border-b border-amber-200 flex gap-2">
-                      <button
-                        onClick={resetColumnVisibility}
-                        className="flex-1 text-xs font-semibold text-amber-700 hover:text-amber-800 px-2 py-1.5 rounded-md hover:bg-amber-100 border border-amber-300 hover:border-amber-400 transition-all inline-flex items-center justify-center gap-1"
-                        title="Reset column visibility to defaults"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        Reset Visibility
-                      </button>
-                      <button
-                        onClick={resetColumnOrder}
-                        className="flex-1 text-xs font-semibold text-amber-700 hover:text-amber-800 px-2 py-1.5 rounded-md hover:bg-amber-100 border border-amber-300 hover:border-amber-400 transition-all inline-flex items-center justify-center gap-1"
-                        title="Reset column order to default"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Reset Order
-                      </button>
-                    </div>
                     
                     <div className="px-3 py-2 border-b border-amber-200">
                       <div className="relative">
