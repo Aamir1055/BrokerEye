@@ -1066,9 +1066,7 @@ const ClientPercentagePage = () => {
           </div>
 
           {/* Table */}
-          {loading ? (
-            <LoadingSpinner />
-          ) : clients.length === 0 ? (
+          {clients.length === 0 && !loading ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
               <div className="text-6xl mb-4">📊</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No client data found</h3>
@@ -1096,8 +1094,41 @@ const ClientPercentagePage = () => {
                     )}
                   </tr>
                 </thead>
+
+                {/* YouTube-style Loading Progress Bar */}
+                {loading && (
+                  <thead className="sticky z-40" style={{ top: '48px' }}>
+                    <tr>
+                      <th colSpan={Object.values(visibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
+                        <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                          <style>{`
+                            @keyframes shimmerSlidePercentage {
+                              0% { transform: translateX(-100%); }
+                              100% { transform: translateX(400%); }
+                            }
+                            .shimmer-loading-bar-percentage {
+                              width: 30%;
+                              height: 100%;
+                              background: #2563eb;
+                              animation: shimmerSlidePercentage 0.9s linear infinite;
+                            }
+                          `}</style>
+                          <div className="shimmer-loading-bar-percentage absolute top-0 left-0 h-full" />
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                )}
+
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {displayedClients.map((client, index) => (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-8 text-center text-sm text-gray-400">
+                        Loading client percentages...
+                      </td>
+                    </tr>
+                  ) : (
+                  displayedClients.map((client, index) => (
                     <tr key={client.client_login} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       {visibleColumns.login && (
                         <td 
@@ -1151,7 +1182,8 @@ const ClientPercentagePage = () => {
                         </td>
                       )}
                     </tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
               </div>
