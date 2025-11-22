@@ -1097,7 +1097,7 @@ const ClientPercentagePage = () => {
 
                 {/* YouTube-style Loading Progress Bar */}
                 {loading && (
-                  <thead className="sticky z-40" style={{ top: '48px' }}>
+                  <thead>
                     <tr>
                       <th colSpan={Object.values(visibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
                         <div className="relative w-full h-full bg-gray-200 overflow-hidden">

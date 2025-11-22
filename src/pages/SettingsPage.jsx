@@ -172,7 +172,44 @@ const SettingsPage = () => {
   }
 
   if (loading) {
-    return <LoadingSpinner />
+    return (
+      <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
+          onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+        />
+        <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+          <div className="max-w-4xl mx-auto">
+            {/* Shimmer Loading Cards */}
+            <div className="mb-5">
+              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-4 w-64 bg-gray-100 rounded animate-pulse"></div>
+            </div>
+            
+            {/* Account Info Skeleton */}
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-4 mb-4">
+              <div className="h-5 w-40 bg-gray-200 rounded animate-pulse mb-3"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i}>
+                    <div className="h-3 w-20 bg-gray-100 rounded animate-pulse mb-1"></div>
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* 2FA Section Skeleton */}
+            <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-4">
+              <div className="h-5 w-56 bg-gray-200 rounded animate-pulse mb-3"></div>
+              <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-2"></div>
+              <div className="h-10 w-32 bg-blue-100 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
