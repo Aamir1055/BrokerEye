@@ -597,7 +597,8 @@ const ClientPercentagePage = () => {
                   </button>
                 </div>
 
-                {/* Number Filters */}
+                {/* Number/Text Filters - Only show for percentage column */}
+                {columnKey === 'percentage' && (
                 <div className="border-b border-gray-200">
                   <div className="px-1.5 py-1 relative group">
                     <button
@@ -713,6 +714,7 @@ const ClientPercentagePage = () => {
                     )}
                   </div>
                 </div>
+                )}
 
                 {/* Search Box */}
                 <div className="p-1 border-b border-gray-200">
