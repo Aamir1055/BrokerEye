@@ -2946,7 +2946,7 @@ const Client2Page = () => {
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-5 border-b-2 border-gradient-to-r from-blue-200 via-indigo-200 to-purple-200">
+          <div className="flex items-center justify-between mb-6 pb-5 border-b-2 border-blue-200 shadow-sm">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -3454,7 +3454,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className={`bg-white rounded-xl shadow-sm border border-slate-200 p-3 hover:shadow-md transition-all duration-200 cursor-move hover:border-slate-300 hover:-translate-y-0.5`}
+                      className={`bg-white rounded-xl shadow-md border border-slate-200 p-3 hover:shadow-lg transition-all duration-300 cursor-move hover:border-blue-300 hover:-translate-y-1`}
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragOver={handleCardDragOver}
@@ -4667,7 +4667,7 @@ const Client2Page = () => {
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                         <tr
                           key={`${client.login}-${animationKey}-${idx}`}
-                          className={`hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                          className={`hover:bg-blue-50 hover:shadow-sm transition-all duration-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
                           style={{
                             opacity: 0,
                             animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
