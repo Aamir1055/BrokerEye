@@ -3489,7 +3489,7 @@ const ClientsPage = () => {
                                   </svg>
                                   {filterCount > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-lg border-2 border-white">
-                                      {filterCount}
+                                      1
                                     </span>
                                   )}
                                 </button>

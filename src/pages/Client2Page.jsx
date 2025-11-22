@@ -36,6 +36,7 @@ const Client2Page = () => {
   useEffect(() => {
     try { localStorage.setItem('client2ColumnValuesBatchSize', String(columnValuesBatchSize)) } catch { }
   }, [columnValuesBatchSize])
+  
   // Group context
   const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
 
@@ -127,11 +128,30 @@ const Client2Page = () => {
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [columnValueSearchDebounce, setColumnValueSearchDebounce] = useState({}) // Debounced search queries
-  const [quickFilters, setQuickFilters] = useState({
-    hasFloating: false,
-    hasCredit: false,
-    noDeposit: false
+  const [quickFilters, setQuickFilters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('client2QuickFilters')
+      return saved ? JSON.parse(saved) : {
+        hasFloating: false,
+        hasCredit: false,
+        noDeposit: false
+      }
+    } catch (e) {
+      return {
+        hasFloating: false,
+        hasCredit: false,
+        noDeposit: false
+      }
+    }
   })
+  
+  // Save quick filters to localStorage whenever they change
+  useEffect(() => {
+    try { 
+      localStorage.setItem('client2QuickFilters', JSON.stringify(quickFilters)) 
+    } catch { }
+  }, [quickFilters])
+  
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
