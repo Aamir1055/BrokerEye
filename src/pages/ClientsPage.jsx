@@ -349,6 +349,7 @@ const ClientsPage = () => {
     { key: 'leverage', label: 'Leverage' },
     { key: 'profit', label: 'Floating Profit' },
     { key: 'pnl', label: 'PNL' },
+    { key: 'floating', label: 'Floating' },
     { key: 'currency', label: 'Currency' },
     { key: 'currencyDigits', label: 'Currency Digits' },
     { key: 'applied_percentage', label: 'Applied %' },
