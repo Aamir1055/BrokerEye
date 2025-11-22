@@ -1230,11 +1230,11 @@ const Client2Page = () => {
 
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
 
-  // Auto-refresh every 30 seconds (reduced from 3 seconds to minimize API calls)
+  // Auto-refresh every 1 second to keep data updated (including filtered data)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      fetchClients(true) // silent = true, no loading spinner
-    }, 30000) // 30 seconds instead of 3 seconds
+      fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
+    }, 1000) // 1 second refresh for real-time updates
     return () => clearInterval(intervalId)
   }, [fetchClients])
 
@@ -3455,7 +3455,8 @@ const Client2Page = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Pagination Controls - Top */}
+            {/* Pagination Controls - Top - Only show when there's data */}
+            {clients && clients.length > 0 && (
             <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-blue-700">Show:</span>
@@ -3563,6 +3564,7 @@ const Client2Page = () => {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Column Selector Dropdown */}
             {showColumnSelector && (
@@ -3893,10 +3895,10 @@ const Client2Page = () => {
                                         })
                                         setShowFilterDropdown(col.key)
 
-                                        // Fetch column values for ALL columns (including login)
+                                        // Fetch column values for ALL columns (including login) - always refresh to ensure fresh data
                                         const columnType = getColumnType(col.key)
-                                        // Always fetch values for checkbox filtering
-                                        fetchColumnValues(col.key)
+                                        // Always fetch values for checkbox filtering with forceRefresh=true to avoid "No values available"
+                                        fetchColumnValues(col.key, true)
                                         // Initialize selectedColumnValues: if there's an active checkbox filter, restore it; otherwise start empty
                                         const existingCheckboxFilter = columnFilters[`${col.key}_checkbox`]
                                         const initialSelection = existingCheckboxFilter?.values || []

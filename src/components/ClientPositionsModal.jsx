@@ -156,7 +156,18 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       // If all base options exceed total, include total as the only numeric option
       options = [total]
     }
-    return [...options, 'All']
+    return options
+  }
+
+  // Build dynamic page-size options for Positions based on total rows
+  const getPositionsPageSizeOptions = (total) => {
+    const base = [50, 100, 200]
+    let options = base.filter(n => n <= total)
+    if (total > 0 && options.length === 0) {
+      // If all base options exceed total, include total as the only numeric option
+      options = [total]
+    }
+    return options
   }
   
   const positionsColumns = [
@@ -1131,15 +1142,25 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   })()
 
   // Pagination logic for positions
-  const positionsTotalPages = positionsItemsPerPage === 'All' ? 1 : Math.ceil(filteredPositions.length / positionsItemsPerPage)
-  const positionsStartIndex = positionsItemsPerPage === 'All' ? 0 : (positionsCurrentPage - 1) * positionsItemsPerPage
-  const positionsEndIndex = positionsItemsPerPage === 'All' ? filteredPositions.length : positionsStartIndex + positionsItemsPerPage
+  const positionsTotalPages = Math.ceil(filteredPositions.length / positionsItemsPerPage)
+  const positionsStartIndex = (positionsCurrentPage - 1) * positionsItemsPerPage
+  const positionsEndIndex = positionsStartIndex + positionsItemsPerPage
   const displayedPositions = filteredPositions.slice(positionsStartIndex, positionsEndIndex)
 
   // Reset to page 1 when positions filters change
   useEffect(() => {
     setPositionsCurrentPage(1)
   }, [searchQuery])
+
+  // Keep positions page-size selection valid when total filtered rows changes
+  useEffect(() => {
+    const total = filteredPositions.length
+    const options = getPositionsPageSizeOptions(total)
+    if (options.length > 0 && (!options.includes(positionsItemsPerPage) || positionsItemsPerPage > total)) {
+      setPositionsItemsPerPage(options[0] || 50)
+      setPositionsCurrentPage(1)
+    }
+  }, [filteredPositions.length])
 
   // Apply search and filters to deals
   const filteredDealsResult = (() => {
@@ -1250,9 +1271,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   })()
 
   // Apply pagination to deals
-  const dealsTotalPages = dealsItemsPerPage === 'All' ? 1 : Math.ceil(filteredDealsResult.length / dealsItemsPerPage)
-  const dealsStartIndex = dealsItemsPerPage === 'All' ? 0 : (dealsCurrentPage - 1) * dealsItemsPerPage
-  const dealsEndIndex = dealsItemsPerPage === 'All' ? filteredDealsResult.length : dealsStartIndex + dealsItemsPerPage
+  const dealsTotalPages = Math.ceil(filteredDealsResult.length / dealsItemsPerPage)
+  const dealsStartIndex = (dealsCurrentPage - 1) * dealsItemsPerPage
+  const dealsEndIndex = dealsStartIndex + dealsItemsPerPage
   const displayedDeals = filteredDealsResult.slice(dealsStartIndex, dealsEndIndex)
 
   // Reset to page 1 when filters change
@@ -1264,12 +1285,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   useEffect(() => {
     const total = filteredDealsResult.length
     const options = getDealsPageSizeOptions(total)
-    const numericOptions = options.filter(o => o !== 'All')
-    if (dealsItemsPerPage !== 'All') {
-      if (numericOptions.length === 0 || !numericOptions.includes(dealsItemsPerPage) || dealsItemsPerPage > total) {
-        setDealsItemsPerPage(numericOptions[0] || 'All')
-        setDealsCurrentPage(1)
-      }
+    if (options.length > 0 && (!options.includes(dealsItemsPerPage) || dealsItemsPerPage > total)) {
+      setDealsItemsPerPage(options[0] || 50)
+      setDealsCurrentPage(1)
     }
   }, [filteredDealsResult.length])
 
@@ -1466,13 +1484,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 <span className="text-xs text-gray-600">Show:</span>
                 <select
                   value={positionsItemsPerPage}
-                  onChange={(e) => setPositionsItemsPerPage(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                  onChange={(e) => setPositionsItemsPerPage(parseInt(e.target.value))}
                   className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                  <option value="All">All</option>
+                  {getPositionsPageSizeOptions(filteredPositions.length).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
                 </select>
               </div>
 
@@ -2275,7 +2292,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <span className="text-xs text-gray-600">Show:</span>
                         <select
                           value={dealsItemsPerPage}
-                          onChange={(e) => setDealsItemsPerPage(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                          onChange={(e) => setDealsItemsPerPage(parseInt(e.target.value))}
                           className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                         >
                           {getDealsPageSizeOptions(filteredDealsResult.length).map((opt) => (
@@ -2284,8 +2301,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         </select>
                       </div>
 
-                      {dealsItemsPerPage !== 'All' && (
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1">
                           <button
                             onClick={() => setDealsCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={dealsCurrentPage === 1}
