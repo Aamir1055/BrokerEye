@@ -74,11 +74,6 @@ const Client2Page = () => {
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
-  // CSV multi-field filters using simplified backend search format
-  // Each holds a comma-separated list matching the backend style: { filters: [ { email: "a@b.com,x@y.com" } ] }
-  const [emailFilterList, setEmailFilterList] = useState('')
-  const [nameFilterList, setNameFilterList] = useState('')
-  const [phoneFilterList, setPhoneFilterList] = useState('')
   const [filters, setFilters] = useState([])
   const [mt5Accounts, setMt5Accounts] = useState([])
   const [accountRangeMin, setAccountRangeMin] = useState('')
@@ -830,67 +825,7 @@ const Client2Page = () => {
     }
   }, [columnWidths])
 
-  // Apply client-side checkbox filters to fetched clients
-  const applyClientSideCheckboxFilters = (clients, filters) => {
-    if (!clients || clients.length === 0) return clients
-
-    // Track fields that have text/number filters (skip checkbox filters for these fields)
-    const textFilteredFields = new Set()
-    const numberFilteredFields = new Set()
-    
-    Object.entries(filters || {}).forEach(([key, cfg]) => {
-      if (key.endsWith('_text') && cfg?.value != null && String(cfg.value).length > 0) {
-        const columnKey = key.replace('_text', '')
-        textFilteredFields.add(columnKey)
-      }
-      if (key.endsWith('_number') && cfg?.value1 != null) {
-        const columnKey = key.replace('_number', '')
-        numberFilteredFields.add(columnKey)
-      }
-    })
-
-    return clients.filter(client => {
-      // Check each checkbox filter
-      for (const [filterKey, filterData] of Object.entries(filters)) {
-        if (!filterKey.endsWith('_checkbox')) continue
-        
-        const columnKey = filterKey.replace('_checkbox', '')
-        if (columnKey === 'login') continue // login is handled server-side
-        
-        // Skip checkbox filter if text or number filter is active for this field
-        if (textFilteredFields.has(columnKey) || numberFilteredFields.has(columnKey)) {
-          continue
-        }
-        
-        const selectedValues = filterData?.values || []
-        if (selectedValues.length === 0) continue
-
-        // Get client value for this column
-        let clientValue = client[columnKey]
-        
-        // Handle nested properties (e.g., 'group.name')
-        if (columnKey.includes('.')) {
-          const parts = columnKey.split('.')
-          clientValue = client
-          for (const part of parts) {
-            clientValue = clientValue?.[part]
-            if (clientValue === undefined) break
-          }
-        }
-
-        // Convert to string for comparison
-        const clientValueStr = String(clientValue || '').trim()
-        const selectedValuesStr = selectedValues.map(v => String(v).trim())
-
-        // Check if client value matches any selected value
-        if (!selectedValuesStr.includes(clientValueStr)) {
-          return false // Exclude this client
-        }
-      }
-
-      return true // Include this client
-    })
-  }
+  // Checkbox filters are now handled server-side via API (no client-side filtering needed)
 
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
@@ -918,10 +853,6 @@ const Client2Page = () => {
       const combinedFilters = []
       // Capture login checkbox selections to apply via mt5Accounts (OR semantics)
       let checkboxLoginIds = []
-      // Track multi-value checkbox selections for OR handling via multiple requests
-      let multiOrField = null
-      let multiOrValues = []
-      let multiOrConflict = false
 
       // Inject server-side quick filters (full dataset filtering)
       if (quickFilters?.hasFloating) {
@@ -1038,28 +969,18 @@ const Client2Page = () => {
                 (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
 
               if (shouldUseNotEqual) {
-                // More efficient to exclude few unselected values than include many selected
-                unselectedValues.forEach(value => {
-                  combinedFilters.push({ field, operator: 'not_equal', value: String(value).trim() })
-                })
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using not_equal (excluding ${unselectedValues.length} values)`)
-              } else if (selectedValues.length === 1) {
-                // Single value: simple equal filter
-                combinedFilters.push({ field, operator: 'equal', value: selectedValues[0] })
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: single value equal filter`)
-              } else if (selectedValues.length > 50) {
-                // Too many values for multi-request approach - skip filtering with warning
-                console.warn(`[Client2] ⚠️ Checkbox ${columnKey}: ${selectedValues.length} values selected (limit: 50). Checkbox filter ignored. Use text/number filter instead.`)
-                // Don't set error here - let the text filter work if present
-              } else {
-                // Multiple values (2-50): use multi-request OR approach
-                if (multiOrField && multiOrField !== field) {
-                  multiOrConflict = true
-                } else {
-                  multiOrField = field
-                  multiOrValues = selectedValues
-                }
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: multi-value OR (${selectedValues.length} values)`)
+                // For not_equal optimization, still use the standard format with operator
+                // This is a special case that may not work with the simplified API format
+                // So we'll skip this optimization and just send all selected values
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: skipping not_equal optimization, using positive filter`)
+              }
+              
+              {
+                // Multiple values (including single): send as comma-separated list
+                // Format for API: { "email": "value1,value2,value3" } (not { field: "email", value: "..." })
+                const commaSeparatedValues = selectedValues.join(',')
+                combinedFilters.push({ [field]: commaSeparatedValues })
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: multi-value filter (${selectedValues.length} values)`)
               }
             }
           }
@@ -1144,190 +1065,47 @@ const Client2Page = () => {
       // ALWAYS fetch normal data for table display
       const shouldFetchPercentage = percentModeActive
 
-      // Check if there are any active checkbox filters (excluding login which is handled server-side)
-      const hasActiveCheckboxFilters = Object.keys(columnFilters).some(key => {
-        if (!key.endsWith('_checkbox')) return false
-        const columnKey = key.replace('_checkbox', '')
-        if (columnKey === 'login') return false // login is handled via mt5Accounts
-        const values = columnFilters[key]?.values || []
-        return values.length > 0
-      })
-
-      // If checkbox filters are active, we need to fetch ALL pages to apply client-side filtering
-      let allClients = []
-      let apiTotalCount = 0
-
-      if (hasActiveCheckboxFilters) {
-        console.log('[Client2] 📊 Checkbox filters detected - fetching ALL pages for client-side filtering')
-
-        // Fetch first page to get total count
-        const firstPagePayload = { ...payload, page: 1, limit: itemsPerPage }
-        const firstResponse = await brokerAPI.searchClients(firstPagePayload)
-        const firstData = extractData(firstResponse)
-        apiTotalCount = Number(firstData?.total || 0)
-        const totalPages = Math.ceil(apiTotalCount / itemsPerPage)
-
-        console.log(`[Client2] 📊 Total: ${apiTotalCount} clients across ${totalPages} pages - fetching all...`)
-
-        // Collect clients from first page
-        const firstPageClients = (firstData?.clients || []).filter(c => c != null && c.login != null)
-        allClients.push(...firstPageClients)
-
-        // Fetch remaining pages in parallel
-        if (totalPages > 1) {
-          const remainingPagePromises = []
-          for (let page = 2; page <= totalPages; page++) {
-            remainingPagePromises.push(brokerAPI.searchClients({ ...payload, page, limit: itemsPerPage }))
-          }
-
-          const remainingResponses = await Promise.all(remainingPagePromises)
-          remainingResponses.forEach(response => {
-            const data = extractData(response)
-            const clients = (data?.clients || []).filter(c => c != null && c.login != null)
-            allClients.push(...clients)
-          })
-        }
-
-        // Deduplicate by login
-        const seenLogins = new Set()
-        allClients = allClients.filter(client => {
-          if (seenLogins.has(client.login)) return false
-          seenLogins.add(client.login)
-          return true
-        })
-
-        console.log(`[Client2] 📊 Fetched ${allClients.length} total clients, now applying client-side filters...`)
-
-        // Apply client-side checkbox filters
-        const filteredClients = applyClientSideCheckboxFilters(allClients, columnFilters)
-
-        // Get totals from first response
-        const totals = firstData?.totals || {}
-
-        setClients(filteredClients)
-        setTotalClients(apiTotalCount) // Use original API total, not filtered count
-        setTotalPages(Math.ceil(apiTotalCount / itemsPerPage))
-        setTotals(totals)
-        setTotalsPercent({})
-        setError('')
-
-        console.log(`[Client2] ✅ Showing ${filteredClients.length} filtered clients out of ${apiTotalCount} total`)
-        return // Exit early - we're done
-      }
-
-      // Build payload for normal and percentage requests (only if no checkbox filters)
-      const payloadNormal = { ...payload }
-      const payloadPercent = shouldFetchPercentage ? { ...payload, percentage: true } : null
-
-      // Helper: build payload variants for multi-value OR filtering
-      const buildPayloadVariants = (basePayload, isPercentage) => {
-        if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-          // Create separate request for each value (OR semantics)
-          return multiOrValues.map(val => {
-            const filters = Array.isArray(basePayload.filters) ? [...basePayload.filters] : []
-            filters.push({ field: multiOrField, operator: 'equal', value: val })
-            const variant = { ...basePayload, filters }
-            if (isPercentage) variant.percentage = true
-            return variant
-          })
-        }
-        // No multi-OR needed
-        const single = { ...basePayload }
-        if (isPercentage) single.percentage = true
-        return [single]
-      }
-
-      // Create payload variants for multi-value checkbox filters
-      const normalPayloads = buildPayloadVariants(payloadNormal, false)
-      const percentPayloads = shouldFetchPercentage ? buildPayloadVariants(payloadPercent, true) : []
-
-      // Safety check: prevent excessive parallel requests
-      if (normalPayloads.length > 50) {
-        console.error(`[Client2] ❌ Too many requests: ${normalPayloads.length} variants. Aborting to prevent network overload.`)
-        setError(`Too many filter values selected (${normalPayloads.length} requests needed). Please reduce your selection to 50 or fewer values.`)
-        if (!silent) setLoading(false)
-        return
-      }
-
-      if (normalPayloads.length > 1) {
-        console.log(`[Client2] 🔄 Multi-value OR: fetching ${normalPayloads.length} variants for ${multiOrField}`)
-      }
+      // Checkbox filters are now handled server-side via API filters (single request with comma-separated values)
 
       // Always log payload when filters are present to debug filtering issues
       if (payload.filters && payload.filters.length > 0) {
-        console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(normalPayloads[0], null, 2))
+        console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(payload, null, 2))
       }
-      if (DEBUG_LOGS) console.log('[Client2] Payloads -> Normal:', normalPayloads.length, 'Percent:', shouldFetchPercentage ? percentPayloads.length : 'SKIPPED')
 
-      // Fetch data: if multi-value OR, fetch all variants and merge results
+      // Fetch data with single API call
       if (shouldFetchPercentage) {
         // Fetch both normal and percentage data
-        const [normalResponses, percentResponses] = await Promise.all([
-          Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p))),
-          Promise.all(percentPayloads.map(p => brokerAPI.searchClients(p)))
+        const [normalResponse, percentResponse] = await Promise.all([
+          brokerAPI.searchClients(payload),
+          brokerAPI.searchClients({ ...payload, percentage: true })
         ])
 
-        // Merge normal responses (deduplicate by login)
-        const allNormalClients = []
-        const seenLogins = new Set()
-        let totalFromAllVariants = 0
-        normalResponses.forEach(response => {
-          const data = extractData(response)
-          const clients = (data?.clients || []).filter(c => c != null && c.login != null)
-          totalFromAllVariants += Number(data?.total || 0)
-          clients.forEach(client => {
-            if (!seenLogins.has(client.login)) {
-              seenLogins.add(client.login)
-              allNormalClients.push(client)
-            }
-          })
-        })
-
-        // Use first response for metadata
-        const normalData = extractData(normalResponses[0])
+        const normalData = extractData(normalResponse)
+        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
-        // For multi-request: use sum of totals; for single request: use API total
-        const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allNormalClients.length || 0)
-        const pages = normalPayloads.length > 1 ? Math.ceil(allNormalClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
+        const normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const pages = Math.max(1, Number(normalData?.pages || 1))
 
-        setClients(allNormalClients)
+        setClients(normalClients)
         setTotalClients(normalTotal)
         setTotalPages(pages)
         setTotals(normalTotals)
         setError('')
 
-        // Merge percentage data
-        const percentData = extractData(percentResponses[0])
+        // Set percentage data
+        const percentData = extractData(percentResponse)
         const percentTotals = percentData?.totals || {}
         setTotalsPercent(percentTotals)
       } else {
-        // Normal only - fetch all variants and merge
-        const normalResponses = await Promise.all(normalPayloads.map(p => brokerAPI.searchClients(p)))
-
-        // Merge results (deduplicate by login)
-        const allClients = []
-        const seenLogins = new Set()
-        let totalFromAllVariants = 0
-        normalResponses.forEach(response => {
-          const data = extractData(response)
-          const clients = (data?.clients || []).filter(c => c != null && c.login != null)
-          totalFromAllVariants += Number(data?.total || 0)
-          clients.forEach(client => {
-            if (!seenLogins.has(client.login)) {
-              seenLogins.add(client.login)
-              allClients.push(client)
-            }
-          })
-        })
-
-        // Use first response for metadata
-        const normalData = extractData(normalResponses[0])
+        // Normal only
+        const normalResponse = await brokerAPI.searchClients(payload)
+        const normalData = extractData(normalResponse)
+        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
-        // For multi-request: use sum of totals; for single request: use API total
-        const normalTotal = normalPayloads.length > 1 ? totalFromAllVariants : Number(normalData?.total || allClients.length || 0)
-        const pages = normalPayloads.length > 1 ? Math.ceil(allClients.length / (Number(payload.limit) || 50)) : Math.max(1, Number(normalData?.pages || 1))
+        const normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const pages = Math.max(1, Number(normalData?.pages || 1))
 
-        setClients(allClients)
+        setClients(normalClients)
         setTotalClients(normalTotal)
         setTotalPages(pages)
         setTotals(normalTotals)
@@ -1389,72 +1167,17 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients])
 
-  // Client-side filtering for email, name, and phone
+  // Pass-through - filtering done by API (like ClientsPage)
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    
-    let filtered = clients.filter(c => c != null && c.login != null)
-    
-    // Track if any client-side filters are active
-    const hasEmailFilter = emailFilterList && emailFilterList.trim()
-    const hasNameFilter = nameFilterList && nameFilterList.trim()
-    const hasPhoneFilter = phoneFilterList && phoneFilterList.trim()
-    const hasAnyFilter = hasEmailFilter || hasNameFilter || hasPhoneFilter
-    
-    // Apply email filter (client-side)
-    if (hasEmailFilter) {
-      const emailList = emailFilterList.split(',').map(e => e.trim().toLowerCase()).filter(e => e.length > 0)
-      if (emailList.length > 0) {
-        filtered = filtered.filter(client => {
-          const clientEmail = (client.email || '').toLowerCase()
-          return emailList.some(email => clientEmail.includes(email))
-        })
-        console.log(`[Client2] 📧 Email filter: ${emailList.length} values → ${filtered.length} matches`)
-      }
-    }
-    
-    // Apply name filter (client-side)
-    if (hasNameFilter) {
-      const nameList = nameFilterList.split(',').map(n => n.trim().toLowerCase()).filter(n => n.length > 0)
-      if (nameList.length > 0) {
-        filtered = filtered.filter(client => {
-          const clientName = (client.name || '').toLowerCase()
-          return nameList.some(name => clientName.includes(name))
-        })
-        console.log(`[Client2] 👤 Name filter: ${nameList.length} values → ${filtered.length} matches`)
-      }
-    }
-    
-    // Apply phone filter (client-side)
-    if (hasPhoneFilter) {
-      const phoneList = phoneFilterList.split(',').map(p => p.trim()).filter(p => p.length > 0)
-      if (phoneList.length > 0) {
-        filtered = filtered.filter(client => {
-          const clientPhone = (client.phone || '').toString()
-          return phoneList.some(phone => clientPhone.includes(phone))
-        })
-        console.log(`[Client2] 📞 Phone filter: ${phoneList.length} values → ${filtered.length} matches`)
-      }
-    }
-    
-    if (hasAnyFilter) {
-      console.log(`[Client2] ✅ Client-side filtering complete: ${clients.length} → ${filtered.length} clients`)
-    }
-    
-    return filtered
-  }, [clients, emailFilterList, nameFilterList, phoneFilterList])
-  
-  // Computed display count (shows filtered count when client-side filters are active)
-  const displayedClientCount = useMemo(() => {
-    const hasClientSideFilters = (emailFilterList && emailFilterList.trim()) || 
-                                  (nameFilterList && nameFilterList.trim()) || 
-                                  (phoneFilterList && phoneFilterList.trim())
-    return hasClientSideFilters ? sortedClients.length : totalClients
-  }, [sortedClients, totalClients, emailFilterList, nameFilterList, phoneFilterList])
+    return clients.filter(c => c != null && c.login != null)
+  }, [clients])
 
   // Compute percentage totals by summing percentage columns from client data
   const computedPercentageTotals = useMemo(() => {
-    if (!Array.isArray(sortedClients) || sortedClients.length === 0) {
+    const dataSource = sortedClients
+    
+    if (!Array.isArray(dataSource) || dataSource.length === 0) {
       return {
         dailyDeposit: 0,
         dailyWithdrawal: 0,
@@ -1463,9 +1186,9 @@ const Client2Page = () => {
     }
     
     return {
-      dailyDeposit: sortedClients.reduce((sum, client) => sum + (parseFloat(client.dailyDeposit_percentage) || 0), 0),
-      dailyWithdrawal: sortedClients.reduce((sum, client) => sum + (parseFloat(client.dailyWithdrawal_percentage) || 0), 0),
-      lifetimePnL: sortedClients.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
+      dailyDeposit: dataSource.reduce((sum, client) => sum + (parseFloat(client.dailyDeposit_percentage) || 0), 0),
+      dailyWithdrawal: dataSource.reduce((sum, client) => sum + (parseFloat(client.dailyWithdrawal_percentage) || 0), 0),
+      lifetimePnL: dataSource.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
     }
   }, [sortedClients])
 
@@ -2656,8 +2379,8 @@ const Client2Page = () => {
   // Get comprehensive card configuration for dynamic rendering - matches all 57 cards
   const getClient2CardConfig = useCallback((cardKey, totals) => {
     const configs = {
-      // COUNT (shows filtered count when client-side filters are active)
-      totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => displayedClientCount || 0 },
+      // COUNT
+      totalClients: { label: 'Total Clients', color: 'blue', format: 'integer', getValue: () => totalClients || 0 },
       // A
       assets: { label: 'Assets', color: 'blue', getValue: () => totals?.assets || 0 },
 
@@ -2758,7 +2481,7 @@ const Client2Page = () => {
     }
 
     return configs[cardKey] || null
-  }, [displayedClientCount, rebateTotals, totals, totalsPercent, computedPercentageTotals])
+  }, [totalClients, rebateTotals, totals, totalsPercent, computedPercentageTotals])
 
   // Build export payload variants (reuses filter logic from fetchClients)
   const buildExportPayloadVariants = useCallback((percentageFlag = false) => {
@@ -3235,12 +2958,12 @@ const Client2Page = () => {
                   </svg>
                   <span className="relative flex items-center">
                     Filter
-                    {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0) + (emailFilterList ? 1 : 0) + (nameFilterList ? 1 : 0) + (phoneFilterList ? 1 : 0)) > 0 && (
+                    {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
                       <span
                         className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none shadow-sm"
                         title="Active filters count"
                       >
-                        {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0) + (emailFilterList ? 1 : 0) + (nameFilterList ? 1 : 0) + (phoneFilterList ? 1 : 0)}
+                        {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
                       </span>
                     )}
                   </span>
@@ -3301,90 +3024,7 @@ const Client2Page = () => {
                         </label>
                       </div>
 
-                      {/* CSV List Filters Section */}
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="text-xs font-semibold text-gray-700 mb-3">Multi-Value Filters (comma-separated)</div>
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
-                            <input
-                              type="text"
-                              placeholder="e.g., user1@email.com,user2@email.com"
-                              value={emailFilterList}
-                              onChange={(e) => setEmailFilterList(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  setCurrentPage(1)
-                                  fetchClients()
-                                  setShowFilterMenu(false)
-                                }
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Name</label>
-                            <input
-                              type="text"
-                              placeholder="e.g., John Doe,Jane Smith"
-                              value={nameFilterList}
-                              onChange={(e) => setNameFilterList(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  setCurrentPage(1)
-                                  fetchClients()
-                                  setShowFilterMenu(false)
-                                }
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number</label>
-                            <input
-                              type="text"
-                              placeholder="e.g., 1234567890,9876543210"
-                              value={phoneFilterList}
-                              onChange={(e) => setPhoneFilterList(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  setCurrentPage(1)
-                                  fetchClients()
-                                  setShowFilterMenu(false)
-                                }
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-emerald-500 text-gray-900"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setCurrentPage(1)
-                              fetchClients()
-                              setShowFilterMenu(false)
-                            }}
-                            className="flex-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700"
-                          >
-                            Apply
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEmailFilterList('')
-                              setNameFilterList('')
-                              setPhoneFilterList('')
-                              setCurrentPage(1)
-                              fetchClients()
-                            }}
-                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      </div>
+
                     </div>
                   </div>
                 )}

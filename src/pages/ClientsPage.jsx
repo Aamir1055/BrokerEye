@@ -257,7 +257,6 @@ const ClientsPage = () => {
     8,   // Daily Deposit
     9,   // Daily Withdrawal
     10,  // Daily PNL
-    61,  // Daily PnL %
     
     // Period PNL
     11,  // This Week PNL
@@ -386,10 +385,7 @@ const ClientsPage = () => {
     profit: 'profit_percentage',
     storage: 'storage_percentage',
     pnl: 'pnl_percentage',
-    lifetimePnL: 'lifetimePnL_percentage',
-    dailyPnL: 'dailyPnL_percentage',  // Keep for checksum tracking
-    thisMonthPnL: 'thisMonthPnL_percentage',
-    thisWeekPnL: 'thisWeekPnL_percentage'
+    lifetimePnL: 'lifetimePnL_percentage'
     // Removed dailyDeposit and dailyWithdrawal - they have separate percentage cards
   }
 
@@ -416,11 +412,6 @@ const ClientsPage = () => {
       // Also exclude DW percent helpers from appearing as standalone columns
       'dailyDeposit_percentage',
       'dailyWithdrawal_percentage',
-      // Exclude dailyPnL base column and any duplicate percentage columns
-      'dailyPnL',
-      'DAILY_PN_L_PERCENTAGE',
-      'Daily_Pn_L_percentage',
-      'Daily_Pn_L_Percentage',
       'dailyPnLPercentage' // Backend sends both dailyPnL_percentage and dailyPnLPercentage
     ])
 
@@ -1337,8 +1328,7 @@ const ClientsPage = () => {
     }
 
     let sumBalance = 0, sumCredit = 0, sumEquity = 0, sumProfit = 0, sumPnl = 0,
-      sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0,
-      sumDailyPct = 0, sumWeekPct = 0, sumMonthPct = 0, sumLifePct = 0
+      sumDaily = 0, sumWeek = 0, sumMonth = 0, sumLife = 0
     for (let i = 0; i < filteredClients.length; i++) {
       const c = filteredClients[i]
       if (!c) continue
@@ -1352,13 +1342,8 @@ const ClientsPage = () => {
       sumWeek += toNum(c.thisWeekPnL)
       sumMonth += toNum(c.thisMonthPnL)
       sumLife += toNum(c.lifetimePnL)
-      // Include percentage buckets to ensure percent face cards react immediately
-      sumDailyPct += toNum(c.dailyPnL_percentage)
-      sumWeekPct += toNum(c.thisWeekPnL_percentage)
-      sumMonthPct += toNum(c.thisMonthPnL_percentage)
-      sumLifePct += toNum(c.lifetimePnL_percentage)
     }
-    return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife, sumDailyPct, sumWeekPct, sumMonthPct, sumLifePct]
+    return [sumBalance, sumCredit, sumEquity, sumProfit, sumPnl, sumDaily, sumWeek, sumMonth, sumLife]
       .map(v => Math.round(v * 100))
       .join('|')
   }, [filteredClients])
@@ -1898,14 +1883,10 @@ const ClientsPage = () => {
       58: { id: 58, title: 'Total Equity %', value: stats.totalEquityPercent || 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalEquityPercent || 0).toFixed(4))}`, simple: true, borderColor: 'border-sky-300', textColor: 'text-sky-700' },
       59: { id: 59, title: 'PNL %', value: stats.totalPnlPercent || 0, withIcon: true, isPositive: (stats.totalPnlPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalPnlPercent || 0).toFixed(4))}` },
       60: { id: 60, title: 'Floating Profit %', value: stats.totalProfitPercent || 0, withIcon: true, isPositive: (stats.totalProfitPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.totalProfitPercent || 0).toFixed(4))}`, iconColor: (stats.totalProfitPercent || 0) >= 0 ? 'teal' : 'orange' },
-      61: { id: 61, title: 'Daily PnL %', value: stats.dailyPnLPercent || 0, withArrow: true, isPositive: (stats.dailyPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.dailyPnLPercent || 0).toFixed(4))}`, borderColor: (stats.dailyPnLPercent || 0) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: (stats.dailyPnLPercent || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
-      62: { id: 62, title: 'This Week PnL %', value: stats.thisWeekPnLPercent || 0, withArrow: true, isPositive: (stats.thisWeekPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisWeekPnLPercent || 0).toFixed(4))}`, borderColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'border-cyan-300' : 'border-amber-300', textColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-700' : 'text-amber-700', valueColor: (stats.thisWeekPnLPercent || 0) >= 0 ? 'text-cyan-800' : 'text-amber-800' },
-      63: { id: 63, title: 'This Month PnL %', value: stats.thisMonthPnLPercent || 0, withArrow: true, isPositive: (stats.thisMonthPnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.thisMonthPnLPercent || 0).toFixed(4))}`, borderColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'border-teal-300' : 'border-orange-300', textColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-700' : 'text-orange-700', valueColor: (stats.thisMonthPnLPercent || 0) >= 0 ? 'text-teal-800' : 'text-orange-800' },
       64: { id: 64, title: 'Lifetime PnL %', value: stats.lifetimePnLPercent || 0, withArrow: true, isPositive: (stats.lifetimePnLPercent || 0) >= 0, formattedValue: `${formatIndianNumber(Math.abs(stats.lifetimePnLPercent || 0).toFixed(4))}`, borderColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'border-violet-300' : 'border-pink-300', textColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-700' : 'text-pink-700', valueColor: (stats.lifetimePnLPercent || 0) >= 0 ? 'text-violet-800' : 'text-pink-800' },
       65: { id: 65, title: 'Book PnL %', value: (stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)).toFixed(4))}`, borderColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'border-emerald-300' : 'border-rose-300', textColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-700' : 'text-rose-700', valueColor: ((stats.lifetimePnLPercent || 0) + (stats.totalProfitPercent || 0)) >= 0 ? 'text-emerald-800' : 'text-rose-800' },
       // Net Lifetime PnL (Lifetime PnL - Total Rebate)
-      66: { id: 66, title: 'Net Lifetime PnL', value: (stats.lifetimePnL || 0) - (stats.totalCommission || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalCommission || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'border-green-200' : 'border-red-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-700' : 'text-red-700' },
-      67: { id: 67, title: 'Net Lifetime PnL %', value: (stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0), withArrow: true, isPositive: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0, formattedValue: `${formatIndianNumber(Math.abs((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)).toFixed(4))}`, borderColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'border-green-300' : 'border-red-300', textColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-700' : 'text-red-700', valueColor: ((stats.lifetimePnLPercent || 0) - (stats.totalCommissionPercent || 0)) >= 0 ? 'text-green-800' : 'text-red-800' }
+      66: { id: 66, title: 'Net Lifetime PnL', value: (stats.lifetimePnL || 0) - (stats.totalCommission || 0), withArrow: true, isPositive: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0, formattedValue: formatIndianNumber(Math.abs((stats.lifetimePnL || 0) - (stats.totalCommission || 0)).toFixed(2)), borderColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'border-green-200' : 'border-red-200', textColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: ((stats.lifetimePnL || 0) - (stats.totalCommission || 0)) >= 0 ? 'text-green-700' : 'text-red-700' }
     }
     return configs[cardId]
   }
@@ -2070,36 +2051,7 @@ const ClientsPage = () => {
       totalEquityPercent: sum('equity_percentage'),
       totalPnlPercent: sum('pnl_percentage'),
       totalProfitPercent: sum('profit_percentage'),
-      // Weighted PnL percentage cards: (Σ PnL) / (Σ previous equity) * 100
-      // This avoids inflation from summing heterogeneous per‑client percentages.
-      dailyPnLPercent: (() => {
-        let totalPnl = 0, totalEq = 0
-        for (let i = 0; i < filteredClients.length; i++) {
-          const c = filteredClients[i]; if (!c) continue
-          totalPnl += toNum(c.dailyPnL)
-          totalEq += toNum(c.previousEquity)
-        }
-        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
-      })(),
-      thisWeekPnLPercent: (() => {
-        let totalPnl = 0, totalEq = 0
-        for (let i = 0; i < filteredClients.length; i++) {
-          const c = filteredClients[i]; if (!c) continue
-          totalPnl += toNum(c.thisWeekPnL)
-          totalEq += toNum(c.thisWeekPreviousEquity)
-        }
-        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
-      })(),
-      thisMonthPnLPercent: (() => {
-        let totalPnl = 0, totalEq = 0
-        for (let i = 0; i < filteredClients.length; i++) {
-          const c = filteredClients[i]; if (!c) continue
-          totalPnl += toNum(c.thisMonthPnL)
-          totalEq += toNum(c.thisMonthPreviousEquity)
-        }
-        return totalEq !== 0 ? (totalPnl / totalEq) * 100 : 0
-      })(),
-      // Lifetime: keep existing backend lifetime percentage sum behavior, or compute weighted if needed later
+      // Lifetime: keep existing backend lifetime percentage sum behavior
       lifetimePnLPercent: (() => {
         // Prefer weighted lifetime if deposit data available
         let totalPnl = 0, totalNetDeposit = 0
@@ -2123,40 +2075,12 @@ const ClientsPage = () => {
         totalEquity: 0,
         totalPnl: 0,
         totalProfit: 0,
-        dailyPnLPercent: 0,
-        thisWeekPnLPercent: 0,
-        thisMonthPnLPercent: 0,
         lifetimePnLPercent: 0
       }
     }
   }, [filteredClients, commissionTotals, filteredClientsChecksum])
 
-  console.log('📊 [faceCardTotals] Current value:', faceCardTotals.dailyPnLPercent)
-  // Extra debug: show average vs sum for Daily/Week/Month percentages
-  if (filteredClients && filteredClients.length > 0) {
-    const toNumDbg = v => (v == null || v === '' || isNaN(v)) ? 0 : Number(v)
-    let sumDailyPct = 0, sumWeekPct = 0, sumMonthPct = 0
-    let sumDailyPnl = 0, sumWeekPnl = 0, sumMonthPnl = 0
-    let sumPrevEqDaily = 0, sumPrevEqWeek = 0, sumPrevEqMonth = 0
-    for (let i = 0; i < filteredClients.length; i++) {
-      const c = filteredClients[i]; if (!c) continue
-      sumDailyPct += toNumDbg(c.dailyPnL_percentage)
-      sumWeekPct += toNumDbg(c.thisWeekPnL_percentage)
-      sumMonthPct += toNumDbg(c.thisMonthPnL_percentage)
-      sumDailyPnl += toNumDbg(c.dailyPnL)
-      sumWeekPnl += toNumDbg(c.thisWeekPnL)
-      sumMonthPnl += toNumDbg(c.thisMonthPnL)
-      sumPrevEqDaily += toNumDbg(c.previousEquity)
-      sumPrevEqWeek += toNumDbg(c.thisWeekPreviousEquity)
-      sumPrevEqMonth += toNumDbg(c.thisMonthPreviousEquity)
-    }
-    const weightedDaily = sumPrevEqDaily !== 0 ? (sumDailyPnl / sumPrevEqDaily) * 100 : 0
-    const weightedWeek = sumPrevEqWeek !== 0 ? (sumWeekPnl / sumPrevEqWeek) * 100 : 0
-    const weightedMonth = sumPrevEqMonth !== 0 ? (sumMonthPnl / sumPrevEqMonth) * 100 : 0
-    console.log('[faceCardTotals][debug] rawSumsPercent:', { sumDailyPct, sumWeekPct, sumMonthPct })
-    console.log('[faceCardTotals][debug] weightedComputed:', { weightedDaily, weightedWeek, weightedMonth })
-    console.log('[faceCardTotals][debug] components:', { sumDailyPnl, sumPrevEqDaily, sumWeekPnl, sumPrevEqWeek, sumMonthPnl, sumPrevEqMonth })
-  }
+
 
   // Removed totals helpers (no longer needed)
 
@@ -2225,15 +2149,6 @@ const ClientsPage = () => {
     // Percentage fields
     if (key === 'marginLevel' || key === 'applied_percentage' || key === 'soLevel') {
       return value != null && value !== '' ? `${parseFloat(value).toFixed(2)}%` : '-'
-    }
-    
-    // PnL percentage fields (Daily, Weekly, Monthly, Lifetime)
-    if (key.includes('PnL_percentage') || key.includes('pnL_percentage') || 
-        ['dailyPnL_percentage', 'thisWeekPnL_percentage', 'thisMonthPnL_percentage', 'lifetimePnL_percentage'].includes(key)) {
-      if (value == null || value === '') return '-'
-      const num = parseFloat(value)
-      if (!Number.isFinite(num)) return '-'
-      return `${num.toFixed(4)}%`
     }
     
     // Other percentage fields (balance, credit, equity, pnl, profit, etc.)
@@ -2504,13 +2419,8 @@ const ClientsPage = () => {
                       { id: 58, label: 'Total Equity %' },
                       { id: 59, label: 'PNL %' },
                       { id: 60, label: 'Floating Profit %' },
-                      { id: 61, label: 'Daily PnL %' },
-                      { id: 62, label: 'This Week PnL %' },
-                      { id: 63, label: 'This Month PnL %' },
-                      { id: 64, label: 'Lifetime PnL %' },
                       { id: 65, label: 'Book PnL %' },
-                      { id: 66, label: 'Net Lifetime PnL' },
-                      { id: 67, label: 'Net Lifetime PnL %' }
+                      { id: 66, label: 'Net Lifetime PnL' }
                       ]
 
                       // Filter by search text
@@ -2753,12 +2663,8 @@ const ClientsPage = () => {
                     58: 4, // Total Equity % -> Total Equity
                     59: 5, // PNL % -> PNL
                     60: 6, // Floating Profit % -> Floating Profit
-                    61: 10, // Daily PnL % -> Daily PnL
-                    62: 11, // This Week PnL % -> This Week PnL
-                    63: 12, // This Month PnL % -> This Month PnL
                     64: 13, // Lifetime PnL % -> Lifetime PnL
                     65: 53, // Book PnL % -> Book PnL
-                    67: 66, // Net Lifetime PnL % -> Net Lifetime PnL
                     17: 15, // Total Rebate % -> Total Rebate
                     18: 16, // Available Rebate % -> Available Rebate
                     54: 8, // Daily Deposit % -> Daily Deposit
@@ -2775,10 +2681,6 @@ const ClientsPage = () => {
                   
                   const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
                   
-                  // Debug log when rendering Daily PnL card
-                  if (effectiveCardId === 10 || cardId === 61) {
-                    console.log('🎨 [Render] Daily PnL face card - value:', card?.value)
-                  }
                   if (!card || cardVisibility[cardId] === false) return null
                   
                   // Apply themed colors
@@ -2874,8 +2776,8 @@ const ClientsPage = () => {
                   // If the current card is a percentage variant and its normal counterpart
                   // also exists in the order, skip this entry to avoid duplicate rendering
                   const percentToNormalMapForSkip = {
-                    56: 2, 57: 3, 58: 4, 59: 5, 60: 6, 61: 10, 62: 11, 63: 12, 64: 13, 65: 53,
-                    67: 66, 17: 15, 18: 16, 54: 8, 55: 9
+                    56: 2, 57: 3, 58: 4, 59: 5, 60: 6, 64: 13, 65: 53,
+                    17: 15, 18: 16, 54: 8, 55: 9
                   }
                   if (percentToNormalMapForSkip[cardId] && faceCardOrder.includes(percentToNormalMapForSkip[cardId])) {
                     return null
@@ -2888,12 +2790,8 @@ const ClientsPage = () => {
                     4: 58, // Total Equity -> Total Equity %
                     5: 59, // PNL -> PNL %
                     6: 60, // Floating Profit -> Floating Profit %
-                    10: 61, // Daily PnL -> Daily PnL %
-                    11: 62, // This Week PnL -> This Week PnL %
-                    12: 63, // This Month PnL -> This Month PnL %
                     13: 64, // Lifetime PnL -> Lifetime PnL %
                     53: 65, // Book PnL -> Book PnL %
-                    66: 67, // Net Lifetime PnL -> Net Lifetime PnL %
                     15: 17, // Total Rebate -> Total Rebate %
                     16: 18, // Available Rebate -> Available Rebate %
                     8: 54, // Daily Deposit -> Daily Deposit %
@@ -2904,11 +2802,6 @@ const ClientsPage = () => {
                   }
                   
                   const card = getFaceCardConfig(effectiveCardId, faceCardTotals)
-                  
-                  // Debug log when rendering Daily PnL % card
-                  if (effectiveCardId === 61 || cardId === 61) {
-                    console.log('🎨 [Render] Daily PnL % face card - value:', card?.value)
-                  }
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
