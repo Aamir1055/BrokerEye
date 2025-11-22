@@ -53,9 +53,9 @@ const PositionsPage = () => {
     try {
       const saved = localStorage.getItem('positions_items_per_page')
       if (saved && saved !== 'All') return parseInt(saved)
-      return 50
+      return 500
     } catch {
-      return 50
+      return 500
     }
   })
   const [sortColumn, setSortColumn] = useState(null)
@@ -769,7 +769,7 @@ const PositionsPage = () => {
 
   // Generate pagination options; ensure common sizes always present for stable UI
   const generatePageSizeOptions = () => {
-    const base = [25, 50, 100, 200]
+    const base = [25, 50, 100, 200, 500]
     return base
   }
   
