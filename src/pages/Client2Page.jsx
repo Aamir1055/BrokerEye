@@ -4766,7 +4766,26 @@ const Client2Page = () => {
             {/* No Results */}
             {!loading && !initialLoad && clients.length === 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <p className="text-gray-600">No clients found</p>
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-600 text-lg font-semibold mb-2">No clients found</p>
+                <p className="text-gray-500 text-sm mb-4">Try adjusting your filters or search criteria</p>
+                <button
+                  onClick={() => {
+                    // Clear all filters
+                    setFilters([])
+                    setQuickFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+                    setSearchQuery('')
+                    setCurrentPage(1)
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear All Filters
+                </button>
               </div>
             )}
           </div>
