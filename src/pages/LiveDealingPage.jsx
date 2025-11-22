@@ -1921,13 +1921,39 @@ const LiveDealingPage = () => {
                   {visibleColumns.reason && renderHeaderCell('reason', 'Reason')}
                 </tr>
               </thead>
+
+              {/* YouTube-style Loading Progress Bar - Below table header */}
+              {loading && (
+                <thead className="sticky z-40" style={{ top: '48px' }}>
+                  <tr>
+                    <th colSpan={Object.values(visibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
+                      <div className="relative w-full h-full bg-gray-200 overflow-hidden">
+                        <style>{`
+                          @keyframes shimmerSlide {
+                            0% { transform: translateX(-100%); }
+                            100% { transform: translateX(400%); }
+                          }
+                          .shimmer-loading-bar {
+                            width: 30%;
+                            height: 100%;
+                            background: #2563eb;
+                            animation: shimmerSlide 0.9s linear infinite;
+                          }
+                        `}</style>
+                        <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+              )}
+
               <tbody className="bg-white divide-y-2 divide-gray-200">
                 {loading ? (
+                  // Show empty state while loading to avoid layout shift
                   <tr>
-                    <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-12">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-                        <p className="mt-3 text-sm text-gray-600">Loading deals...</p>
+                    <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-8">
+                      <div className="flex flex-col items-center justify-center text-gray-400">
+                        <p className="text-sm">Loading deals...</p>
                       </div>
                     </td>
                   </tr>
