@@ -55,7 +55,7 @@ const IBSelector = () => {
           setShowDropdown(willShow)
           // Data is now prefetched on login, refresh, and page entry; optional on-demand refresh left disabled here
         }}
-        className="text-slate-700 hover:text-slate-900 px-3 py-2 rounded-md hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+        className="text-slate-700 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
