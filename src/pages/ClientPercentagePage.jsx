@@ -177,22 +177,25 @@ const ClientPercentagePage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
+    const isTextColumn = customFilterColumn === 'is_custom'
     const filterConfig = {
       type: customFilterType,
-      value1: parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      value1: isTextColumn ? customFilterValue1 : parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? (isTextColumn ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
       operator: customFilterOperator
     }
 
+    const filterKey = isTextColumn ? `${customFilterColumn}_text` : `${customFilterColumn}_number`
     setColumnFilters(prev => ({
       ...prev,
-      [`${customFilterColumn}_number`]: filterConfig
+      [filterKey]: filterConfig
     }))
 
     // Close modal and dropdown
     setShowCustomFilterModal(false)
     setShowFilterDropdown(null)
     setShowNumberFilterDropdown(null)
+    setShowTextFilterDropdown(null)
     
     // Reset form
     setCustomFilterValue1('')
@@ -412,7 +415,16 @@ const ClientPercentagePage = () => {
     
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
-      if (values && values.length > 0) {
+      if (columnKey.endsWith('_number')) {
+        // Apply number filter
+        const actualColumn = columnKey.replace('_number', '')
+        ibFiltered = ibFiltered.filter(client => matchesNumberFilter(client[actualColumn], values))
+      } else if (columnKey.endsWith('_text')) {
+        // Apply text filter
+        const actualColumn = columnKey.replace('_text', '')
+        ibFiltered = ibFiltered.filter(client => matchesTextFilter(client[actualColumn], values))
+      } else if (values && values.length > 0) {
+        // Apply checkbox filter
         ibFiltered = ibFiltered.filter(client => {
           const clientValue = client[columnKey]
           return values.includes(clientValue)
@@ -895,7 +907,7 @@ const ClientPercentagePage = () => {
                       getUniqueColumnValues(columnKey).map(value => (
                         <label 
                           key={value} 
-                          className="flex items-center gap-1 hover:bg-blue-50 px-1 py-1 rounded cursor-pointer transition-colors"
+                          className="flex items-center gap-1 hover:bg-blue-50 px-1 py-1 rounded cursor-pointer transition-colors bg-white"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
@@ -908,8 +920,9 @@ const ClientPercentagePage = () => {
                             onClick={(e) => e.stopPropagation()}
                             className="w-2.5 h-2.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-[9px] text-gray-700 truncate">
-                            {value}
+                          <span className="text-[9px] text-gray-700 font-medium truncate">
+                            {value === true || value === 1 ? 'Custom' : value === false || value === 0 ? 'Default' : value}
+                          </span>
                           </span>
                         </label>
                       ))
