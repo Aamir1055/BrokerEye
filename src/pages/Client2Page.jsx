@@ -98,14 +98,7 @@ const Client2Page = () => {
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   // Card filter mode: show only percentage cards or only non-percentage cards
-  const [cardFilterPercentMode, setCardFilterPercentMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('client2CardFilterPercentMode')
-      return saved ? JSON.parse(saved) : false
-    } catch (e) {
-      return false
-    }
-  })
+  const [cardFilterPercentMode, setCardFilterPercentMode] = useState(false) // Do not persist; always start disabled
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -128,29 +121,11 @@ const Client2Page = () => {
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [columnValueSearchDebounce, setColumnValueSearchDebounce] = useState({}) // Debounced search queries
-  const [quickFilters, setQuickFilters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('client2QuickFilters')
-      return saved ? JSON.parse(saved) : {
-        hasFloating: false,
-        hasCredit: false,
-        noDeposit: false
-      }
-    } catch (e) {
-      return {
-        hasFloating: false,
-        hasCredit: false,
-        noDeposit: false
-      }
-    }
-  })
-  
-  // Save quick filters to localStorage whenever they change
-  useEffect(() => {
-    try { 
-      localStorage.setItem('client2QuickFilters', JSON.stringify(quickFilters)) 
-    } catch { }
-  }, [quickFilters])
+  const [quickFilters, setQuickFilters] = useState({
+    hasFloating: false,
+    hasCredit: false,
+    noDeposit: false
+  }) // Do not persist quick filters
   
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
@@ -282,14 +257,7 @@ const Client2Page = () => {
   const columnScrollLastTriggerRef = useRef({}) // { [columnKey]: number }
   const columnLastScrollTopRef = useRef({}) // { [columnKey]: number }
 
-  // Persist card filter percentage mode
-  useEffect(() => {
-    try {
-      localStorage.setItem('client2CardFilterPercentMode', JSON.stringify(cardFilterPercentMode))
-    } catch (e) {
-      // ignore
-    }
-  }, [cardFilterPercentMode])
+  // Removed persistence of cardFilterPercentMode (no localStorage usage)
 
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -2483,7 +2451,7 @@ const Client2Page = () => {
 
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
-      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (computedPercentageTotals?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
+      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totalsPercent?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
       bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
       bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0), colorCheck: true }
     }

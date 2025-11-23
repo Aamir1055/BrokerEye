@@ -89,62 +89,86 @@ api.interceptors.response.use(
     }
     const originalRequest = error.config
     const status = error?.response?.status
+    const networkErr = error?.code === 'ERR_NETWORK'
+    if (!error.response) {
+      console.warn('[API] Error without response object:', error.message)
+    }
 
     // If unauthorized and we have a refresh token, attempt a refresh once
     const hasRefresh = !!localStorage.getItem('refresh_token')
     const alreadyRetried = originalRequest?._retry
 
-    if (status === 401 && hasRefresh && !alreadyRetried) {
+    const shouldAttemptRefresh = (
+      (status === 401) || // standard unauthorized
+      (status === 403) || // forbidden (token might be invalid)
+      (networkErr && hasRefresh && !alreadyRetried) // network edge case while token may have expired
+    ) && hasRefresh && !alreadyRetried
+
+    if (shouldAttemptRefresh) {
       originalRequest._retry = true
+      console.warn('[API] 401 detected. Attempting token refresh. url=', originalRequest?.url)
 
       try {
         if (!isRefreshing) {
           isRefreshing = true
           const refresh_token = localStorage.getItem('refresh_token')
+          console.log('[API] 🔄 Initiating token refresh (primary attempt)...')
+
           refreshPromise = rawApi
             .post('/api/auth/broker/refresh', { refresh_token })
             .then((res) => res.data)
             .then((data) => {
               const newAccess = data?.data?.access_token || data?.access_token
               if (!newAccess) throw new Error('No access_token in refresh response')
-
-              // Save and apply new token
+              // Persist token
               localStorage.setItem('access_token', newAccess)
               api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
+              ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
               broadcastTokenRefreshed(newAccess)
-
-              // Flush queue
-              requestQueue.forEach((resolve) => resolve(newAccess))
-              requestQueue = []
+              console.log('[API] ✅ Token refreshed (primary)')
               return newAccess
+            })
+            .catch(async (err) => {
+              console.error('[API] ❌ Primary refresh attempt failed:', err?.message)
+              // Fallback attempt using api instance (with possibly expired Authorization header)
+              try {
+                const refresh_token2 = localStorage.getItem('refresh_token')
+                console.log('[API] 🔁 Trying fallback refresh via api instance...')
+                const res2 = await api.post('/api/auth/broker/refresh', { refresh_token: refresh_token2 })
+                const data2 = res2.data
+                const newAccess2 = data2?.data?.access_token || data2?.access_token
+                if (!newAccess2) throw new Error('No access_token in fallback refresh response')
+                localStorage.setItem('access_token', newAccess2)
+                api.defaults.headers.common['Authorization'] = `Bearer ${newAccess2}`
+                ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess2}`
+                broadcastTokenRefreshed(newAccess2)
+                console.log('[API] ✅ Token refreshed (fallback)')
+                return newAccess2
+              } catch (fallbackErr) {
+                console.error('[API] ❌ Fallback refresh failed:', fallbackErr?.message)
+                throw fallbackErr
+              }
             })
             .finally(() => {
               isRefreshing = false
+              refreshPromise = null
             })
         }
 
-        // Wait for the in-flight refresh to complete
-        const token = await new Promise((resolve, reject) => {
-          if (refreshPromise) {
-            requestQueue.push(resolve)
-          } else {
-            // Should not happen, but guard anyway
-            reject(new Error('No refresh promise available'))
-          }
-        })
+        const token = await (refreshPromise || Promise.reject(new Error('No refresh in progress'))) // wait for whichever promise is active
 
-        // Retry the original request with the new token
+        // Retry original request
         originalRequest.headers = originalRequest.headers || {}
         originalRequest.headers['Authorization'] = `Bearer ${token}`
+        console.log('[API] 🔁 Retrying original request after refresh:', originalRequest?.url)
         return api(originalRequest)
       } catch (refreshErr) {
-        // Refresh failed: clear auth and redirect to login
+        console.error('[API] 🚫 Refresh sequence failed. Logging out.')
         try {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('user_data')
         } catch {}
-        // Soft redirect to login route
         if (typeof window !== 'undefined') {
           try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
           window.location.href = '/login'
@@ -184,6 +208,8 @@ ibApi.interceptors.response.use(
         if (!isRefreshing) {
           isRefreshing = true
           const refresh_token = localStorage.getItem('refresh_token')
+          console.log('[IB API] 🔄 Initiating token refresh...')
+          
           refreshPromise = rawApi
             .post('/api/auth/broker/refresh', { refresh_token })
             .then((res) => res.data)
@@ -194,19 +220,26 @@ ibApi.interceptors.response.use(
               api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
               ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
               broadcastTokenRefreshed(newAccess)
+              
+              console.log('[IB API] ✅ Token refreshed via interceptor')
+              
               requestQueue.forEach((resolve) => resolve(newAccess))
               requestQueue = []
               return newAccess
             })
-            .finally(() => { isRefreshing = false })
+            .catch((err) => {
+              console.error('[IB API] ❌ Token refresh failed:', err.message)
+              requestQueue = []
+              throw err
+            })
+            .finally(() => { 
+              isRefreshing = false
+              refreshPromise = null
+            })
         }
-        const token = await new Promise((resolve, reject) => {
-          if (refreshPromise) {
-            requestQueue.push(resolve)
-          } else {
-            reject(new Error('No refresh promise available'))
-          }
-        })
+        
+        const token = await (refreshPromise || Promise.reject(new Error('No refresh in progress')))
+        
         originalRequest.headers = originalRequest.headers || {}
         originalRequest.headers['Authorization'] = `Bearer ${token}`
         return ibApi(originalRequest)

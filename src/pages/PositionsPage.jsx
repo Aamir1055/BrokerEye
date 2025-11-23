@@ -53,9 +53,9 @@ const PositionsPage = () => {
     try {
       const saved = localStorage.getItem('positions_items_per_page')
       if (saved && saved !== 'All') return parseInt(saved)
-      return 500
+      return 50
     } catch {
-      return 500
+      return 50
     }
   })
   const [sortColumn, setSortColumn] = useState(null)
