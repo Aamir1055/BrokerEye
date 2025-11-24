@@ -3458,7 +3458,7 @@ const Client2Page = () => {
                 <select
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                  className="px-2 py-1 text-xs font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm"
+                  className="px-2 text-xs font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm h-10"
                 >
                   <option value="50">50</option>
                   <option value="100">100</option>
@@ -3474,29 +3474,29 @@ const Client2Page = () => {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`p-1.5 rounded-lg transition-all shadow-sm ${currentPage === 1
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === 1
                           ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
                           : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
 
-                    <span className="text-xs font-bold text-white px-3 py-1 bg-blue-600 rounded-lg shadow-md">
+                    <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-lg shadow-md">
                       Page {currentPage} of {totalPages}
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`p-1.5 rounded-lg transition-all shadow-sm ${currentPage === totalPages
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === totalPages
                           ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
                           : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -3506,10 +3506,10 @@ const Client2Page = () => {
                 <div className="relative" ref={columnSelectorRef}>
                   <button
                     onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="text-amber-700 hover:text-amber-800 px-2.5 py-1 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                    className="text-amber-700 hover:text-amber-800 px-3 py-2 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm h-10"
                     title="Show/Hide Columns"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
                     </svg>
                     Columns
@@ -3525,7 +3525,7 @@ const Client2Page = () => {
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search login, name, email..."
-                      className="w-64 pl-3 pr-8 py-1 text-xs font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400"
+                      className="w-64 pl-3 pr-8 text-xs font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400 h-10"
                     />
                     {/* Inline Clear X Icon */}
                     {searchInput && (
@@ -3548,7 +3548,7 @@ const Client2Page = () => {
                   {/* Search Button */}
                   <button
                     onClick={handleSearch}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-xs font-semibold"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-xs font-semibold h-10"
                     title="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

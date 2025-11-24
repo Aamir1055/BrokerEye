@@ -3046,7 +3046,7 @@ const ClientsPage = () => {
               <select
                 value={itemsPerPage}
                 onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
+                className="px-2.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm h-10"
               >
                 {pageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -3064,31 +3064,31 @@ const ClientsPage = () => {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`p-1.5 rounded-md transition-all shadow-sm ${
+                    className={`p-2 rounded-md transition-all shadow-sm ${
                       currentPage === 1
                         ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
                         : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
                   
-                  <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
+                  <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-md shadow-md border border-blue-700">
                     Page {currentPage} of {totalPages}
                   </span>
                   
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-md transition-all shadow-sm ${
+                    className={`p-2 rounded-md transition-all shadow-sm ${
                       currentPage === totalPages
                         ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
                         : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
@@ -3099,9 +3099,9 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="text-purple-700 hover:text-purple-800 px-2.5 py-1.5 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                  className="text-purple-700 hover:text-purple-800 px-3 py-2 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm h-10"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
