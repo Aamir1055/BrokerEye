@@ -137,6 +137,8 @@ const Client2Page = () => {
     'totalClients', 'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
     'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyDepositPercent', 'dailyPnL',
     'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal', 'dailyWithdrawalPercent',
+    // New computed card: Daily Net D/W
+    'dailyNetDW',
     'equity', 'floating', 'liabilities',
     'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL', 'lifetimePnLPercent',
     'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeWithdrawal',
@@ -146,6 +148,10 @@ const Client2Page = () => {
     'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
     'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
     'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal',
+    // New computed cards: NET Week/Monthly Bonus
+    'netWeekBonus', 'netMonthBonus',
+    // Remaining NET cards
+    'netDailyBonus', 'netLifetimeBonus', 'netWeekDW', 'netMonthDW', 'netLifetimeDW', 'netCredit',
     'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent',
     'netLifetimePnL', 'netLifetimePnLPercent', 'bookPnL', 'bookPnLPercent'
   ]
@@ -327,6 +333,8 @@ const Client2Page = () => {
       dailySOCompensationInPercent: false,
       dailySOCompensationOutPercent: false,
       dailyWithdrawalPercent: false,
+      // New computed card visibility (off by default)
+      dailyNetDW: false,
       equityPercent: false,
       floatingPercent: false,
       liabilitiesPercent: false,
@@ -388,6 +396,16 @@ const Client2Page = () => {
       thisWeekSOCompensationInPercent: false,
       thisWeekSOCompensationOutPercent: false,
       thisWeekWithdrawalPercent: false,
+      // New computed cards visibility (off by default)
+      netWeekBonus: false,
+      netMonthBonus: false,
+      // Remaining NET cards visibility (off by default)
+      netDailyBonus: false,
+      netLifetimeBonus: false,
+      netWeekDW: false,
+      netMonthDW: false,
+      netLifetimeDW: false,
+      netCredit: false,
       // Rebate cards (all visible by default)
       availableRebate: true,
       availableRebatePercent: true,
@@ -2381,6 +2399,10 @@ const Client2Page = () => {
       dailySOCompensationOut: { label: 'Daily SO Compensation Out', color: 'orange', getValue: () => totals?.dailySOCompensationOut || 0 },
       dailyWithdrawal: { label: 'Daily Withdrawal', color: 'red', getValue: () => totals?.dailyWithdrawal || 0 },
       dailyWithdrawalPercent: { label: 'Daily Withdrawal %', color: 'rose', getValue: () => computedPercentageTotals?.dailyWithdrawal || 0 },
+      // Computed: Daily Net D/W = Daily Deposit - Daily Withdrawal
+      dailyNetDW: { label: 'Daily Net D/W', color: 'blue', getValue: () => (totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0), colorCheck: true },
+      // Computed: NET Daily Bonus = Daily Bonus In - Daily Bonus Out
+      netDailyBonus: { label: 'NET Daily Bonus', color: 'blue', getValue: () => (totals?.dailyBonusIn || 0) - (totals?.dailyBonusOut || 0), colorCheck: true },
 
       // E
       equity: { label: 'Equity', color: 'purple', getValue: () => totals?.equity || 0 },
@@ -2442,12 +2464,26 @@ const Client2Page = () => {
       thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
       thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
       thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 },
+      // Computed: NET Week Bonus = This Week Bonus In - This Week Bonus Out
+      netWeekBonus: { label: 'NET Week Bonus', color: 'blue', getValue: () => (totals?.thisWeekBonusIn || 0) - (totals?.thisWeekBonusOut || 0), colorCheck: true },
+      // Computed: NET Week D/W = This Week Deposit - This Week Withdrawal
+      netWeekDW: { label: 'NET Week DW', color: 'blue', getValue: () => (totals?.thisWeekDeposit || 0) - (totals?.thisWeekWithdrawal || 0), colorCheck: true },
 
       // Rebate cards
       availableRebate: { label: 'Available Rebate', color: 'teal', getValue: () => rebateTotals?.availableRebate || 0 },
       availableRebatePercent: { label: 'Available Rebate %', color: 'cyan', getValue: () => rebateTotals?.availableRebatePercent || 0 },
       totalRebate: { label: 'Total Rebate', color: 'emerald', getValue: () => rebateTotals?.totalRebate || 0 },
       totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 },
+      // Computed: NET Monthly Bonus = This Month Bonus In - This Month Bonus Out
+      netMonthBonus: { label: 'NET Monthly Bonus', color: 'blue', getValue: () => (totals?.thisMonthBonusIn || 0) - (totals?.thisMonthBonusOut || 0), colorCheck: true },
+      // Computed: NET Monthly D/W = This Month Deposit - This Month Withdrawal
+      netMonthDW: { label: 'NET Monthly DW', color: 'blue', getValue: () => (totals?.thisMonthDeposit || 0) - (totals?.thisMonthWithdrawal || 0), colorCheck: true },
+      // Computed: NET Lifetime Bonus = Lifetime Bonus In - Lifetime Bonus Out
+      netLifetimeBonus: { label: 'NET Lifetime Bonus', color: 'blue', getValue: () => (totals?.lifetimeBonusIn || 0) - (totals?.lifetimeBonusOut || 0), colorCheck: true },
+      // Computed: NET Lifetime D/W = Lifetime Deposit - Lifetime Withdrawal
+      netLifetimeDW: { label: 'NET Lifetime DW', color: 'blue', getValue: () => (totals?.lifetimeDeposit || 0) - (totals?.lifetimeWithdrawal || 0), colorCheck: true },
+      // Computed: NET Credit = Lifetime Credit In - Lifetime Credit Out (align with Clients module)
+      netCredit: { label: 'NET Credit', color: 'blue', getValue: () => (totals?.lifetimeCreditIn || 0) - (totals?.lifetimeCreditOut || 0), colorCheck: true },
 
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
@@ -3086,6 +3122,7 @@ const Client2Page = () => {
                               dailySOCompensationIn: 'Daily SO Compensation In',
                               dailySOCompensationOut: 'Daily SO Compensation Out',
                               dailyWithdrawal: 'Daily Withdrawal',
+                              dailyNetDW: 'Daily Net D/W',
                               equity: 'Equity',
                               floating: 'Floating',
                               liabilities: 'Liabilities',
@@ -3128,10 +3165,19 @@ const Client2Page = () => {
                               thisWeekSOCompensationIn: 'This Week SO Compensation In',
                               thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                               thisWeekWithdrawal: 'This Week Withdrawal',
+                              // NET cards
+                              netDailyBonus: 'NET Daily Bonus',
+                              netWeekBonus: 'NET Week Bonus',
+                              netWeekDW: 'NET Week DW',
                               availableRebate: 'Available Rebate',
                               availableRebatePercent: 'Available Rebate %',
                               totalRebate: 'Total Rebate',
                               totalRebatePercent: 'Total Rebate %',
+                              netMonthDW: 'NET Monthly DW',
+                              netMonthBonus: 'NET Monthly Bonus',
+                              netLifetimeBonus: 'NET Lifetime Bonus',
+                              netLifetimeDW: 'NET Lifetime DW',
+                              netCredit: 'NET Credit',
                               netLifetimePnL: 'Net Lifetime PnL',
                               netLifetimePnLPercent: 'Net Lifetime PnL %',
                               bookPnL: 'Book PnL',
@@ -3156,6 +3202,16 @@ const Client2Page = () => {
                             const baseLabels = {
                               assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', totalRebate: 'Total Rebate', netLifetimePnL: 'Net Lifetime PnL', bookPnL: 'Book PnL'
                             }
+                            // Inject new labels for net cards
+                            baseLabels.dailyNetDW = 'Daily Net D/W'
+                            baseLabels.netDailyBonus = 'NET Daily Bonus'
+                            baseLabels.netWeekBonus = 'NET Week Bonus'
+                            baseLabels.netWeekDW = 'NET Week DW'
+                            baseLabels.netMonthBonus = 'NET Monthly Bonus'
+                            baseLabels.netMonthDW = 'NET Monthly DW'
+                            baseLabels.netLifetimeBonus = 'NET Lifetime Bonus'
+                            baseLabels.netLifetimeDW = 'NET Lifetime DW'
+                            baseLabels.netCredit = 'NET Credit'
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             const items = baseItems
                             const filteredItems = items.filter(([_, label]) =>
@@ -3195,6 +3251,7 @@ const Client2Page = () => {
                             dailySOCompensationIn: 'Daily SO Compensation In',
                             dailySOCompensationOut: 'Daily SO Compensation Out',
                             dailyWithdrawal: 'Daily Withdrawal',
+                            dailyNetDW: 'Daily Net D/W',
                             equity: 'Equity',
                             floating: 'Floating',
                             liabilities: 'Liabilities',
@@ -3237,8 +3294,17 @@ const Client2Page = () => {
                             thisWeekSOCompensationIn: 'This Week SO Compensation In',
                             thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                             thisWeekWithdrawal: 'This Week Withdrawal',
+                            // NET cards
+                            netDailyBonus: 'NET Daily Bonus',
+                            netWeekBonus: 'NET Week Bonus',
+                            netWeekDW: 'NET Week DW',
                             availableRebate: 'Available Rebate',
                             totalRebate: 'Total Rebate',
+                            netMonthDW: 'NET Monthly DW',
+                            netMonthBonus: 'NET Monthly Bonus',
+                            netLifetimeBonus: 'NET Lifetime Bonus',
+                            netLifetimeDW: 'NET Lifetime DW',
+                            netCredit: 'NET Credit',
                             netLifetimePnL: 'Net Lifetime PnL',
                             bookPnL: 'Book PnL'
                           }

@@ -10,18 +10,31 @@ import WebSocketIndicator from '../components/WebSocketIndicator'
 import GroupSelector from '../components/GroupSelector'
 import IBSelector from '../components/IBSelector'
 import GroupModal from '../components/GroupModal'
+import MobileClientsView from '../components/MobileClientsViewNew'
 import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
   const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
-  // Use rawClients (without USC normalization) for Clients module
-  const displayClients = rawClients.length > 0 ? rawClients : cachedClients
+  // Prefer raw snapshot only until WebSocket starts streaming; then use live clients
+  const displayClients = (rawClients.length > 0 && !lastWsReceiveAt) ? rawClients : cachedClients
   // Alias cached data to expected local names to avoid undefined references
   const clients = displayClients
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  
+  // Mobile detection hook
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -2211,6 +2224,24 @@ const ClientsPage = () => {
 
   // Removed full-page loading spinner to prevent page reload effect on refresh
   // Data updates will happen in place for better UX
+
+  // Mobile view - show only on mobile devices
+  if (isMobile) {
+    return (
+      <>
+        <MobileClientsView 
+          clients={filteredClients || []}
+          onClientClick={(client) => setSelectedClient(client)}
+        />
+        {selectedClient && (
+          <ClientPositionsModal
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+          />
+        )}
+      </>
+    )
+  }
 
   return (
     <div className="h-screen flex overflow-hidden relative">

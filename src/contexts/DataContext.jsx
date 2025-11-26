@@ -718,10 +718,11 @@ export const DataProvider = ({ children }) => {
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
           const normalized = rawClients.map(normalizeUSCValues)
+          const unnormalized = rawClients.map(c => normalizeUSCValues(c, true))
           
           // Debug: Check RAW values BEFORE normalization
-          if (dataArray.length > 0 && dataArray[0]) {
-            const rawSample = dataArray[0]
+          if (rawClients.length > 0 && rawClients[0]) {
+            const rawSample = rawClients[0]
             console.log('[DataContext] WebSocket RAW values (before normalization):', {
               login: rawSample.login,
               currency: rawSample.currency,
@@ -745,8 +746,11 @@ export const DataProvider = ({ children }) => {
           }
           
           const map = new Map()
+          const rawMap = new Map()
           normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
+          unnormalized.forEach(c => { if (c && c.login) rawMap.set(c.login, c) })
           const snapshot = Array.from(map.values())
+          const snapshotRaw = Array.from(rawMap.values())
 
           if (normalized.length !== snapshot.length) {
             console.warn(`[DataContext] ⚠️ WebSocket: Deduplicated ${normalized.length - snapshot.length} duplicate clients`)
@@ -779,6 +783,8 @@ export const DataProvider = ({ children }) => {
               const snapStats = calculateFullStats(snapshot)
               lowPriority(() => setClientStats(snapStats))
               lowPriority(() => setLastFetch(p => ({ ...p, clients: Date.now(), accounts: Date.now() })))
+              // Keep raw (unnormalized) clients in sync for modules that need them
+              lowPriority(() => setRawClients(snapshotRaw))
               return snapshot
             }
 
@@ -841,6 +847,11 @@ export const DataProvider = ({ children }) => {
               })
               lowPriority(() => setLastFetch(p => ({ ...p, clients: Date.now(), accounts: Date.now() })))
             }
+            // Also keep raw snapshot roughly aligned on snapshot ticks
+            lowPriority(() => setRawClients(prevRaw => {
+              if (!Array.isArray(prevRaw) || prevRaw.length === 0) return snapshotRaw
+              return prevRaw
+            }))
             return updated
           }))
 
