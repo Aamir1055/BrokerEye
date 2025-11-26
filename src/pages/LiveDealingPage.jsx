@@ -1019,13 +1019,13 @@ const LiveDealingPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700 transition-all select-none group">
+      <th className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700 transition-all select-none group bg-blue-600">
         <div className="flex items-center gap-1 justify-between">
           <div 
-            className="flex items-center gap-1 cursor-pointer flex-1 text-white"
+            className="flex items-center gap-1 cursor-pointer flex-1"
             onClick={() => handleSort(actualSortKey)}
           >
-            <span className="text-white">{label}</span>
+            <span className="text-white font-bold">{label}</span>
             {getSortIcon(actualSortKey)}
           </div>
           
@@ -1906,15 +1906,15 @@ const LiveDealingPage = () => {
                   {visibleColumns.action && renderHeaderCell('action', 'Action')}
                   {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
                   {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volume', displayMode === 'percentage' ? 'Volume %' : 'Volume')}
-                  {visibleColumns.volumePercentage && renderHeaderCell('volumePercentage', 'Volume %')}
+                  {visibleColumns.volumePercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('volumePercentage', 'Volume %')}
                   {visibleColumns.price && renderHeaderCell('price', 'Price')}
                   {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profit', displayMode === 'percentage' ? 'Profit %' : 'Profit')}
-                  {visibleColumns.profitPercentage && renderHeaderCell('profitPercentage', 'Profit %')}
+                  {visibleColumns.profitPercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('profitPercentage', 'Profit %')}
                   {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commission', displayMode === 'percentage' ? 'Commission %' : 'Commission')}
-                  {visibleColumns.commissionPercentage && renderHeaderCell('commissionPercentage', 'Commission %')}
+                  {visibleColumns.commissionPercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('commissionPercentage', 'Commission %')}
                   {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storage', displayMode === 'percentage' ? 'Storage %' : 'Storage')}
-                  {visibleColumns.storagePercentage && renderHeaderCell('storagePercentage', 'Storage %')}
-                  {visibleColumns.appliedPercentage && renderHeaderCell('appliedPercentage', 'Applied %')}
+                  {visibleColumns.storagePercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('storagePercentage', 'Storage %')}
+                  {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && renderHeaderCell('appliedPercentage', 'Applied %')}
                   {visibleColumns.entry && renderHeaderCell('entry', 'Entry')}
                   {visibleColumns.order && renderHeaderCell('order', 'Order')}
                   {visibleColumns.position && renderHeaderCell('position', 'Position')}
@@ -2040,7 +2040,7 @@ const LiveDealingPage = () => {
                             : formatIndianNumber(deal.rawData?.volume, 2)}
                         </td>
                       )}
-                      {visibleColumns.volumePercentage && (
+                      {visibleColumns.volumePercentage && (displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.volume_percentage != null ? formatIndianNumber(deal.rawData.volume_percentage, 2) : '0.00'}
                         </td>
@@ -2061,7 +2061,7 @@ const LiveDealingPage = () => {
                             : formatIndianNumber(deal.rawData?.profit, 2)}
                         </td>
                       )}
-                      {visibleColumns.profitPercentage && (
+                      {visibleColumns.profitPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
                         <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
@@ -2077,7 +2077,7 @@ const LiveDealingPage = () => {
                             : formatIndianNumber(deal.rawData?.commission, 2)}
                         </td>
                       )}
-                      {visibleColumns.commissionPercentage && (
+                      {visibleColumns.commissionPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.commission_percentage != null ? formatIndianNumber(deal.rawData.commission_percentage, 2) : '0.00'}
                         </td>
@@ -2091,12 +2091,12 @@ const LiveDealingPage = () => {
                             : formatIndianNumber(deal.rawData?.storage, 2)}
                         </td>
                       )}
-                      {visibleColumns.storagePercentage && (
+                      {visibleColumns.storagePercentage && (displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {deal.rawData?.storage_percentage != null ? formatIndianNumber(deal.rawData.storage_percentage, 2) : '0.00'}
                         </td>
                       )}
-                      {visibleColumns.appliedPercentage && (
+                      {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
                             {deal.rawData?.applied_percentage != null ? formatIndianNumber(deal.rawData.applied_percentage, 1) : '0.0'}

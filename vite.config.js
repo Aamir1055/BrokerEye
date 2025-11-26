@@ -24,7 +24,8 @@ export default defineConfig({
         enabled: false // Disable PWA in development
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: null // Prevent service worker from intercepting navigation
       },
       manifest: process.env.NODE_ENV === 'production' ? {
         name: 'Broker Eyes',
@@ -38,12 +39,12 @@ export default defineConfig({
         start_url: '/v2/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: '/v2/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/v2/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }

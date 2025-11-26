@@ -98,14 +98,7 @@ const Client2Page = () => {
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   // Card filter mode: show only percentage cards or only non-percentage cards
-  const [cardFilterPercentMode, setCardFilterPercentMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('client2CardFilterPercentMode')
-      return saved ? JSON.parse(saved) : false
-    } catch (e) {
-      return false
-    }
-  })
+  const [cardFilterPercentMode, setCardFilterPercentMode] = useState(false) // Do not persist; always start disabled
   const [showFaceCards, setShowFaceCards] = useState(true)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -128,29 +121,11 @@ const Client2Page = () => {
   const [selectedColumnValues, setSelectedColumnValues] = useState({}) // Track selected values for checkbox filters
   const [columnValueSearch, setColumnValueSearch] = useState({}) // Search query for column value filters
   const [columnValueSearchDebounce, setColumnValueSearchDebounce] = useState({}) // Debounced search queries
-  const [quickFilters, setQuickFilters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('client2QuickFilters')
-      return saved ? JSON.parse(saved) : {
-        hasFloating: false,
-        hasCredit: false,
-        noDeposit: false
-      }
-    } catch (e) {
-      return {
-        hasFloating: false,
-        hasCredit: false,
-        noDeposit: false
-      }
-    }
-  })
-  
-  // Save quick filters to localStorage whenever they change
-  useEffect(() => {
-    try { 
-      localStorage.setItem('client2QuickFilters', JSON.stringify(quickFilters)) 
-    } catch { }
-  }, [quickFilters])
+  const [quickFilters, setQuickFilters] = useState({
+    hasFloating: false,
+    hasCredit: false,
+    noDeposit: false
+  }) // Do not persist quick filters
   
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
@@ -162,6 +137,8 @@ const Client2Page = () => {
     'totalClients', 'assets', 'balance', 'blockedCommission', 'blockedProfit', 'commission', 'credit',
     'dailyBonusIn', 'dailyBonusOut', 'dailyCreditIn', 'dailyCreditOut', 'dailyDeposit', 'dailyDepositPercent', 'dailyPnL',
     'dailySOCompensationIn', 'dailySOCompensationOut', 'dailyWithdrawal', 'dailyWithdrawalPercent',
+    // New computed card: Daily Net D/W
+    'dailyNetDW',
     'equity', 'floating', 'liabilities',
     'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL', 'lifetimePnLPercent',
     'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeWithdrawal',
@@ -171,6 +148,10 @@ const Client2Page = () => {
     'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
     'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
     'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal',
+    // New computed cards: NET Week/Monthly Bonus
+    'netWeekBonus', 'netMonthBonus',
+    // Remaining NET cards
+    'netDailyBonus', 'netLifetimeBonus', 'netWeekDW', 'netMonthDW', 'netLifetimeDW', 'netCredit',
     'availableRebate', 'availableRebatePercent', 'totalRebate', 'totalRebatePercent',
     'netLifetimePnL', 'netLifetimePnLPercent', 'bookPnL', 'bookPnLPercent'
   ]
@@ -282,14 +263,7 @@ const Client2Page = () => {
   const columnScrollLastTriggerRef = useRef({}) // { [columnKey]: number }
   const columnLastScrollTopRef = useRef({}) // { [columnKey]: number }
 
-  // Persist card filter percentage mode
-  useEffect(() => {
-    try {
-      localStorage.setItem('client2CardFilterPercentMode', JSON.stringify(cardFilterPercentMode))
-    } catch (e) {
-      // ignore
-    }
-  }, [cardFilterPercentMode])
+  // Removed persistence of cardFilterPercentMode (no localStorage usage)
 
   // Face card visibility state
   const getInitialCardVisibility = () => {
@@ -359,6 +333,8 @@ const Client2Page = () => {
       dailySOCompensationInPercent: false,
       dailySOCompensationOutPercent: false,
       dailyWithdrawalPercent: false,
+      // New computed card visibility (off by default)
+      dailyNetDW: false,
       equityPercent: false,
       floatingPercent: false,
       liabilitiesPercent: false,
@@ -420,6 +396,16 @@ const Client2Page = () => {
       thisWeekSOCompensationInPercent: false,
       thisWeekSOCompensationOutPercent: false,
       thisWeekWithdrawalPercent: false,
+      // New computed cards visibility (off by default)
+      netWeekBonus: false,
+      netMonthBonus: false,
+      // Remaining NET cards visibility (off by default)
+      netDailyBonus: false,
+      netLifetimeBonus: false,
+      netWeekDW: false,
+      netMonthDW: false,
+      netLifetimeDW: false,
+      netCredit: false,
       // Rebate cards (all visible by default)
       availableRebate: true,
       availableRebatePercent: true,
@@ -1092,32 +1078,24 @@ const Client2Page = () => {
         console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(payload, null, 2))
       }
 
-      // Fetch data with single API call
+      // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
-        // Fetch both normal and percentage data
-        const [normalResponse, percentResponse] = await Promise.all([
-          brokerAPI.searchClients(payload),
-          brokerAPI.searchClients({ ...payload, percentage: true })
-        ])
-
-        const normalData = extractData(normalResponse)
-        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
-        const normalTotals = normalData?.totals || {}
-        const normalTotal = Number(normalData?.total || normalClients.length || 0)
-        const pages = Math.max(1, Number(normalData?.pages || 1))
-
-        setClients(normalClients)
-        setTotalClients(normalTotal)
-        setTotalPages(pages)
-        setTotals(normalTotals)
-        setError('')
-
-        // Set percentage data
+        // Fetch only percentage data
+        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
         const percentData = extractData(percentResponse)
+        const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
+        const percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const pages = Math.max(1, Number(percentData?.pages || 1))
+
+        setClients(percentClients)
+        setTotalClients(percentTotal)
+        setTotalPages(pages)
+        setTotals({}) // Clear normal totals
         setTotalsPercent(percentTotals)
+        setError('')
       } else {
-        // Normal only
+        // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload)
         const normalData = extractData(normalResponse)
         const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
@@ -2421,6 +2399,10 @@ const Client2Page = () => {
       dailySOCompensationOut: { label: 'Daily SO Compensation Out', color: 'orange', getValue: () => totals?.dailySOCompensationOut || 0 },
       dailyWithdrawal: { label: 'Daily Withdrawal', color: 'red', getValue: () => totals?.dailyWithdrawal || 0 },
       dailyWithdrawalPercent: { label: 'Daily Withdrawal %', color: 'rose', getValue: () => computedPercentageTotals?.dailyWithdrawal || 0 },
+      // Computed: Daily Net D/W = Daily Deposit - Daily Withdrawal
+      dailyNetDW: { label: 'Daily Net D/W', color: 'blue', getValue: () => (totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0), colorCheck: true },
+      // Computed: NET Daily Bonus = Daily Bonus In - Daily Bonus Out
+      netDailyBonus: { label: 'NET Daily Bonus', color: 'blue', getValue: () => (totals?.dailyBonusIn || 0) - (totals?.dailyBonusOut || 0), colorCheck: true },
 
       // E
       equity: { label: 'Equity', color: 'purple', getValue: () => totals?.equity || 0 },
@@ -2482,16 +2464,30 @@ const Client2Page = () => {
       thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
       thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
       thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 },
+      // Computed: NET Week Bonus = This Week Bonus In - This Week Bonus Out
+      netWeekBonus: { label: 'NET Week Bonus', color: 'blue', getValue: () => (totals?.thisWeekBonusIn || 0) - (totals?.thisWeekBonusOut || 0), colorCheck: true },
+      // Computed: NET Week D/W = This Week Deposit - This Week Withdrawal
+      netWeekDW: { label: 'NET Week DW', color: 'blue', getValue: () => (totals?.thisWeekDeposit || 0) - (totals?.thisWeekWithdrawal || 0), colorCheck: true },
 
       // Rebate cards
       availableRebate: { label: 'Available Rebate', color: 'teal', getValue: () => rebateTotals?.availableRebate || 0 },
       availableRebatePercent: { label: 'Available Rebate %', color: 'cyan', getValue: () => rebateTotals?.availableRebatePercent || 0 },
       totalRebate: { label: 'Total Rebate', color: 'emerald', getValue: () => rebateTotals?.totalRebate || 0 },
       totalRebatePercent: { label: 'Total Rebate %', color: 'blue', getValue: () => rebateTotals?.totalRebatePercent || 0 },
+      // Computed: NET Monthly Bonus = This Month Bonus In - This Month Bonus Out
+      netMonthBonus: { label: 'NET Monthly Bonus', color: 'blue', getValue: () => (totals?.thisMonthBonusIn || 0) - (totals?.thisMonthBonusOut || 0), colorCheck: true },
+      // Computed: NET Monthly D/W = This Month Deposit - This Month Withdrawal
+      netMonthDW: { label: 'NET Monthly DW', color: 'blue', getValue: () => (totals?.thisMonthDeposit || 0) - (totals?.thisMonthWithdrawal || 0), colorCheck: true },
+      // Computed: NET Lifetime Bonus = Lifetime Bonus In - Lifetime Bonus Out
+      netLifetimeBonus: { label: 'NET Lifetime Bonus', color: 'blue', getValue: () => (totals?.lifetimeBonusIn || 0) - (totals?.lifetimeBonusOut || 0), colorCheck: true },
+      // Computed: NET Lifetime D/W = Lifetime Deposit - Lifetime Withdrawal
+      netLifetimeDW: { label: 'NET Lifetime DW', color: 'blue', getValue: () => (totals?.lifetimeDeposit || 0) - (totals?.lifetimeWithdrawal || 0), colorCheck: true },
+      // Computed: NET Credit = Lifetime Credit In - Lifetime Credit Out (align with Clients module)
+      netCredit: { label: 'NET Credit', color: 'blue', getValue: () => (totals?.lifetimeCreditIn || 0) - (totals?.lifetimeCreditOut || 0), colorCheck: true },
 
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
-      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (computedPercentageTotals?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
+      netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totalsPercent?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
       bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
       bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0), colorCheck: true }
     }
@@ -2946,27 +2942,28 @@ const Client2Page = () => {
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-6 pb-5 border-b-2 border-blue-200 shadow-sm">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-700 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
+                className="lg:hidden text-slate-700 hover:text-slate-900 p-2.5 rounded-xl hover:bg-slate-100 border border-slate-300 transition-all shadow-sm hover:shadow"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Client 2</h1>
+                <h1 className="text-2xl font-bold text-blue-600 tracking-tight">Client 2</h1>
+                <p className="text-xs text-slate-500 mt-0.5">Advanced client management & analytics</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* Filter Button (Green/Emerald Theme) */}
-              <div className="relative" ref={filterMenuRef}>
+              <div className="relative flex items-center" ref={filterMenuRef}>
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition-colors font-medium text-sm"
+                  className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:border-emerald-500"
                   title="Filter Options"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2976,7 +2973,7 @@ const Client2Page = () => {
                     Filter
                     {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
                       <span
-                        className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none shadow-sm"
+                        className="ml-1.5 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-5 min-w-5 px-1.5 leading-none shadow-md ring-2 ring-white"
                         title="Active filters count"
                       >
                         {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
@@ -2986,11 +2983,16 @@ const Client2Page = () => {
                 </button>
 
                 {showFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border-2 border-emerald-300 z-50">
-                    <div className="p-3">
-                      <div className="text-xs font-semibold text-gray-700 mb-3">Quick Filters</div>
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-emerald-400 z-50">
+                    <div className="p-4">
+                      <div className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                        Quick Filters
+                      </div>
                       <div className="space-y-2">
-                        <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
                           <input
                             type="checkbox"
                             checked={quickFilters.hasFloating}
@@ -3002,11 +3004,11 @@ const Client2Page = () => {
                               setCurrentPage(1)
                               // useEffect will handle fetching with updated filters
                             }}
-                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
                           />
-                          <span className="text-sm text-gray-700">Has Floating</span>
+                          <span className="text-sm font-medium text-slate-700">Has Floating</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
                           <input
                             type="checkbox"
                             checked={quickFilters.hasCredit}
@@ -3018,11 +3020,11 @@ const Client2Page = () => {
                               setCurrentPage(1)
                               // useEffect will handle fetching with updated filters
                             }}
-                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
                           />
-                          <span className="text-sm text-gray-700">Has Credit</span>
+                          <span className="text-sm font-medium text-slate-700">Has Credit</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
                           <input
                             type="checkbox"
                             checked={quickFilters.noDeposit}
@@ -3034,9 +3036,9 @@ const Client2Page = () => {
                               setCurrentPage(1)
                               // useEffect will handle fetching with updated filters
                             }}
-                            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
                           />
-                          <span className="text-sm text-gray-700">No Deposit</span>
+                          <span className="text-sm font-medium text-slate-700">No Deposit</span>
                         </label>
                       </div>
 
@@ -3047,11 +3049,11 @@ const Client2Page = () => {
               </div>
 
               {/* Card Filter Button (Pink Theme) */}
-              <div className="relative" ref={cardFilterMenuRef}>
+              <div className="relative flex items-center" ref={cardFilterMenuRef}>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-lg border-2 border-pink-300 text-pink-700 hover:bg-pink-50 transition-colors font-medium text-sm"
+                    className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-pink-400 text-pink-700 hover:bg-pink-50 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:border-pink-500"
                     title="Toggle Card Visibility"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3061,7 +3063,7 @@ const Client2Page = () => {
                   </button>
 
                   {/* Percentage Toggle - Now outside the menu */}
-                  <div className="flex items-center gap-2 bg-white border-2 border-pink-300 rounded-lg px-2 h-9">
+                  <div className="flex items-center gap-2 bg-white border-2 border-pink-400 rounded-xl px-3 h-10 shadow-sm">
                     <span className="text-xs font-medium text-pink-700">%</span>
                     <button
                       onClick={() => setCardFilterPercentMode(v => !v)}
@@ -3079,7 +3081,7 @@ const Client2Page = () => {
                 </div>
 
                 {showCardFilterMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#9ca3af #f3f4f6'
                   }}>
@@ -3120,6 +3122,7 @@ const Client2Page = () => {
                               dailySOCompensationIn: 'Daily SO Compensation In',
                               dailySOCompensationOut: 'Daily SO Compensation Out',
                               dailyWithdrawal: 'Daily Withdrawal',
+                              dailyNetDW: 'Daily Net D/W',
                               equity: 'Equity',
                               floating: 'Floating',
                               liabilities: 'Liabilities',
@@ -3162,10 +3165,19 @@ const Client2Page = () => {
                               thisWeekSOCompensationIn: 'This Week SO Compensation In',
                               thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                               thisWeekWithdrawal: 'This Week Withdrawal',
+                              // NET cards
+                              netDailyBonus: 'NET Daily Bonus',
+                              netWeekBonus: 'NET Week Bonus',
+                              netWeekDW: 'NET Week DW',
                               availableRebate: 'Available Rebate',
                               availableRebatePercent: 'Available Rebate %',
                               totalRebate: 'Total Rebate',
                               totalRebatePercent: 'Total Rebate %',
+                              netMonthDW: 'NET Monthly DW',
+                              netMonthBonus: 'NET Monthly Bonus',
+                              netLifetimeBonus: 'NET Lifetime Bonus',
+                              netLifetimeDW: 'NET Lifetime DW',
+                              netCredit: 'NET Credit',
                               netLifetimePnL: 'Net Lifetime PnL',
                               netLifetimePnLPercent: 'Net Lifetime PnL %',
                               bookPnL: 'Book PnL',
@@ -3190,6 +3202,16 @@ const Client2Page = () => {
                             const baseLabels = {
                               assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', totalRebate: 'Total Rebate', netLifetimePnL: 'Net Lifetime PnL', bookPnL: 'Book PnL'
                             }
+                            // Inject new labels for net cards
+                            baseLabels.dailyNetDW = 'Daily Net D/W'
+                            baseLabels.netDailyBonus = 'NET Daily Bonus'
+                            baseLabels.netWeekBonus = 'NET Week Bonus'
+                            baseLabels.netWeekDW = 'NET Week DW'
+                            baseLabels.netMonthBonus = 'NET Monthly Bonus'
+                            baseLabels.netMonthDW = 'NET Monthly DW'
+                            baseLabels.netLifetimeBonus = 'NET Lifetime Bonus'
+                            baseLabels.netLifetimeDW = 'NET Lifetime DW'
+                            baseLabels.netCredit = 'NET Credit'
                             const baseItems = Object.entries(baseLabels).map(([key, label]) => [key, label])
                             const items = baseItems
                             const filteredItems = items.filter(([_, label]) =>
@@ -3229,6 +3251,7 @@ const Client2Page = () => {
                             dailySOCompensationIn: 'Daily SO Compensation In',
                             dailySOCompensationOut: 'Daily SO Compensation Out',
                             dailyWithdrawal: 'Daily Withdrawal',
+                            dailyNetDW: 'Daily Net D/W',
                             equity: 'Equity',
                             floating: 'Floating',
                             liabilities: 'Liabilities',
@@ -3271,8 +3294,17 @@ const Client2Page = () => {
                             thisWeekSOCompensationIn: 'This Week SO Compensation In',
                             thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                             thisWeekWithdrawal: 'This Week Withdrawal',
+                            // NET cards
+                            netDailyBonus: 'NET Daily Bonus',
+                            netWeekBonus: 'NET Week Bonus',
+                            netWeekDW: 'NET Week DW',
                             availableRebate: 'Available Rebate',
                             totalRebate: 'Total Rebate',
+                            netMonthDW: 'NET Monthly DW',
+                            netMonthBonus: 'NET Monthly Bonus',
+                            netLifetimeBonus: 'NET Lifetime Bonus',
+                            netLifetimeDW: 'NET Lifetime DW',
+                            netCredit: 'NET Credit',
                             netLifetimePnL: 'Net Lifetime PnL',
                             bookPnL: 'Book PnL'
                           }
@@ -3320,17 +3352,17 @@ const Client2Page = () => {
               {/* Cards Toggle Button */}
               <button
                 onClick={() => setShowFaceCards(v => !v)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all shadow-sm text-sm font-semibold h-9 ${showFaceCards
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
+                className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shadow-sm text-sm font-semibold h-10 ${showFaceCards
+                    ? 'bg-blue-50 border-blue-400 text-blue-700 hover:border-blue-500 hover:shadow-md'
+                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
                   }`}
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
                 <span>Cards</span>
-                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
+                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-400'
                   }`}>
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0'
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0.5'
                       }`}
                   />
                 </div>
@@ -3340,10 +3372,10 @@ const Client2Page = () => {
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className={`text-blue-600 hover:text-blue-700 p-2 rounded-lg border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`text-blue-600 hover:text-blue-700 p-2 rounded-xl border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh clients data"
               >
-                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -3352,31 +3384,31 @@ const Client2Page = () => {
               <div className="relative" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="text-green-600 hover:text-green-700 p-2 rounded-lg border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                  className="text-emerald-600 hover:text-emerald-700 p-2 rounded-xl border-2 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center"
                   title="Download as Excel (CSV)"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border-2 border-green-300 z-50 overflow-hidden">
-                    <div className="py-1">
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border-2 border-emerald-300 z-50 overflow-hidden">
+                    <div className="py-1.5">
                       <button
                         onClick={() => handleExportToExcel('table')}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Export Table View
                       </button>
                       <button
                         onClick={() => handleExportToExcel('all')}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                         Export All Data
@@ -3432,25 +3464,23 @@ const Client2Page = () => {
 
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
-                  // Colors
-                  let textColorClass = `text-${card.color}-700`
-                  let borderColorClass = `border-${card.color}-200`
-                  let labelColorClass = `text-${card.color}-600`
+                  // Clean, professional color scheme
+                  let textColorClass = 'text-slate-700'
+                  let labelColorClass = 'text-slate-500'
+                  
                   if (card.colorCheck) {
                     if (rawValue >= 0) {
-                      textColorClass = 'text-green-700'
-                      borderColorClass = 'border-green-200'
-                      labelColorClass = 'text-green-600'
+                      textColorClass = 'text-emerald-600'
+                      labelColorClass = 'text-emerald-500'
                     } else {
-                      textColorClass = 'text-red-700'
-                      borderColorClass = 'border-red-200'
-                      labelColorClass = 'text-red-600'
+                      textColorClass = 'text-rose-600'
+                      labelColorClass = 'text-rose-500'
                     }
                   }
                   return (
                     <div
                       key={cardKey}
-                      className={`bg-white rounded-lg shadow-sm border-2 ${borderColorClass} p-2 hover:shadow-md transition-all duration-200 cursor-move hover:scale-105 active:scale-95`}
+                      className={`bg-white rounded-xl shadow-md border border-slate-200 p-3 hover:shadow-lg transition-all duration-300 cursor-move hover:border-blue-300 hover:-translate-y-1`}
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragOver={handleCardDragOver}
@@ -3458,10 +3488,21 @@ const Client2Page = () => {
                       onDragEnd={handleCardDragEnd}
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
-                      <div className={`text-[10px] font-medium ${labelColorClass} mb-1`}>
+                      <div className={`text-[10px] font-semibold ${labelColorClass} mb-1.5 uppercase tracking-wide`}>
                         {displayLabel}
                       </div>
-                      <div className={`text-sm font-bold ${textColorClass}`}>
+                      <div className={`text-base font-bold ${textColorClass} flex items-center gap-1.5`}>
+                        {card.colorCheck && (
+                          rawValue >= 0 ? (
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
+                              <path d="M6 2L11 10H1z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
+                              <path d="M6 10L1 2h10z" />
+                            </svg>
+                          )
+                        )}
                         {card.format === 'integer'
                           ? formatIndianNumber(String(Math.round(rawValue || 0)))
                           : formatIndianNumber((rawValue || 0).toFixed(2))}
@@ -3477,52 +3518,52 @@ const Client2Page = () => {
           <div className="flex-1">
             {/* Pagination Controls - Top - Only show when there's data */}
             {clients && clients.length > 0 && (
-            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
+            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 rounded-xl shadow-sm border-2 border-slate-200 p-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-blue-700">Show:</span>
+                <span className="text-xs font-semibold text-slate-600">Show:</span>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
+                  className="px-2 text-xs font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm h-10"
                 >
                   <option value="50">50</option>
                   <option value="100">100</option>
                   <option value="200">200</option>
                   <option value="500">500</option>
                 </select>
-                <span className="text-xs font-semibold text-blue-700">entries</span>
+                <span className="text-xs font-semibold text-slate-600">entries</span>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {/* Page Navigation */}
                 <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === 1
-                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === 1
+                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
+                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
 
-                    <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
+                    <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-lg shadow-md">
                       Page {currentPage} of {totalPages}
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`p-1.5 rounded-md transition-all shadow-sm ${currentPage === totalPages
-                          ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                          : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === totalPages
+                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
+                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
                         }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </div>
@@ -3531,7 +3572,7 @@ const Client2Page = () => {
                 <div className="relative" ref={columnSelectorRef}>
                   <button
                     onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                    className="text-amber-700 hover:text-amber-800 px-3 py-2 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm h-10"
                     title="Show/Hide Columns"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3542,7 +3583,7 @@ const Client2Page = () => {
                 </div>
 
                 {/* Search Bar */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <div className="relative">
                     <input
                       type="text"
@@ -3550,7 +3591,7 @@ const Client2Page = () => {
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search login, name, email..."
-                      className="w-64 pl-3 pr-8 py-1.5 text-xs font-medium border-2 border-gray-300 rounded-md bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                      className="w-64 pl-3 pr-8 text-xs font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400 h-10"
                     />
                     {/* Inline Clear X Icon */}
                     {searchInput && (
@@ -3560,10 +3601,10 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         title="Clear search"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
@@ -3573,7 +3614,7 @@ const Client2Page = () => {
                   {/* Search Button */}
                   <button
                     onClick={handleSearch}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-xs font-medium"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-xs font-semibold h-10"
                     title="Search"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3671,7 +3712,7 @@ const Client2Page = () => {
 
             {/* Table - Show table with progress bar for all loading states */}
             {(clients.length > 0 || (initialLoad && loading)) && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '470px' : '650px' }}>
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '550px' : '750px' }}>
                 {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
                 <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
                   scrollbarWidth: 'thin',
@@ -3804,7 +3845,7 @@ const Client2Page = () => {
                 `}</style>
 
                   {/* Table */}
-                  <table ref={tableRef} className="divide-y divide-gray-200" style={{
+                  <table ref={tableRef} className="divide-y divide-slate-200" style={{
                     tableLayout: 'fixed',
                     width: `${totalTableWidth}px`,
                     minWidth: '100%'
@@ -3825,7 +3866,7 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-2 py-3 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
+                              className={`px-2 py-2 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
                                 } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
                               onClick={() => handleSort(col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
@@ -4059,7 +4100,7 @@ const Client2Page = () => {
                                                         <select
                                                           value={tempFilter.operator}
                                                           onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                         >
                                                           <option value="equal">Equal...</option>
                                                           <option value="not_equal">Not Equal...</option>
@@ -4088,7 +4129,7 @@ const Client2Page = () => {
                                                               if (menu) menu.classList.add('hidden')
                                                             }
                                                           }}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                         />
                                                       </div>
 
@@ -4110,7 +4151,7 @@ const Client2Page = () => {
                                                                 if (menu) menu.classList.add('hidden')
                                                               }
                                                             }}
-                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                           />
                                                         </div>
                                                       )}
@@ -4142,7 +4183,7 @@ const Client2Page = () => {
                                                     placeholder="Search values..."
                                                     value={columnValueSearch[columnKey] || ''}
                                                     onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                   />
                                                 </div>
 
@@ -4382,7 +4423,7 @@ const Client2Page = () => {
                                                                     setShowFilterDropdown(null)
                                                                   }
                                                                 }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                               >
                                                                 <option value="equal">Equal...</option>
                                                                 <option value="notEqual">Not Equal...</option>
@@ -4408,7 +4449,7 @@ const Client2Page = () => {
                                                                     setShowFilterDropdown(null)
                                                                   }
                                                                 }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                               />
                                                             </div>
                                                             <div>
@@ -4646,13 +4687,13 @@ const Client2Page = () => {
                       </thead>
                     )}
 
-                    <tbody className="bg-white divide-y divide-gray-200" key={`tbody-${animationKey}`}>
+                    <tbody className="bg-white divide-y divide-slate-100" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                         <tr
                           key={`${client.login}-${animationKey}-${idx}`}
-                          className="hover:bg-blue-50 transition-colors"
+                          className={`hover:bg-blue-50 hover:shadow-sm transition-all duration-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
                           style={{
                             opacity: 0,
                             animation: `fadeIn 0.2s ease-out forwards ${idx * 20}ms`
@@ -4667,7 +4708,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-4 py-3 text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline transition-all"
+                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -4688,7 +4729,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-4 py-3 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
+                                className={`px-2 py-1.5 text-base ${getValueColorClass(col.key, rawValue) || 'text-slate-700'}`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
@@ -4751,7 +4792,26 @@ const Client2Page = () => {
             {/* No Results */}
             {!loading && !initialLoad && clients.length === 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <p className="text-gray-600">No clients found</p>
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-600 text-lg font-semibold mb-2">No clients found</p>
+                <p className="text-gray-500 text-sm mb-4">Try adjusting your filters or search criteria</p>
+                <button
+                  onClick={() => {
+                    // Clear all filters
+                    setFilters([])
+                    setQuickFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+                    setSearchQuery('')
+                    setCurrentPage(1)
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear All Filters
+                </button>
               </div>
             )}
           </div>

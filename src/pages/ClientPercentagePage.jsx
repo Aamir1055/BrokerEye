@@ -75,6 +75,7 @@ const ClientPercentagePage = () => {
   const filterRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
   
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
@@ -176,22 +177,25 @@ const ClientPercentagePage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
+    const isTextColumn = customFilterColumn === 'is_custom'
     const filterConfig = {
       type: customFilterType,
-      value1: parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? parseFloat(customFilterValue2) : null,
+      value1: isTextColumn ? customFilterValue1 : parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? (isTextColumn ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
       operator: customFilterOperator
     }
 
+    const filterKey = isTextColumn ? `${customFilterColumn}_text` : `${customFilterColumn}_number`
     setColumnFilters(prev => ({
       ...prev,
-      [`${customFilterColumn}_number`]: filterConfig
+      [filterKey]: filterConfig
     }))
 
     // Close modal and dropdown
     setShowCustomFilterModal(false)
     setShowFilterDropdown(null)
     setShowNumberFilterDropdown(null)
+    setShowTextFilterDropdown(null)
     
     // Reset form
     setCustomFilterValue1('')
@@ -223,6 +227,32 @@ const ClientPercentagePage = () => {
         return numValue >= value1
       case 'between':
         return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
+  }
+
+  // Check if value matches text filter
+  const matchesTextFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    
+    const strValue = String(value || '').toLowerCase()
+    const { type, value1 } = filterConfig
+    const searchValue = String(value1 || '').toLowerCase()
+
+    switch (type) {
+      case 'equal':
+        return strValue === searchValue
+      case 'notEqual':
+        return strValue !== searchValue
+      case 'startsWith':
+        return strValue.startsWith(searchValue)
+      case 'endsWith':
+        return strValue.endsWith(searchValue)
+      case 'contains':
+        return strValue.includes(searchValue)
+      case 'doesNotContain':
+        return !strValue.includes(searchValue)
       default:
         return true
     }
@@ -385,9 +415,27 @@ const ClientPercentagePage = () => {
     
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
-      if (values && values.length > 0) {
+      if (columnKey.endsWith('_number')) {
+        // Apply number filter
+        const actualColumn = columnKey.replace('_number', '')
+        ibFiltered = ibFiltered.filter(client => matchesNumberFilter(client[actualColumn], values))
+      } else if (columnKey.endsWith('_text')) {
+        // Apply text filter
+        const actualColumn = columnKey.replace('_text', '')
+        ibFiltered = ibFiltered.filter(client => matchesTextFilter(client[actualColumn], values))
+      } else if (values && values.length > 0) {
+        // Apply checkbox filter
         ibFiltered = ibFiltered.filter(client => {
           const clientValue = client[columnKey]
+          // Special handling for is_custom field - compare boolean/number values
+          if (columnKey === 'is_custom') {
+            // Convert clientValue to comparable format
+            const normalizedClientValue = clientValue === true || clientValue === 1 || clientValue === '1'
+            return values.some(filterValue => {
+              const normalizedFilterValue = filterValue === true || filterValue === 1 || filterValue === '1'
+              return normalizedClientValue === normalizedFilterValue
+            })
+          }
           return values.includes(clientValue)
         })
       }
@@ -597,123 +645,6 @@ const ClientPercentagePage = () => {
                   </button>
                 </div>
 
-                {/* Number Filters */}
-                <div className="border-b border-gray-200">
-                  <div className="px-1.5 py-1 relative group">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
-                      }}
-                      className="w-full flex items-center justify-between px-1.5 py-1 text-[9px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                    >
-                      <span>Number Filters</span>
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                    
-                    {/* Number Filter Dropdown - Opens to the right */}
-                    {showNumberFilterDropdown === columnKey && (
-                      <div 
-                        className="absolute left-full top-0 ml-1 w-36 bg-white border border-gray-300 rounded shadow-lg z-50"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="text-[9px]">
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1 py-0.5 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('notEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Not Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('between')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Between...
-                          </div>
-                          <div 
-                            className="hover:bg-gray-50 px-1.5 py-1 cursor-pointer text-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Custom Filter...
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Search Box */}
                 <div className="p-1 border-b border-gray-200">
                   <div className="relative">
@@ -769,7 +700,7 @@ const ClientPercentagePage = () => {
                       getUniqueColumnValues(columnKey).map(value => (
                         <label 
                           key={value} 
-                          className="flex items-center gap-1 hover:bg-blue-50 px-1 py-1 rounded cursor-pointer transition-colors"
+                          className="flex items-center gap-1 hover:bg-blue-50 px-1 py-1 rounded cursor-pointer transition-colors bg-white"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
@@ -782,8 +713,8 @@ const ClientPercentagePage = () => {
                             onClick={(e) => e.stopPropagation()}
                             className="w-2.5 h-2.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-[9px] text-gray-700 truncate">
-                            {value}
+                          <span className="text-[9px] text-gray-700 font-medium truncate">
+                            {value === true || value === 1 ? 'Custom' : value === false || value === 0 ? 'Default' : value}
                           </span>
                         </label>
                       ))
@@ -1127,6 +1058,32 @@ const ClientPercentagePage = () => {
                         Loading client percentages...
                       </td>
                     </tr>
+                  ) : displayedClients.length === 0 ? (
+                    <tr>
+                      <td colSpan={Object.values(visibleColumns).filter(v => v).length} className="px-6 py-8 text-center">
+                        <div className="flex flex-col items-center gap-4">
+                          <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div>
+                            <p className="text-gray-600 text-lg font-semibold mb-2">No clients found</p>
+                            <p className="text-gray-500 text-sm mb-4">Try adjusting your filters</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setColumnFilters({})
+                              setFilterSearchQuery({})
+                            }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Clear All Filters
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ) : (
                   displayedClients.map((client, index) => (
                     <tr key={client.client_login} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
@@ -1315,26 +1272,41 @@ const ClientPercentagePage = () => {
                 <select
                   value={customFilterType}
                   onChange={(e) => setCustomFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
                 >
-                  <option value="equal">Equal</option>
-                  <option value="notEqual">Not Equal</option>
-                  <option value="lessThan">Less Than</option>
-                  <option value="lessThanOrEqual">Less Than Or Equal</option>
-                  <option value="greaterThan">Greater Than</option>
-                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
-                  <option value="between">Between</option>
+                  {customFilterColumn === 'is_custom' ? (
+                    // Text filter options
+                    <>
+                      <option value="equal">Equal</option>
+                      <option value="notEqual">Not Equal</option>
+                      <option value="startsWith">Starts With</option>
+                      <option value="endsWith">Ends With</option>
+                      <option value="contains">Contains</option>
+                      <option value="doesNotContain">Does Not Contain</option>
+                    </>
+                  ) : (
+                    // Number filter options
+                    <>
+                      <option value="equal">Equal</option>
+                      <option value="notEqual">Not Equal</option>
+                      <option value="lessThan">Less Than</option>
+                      <option value="lessThanOrEqual">Less Than Or Equal</option>
+                      <option value="greaterThan">Greater Than</option>
+                      <option value="greaterThanOrEqual">Greater Than Or Equal</option>
+                      <option value="between">Between</option>
+                    </>
+                  )}
                 </select>
               </div>
 
               {/* Value Input */}
               <div>
                 <input
-                  type="number"
+                  type={customFilterColumn === 'is_custom' ? 'text' : 'number'}
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
                   placeholder="Enter the value"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
                 />
               </div>
 

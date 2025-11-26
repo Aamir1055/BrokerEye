@@ -1,0 +1,385 @@
+import React from 'react';
+
+const CustomizeViewModal = ({ 
+  isOpen, 
+  onClose, 
+  onFilterClick,
+  onIBFilterClick,
+  onGroupsClick,
+  onReset,
+  onApply 
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop overlay */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.35)',
+          zIndex: 9998,
+        }}
+        onClick={onClose}
+      />
+
+      {/* Modal content */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '412px',
+          height: '360px',
+          background: '#FFFFFF',
+          borderRadius: '20px 20px 0 0',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Top indicator line */}
+        <div
+          style={{
+            width: '47px',
+            height: '2px',
+            background: 'rgba(71, 84, 103, 0.55)',
+            borderRadius: '2px',
+            margin: '10px auto',
+          }}
+        />
+
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 20px',
+            marginBottom: '10px',
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '5px',
+            }}
+          >
+            <svg
+              width="8"
+              height="14"
+              viewBox="0 0 8 14"
+              fill="none"
+              style={{ transform: 'rotate(180deg)' }}
+            >
+              <path
+                d="M1 1L7 7L1 13"
+                stroke="#4B4B4B"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <h2
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 600,
+              fontSize: '18px',
+              lineHeight: '24px',
+              color: '#4B4B4B',
+              letterSpacing: '-0.0041em',
+              margin: 0,
+            }}
+          >
+            Customize view
+          </h2>
+
+          <div style={{ width: '18px' }} /> {/* Spacer for centering */}
+        </div>
+
+        {/* Divider line */}
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            background: '#F2F2F7',
+            marginBottom: '20px',
+          }}
+        />
+
+        {/* Menu options */}
+        <div style={{ flex: 1, padding: '0 20px' }}>
+          {/* Filter option */}
+          <button
+            onClick={onFilterClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'rgba(230, 238, 248, 0.44)',
+                borderRadius: '8px',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M2 3.75H16M4.5 9H13.5M7.5 14.25H10.5"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '20px',
+                color: '#1B2D45',
+                textAlign: 'left',
+              }}
+            >
+              Filter
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div
+            style={{
+              width: '100%',
+              height: '1px',
+              background: '#F2F2F7',
+              margin: '12px 0',
+            }}
+          />
+
+          {/* IB Filter option */}
+          <button
+            onClick={onIBFilterClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'rgba(230, 238, 248, 0.44)',
+                borderRadius: '8px',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M9 9.75C11.0711 9.75 12.75 8.07107 12.75 6C12.75 3.92893 11.0711 2.25 9 2.25C6.92893 2.25 5.25 3.92893 5.25 6C5.25 8.07107 6.92893 9.75 9 9.75Z"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M3 15.75C3 12.8505 5.68629 10.5 9 10.5C12.3137 10.5 15 12.8505 15 15.75"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '20px',
+                color: '#1B2D45',
+                textAlign: 'left',
+              }}
+            >
+              IB Filter
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div
+            style={{
+              width: '100%',
+              height: '1px',
+              background: '#F2F2F7',
+              margin: '12px 0',
+            }}
+          />
+
+          {/* Groups option */}
+          <button
+            onClick={onGroupsClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'rgba(230, 238, 248, 0.44)',
+                borderRadius: '8px',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M6 7.5C7.65685 7.5 9 6.15685 9 4.5C9 2.84315 7.65685 1.5 6 1.5C4.34315 1.5 3 2.84315 3 4.5C3 6.15685 4.34315 7.5 6 7.5Z"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M12 7.5C13.6569 7.5 15 6.15685 15 4.5C15 2.84315 13.6569 1.5 12 1.5C10.3431 1.5 9 2.84315 9 4.5C9 6.15685 10.3431 7.5 12 7.5Z"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M6 16.5C7.65685 16.5 9 15.1569 9 13.5C9 11.8431 7.65685 10.5 6 10.5C4.34315 10.5 3 11.8431 3 13.5C3 15.1569 4.34315 16.5 6 16.5Z"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M12 16.5C13.6569 16.5 15 15.1569 15 13.5C15 11.8431 13.6569 10.5 12 10.5C10.3431 10.5 9 11.8431 9 13.5C9 15.1569 10.3431 16.5 12 16.5Z"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '20px',
+                color: '#1B2D45',
+                textAlign: 'left',
+              }}
+            >
+              Groups
+            </span>
+          </button>
+        </div>
+
+        {/* Bottom divider */}
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            background: '#F2F2F7',
+            margin: '20px 0',
+          }}
+        />
+
+        {/* Action buttons */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '16px',
+            padding: '0 20px 20px',
+          }}
+        >
+          {/* Reset button */}
+          <button
+            onClick={onReset}
+            style={{
+              flex: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 16px',
+              background: '#F4F8FC',
+              border: '1px solid #F2F2F7',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
+              cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#2563EB',
+            }}
+          >
+            Reset
+          </button>
+
+          {/* Apply button */}
+          <button
+            onClick={onApply}
+            style={{
+              flex: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 27px',
+              background: '#FFFFFF',
+              border: '1px solid #F2F2F7',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
+              cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#4B4B4B',
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default CustomizeViewModal;
