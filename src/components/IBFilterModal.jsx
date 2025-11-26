@@ -18,14 +18,19 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
     setError(null)
     try {
       const response = await api.getIBEmails()
-      if (response.status === 'success' && response.data?.emails) {
+      // Handle different response structures
+      const emailsData = response.data?.data?.emails || response.data?.emails || []
+      if (emailsData && emailsData.length > 0) {
         // Sort by percentage in ascending order
-        const sortedEmails = response.data.emails.sort((a, b) => {
+        const sortedEmails = emailsData.sort((a, b) => {
           const percentA = parseFloat(a.percentage || 0)
           const percentB = parseFloat(b.percentage || 0)
           return percentA - percentB
         })
         setIbEmails(sortedEmails)
+      } else {
+        // If no emails, set empty array (not an error)
+        setIbEmails([])
       }
     } catch (err) {
       console.error('Error fetching IB emails:', err)
@@ -52,16 +57,17 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
       // Fetch MT5 accounts for the selected IB
       const response = await api.getIBMT5Accounts(ib.email)
       
-      if (response.status === 'success' && response.data?.mt5_accounts) {
-        // Pass both IB info and MT5 accounts to parent
-        onSelectIB({
-          email: ib.email,
-          name: ib.name,
-          percentage: ib.percentage,
-          mt5Accounts: response.data.mt5_accounts
-        })
-        onClose()
-      }
+      // Handle different response structures
+      const mt5Data = response.data?.data?.mt5_accounts || response.data?.mt5_accounts || []
+      
+      // Pass both IB info and MT5 accounts to parent
+      onSelectIB({
+        email: ib.email,
+        name: ib.name,
+        percentage: ib.percentage,
+        mt5Accounts: mt5Data
+      })
+      onClose()
     } catch (err) {
       console.error('Error fetching MT5 accounts:', err)
       setError('Failed to fetch MT5 accounts. Please try again.')

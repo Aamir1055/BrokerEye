@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import CustomizeViewModal from './CustomizeViewModal'
 import IBFilterModal from './IBFilterModal'
 import LoginGroupsModal from './LoginGroupsModal'
@@ -110,6 +112,8 @@ const MetricsView = ({ metrics, onBack }) => {
 }
 
 const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
+  const { groups, createGroup, updateGroup, deleteGroup, setShowGroupModal, showGroupModal, setEditingGroup, editingGroup } = useGroups()
+  const { selectedIB, setSelectedIB, ibMT5Accounts } = useIB()
   const [searchQuery, setSearchQuery] = useState('')
   const [showCustomizeModal, setShowCustomizeModal] = useState(false)
   const [showIBFilterModal, setShowIBFilterModal] = useState(false)
@@ -139,11 +143,36 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   }, [])
 
   // Filter clients
-  const filteredClients = (clients || []).filter(client => 
-    client.login?.toString().includes(searchQuery) ||
-    client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  let filteredClients = (clients || []).filter(client => {
+    // Search filter
+    if (searchQuery && !(
+      client.login?.toString().includes(searchQuery) ||
+      client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    )) {
+      return false
+    }
+    
+    // Advanced filters
+    if (filters.hasFloating && (!client.floating_profit || parseFloat(client.floating_profit) === 0)) {
+      return false
+    }
+    if (filters.hasCredit && (!client.credit || parseFloat(client.credit) === 0)) {
+      return false
+    }
+    if (filters.noDeposit && client.deposit && parseFloat(client.deposit) > 0) {
+      return false
+    }
+    
+    return true
+  })
+  
+  // Apply IB filter if selected
+  if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+    filteredClients = filteredClients.filter(client => 
+      ibMT5Accounts.includes(client.login?.toString())
+    )
+  }
 
   // Calculate totals
   const totals = {
@@ -928,7 +957,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         initialFilters={filters}
         onApply={(newFilters) => {
           setFilters(newFilters)
-          console.log('Applied filters:', newFilters)
+          setShowFilterModal(false)
         }}
       />
 
@@ -954,7 +983,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         visibleColumns={visibleColumns}
         onApply={(columns) => {
           setVisibleColumns(columns)
-          console.log('Visible columns:', columns)
+          setShowColumnsModal(false)
         }}
       />
 
@@ -962,22 +991,34 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         isOpen={showIBFilterModal}
         onClose={() => setShowIBFilterModal(false)}
         onSelectIB={(ib) => {
-          console.log('Selected IB:', ib)
+          setSelectedIB(ib)
+          setShowIBFilterModal(false)
         }}
       />
 
       <LoginGroupsModal
         isOpen={showGroupsModal}
         onClose={() => setShowGroupsModal(false)}
-        groups={[]}
+        groups={groups || []}
         onCreateGroup={() => {
-          console.log('Create new group')
+          setShowGroupsModal(false)
+          setShowGroupModal?.(true)
+          setEditingGroup?.(null)
         }}
         onEditGroup={(group) => {
-          console.log('Edit group:', group)
+          setShowGroupsModal(false)
+          setShowGroupModal?.(true)
+          setEditingGroup?.(group)
         }}
-        onDeleteGroup={(group) => {
-          console.log('Delete group:', group)
+        onDeleteGroup={async (group) => {
+          if (window.confirm(`Are you sure you want to delete group \"${group.name}\"?`)) {
+            try {
+              await deleteGroup?.(group.id)
+            } catch (error) {
+              console.error('Error deleting group:', error)
+              alert('Failed to delete group')
+            }
+          }
         }}
       />
 
