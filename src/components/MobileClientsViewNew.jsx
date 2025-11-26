@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import CustomizeViewModal from './CustomizeViewModal'
 import IBFilterModal from './IBFilterModal'
 import LoginGroupsModal from './LoginGroupsModal'
+import FilterModal from './FilterModal'
+import ShowHideColumnsModal from './ShowHideColumnsModal'
 
 // Simple slide-in side drawer matching Figma nav
 const SideDrawer = ({ open, onClose, onNavigate, active }) => {
@@ -112,10 +114,14 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   const [showCustomizeModal, setShowCustomizeModal] = useState(false)
   const [showIBFilterModal, setShowIBFilterModal] = useState(false)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [showColumnsModal, setShowColumnsModal] = useState(false)
   const [currentTime, setCurrentTime] = useState('5:08')
   const [currentPage, setCurrentPage] = useState(1)
   const [showDrawer, setShowDrawer] = useState(false)
   const [activeNav, setActiveNav] = useState('clients')
+  const [filters, setFilters] = useState({})
+  const [visibleColumns, setVisibleColumns] = useState(['login', 'percentage', 'floating', 'volume', 'balance', 'credit', 'equity', 'name'])
   const [showMetrics, setShowMetrics] = useState(false)
   const itemsPerPage = 10
 
@@ -329,16 +335,23 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         }}>View All</button>
         
         <div style={{ display: 'flex', gap: '8px' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          {/* Download icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{cursor: 'pointer'}}>
             <path d="M9 18L15 12L9 6" stroke="#999999" strokeWidth="1.5"/>
           </svg>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          {/* Percentage icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{cursor: 'pointer'}}>
             <path d="M12 5V19M5 12H19" stroke="#999999" strokeWidth="1.5"/>
           </svg>
+          {/* Filter/Customize icon */}
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" onClick={() => setShowCustomizeModal(true)} style={{cursor: 'pointer'}}>
             <rect x="4" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
             <rect x="11" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
             <rect x="18" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
+          </svg>
+          {/* Show/Hide Columns icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" onClick={() => setShowColumnsModal(true)} style={{cursor: 'pointer'}}>
+            <path d="M4 6H20M4 12H20M4 18H20" stroke="#999999" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
       </div>
@@ -890,7 +903,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         onClose={() => setShowCustomizeModal(false)}
         onFilterClick={() => {
           setShowCustomizeModal(false)
-          console.log('Filter clicked')
+          setShowFilterModal(true)
         }}
         onIBFilterClick={() => {
           setShowCustomizeModal(false)
@@ -902,18 +915,54 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         }}
         onReset={() => {
           setSearchQuery('')
+          setFilters({})
         }}
         onApply={() => {
           setShowCustomizeModal(false)
         }}
       />
 
+      <FilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        initialFilters={filters}
+        onApply={(newFilters) => {
+          setFilters(newFilters)
+          console.log('Applied filters:', newFilters)
+        }}
+      />
+
+      <ShowHideColumnsModal
+        isOpen={showColumnsModal}
+        onClose={() => setShowColumnsModal(false)}
+        columns={[
+          { id: 'login', label: 'Login' },
+          { id: 'percentage', label: 'Percentage' },
+          { id: 'floating', label: 'Floating Profit' },
+          { id: 'volume', label: 'Volume' },
+          { id: 'balance', label: 'Balance' },
+          { id: 'credit', label: 'Credit' },
+          { id: 'equity', label: 'Equity' },
+          { id: 'name', label: 'Name' },
+          { id: 'firstName', label: 'First Name' },
+          { id: 'middleName', label: 'Middle Name' },
+          { id: 'email', label: 'E Mail' },
+          { id: 'phoneNo', label: 'Phone No' },
+          { id: 'city', label: 'City' },
+          { id: 'state', label: 'State' },
+        ]}
+        visibleColumns={visibleColumns}
+        onApply={(columns) => {
+          setVisibleColumns(columns)
+          console.log('Visible columns:', columns)
+        }}
+      />
+
       <IBFilterModal
         isOpen={showIBFilterModal}
         onClose={() => setShowIBFilterModal(false)}
-        ibList={[]}
-        onApply={(selectedIBs) => {
-          console.log('Selected IBs:', selectedIBs)
+        onSelectIB={(ib) => {
+          console.log('Selected IB:', ib)
         }}
       />
 
@@ -922,7 +971,13 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         onClose={() => setShowGroupsModal(false)}
         groups={[]}
         onCreateGroup={() => {
-          console.log('Create group clicked')
+          console.log('Create new group')
+        }}
+        onEditGroup={(group) => {
+          console.log('Edit group:', group)
+        }}
+        onDeleteGroup={(group) => {
+          console.log('Delete group:', group)
         }}
       />
 

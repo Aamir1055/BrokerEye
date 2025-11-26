@@ -4,7 +4,9 @@ const LoginGroupsModal = ({
   isOpen, 
   onClose, 
   groups = [],
-  onCreateGroup 
+  onCreateGroup,
+  onEditGroup,
+  onDeleteGroup
 }) => {
   if (!isOpen) return null;
 
@@ -26,76 +28,95 @@ const LoginGroupsModal = ({
         onClick={onClose}
       />
 
-      {/* Modal content */}
+      {/* Modal content - Bottom Sheet */}
       <div
         style={{
           position: 'fixed',
-          top: '50%',
+          bottom: 0,
           left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '90%',
-          maxWidth: '380px',
-          minHeight: '250px',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '412px',
+          height: 'auto',
+          maxHeight: '80vh',
           background: '#FFFFFF',
-          borderRadius: '20px',
+          borderRadius: '20px 20px 0 0',
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
-          padding: '24px 20px',
         }}
       >
-        {/* Header with close button */}
+        {/* Top indicator line */}
+        <div
+          style={{
+            width: '47px',
+            height: '2px',
+            background: 'rgba(71, 84, 103, 0.55)',
+            borderRadius: '2px',
+            margin: '10px auto',
+          }}
+        />
+
+        {/* Header */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '24px',
+            padding: '10px 20px',
+            marginBottom: '10px',
           }}
         >
-          <h2
-            style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 600,
-              fontSize: '20px',
-              lineHeight: '28px',
-              color: '#1B2D45',
-              margin: 0,
-            }}
-          >
-            Login Groups
-          </h2>
-
           <button
             onClick={onClose}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              padding: '5px',
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg
+              width="8"
+              height="14"
+              viewBox="0 0 8 14"
+              fill="none"
+              style={{ transform: 'rotate(180deg)' }}
+            >
               <path
-                d="M15 5L5 15M5 5L15 15"
-                stroke="#2563EB"
+                d="M1 1L7 7L1 13"
+                stroke="#4B4B4B"
                 strokeWidth="2"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
             </svg>
           </button>
+
+          <h2
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 600,
+              fontSize: '18px',
+              lineHeight: '24px',
+              color: '#4B4B4B',
+              letterSpacing: '-0.0041em',
+              margin: 0,
+            }}
+          >
+            Login Groups
+          </h2>
+
+          <div style={{ width: '18px' }} /> {/* Spacer for centering */}
         </div>
 
-        {/* Divider */}
+        {/* Divider line */}
         <div
           style={{
             width: '100%',
             height: '1px',
             background: '#F2F2F7',
-            marginBottom: '24px',
+            marginBottom: '20px',
           }}
         />
 
@@ -103,43 +124,125 @@ const LoginGroupsModal = ({
         <div
           style={{
             flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px 0',
+            overflowY: 'auto',
+            maxHeight: '500px',
           }}
         >
           {hasGroups ? (
-            // Show groups list
-            <div style={{ width: '100%' }}>
+            // Show groups list with edit/delete icons
+            <div style={{ width: '100%', padding: '0 20px' }}>
               {groups.map((group, index) => (
                 <div
-                  key={index}
+                  key={group.id || index}
                   style={{
-                    padding: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px 0',
                     borderBottom: index < groups.length - 1 ? '1px solid #F2F2F7' : 'none',
                   }}
                 >
-                  <div
-                    style={{
-                      fontFamily: 'Outfit, sans-serif',
-                      fontSize: '16px',
-                      color: '#1B2D45',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {group.name}
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '16px',
+                        lineHeight: '20px',
+                        color: '#1B2D45',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {group.name}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '14px',
+                        lineHeight: '18px',
+                        color: '#999999',
+                        marginTop: '4px',
+                      }}
+                    >
+                      {group.loginCount || 0} logins
+                    </div>
                   </div>
+
+                  {/* Action buttons */}
                   <div
                     style={{
-                      fontFamily: 'Outfit, sans-serif',
-                      fontSize: '14px',
-                      color: '#999999',
-                      marginTop: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
                     }}
                   >
-                    {group.loginCount || 0} logins
+                    {/* Edit button */}
+                    <button
+                      onClick={() => onEditGroup && onEditGroup(group)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M14.166 2.5009C14.3849 2.28203 14.6447 2.10842 14.9307 1.98996C15.2167 1.87151 15.5232 1.81055 15.8327 1.81055C16.1422 1.81055 16.4487 1.87151 16.7347 1.98996C17.0206 2.10842 17.2805 2.28203 17.4993 2.5009C17.7182 2.71977 17.8918 2.97961 18.0103 3.26558C18.1287 3.55154 18.1897 3.85804 18.1897 4.16757C18.1897 4.4771 18.1287 4.7836 18.0103 5.06956C17.8918 5.35553 17.7182 5.61537 17.4993 5.83424L6.24935 17.0842L1.66602 18.3342L2.91602 13.7509L14.166 2.5009Z"
+                          stroke="#999999"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Delete button */}
+                    <button
+                      onClick={() => onDeleteGroup && onDeleteGroup(group)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M2.5 5H4.16667H17.5"
+                          stroke="#FF383C"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M6.66602 5.00008V3.33341C6.66602 2.89139 6.84161 2.46746 7.15417 2.1549C7.46673 1.84234 7.89065 1.66675 8.33268 1.66675H11.666C12.108 1.66675 12.532 1.84234 12.8445 2.1549C13.1571 2.46746 13.3327 2.89139 13.3327 3.33341V5.00008M15.8327 5.00008V16.6667C15.8327 17.1088 15.6571 17.5327 15.3445 17.8453C15.032 18.1578 14.608 18.3334 14.166 18.3334H5.83268C5.39065 18.3334 4.96673 18.1578 4.65417 17.8453C4.34161 17.5327 4.16602 17.1088 4.16602 16.6667V5.00008H15.8327Z"
+                          stroke="#FF383C"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M8.33398 9.16675V14.1667"
+                          stroke="#FF383C"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M11.666 9.16675V14.1667"
+                          stroke="#FF383C"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -149,13 +252,14 @@ const LoginGroupsModal = ({
             <div
               style={{
                 textAlign: 'center',
-                padding: '20px',
+                padding: '40px 20px',
               }}
             >
               <p
                 style={{
                   fontFamily: 'Outfit, sans-serif',
                   fontSize: '16px',
+                  lineHeight: '20px',
                   color: '#999999',
                   margin: '0 0 32px 0',
                 }}
@@ -166,11 +270,11 @@ const LoginGroupsModal = ({
               {/* Create Now button */}
               <button
                 onClick={() => {
-                  onCreateGroup();
+                  onCreateGroup && onCreateGroup();
                   onClose();
                 }}
                 style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
@@ -181,9 +285,9 @@ const LoginGroupsModal = ({
                   cursor: 'pointer',
                   fontFamily: 'Outfit, sans-serif',
                   fontSize: '16px',
+                  lineHeight: '20px',
                   color: '#1B2D45',
                   fontWeight: 500,
-                  margin: '0 auto',
                   boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
                 }}
               >
@@ -200,6 +304,9 @@ const LoginGroupsModal = ({
             </div>
           )}
         </div>
+
+        {/* Bottom padding */}
+        <div style={{ height: '20px' }} />
       </div>
     </>
   );

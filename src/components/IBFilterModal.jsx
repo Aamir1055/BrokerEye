@@ -73,114 +73,297 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+    <>
+      {/* Backdrop overlay */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.35)',
+          zIndex: 9998,
+        }}
+        onClick={onClose}
+      />
+
+      {/* Modal content */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '412px',
+          height: 'auto',
+          maxHeight: '80vh',
+          background: '#FFFFFF',
+          borderRadius: '20px 20px 0 0',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Top indicator line */}
+        <div
+          style={{
+            width: '47px',
+            height: '2px',
+            background: 'rgba(71, 84, 103, 0.55)',
+            borderRadius: '2px',
+            margin: '10px auto',
+          }}
+        />
+
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">Select IB Filter</h2>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 20px',
+            marginBottom: '10px',
+          }}
+        >
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '5px',
+            }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              width="8"
+              height="14"
+              viewBox="0 0 8 14"
+              fill="none"
+              style={{ transform: 'rotate(180deg)' }}
+            >
+              <path
+                d="M1 1L7 7L1 13"
+                stroke="#4B4B4B"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
+
+          <h2
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 600,
+              fontSize: '18px',
+              lineHeight: '24px',
+              color: '#4B4B4B',
+              letterSpacing: '-0.0041em',
+              margin: 0,
+            }}
+          >
+            IB Filter
+          </h2>
+
+          <div style={{ width: '18px' }} /> {/* Spacer for centering */}
         </div>
 
-        {/* Search Bar */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="relative">
+        {/* Divider line */}
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            background: '#F2F2F7',
+            marginBottom: '20px',
+          }}
+        />
+
+        {/* Search bar */}
+        <div style={{ padding: '0 20px', marginBottom: '20px' }}>
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+            }}
+          >
             <input
               type="text"
-              placeholder="Search by email or name..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={{
+                width: '100%',
+                padding: '12px 16px 12px 45px',
+                background: '#FFFFFF',
+                border: '1px solid #E6EEF8',
+                borderRadius: '12px',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                color: '#1B2D45',
+                outline: 'none',
+              }}
             />
             <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              style={{
+                position: 'absolute',
+                left: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
               fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <circle cx="8" cy="8" r="6.5" stroke="#999999" strokeWidth="1.5"/>
+              <path d="M13 13L16 16" stroke="#999999" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        {/* IB Emails list */}
+        <div 
+          style={{ 
+            flex: 1, 
+            padding: '0 20px', 
+            overflowY: 'auto',
+            marginBottom: '20px',
+            maxHeight: '500px'
+          }}
+        >
           {loading && !ibEmails.length ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px 0',
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '3px solid #F2F2F7',
+                  borderTop: '3px solid #2563EB',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }}
+              />
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-500 mb-4">{error}</p>
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '14px',
+                  color: '#FF383C',
+                  marginBottom: '16px',
+                }}
+              >
+                {error}
+              </p>
               <button
                 onClick={fetchIBEmails}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                style={{
+                  padding: '10px 20px',
+                  background: '#2563EB',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
               >
                 Retry
               </button>
             </div>
           ) : filteredEmails.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '14px',
+                  color: '#999999',
+                }}
+              >
                 {searchQuery ? 'No IB emails match your search' : 'No IB emails found'}
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {filteredEmails.map((ib) => (
-                <button
-                  key={ib.id}
-                  onClick={() => handleSelectIB(ib)}
-                  disabled={loading}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            filteredEmails.map((ib) => (
+              <button
+                key={ib.id}
+                onClick={() => handleSelectIB(ib)}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 0',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid #F2F2F7',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'Outfit, sans-serif',
+                    fontWeight: 400,
+                    fontSize: '16px',
+                    lineHeight: '20px',
+                    color: '#2563EB',
+                    textAlign: 'left',
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {ib.email}
-                        <span className="ml-2 text-xs font-semibold text-blue-600">
-                          ({ib.percentage}%)
-                        </span>
-                      </p>
-                      {ib.name && (
-                        <p className="text-xs text-gray-500 truncate mt-1">{ib.name}</p>
-                      )}
-                    </div>
-                    <div className="ml-4 text-right">
-                      <p className="text-xs text-gray-500">Total Commission</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        ${parseFloat(ib.total_commission || 0).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  {ib.email}
+                </span>
+                <svg
+                  width="8"
+                  height="14"
+                  viewBox="0 0 8 14"
+                  fill="none"
+                >
+                  <path
+                    d="M1 1L7 7L1 13"
+                    stroke="#2563EB"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            ))
           )}
         </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>
-              {filteredEmails.length} IB{filteredEmails.length !== 1 ? 's' : ''} found
-            </span>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+
+      {/* Add CSS keyframes for loading spinner */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </>
   )
 }
 
