@@ -19,6 +19,7 @@ export const useData = () => {
     const noop = async () => {}
     return {
       clients: [],
+      rawClients: [], // Raw clients without USC normalization
       positions: [],
       orders: [],
       deals: [],
@@ -83,6 +84,7 @@ export const DataProvider = ({ children }) => {
   const lowPriority = (cb) => startTransition(cb)
   const { isAuthenticated } = useAuth()
   const [clients, setClients] = useState([])
+  const [rawClients, setRawClients] = useState([]) // Raw clients without USC normalization (for Clients module)
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
   const [deals, setDeals] = useState([])
@@ -238,7 +240,13 @@ export const DataProvider = ({ children }) => {
   }, [])
 
   // Helper function to normalize USC currency values - WebSocket sends USC * 100
-  const normalizeUSCValues = (client) => {
+  // Note: Can be disabled by passing skipNormalization flag for specific modules
+  const normalizeUSCValues = (client, skipNormalization = false) => {
+    // Skip normalization if requested (for Clients module)
+    if (skipNormalization) {
+      return client
+    }
+    
     // WebSocket sends USC values multiplied by 100, need to divide them back
     if (client && client.currency === 'USC') {
       // Get list of percentage fields that were freshly recalculated (already in 0-100 scale)
@@ -503,17 +511,22 @@ export const DataProvider = ({ children }) => {
       }
 
       // Normalize
-      const normalized = validRawData.map(normalizeUSCValues)
+      const normalized = validRawData.map(c => normalizeUSCValues(c, false)) // Apply normalization for positions
+      const unnormalized = validRawData.map(c => normalizeUSCValues(c, true))     // Skip normalization for clients
 
       // Deduplicate by login (last occurrence wins)
       const map = new Map()
+      const rawMap = new Map()
       normalized.forEach(c => { if (c && c.login) map.set(c.login, c) })
+      unnormalized.forEach(c => { if (c && c.login) rawMap.set(c.login, c) })
       const data = Array.from(map.values())
+      const rawDataDeduped = Array.from(rawMap.values())
       if (normalized.length !== data.length) {
         console.warn(`[DataContext] ⚠️ Deduplicated ${normalized.length - data.length} duplicate clients (${normalized.length} → ${data.length})`)
       }
 
       setClients(data)
+      setRawClients(rawDataDeduped) // Store raw clients without USC normalization
       setAccounts(data)
       hasRestDataRef.current = true  // Mark REST data as loaded
 
@@ -2008,6 +2021,7 @@ export const DataProvider = ({ children }) => {
   const value = useMemo(() => ({
     // Data
     clients,
+    rawClients, // Raw clients without USC normalization (for Clients module)
     positions,
     orders,
     deals,
@@ -2044,7 +2058,7 @@ export const DataProvider = ({ children }) => {
     verifyAgainstAPI,
     statsDrift
   }), [
-    clients, positions, orders, deals, accounts,
+    clients, rawClients, positions, orders, deals, accounts,
     clientStats,
     latestServerTimestamp, latestMeasuredLagMs, lastWsReceiveAt,
     loading, connectionState,

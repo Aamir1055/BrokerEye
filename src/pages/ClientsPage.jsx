@@ -14,9 +14,12 @@ import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
-  const { clients: cachedClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
+  const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
+  
+  // Use rawClients (without USC normalization) for Clients module
+  const displayClients = rawClients.length > 0 ? rawClients : cachedClients
   // Alias cached data to expected local names to avoid undefined references
-  const clients = cachedClients
+  const clients = displayClients
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
