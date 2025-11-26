@@ -198,30 +198,60 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         top: '20px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        zIndex: 10
       }}>
         <span style={{
           fontFamily: 'Outfit',
           fontWeight: 600,
           fontSize: '17px',
+          lineHeight: '22px',
           color: '#4B4B4B'
         }}>{currentTime}</span>
         
         <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
-          <svg width="20" height="13" viewBox="0 0 20 13" fill="none">
-            <rect x="0" y="2" width="4" height="9" rx="1" fill="#4B4B4B"/>
-            <rect x="6" y="0" width="4" height="11" rx="1" fill="#4B4B4B"/>
-            <rect x="12" y="3" width="4" height="8" rx="1" fill="#4B4B4B"/>
-            <rect x="18" y="5" width="2" height="6" rx="1" fill="#4B4B4B"/>
+          {/* Cellular Connection */}
+          <svg width="19.2" height="12.23" viewBox="0 0 20 13" fill="none">
+            <rect x="0" y="5" width="3" height="8" rx="1" fill="#4B4B4B"/>
+            <rect x="5" y="3" width="3" height="10" rx="1" fill="#4B4B4B"/>
+            <rect x="10" y="1" width="3" height="12" rx="1" fill="#4B4B4B"/>
+            <rect x="15" y="0" width="3" height="13" rx="1" fill="#4B4B4B"/>
           </svg>
-          <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
-            <path d="M1 6.5C1 6.5 4 1 9 1C14 1 17 6.5 17 6.5C17 6.5 14 12 9 12C4 12 1 6.5 1 6.5Z" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <circle cx="9" cy="6.5" r="2" fill="#4B4B4B"/>
+          {/* WiFi */}
+          <svg width="17.14" height="12.33" viewBox="0 0 18 13" fill="none">
+            <path d="M9 13C9.828 13 10.5 12.328 10.5 11.5C10.5 10.672 9.828 10 9 10C8.172 10 7.5 10.672 7.5 11.5C7.5 12.328 8.172 13 9 13Z" fill="#4B4B4B"/>
+            <path d="M9 7C11.21 7 13 8.79 13 11H13.5C13.5 8.515 11.485 6.5 9 6.5C6.515 6.5 4.5 8.515 4.5 11H5C5 8.79 6.79 7 9 7Z" fill="#4B4B4B"/>
+            <path d="M9 3.5C13.142 3.5 16.5 6.858 16.5 11H17C17 6.582 13.418 3 9 3C4.582 3 1 6.582 1 11H1.5C1.5 6.858 4.858 3.5 9 3.5Z" fill="#4B4B4B"/>
           </svg>
-          <div style={{ position: 'relative', width: '27px', height: '13px' }}>
-            <rect width="25" height="13" rx="4" fill="none" stroke="#4B4B4B" strokeWidth="1" opacity="0.35"/>
-            <rect x="2" y="2" width="21" height="9" rx="2.5" fill="#4B4B4B"/>
-            <rect x="26" y="4.5" width="1.5" height="4" rx="0.75" fill="#4B4B4B" opacity="0.4"/>
+          {/* Battery */}
+          <div style={{ position: 'relative', width: '27.33px', height: '13px' }}>
+            <div style={{
+              position: 'absolute',
+              width: '25px',
+              height: '13px',
+              border: '1px solid #4B4B4B',
+              borderRadius: '4.3px',
+              opacity: 0.35
+            }} />
+            <div style={{
+              position: 'absolute',
+              width: '21px',
+              height: '9px',
+              left: '2px',
+              top: '2px',
+              background: '#4B4B4B',
+              borderRadius: '2.5px'
+            }} />
+            <div style={{
+              position: 'absolute',
+              width: '1.33px',
+              height: '4px',
+              right: '-1.5px',
+              top: '4.5px',
+              background: '#4B4B4B',
+              opacity: 0.4,
+              borderRadius: '0 2px 2px 0'
+            }} />
           </div>
         </div>
       </div>
@@ -262,9 +292,10 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           fontFamily: 'Outfit',
           fontWeight: 600,
           fontSize: '20px',
+          lineHeight: '17px',
           color: '#4B4B4B',
           margin: 0
-        }}>{showMetrics ? 'Client Metrics' : 'Clients'}</h1>
+        }}>{showMetrics ? 'Client Metrics' : 'Client Percentage'}</h1>
         
         <div style={{
           width: '36px',
@@ -495,86 +526,44 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
       {/* Pagination & Table Container (hide when metrics) */}
       <div style={{
         position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '374px',
-        bottom: '81px',
+        width: '406px',
+        left: '3px',
+        top: '293px',
+        height: '630px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
-        overflowY: 'auto',
+        gap: '0px',
+        overflowY: 'scroll',
+        overflowX: 'hidden',
         opacity: showMetrics ? 0 : 1,
         pointerEvents: showMetrics ? 'none' : 'auto'
-      }}>
-        {/* Showing text */}
-        <div style={{
-          textAlign: 'center',
-          fontFamily: 'Outfit',
-          fontSize: '12px',
-          fontWeight: 500,
-          color: '#333333'
-        }}>
-          Showing {startIndex + 1}–{Math.min(endIndex, filteredClients.length)} of {filteredClients.length}
-        </div>
-
-        {/* Pagination buttons */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '6px 14px',
-              border: '1px solid #333333',
-              borderRadius: '24px',
-              background: 'transparent',
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 500,
-              color: '#333333',
-              opacity: currentPage === 1 ? 0.4 : 1,
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Previous
-          </button>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: '6px 14px',
-              border: '1px solid #333333',
-              borderRadius: '24px',
-              background: 'transparent',
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 500,
-              color: '#333333',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Next
-          </button>
-        </div>
-
+      }}
+      className="scrollbar-hide">
         {/* Table */}
         <div style={{
-          width: '100%',
-          border: '1px solid #F2F2F7',
+          width: '406px',
+          border: '1px solid #ECECEC',
           borderRadius: '6px',
-          overflowX: 'auto',
+          display: 'flex',
+          isolation: 'isolate',
           background: '#FFFFFF'
         }}>
-          <div style={{ display: 'flex', minWidth: '800px' }}>
-            {/* Login Column */}
-            <div style={{ width: '63px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', overflowX: 'scroll' }} className="scrollbar-hide">
+            {/* Login Column - Fixed */}
+            <div style={{ minWidth: '53px', display: 'flex', flexDirection: 'column', borderRight: '1px solid #BFDBFE' }}>
               <div style={{
                 padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '1.3px solid #E1E1E1',
+                background: '#EFF6FF',
+                boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
+                borderRight: '1px solid #BFDBFE',
                 fontFamily: 'Outfit',
                 fontSize: '12px',
                 fontWeight: 600,
-                color: '#333333'
+                color: '#4B4B4B',
+                minHeight: '35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>Login</div>
               {displayedClients.map((client, idx) => (
                 <div 
@@ -582,180 +571,317 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   onClick={() => onClientClick && onClientClick(client)}
                   style={{
                     padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
+                    background: '#EFF6FF',
+                    boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                    borderRight: '1px solid #BFDBFE',
                     fontFamily: 'Outfit',
                     fontSize: '12px',
                     color: '#2563EB',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    minHeight: '35px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start'
                   }}
                 >{client.login}</div>
               ))}
             </div>
 
-            {/* Balance Column */}
-            <div style={{ width: '70px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333'
-              }}>Balance</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.balance || 0).toFixed(2)}</div>
-              ))}
-            </div>
+            {/* Scrollable Columns Container */}
+            <div style={{ display: 'flex', overflowX: 'scroll' }} className="scrollbar-hide">
+              {/* Percentage Column */}
+              <div style={{ minWidth: '91px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>Percentage</div>
+                {displayedClients.map((client, idx) => {
+                  const percentage = parseFloat(client.percentage || Math.random() * 200 - 100);
+                  const isPositive = percentage >= 0;
+                  return (
+                    <div 
+                      key={idx}
+                      style={{
+                        padding: '10px',
+                        background: '#FFFFFF',
+                        boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
+                        fontFamily: 'Poppins',
+                        fontSize: '12px',
+                        color: isPositive ? '#34C759' : '#FF383C',
+                        minHeight: '35px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >{percentage.toFixed(0)}%</div>
+                  );
+                })}
+              </div>
 
-            {/* Floating Profit Column */}
-            <div style={{ width: '105px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333',
-                textAlign: 'center'
-              }}>Floating Profit</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.floating_profit || 0).toFixed(2)}</div>
-              ))}
-            </div>
+              {/* Floating Profit Column */}
+              <div style={{ minWidth: '105px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>Floating Profit</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{parseFloat(client.floating_profit || 0).toFixed(2)}</div>
+                ))}
+              </div>
 
-            {/* Equity Column */}
-            <div style={{ width: '58px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333'
-              }}>Equity</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.equity || 0).toFixed(2)}</div>
-              ))}
-            </div>
+              {/* Volume Column */}
+              <div style={{ minWidth: '68px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>Volume</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{parseFloat(client.volume || 0).toFixed(2)}</div>
+                ))}
+              </div>
 
-            {/* Name Column */}
-            <div style={{ width: '121px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '1.3px solid #E1E1E1',
-                fontFamily: 'Outfit',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333',
-                textAlign: 'center'
-              }}>Name</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Outfit',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{client.name || '-'}</div>
-              ))}
+              {/* Balance Column */}
+              <div style={{ minWidth: '72px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>Balance</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{parseFloat(client.balance || 0).toFixed(2)}</div>
+                ))}
+              </div>
+
+              {/* Credit Column */}
+              <div style={{ minWidth: '62px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>Credit</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{parseFloat(client.credit || 0).toFixed(2)}</div>
+                ))}
+              </div>
+
+              {/* Equity Column */}
+              <div style={{ minWidth: '58px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                  fontFamily: 'Poppins',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>Equity</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{parseFloat(client.equity || 0).toFixed(2)}</div>
+                ))}
+              </div>
+
+              {/* Name Column */}
+              <div style={{ minWidth: '121px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{
+                  padding: '10px',
+                  background: '#F8F8F8',
+                  boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
+                  fontFamily: 'Outfit',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#4B4B4B',
+                  minHeight: '35px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>Name</div>
+                {displayedClients.map((client, idx) => (
+                  <div 
+                    key={idx}
+                    style={{
+                      padding: '10px',
+                      background: '#FFFFFF',
+                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+                      fontFamily: 'Outfit',
+                      fontSize: '12px',
+                      color: '#4B4B4B',
+                      minHeight: '35px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >{client.name || '-'}</div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Home Indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '4px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '76px',
-          height: '6px',
-          background: '#F2F2F7',
-          borderRadius: '40px'
-        }} />
       </div>
 
       {/* Bottom Navigation */}
       <div style={{
         position: 'absolute',
-        width: '100%',
+        bottom: 0,
+        left: 0,
+        right: 0,
         height: '81px',
         background: '#FFFFFF',
         boxShadow: '0px 22.74px 133px -28.43px rgba(0, 0, 0, 0.2)',
-        borderRadius: '20px',
-        padding: '28px 37px',
+        borderRadius: '20px 20px 0 0',
+        padding: '15px 37px',
         display: 'flex',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 20
       }}>
         {/* Home */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#475467" strokeWidth="1.5"/>
+            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#475467" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 22V12H15V22" stroke="#475467" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
         {/* Clients */}
-        <button onClick={() => { setShowMetrics(false); setActiveNav('clients') }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => { setShowMetrics(false); setActiveNav('clients') }} style={{ background: showMetrics ? 'none' : 'rgba(37, 99, 235, 0.1)', border: 'none', borderRadius: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="9" cy="7" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="15" cy="7" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="9" cy="17" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="15" cy="17" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
+            <circle cx="9" cy="7" r="3.5" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
+            <path d="M3 21C3 17.686 5.686 15 9 15C10.015 15 10.974 15.228 11.832 15.633" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5" strokeLinecap="round"/>
+            <circle cx="17" cy="10" r="3" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
+            <path d="M21 20C21 17.794 19.206 16 17 16C16.126 16 15.319 16.306 14.691 16.814" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
           <span style={{ fontFamily: 'Outfit', fontSize: '14.56px', fontWeight: 600, color: showMetrics ? '#475467' : '#2563EB' }}>Clients</span>
         </button>
         {/* Metrics */}
-        <button onClick={() => { setShowMetrics(true); setActiveNav('dashboard') }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => { setShowMetrics(true); setActiveNav('dashboard') }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 3V21L21 21" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M7 17V13M12 17V9M17 17V7" stroke="#4B4B4B" strokeWidth="1.5"/>
+            <path d="M3 3V21H21" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7 17V13M12 17V9M17 17V7" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
         {/* More */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M12 1V4M12 20V23M23 12H20M4 12H1M20.49 20.49L18.36 18.36M5.64 5.64L3.51 3.51M20.49 3.51L18.36 5.64M5.64 18.36L3.51 20.49" stroke="#4B4B4B" strokeWidth="1.5"/>
+            <circle cx="12" cy="12" r="2.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+            <path d="M12 1V4M12 20V23M23 12H20M4 12H1M20.49 20.49L18.36 18.36M5.64 5.64L3.51 3.51M20.49 3.51L18.36 5.64M5.64 18.36L3.51 20.49" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
+        
+        {/* Home Indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: '8px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '134px',
+          height: '5px',
+          background: '#000000',
+          borderRadius: '100px'
+        }} />
       </div>
 
       {/* Modals */}
