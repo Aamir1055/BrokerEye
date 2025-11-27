@@ -11,15 +11,16 @@ import GroupSelector from '../components/GroupSelector'
 import IBSelector from '../components/IBSelector'
 import GroupModal from '../components/GroupModal'
 import MobileClientsView from '../components/MobileClientsViewNew'
+import ClientDashboardDesignC from '../components/dashboard/ClientDashboardDesignC'
 import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
   const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
-  // Always use rawClients (unnormalized) for Clients module - USC normalization is handled by backend
-  // rawClients contains data without frontend USC normalization (dailyDeposit, balance, etc. are not divided by 100)
-  const clients = rawClients.length > 0 ? rawClients : cachedClients
+  // Always use rawClients (unnormalized) for Clients module - USC values are handled by backend
+  // rawClients contains data without frontend USC normalization
+  const clients = rawClients.length > 0 ? rawClients : []
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
@@ -2224,23 +2225,8 @@ const ClientsPage = () => {
   // Removed full-page loading spinner to prevent page reload effect on refresh
   // Data updates will happen in place for better UX
 
-  // Mobile view - show only on mobile devices
-  if (isMobile) {
-    return (
-      <>
-        <MobileClientsView 
-          clients={filteredClients || []}
-          onClientClick={(client) => setSelectedClient(client)}
-        />
-        {selectedClient && (
-          <ClientPositionsModal
-            client={selectedClient}
-            onClose={() => setSelectedClient(null)}
-          />
-        )}
-      </>
-    )
-  }
+  // Unified layout: no early return. Mobile handled inside main render.
+  const renderMobile = isMobile
 
   return (
     <div className="h-screen flex overflow-hidden relative">
@@ -2262,8 +2248,20 @@ const ClientsPage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-auto relative z-10`}>
         <div className="max-w-full mx-auto flex flex-col min-h-0">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+          {/* Mobile Dashboard */}
+          {renderMobile && (
+            <div className="mb-4">
+              <ClientDashboardDesignC />
+              {selectedClient && (
+                <ClientPositionsModal
+                  client={selectedClient}
+                  onClose={() => setSelectedClient(null)}
+                />
+              )}
+            </div>
+          )}
+          {/* Desktop / shared header (hidden on mobile for cleaner UI) */}
+          <div className={`flex items-center justify-between mb-6 pb-4 border-b border-gray-200 ${renderMobile ? 'hidden md:flex' : ''}`}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -2681,8 +2679,8 @@ const ClientsPage = () => {
             </div>
           )}
 
-          {/* Stats Summary */}
-          {showFaceCards && (
+          {/* Stats Summary - Hidden on mobile */}
+          {showFaceCards && !renderMobile && (
           <>
             {/* Drag and Drop Instructions */}
             <div className="flex items-center justify-between mb-2 px-2">
@@ -2700,7 +2698,7 @@ const ClientsPage = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 md:mb-6 [&>div]:shadow-md [&>div]:border-2">
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
@@ -3072,7 +3070,7 @@ const ClientsPage = () => {
           </>
           )}
 
-          {/* Pagination Controls - Top */}
+          {!renderMobile && (
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-blue-700">Show:</span>
@@ -3363,8 +3361,10 @@ const ClientsPage = () => {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Data Table */}
+          {/* Data Table - Hidden on mobile */}
+          {!renderMobile && (
           <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
             overflow: 'hidden',
             minHeight: '250px',
@@ -4043,6 +4043,7 @@ const ClientsPage = () => {
               </table>
             </div>
           </div>
+          )}
 
         </div>
       </main>

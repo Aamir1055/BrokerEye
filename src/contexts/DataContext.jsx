@@ -1170,6 +1170,73 @@ export const DataProvider = ({ children }) => {
         lowPriority(() => setClientStats(s => ({ ...s, totalClients: s.totalClients + addedClientsCount })))
       }
       
+      // CRITICAL FIX: Also update rawClients (unnormalized) for Clients module in real-time
+      lowPriority(() => setRawClients(prev => {
+        // Build index map for rawClients
+        const rawIndexMap = new Map()
+        prev.forEach((c, i) => {
+          if (c?.login) rawIndexMap.set(c.login, i)
+        })
+        
+        const rawUpdated = [...prev]
+        
+        for (let i = 0; i < updates.length; i++) {
+          const { updatedAccount, accountLogin } = updates[i]
+          
+          // Get the RAW (unnormalized) version by applying normalizeUSCValues with skipNormalization=true
+          const rawAccount = normalizeUSCValues(updatedAccount, true)
+          
+          if (!rawAccount || !accountLogin) continue
+          
+          const index = rawIndexMap.get(accountLogin)
+          
+          if (index === undefined) {
+            // New client - add to raw list
+            const newIndex = rawUpdated.length
+            rawUpdated.push(rawAccount)
+            rawIndexMap.set(accountLogin, newIndex)
+          } else {
+            // Update existing raw client
+            const existingRaw = rawUpdated[index]
+            
+            if (!existingRaw || existingRaw.login !== accountLogin) {
+              const correctIndex = rawUpdated.findIndex(c => c?.login === accountLogin)
+              if (correctIndex === -1) continue
+              rawIndexMap.set(accountLogin, correctIndex)
+              const merged = { ...rawUpdated[correctIndex] }
+              for (const key in rawAccount) {
+                if (rawAccount[key] !== undefined) {
+                  merged[key] = rawAccount[key]
+                }
+              }
+              rawUpdated[correctIndex] = merged
+              continue
+            }
+            
+            // Selective merge - only update defined values
+            let hasChanges = false
+            for (const key in rawAccount) {
+              if (rawAccount[key] !== undefined && rawAccount[key] !== existingRaw[key]) {
+                hasChanges = true
+                break
+              }
+            }
+            
+            if (!hasChanges) continue
+            
+            const merged = { ...existingRaw }
+            for (const key in rawAccount) {
+              if (rawAccount[key] !== undefined) {
+                merged[key] = rawAccount[key]
+              }
+            }
+            rawUpdated[index] = merged
+          }
+        }
+        
+        return rawUpdated
+      }))
+      
       // OPTIMIZED: Single state update for accounts with index map
       lowPriority(() => setAccounts(prev => {
         // Rebuild index if needed OR if size mismatch (indicates stale map)
@@ -1405,6 +1472,16 @@ export const DataProvider = ({ children }) => {
             return [normalizedUser, ...prev]
           })
           
+          // Also add to rawClients (unnormalized) for Clients module
+          const rawUser = normalizeUSCValues(newUser, true)
+          setRawClients(prev => {
+            const exists = Array.isArray(prev) && prev.some(c => c && c.login === userLogin)
+            if (exists) {
+              return prev
+            }
+            return [rawUser, ...prev]
+          })
+          
           setAccounts(prev => {
             const exists = Array.isArray(prev) && prev.some(c => c && c.login === userLogin)
             if (exists) return prev
@@ -1500,6 +1577,46 @@ export const DataProvider = ({ children }) => {
           // Update stats incrementally based on the change - use merged client, not raw update
           updateStatsIncremental(oldClient, mergedClient)
           
+          // Also update rawClients (unnormalized) for Clients module
+          const rawUser = normalizeUSCValues(updatedUser, true)
+          if (msgTs) {
+            const tsMs = msgTs < 10000000000 ? msgTs * 1000 : msgTs
+            rawUser.serverTimestamp = tsMs
+          }
+          
+          setRawClients(prev => {
+            const index = prev.findIndex(c => c && c.login === userLogin)
+            if (index === -1) {
+              // User not found in raw clients, add as new
+              return [rawUser, ...prev]
+            }
+            const updated = [...prev]
+            const existingRaw = updated[index]
+            
+            // Check if there are actual changes
+            let hasChanges = false
+            for (const key in rawUser) {
+              if (rawUser[key] !== undefined && rawUser[key] !== existingRaw[key]) {
+                hasChanges = true
+                break
+              }
+            }
+            
+            // Only update if there are actual changes
+            if (!hasChanges) {
+              return prev
+            }
+            
+            const merged = { ...existingRaw }
+            for (const key in rawUser) {
+              if (rawUser[key] !== undefined) {
+                merged[key] = rawUser[key]
+              }
+            }
+            updated[index] = merged
+            return updated
+          })
+          
           setAccounts(prev => {
             const index = prev.findIndex(c => c && c.login === userLogin)
             if (index === -1) return [normalizedUser, ...prev]
@@ -1578,6 +1695,9 @@ export const DataProvider = ({ children }) => {
             }
             return filtered
           })
+          
+          // Also remove from rawClients
+          setRawClients(prev => prev.filter(c => c.login !== userLogin))
           
           setAccounts(prev => prev.filter(c => c.login !== userLogin))
         }
