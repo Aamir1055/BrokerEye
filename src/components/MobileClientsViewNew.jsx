@@ -284,25 +284,102 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           cursor: 'pointer'
         }}>View All</button>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {/* Download icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{cursor: 'pointer'}}>
-            <path d="M9 18L15 12L9 6" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          {/* Percentage icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{cursor: 'pointer'}}>
-            <path d="M12 5V19M5 12H19" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          {/* Filter/Customize icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" onClick={() => setShowCustomizeModal(true)} style={{cursor: 'pointer'}}>
-            <rect x="4" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="11" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="18" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          {/* Show/Hide Columns icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" onClick={() => setShowColumnsModal(true)} style={{cursor: 'pointer'}}>
-            <path d="M4 6H20M4 12H20M4 18H20" stroke="#999999" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Download button */}
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              padding: '5px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2.66669V10M8 10L10.6667 7.33335M8 10L5.33333 7.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 12.6667H12" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          
+          {/* Percentage button */}
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              padding: '5px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="4.66667" cy="4.66667" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+              <circle cx="11.3333" cy="11.3333" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+              <path d="M3.33331 12.6667L12.6666 3.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          
+          {/* Filter button */}
+          <button
+            onClick={() => setShowCustomizeModal(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '5px 10px',
+              gap: '4px',
+              height: '26px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2.66669 4H13.3334M4.66669 8H11.3334M6.66669 12H9.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            <span style={{
+              fontFamily: 'Outfit',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '16px',
+              color: '#333333'
+            }}>Filter</span>
+          </button>
+          
+          {/* Show/Hide Columns button */}
+          <button
+            onClick={() => setShowColumnsModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              padding: '5px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4H14M2 8H14M2 12H14" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
       </div>
 
