@@ -168,6 +168,16 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
     dailyNetDW: filteredClients.reduce((sum, c) => sum + (parseFloat(c.balance) || 0), 0)
   }
 
+  // Figma-style number formatting (Indian grouping, 2 decimals)
+  const formatValue = (n) => {
+    const num = Number(n) || 0
+    try {
+      return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    } catch(_) {
+      return num.toFixed(2)
+    }
+  }
+
   // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -576,7 +586,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                     flex: 'none',
                     order: 0,
                     flexGrow: 0
-                  }}>{(totals.monthlyEquity / 1000).toFixed(1)}K</span>
+                  }}>{formatValue(totals.monthlyEquity)}</span>
                   
                   {/* Supporting text - Currency */}
                   <span style={{
@@ -803,7 +813,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                     flex: 'none',
                     order: 0,
                     flexGrow: 0
-                  }}>{(totals.dailyNetDW / 1000).toFixed(1)}K</span>
+                  }}>{formatValue(totals.dailyNetDW)}</span>
                   
                   {/* Supporting text - Currency */}
                   <span style={{
@@ -1030,7 +1040,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                     flex: 'none',
                     order: 0,
                     flexGrow: 0
-                  }}>{(totals.equity / 1000).toFixed(1)}K</span>
+                  }}>{formatValue(totals.equity)}</span>
                   
                   {/* Supporting text - Currency */}
                   <span style={{
@@ -1257,7 +1267,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                     flex: 'none',
                     order: 0,
                     flexGrow: 0
-                  }}>{(totals.lifetimeBonusOut / 1000).toFixed(1)}K</span>
+                  }}>{formatValue(totals.lifetimeBonusOut)}</span>
                   
                   {/* Supporting text - Currency */}
                   <span style={{
