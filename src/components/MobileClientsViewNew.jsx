@@ -163,7 +163,9 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   // Calculate totals
   const totals = {
     monthlyEquity: filteredClients.reduce((sum, c) => sum + (parseFloat(c.equity) || 0), 0),
-    lifetimeBonusOut: filteredClients.reduce((sum, c) => sum + (parseFloat(c.bonus) || 0), 0)
+    lifetimeBonusOut: filteredClients.reduce((sum, c) => sum + (parseFloat(c.bonus) || 0), 0),
+    equity: filteredClients.reduce((sum, c) => sum + (parseFloat(c.equity) || 0), 0),
+    dailyNetDW: filteredClients.reduce((sum, c) => sum + (parseFloat(c.balance) || 0), 0)
   }
 
   // Pagination
@@ -441,186 +443,931 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         }}>View All</span>
       </div>
 
-      {/* Frame 1707486466 - Face Cards */}
+      {/* Frame 1707486466 - Face Cards Container */}
       <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: '0px',
-        gap: '10px',
         position: 'absolute',
-        width: '392px',
-        height: '62px',
+        width: '372px',
+        height: '82px',
         left: '20px',
         top: '174px',
-        overflowX: 'scroll',
+        overflowX: 'auto',
+        overflowY: 'hidden',
         opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto'
+        pointerEvents: showMetrics ? 'none' : 'auto',
+        whiteSpace: 'nowrap'
       }} className="scrollbar-hide">
-        {/* Frame 1707486465 - Monthly Equity Card */}
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'inline-flex',
+          flexDirection: 'row',
           alignItems: 'flex-start',
-          padding: '10px',
           gap: '10px',
-          width: '156px',
-          height: '62px',
-          background: '#FFFFFF',
-          borderRadius: '10px',
-          flexShrink: 0
+          height: '82px'
         }}>
+          {/* Property 1=Default - Monthly Equity Card */}
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            padding: '0px',
-            gap: '10px',
-            width: '136px',
-            height: '44px'
+            boxSizing: 'border-box',
+            position: 'relative',
+            width: '176px',
+            height: '82px',
+            background: '#FFFFFF',
+            border: '1px solid #ECECEC',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px',
+            flexShrink: 0
           }}>
-            {/* Frame 1686556430 - Label row */}
+            {/* Group 1707486423 */}
             <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              padding: '0px',
-              gap: '22px',
-              width: '136px',
-              height: '12px'
+              position: 'absolute',
+              left: '5.68%',
+              right: '5.68%',
+              top: '12.2%',
+              bottom: '12.2%'
             }}>
-              <span style={{
-                width: '102px',
-                height: '12px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '11px',
-                lineHeight: '14px',
-                color: '#404040'
-              }}>MONTHLY EQUITY</span>
+              {/* Frame 1707486442 */}
               <div style={{
-                width: '12px',
-                height: '12px',
-                background: '#2563EB',
-                borderRadius: '2px'
-              }} />
-            </div>
-            
-            {/* Frame 1686556429 - Value row */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              padding: '0px',
-              gap: '4px',
-              width: '136px',
-              height: '22px'
-            }}>
-              <span style={{
-                width: '81px',
-                height: '22px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '16px',
-                lineHeight: '22px',
-                color: '#000000'
-              }}>{totals.monthlyEquity.toFixed(2)}</span>
-              <span style={{
-                width: '22px',
-                height: '8px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '11px',
-                lineHeight: '14px',
-                color: '#404040'
-              }}>USD</span>
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '0px',
+                gap: '10px',
+                position: 'absolute',
+                left: '0%',
+                right: '34.09%',
+                top: '0%',
+                bottom: '36.59%'
+              }}>
+                {/* Frame 1707486440 - Icon + Label */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '6px',
+                  width: '106px',
+                  height: '12px',
+                  flex: 'none',
+                  order: 0,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Mask group - Icon */}
+                  <div style={{
+                    position: 'relative',
+                    width: '12px',
+                    height: '12px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      left: '0px',
+                      top: '0px'
+                    }}>
+                      <circle cx="6" cy="6" r="5" stroke="#1A63BC" strokeWidth="1.5"/>
+                      <path d="M6 3V6L8 8" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  
+                  {/* Supporting text - Label */}
+                  <span style={{
+                    width: '88px',
+                    height: '12px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '13px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>MONTHLY EQUITY</span>
+                </div>
+                
+                {/* Frame 1707486439 - Value + Currency */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '2px',
+                  width: '106px',
+                  height: '20px',
+                  flex: 'none',
+                  order: 1,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Supporting text - Value */}
+                  <span style={{
+                    width: '74px',
+                    height: '20px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    textTransform: 'uppercase',
+                    color: '#4B4B4B',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>{(totals.monthlyEquity / 1000).toFixed(1)}K</span>
+                  
+                  {/* Supporting text - Currency */}
+                  <span style={{
+                    width: '22px',
+                    height: '8px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '8px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>USD</span>
+                </div>
+              </div>
+              
+              {/* Frame 1707486441 - Percentage + Chart */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                padding: '0px',
+                gap: '64px',
+                position: 'absolute',
+                left: '0%',
+                right: '0%',
+                top: '46.34%',
+                bottom: '12.2%'
+              }}>
+                {/* Frame 79 - Percentage */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '3px',
+                  width: '48px',
+                  height: '14px',
+                  borderRadius: '50px',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0
+                }}>
+                  {/* bx:trending-up icon */}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{
+                    width: '14px',
+                    height: '14px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <path d="M10.5 4.66667L13.4167 7.58333M13.4167 7.58333L10.5 10.5M13.4167 7.58333H4.66667M4.08333 3.5L0.583328 7L4.08333 10.5" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  
+                  {/* 12.0% */}
+                  <span style={{
+                    width: '32px',
+                    height: '13px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '11px',
+                    lineHeight: '13px',
+                    letterSpacing: '0.01em',
+                    color: '#15803D',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>12.0%</span>
+                </div>
+                
+                {/* Group 23 - Chart */}
+                <div style={{
+                  position: 'relative',
+                  width: '44px',
+                  height: '34px',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0
+                }}>
+                  {/* Vector 2 - Background gradient */}
+                  <svg width="44" height="34" viewBox="0 0 44 34" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.59 0C31.59 8 36 17 44 21V34H31.59V0Z" fill="url(#paint0_linear_chart1)" fillOpacity="0.3"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_chart1" x1="44" y1="0" x2="31.59" y2="34" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#15803D" stopOpacity="0.3"/>
+                        <stop offset="1" stopColor="#15803D" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  
+                  {/* Vector 1 - Chart line */}
+                  <svg width="44" height="21" viewBox="0 0 44 21" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.59 21C31.59 13 36 4 44 0" stroke="#15803D" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Frame 1707486464 - Lifetime Bonus OUT Card */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          padding: '10px',
-          gap: '10px',
-          width: '156px',
-          height: '62px',
-          background: '#FFFFFF',
-          borderRadius: '10px',
-          flexShrink: 0
-        }}>
+          {/* Property 1=Variant2 - Daily Net D/W Card */}
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            padding: '0px',
-            gap: '10px',
-            width: '136px',
-            height: '44px'
+            boxSizing: 'border-box',
+            position: 'relative',
+            width: '176px',
+            height: '82px',
+            background: '#FFFFFF',
+            border: '1px solid #ECECEC',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px',
+            flexShrink: 0
           }}>
-            {/* Frame 1686556430 - Label row */}
+            {/* Group 1707486423 */}
             <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              padding: '0px',
-              gap: '22px',
-              width: '136px',
-              height: '12px'
+              position: 'absolute',
+              left: '5.68%',
+              right: '5.68%',
+              top: '12.2%',
+              bottom: '12.2%'
             }}>
-              <span style={{
-                width: '102px',
-                height: '12px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '11px',
-                lineHeight: '14px',
-                color: '#404040'
-              }}>LIFETIME BONUS OUT</span>
+              {/* Frame 1707486442 */}
               <div style={{
-                width: '12px',
-                height: '12px',
-                background: '#2563EB',
-                borderRadius: '2px'
-              }} />
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '0px',
+                gap: '10px',
+                position: 'absolute',
+                left: '0%',
+                right: '34.09%',
+                top: '0%',
+                bottom: '36.59%'
+              }}>
+                {/* Frame 1707486440 - Icon + Label */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '6px',
+                  width: '106px',
+                  height: '12px',
+                  flex: 'none',
+                  order: 0,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Mask group - Icon */}
+                  <div style={{
+                    position: 'relative',
+                    width: '12px',
+                    height: '12px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      left: '0px',
+                      top: '0px'
+                    }}>
+                      <circle cx="6" cy="6" r="5" stroke="#1A63BC" strokeWidth="1.5"/>
+                      <path d="M6 3V6L8 8" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  
+                  {/* Supporting text - Label */}
+                  <span style={{
+                    width: '88px',
+                    height: '12px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '13px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>DAILY NET D/W</span>
+                </div>
+                
+                {/* Frame 1707486439 - Value + Currency */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '2px',
+                  width: '106px',
+                  height: '20px',
+                  flex: 'none',
+                  order: 1,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Supporting text - Value */}
+                  <span style={{
+                    width: '74px',
+                    height: '20px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    textTransform: 'uppercase',
+                    color: '#4B4B4B',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>{(totals.dailyNetDW / 1000).toFixed(1)}K</span>
+                  
+                  {/* Supporting text - Currency */}
+                  <span style={{
+                    width: '22px',
+                    height: '8px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '8px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>USD</span>
+                </div>
+              </div>
+              
+              {/* Frame 1707486441 - Percentage + Chart */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                padding: '0px',
+                gap: '64px',
+                position: 'absolute',
+                height: '34px',
+                left: '0%',
+                right: '0%',
+                top: 'calc(50% - 34px/2 + 14px)'
+              }}>
+                {/* Frame 79 - Percentage (Red - Trending Down) */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '3px',
+                  width: '48px',
+                  height: '14px',
+                  borderRadius: '50px',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0
+                }}>
+                  {/* bx:trending-down icon */}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{
+                    width: '14px',
+                    height: '14px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <path d="M10.5 9.33333L13.4167 6.41667M13.4167 6.41667L10.5 3.5M13.4167 6.41667H4.66667M4.08333 10.5L0.583328 7L4.08333 3.5" stroke="#B91C1C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  
+                  {/* 12.0% */}
+                  <span style={{
+                    width: '32px',
+                    height: '13px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '11px',
+                    lineHeight: '13px',
+                    letterSpacing: '0.01em',
+                    color: '#B91C1C',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>12.0%</span>
+                </div>
+                
+                {/* Group 1759 - Chart (Red) */}
+                <div style={{
+                  position: 'relative',
+                  width: '44.52px',
+                  height: '34px',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0
+                }}>
+                  {/* Vector 2 - Background gradient */}
+                  <svg width="45" height="34" viewBox="0 0 45 34" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.8 34C31.8 26 36.2 17 44.52 13V0H31.8V34Z" fill="url(#paint0_linear_chart2)" fillOpacity="0.3"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_chart2" x1="44.52" y1="34" x2="31.8" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#B91C1C" stopOpacity="0.3"/>
+                        <stop offset="1" stopColor="#B91C1C" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  
+                  {/* Vector 1 - Chart line */}
+                  <svg width="45" height="18" viewBox="0 0 45 18" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.8 0C31.8 8 36.2 17 44.52 18" stroke="#B91C1C" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              </div>
             </div>
-            
-            {/* Frame 1686556429 - Value row */}
+          </div>
+
+          {/* Property 1=Variant3 - Total Equity Card */}
+          <div style={{
+            boxSizing: 'border-box',
+            position: 'relative',
+            width: '176px',
+            height: '82px',
+            background: '#FFFFFF',
+            border: '1px solid #ECECEC',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px',
+            flexShrink: 0
+          }}>
+            {/* Group 1707486423 */}
             <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              padding: '0px',
-              gap: '4px',
-              width: '136px',
-              height: '22px'
+              position: 'absolute',
+              left: '5.68%',
+              right: '5.68%',
+              top: '12.2%',
+              bottom: '12.2%'
             }}>
-              <span style={{
-                width: '83px',
-                height: '22px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '16px',
-                lineHeight: '22px',
-                color: '#FF383C'
-              }}>{totals.lifetimeBonusOut.toFixed(2)}</span>
-              <span style={{
-                width: '22px',
-                height: '8px',
-                fontFamily: 'Outfit',
-                fontStyle: 'normal',
-                fontWeight: 500,
-                fontSize: '11px',
-                lineHeight: '14px',
-                color: '#404040'
-              }}>USD</span>
+              {/* Frame 1707486442 */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '0px',
+                gap: '10px',
+                position: 'absolute',
+                left: '0%',
+                right: '34.09%',
+                top: '0%',
+                bottom: '36.59%'
+              }}>
+                {/* Frame 1707486440 - Icon + Label */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '6px',
+                  width: '106px',
+                  height: '12px',
+                  flex: 'none',
+                  order: 0,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Mask group - Icon */}
+                  <div style={{
+                    position: 'relative',
+                    width: '12px',
+                    height: '12px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      left: '0px',
+                      top: '0px'
+                    }}>
+                      <path d="M2 9L6 5L8 7L10 4" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M8 4H10V6" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  
+                  {/* Supporting text - Label */}
+                  <span style={{
+                    width: '88px',
+                    height: '12px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '13px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>TOTAL EQUITY</span>
+                </div>
+                
+                {/* Frame 1707486439 - Value + Currency */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '2px',
+                  width: '106px',
+                  height: '20px',
+                  flex: 'none',
+                  order: 1,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Supporting text - Value */}
+                  <span style={{
+                    width: '74px',
+                    height: '20px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    textTransform: 'uppercase',
+                    color: '#4B4B4B',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>{(totals.equity / 1000).toFixed(1)}K</span>
+                  
+                  {/* Supporting text - Currency */}
+                  <span style={{
+                    width: '22px',
+                    height: '8px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '8px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>USD</span>
+                </div>
+              </div>
+              
+              {/* Frame 1707486441 - Percentage + Chart */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                padding: '0px',
+                gap: '64px',
+                position: 'absolute',
+                height: '34px',
+                left: '0%',
+                right: '0%',
+                top: 'calc(50% - 34px/2 + 14px)'
+              }}>
+                {/* Frame 79 - Percentage (Red - Trending Down) */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '3px',
+                  width: '48px',
+                  height: '14px',
+                  borderRadius: '50px',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0
+                }}>
+                  {/* bx:trending-down icon */}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{
+                    width: '14px',
+                    height: '14px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <path d="M10.5 9.33333L13.4167 6.41667M13.4167 6.41667L10.5 3.5M13.4167 6.41667H4.66667M4.08333 10.5L0.583328 7L4.08333 3.5" stroke="#B91C1C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  
+                  {/* 12.0% */}
+                  <span style={{
+                    width: '32px',
+                    height: '13px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '11px',
+                    lineHeight: '13px',
+                    letterSpacing: '0.01em',
+                    color: '#B91C1C',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>12.0%</span>
+                </div>
+                
+                {/* Group 1759 - Chart (Red) */}
+                <div style={{
+                  position: 'relative',
+                  width: '44.52px',
+                  height: '34px',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0
+                }}>
+                  {/* Vector 2 - Background gradient */}
+                  <svg width="45" height="34" viewBox="0 0 45 34" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.8 34C31.8 26 36.2 17 44.52 13V0H31.8V34Z" fill="url(#paint0_linear_chart3)" fillOpacity="0.3"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_chart3" x1="44.52" y1="34" x2="31.8" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#B91C1C" stopOpacity="0.3"/>
+                        <stop offset="1" stopColor="#B91C1C" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  
+                  {/* Vector 1 - Chart line */}
+                  <svg width="45" height="18" viewBox="0 0 45 18" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.8 0C31.8 8 36.2 17 44.52 18" stroke="#B91C1C" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Property 1=Variant4 - Net Lifetime Bonus Card */}
+          <div style={{
+            boxSizing: 'border-box',
+            position: 'relative',
+            width: '176px',
+            height: '82px',
+            background: '#FFFFFF',
+            border: '1px solid #ECECEC',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px',
+            flexShrink: 0
+          }}>
+            {/* Group 1707486423 */}
+            <div style={{
+              position: 'absolute',
+              left: '5.68%',
+              right: '5.68%',
+              top: '12.2%',
+              bottom: '12.2%'
+            }}>
+              {/* Frame 1707486442 */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '0px',
+                gap: '10px',
+                position: 'absolute',
+                left: '0%',
+                right: '34.09%',
+                top: '0%',
+                bottom: '36.59%'
+              }}>
+                {/* Frame 1707486440 - Icon + Label */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '6px',
+                  width: '106px',
+                  height: '12px',
+                  flex: 'none',
+                  order: 0,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Mask group - Icon */}
+                  <div style={{
+                    position: 'relative',
+                    width: '12px',
+                    height: '12px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      left: '0px',
+                      top: '0px'
+                    }}>
+                      <rect x="2" y="3" width="8" height="6" rx="1" stroke="#1A63BC" strokeWidth="1.5"/>
+                      <path d="M6 7V5" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  
+                  {/* Supporting text - Label */}
+                  <span style={{
+                    width: '109px',
+                    height: '12px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '13px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>NET LIFETIME BONUS</span>
+                </div>
+                
+                {/* Frame 1707486439 - Value + Currency */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '2px',
+                  width: '106px',
+                  height: '20px',
+                  flex: 'none',
+                  order: 1,
+                  alignSelf: 'stretch',
+                  flexGrow: 0
+                }}>
+                  {/* Supporting text - Value */}
+                  <span style={{
+                    width: '74px',
+                    height: '20px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    textTransform: 'uppercase',
+                    color: '#4B4B4B',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>{(totals.lifetimeBonusOut / 1000).toFixed(1)}K</span>
+                  
+                  {/* Supporting text - Currency */}
+                  <span style={{
+                    width: '22px',
+                    height: '8px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '8px',
+                    textTransform: 'uppercase',
+                    color: '#475467',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>USD</span>
+                </div>
+              </div>
+              
+              {/* Frame 1707486441 - Percentage + Chart */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                padding: '0px',
+                gap: '64px',
+                position: 'absolute',
+                left: '0%',
+                right: '0%',
+                top: '46.34%',
+                bottom: '12.2%'
+              }}>
+                {/* Frame 79 - Percentage */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '0px',
+                  gap: '3px',
+                  width: '48px',
+                  height: '14px',
+                  borderRadius: '50px',
+                  flex: 'none',
+                  order: 0,
+                  flexGrow: 0
+                }}>
+                  {/* bx:trending-up icon */}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{
+                    width: '14px',
+                    height: '14px',
+                    flex: 'none',
+                    order: 0,
+                    flexGrow: 0
+                  }}>
+                    <path d="M10.5 4.66667L13.4167 7.58333M13.4167 7.58333L10.5 10.5M13.4167 7.58333H4.66667M4.08333 3.5L0.583328 7L4.08333 10.5" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  
+                  {/* 12.0% */}
+                  <span style={{
+                    width: '32px',
+                    height: '13px',
+                    fontFamily: 'Inter',
+                    fontStyle: 'normal',
+                    fontWeight: 500,
+                    fontSize: '11px',
+                    lineHeight: '13px',
+                    letterSpacing: '0.01em',
+                    color: '#15803D',
+                    flex: 'none',
+                    order: 1,
+                    flexGrow: 0
+                  }}>12.0%</span>
+                </div>
+                
+                {/* Group 23 - Chart */}
+                <div style={{
+                  position: 'relative',
+                  width: '44px',
+                  height: '34px',
+                  flex: 'none',
+                  order: 1,
+                  flexGrow: 0
+                }}>
+                  {/* Vector 2 - Background gradient */}
+                  <svg width="44" height="34" viewBox="0 0 44 34" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.59 0C31.59 8 36 17 44 21V34H31.59V0Z" fill="url(#paint0_linear_chart4)" fillOpacity="0.3"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_chart4" x1="44" y1="0" x2="31.59" y2="34" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#15803D" stopOpacity="0.3"/>
+                        <stop offset="1" stopColor="#15803D" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  
+                  {/* Vector 1 - Chart line */}
+                  <svg width="44" height="21" viewBox="0 0 44 21" fill="none" style={{
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px'
+                  }}>
+                    <path d="M31.59 21C31.59 13 36 4 44 0" stroke="#15803D" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -632,7 +1379,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         width: '50px',
         height: '8px',
         left: 'calc(50% - 50px/2)',
-        top: '246px',
+        top: '266px',
         display: 'flex',
         gap: '14px',
         opacity: showMetrics ? 0 : 1
