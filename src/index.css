@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -65,7 +66,7 @@
 /* Custom styles */
 @layer base {
   html {
-    font-family: system-ui, sans-serif;
+    font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
     /* Global scale-down so 100% zoom feels like 90% */
     font-size: 90%;
   }
@@ -96,6 +97,10 @@
     opacity: 1 !important;
   }
 }
+
+/* Hide native scrollbars utility */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Custom Animations */
 @keyframes fade-in {

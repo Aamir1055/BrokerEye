@@ -200,22 +200,23 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
     <div style={{
       position: 'relative',
       width: '412px',
-      height: '923px',
+      height: '918px',
       background: '#F2F2F7',
       fontFamily: 'Outfit, sans-serif',
       overflow: 'hidden',
-      borderRadius: '20px'
+      borderRadius: '20px',
+      margin: '0 auto'
     }}>
       {/* Rectangle 41868 - Header */}
       <div style={{
         position: 'absolute',
         width: '412px',
         height: '118px',
-        left: 'calc(50% - 412px/2)',
+        left: '0px',
         top: '0px',
         background: '#FFFFFF',
         boxShadow: '0px 3.64486px 44.9229px rgba(0, 0, 0, 0.05)',
-        borderRadius: '20px'
+        borderRadius: '20px 20px 0px 0px'
       }}>
         {/* Frame 1707486430 - Main Header Row */}
         <div style={{
@@ -305,12 +306,12 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '0px',
-        gap: '274px',
+        gap: '10px',
         position: 'absolute',
         width: '372px',
         height: '18px',
         left: '20px',
-        top: '138px'
+        top: '110px'
       }}>
         {/* View All */}
         <span style={{
@@ -404,10 +405,10 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         padding: '0px',
         gap: '10px',
         position: 'absolute',
-        width: '392px',
+        width: '372px',
         height: '82px',
         left: '20px',
-        top: '166px',
+        top: '138px',
         overflowX: 'scroll',
         overflowY: 'hidden'
       }} className="scrollbar-hide">
@@ -429,7 +430,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         width: '269px',
         height: '42px',
         left: '20px',
-        top: '296px',
+        top: '230px',
         background: '#FFFFFF',
         border: '1px solid #ECECEC',
         boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
@@ -489,7 +490,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         width: '93px',
         height: '42px',
         left: '299px',
-        top: '296px',
+        top: '230px',
         background: '#F4F8FC',
         border: '1px solid #ECECEC',
         boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05), inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
@@ -536,9 +537,9 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         gap: '10px',
         position: 'absolute',
         width: '372px',
-        height: '455px',
-        left: '21px',
-        top: '378px'
+        height: '626px',
+        left: '20px',
+        top: '282px'
       }}>
         {/* Pagination Controls */}
         <div style={{
@@ -631,18 +632,26 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         {/* Table */}
         <div style={{
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: 'column',
           alignItems: 'flex-start',
           padding: '0px',
           width: '372px',
-          height: '420px',
-          overflowX: 'scroll',
+          height: '591px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           borderRadius: '6px',
           flex: 'none',
           order: 1,
           alignSelf: 'stretch',
           flexGrow: 0
         }} className="scrollbar-hide">
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            width: '100%',
+            overflowX: 'auto'
+          }}>
           {/* Sample table data - replace with real data */}
           {/* Login Column */}
           <div style={{
@@ -933,6 +942,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                 }}>{name}</span>
               </div>
             ))}
+          </div>
           </div>
         </div>
       </div>
