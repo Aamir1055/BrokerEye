@@ -224,7 +224,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         }}
       />
 
-      {/* Rounded rectangle - Header Container */}
+      {/* Header Container (Figma spec) */}
       <div style={{
         position: 'absolute',
         width: '412px',
@@ -232,10 +232,66 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         left: '0px',
         top: '0px',
         background: '#FFFFFF',
+        border: '0.91px solid rgba(26, 99, 188, 0.05)',
         boxShadow: '0px 3.64486px 44.9229px rgba(0, 0, 0, 0.05)',
-        borderRadius: '20px'
+        borderRadius: '22px 22px 20px 20px'
       }}>
-        {/* Header Content */}
+        {/* Status Bar (Time / Signal / WiFi / Battery) */}
+        <div style={{
+          position: 'absolute',
+          width: '372px',
+          height: '22px',
+          left: '20px',
+          top: '20px',
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{
+            width: '31px',
+            height: '22px',
+            fontFamily: 'Outfit',
+            fontStyle: 'normal',
+            fontWeight: 600,
+            fontSize: '17px',
+            lineHeight: '22px',
+            textAlign: 'center',
+            color: '#4B4B4B'
+          }}>{new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
+          {/* Right side indicators */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '7px',
+            width: '78px',
+            height: '13px'
+          }}>
+            {/* Cellular */}
+            <svg width="19" height="13" viewBox="0 0 19 13" fill="none">
+              <rect x="0" y="9" width="3" height="4" fill="#4B4B4B"/>
+              <rect x="4" y="7" width="3" height="6" fill="#4B4B4B"/>
+              <rect x="8" y="5" width="3" height="8" fill="#4B4B4B"/>
+              <rect x="12" y="3" width="3" height="10" fill="#4B4B4B"/>
+              <rect x="16" y="1" width="3" height="12" fill="#4B4B4B"/>
+            </svg>
+            {/* Wifi */}
+            <svg width="17" height="13" viewBox="0 0 17 13" fill="none">
+              <path d="M1 4C5 -0.333333 12 -0.333333 16 4" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M3 6.5C6 3.5 11 3.5 14 6.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M6 9C7.5 7.5 9.5 7.5 11 9" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="8.5" cy="11" r="1" fill="#4B4B4B"/>
+            </svg>
+            {/* Battery */}
+            <svg width="27" height="13" viewBox="0 0 27 13" fill="none">
+              <rect x="0.5" y="0.5" width="24" height="12" rx="4" stroke="#4B4B4B" strokeWidth="1" fill="rgba(75,75,75,0.35)"/>
+              <rect x="2" y="2" width="20" height="8" rx="2.5" fill="#4B4B4B" stroke="#4B4B4B"/>
+              <rect x="25" y="4" width="1.5" height="4" fill="#4B4B4B" opacity="0.4"/>
+            </svg>
+          </div>
+        </div>
+        {/* Header Content Row */}
         <div style={{
           position: 'absolute',
           width: '372px',
@@ -245,7 +301,8 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          gap: '118px'
         }}>
           {/* Hamburger Button */}
           <button 
@@ -260,32 +317,32 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               height: '36px',
               background: 'rgba(230, 238, 248, 0.44)',
               boxShadow: 'inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
-              borderRadius: '6px',
+              borderRadius: '8px',
               border: 'none',
               cursor: 'pointer'
             }}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
-              <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
-              <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
+              <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
+              <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
+              <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
             </svg>
           </button>
           
           {/* Text - Clients/Client Percentage */}
           <h1 style={{
             position: 'absolute',
-            width: '123px',
-            height: '24px',
-            left: 'calc(50% - 123px/2 + 0.5px)',
-            top: '6px',
+            width: '63px',
+            height: '17px',
+            left: 'calc(50% - 63px/2)',
+            top: '10px',
             fontFamily: 'Outfit',
             fontStyle: 'normal',
             fontWeight: 600,
-            fontSize: '18px',
-            lineHeight: '24px',
+            fontSize: '20px',
+            lineHeight: '17px',
             textAlign: 'center',
-            color: '#000000',
+            color: '#4B4B4B',
             margin: 0
           }}>{showMetrics ? 'Client Metrics' : 'Clients'}</h1>
           
