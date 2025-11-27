@@ -1,814 +1,941 @@
-import { useState, useEffect } from 'react'
-import CustomizeViewModal from './CustomizeViewModal'
-import IBFilterModal from './IBFilterModal'
-import LoginGroupsModal from './LoginGroupsModal'
+import { useState } from 'react'
 
-// Simple slide-in side drawer matching Figma nav
-const SideDrawer = ({ open, onClose, onNavigate, active }) => {
-  return (
-    <>
-      {open && (
-        <div onClick={onClose} style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.15)', zIndex: 40
-        }} />
-      )}
+const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Sample card data - replace with real data later
+  const faceCards = [
+    { id: 1, label: 'NET LIFETIME', amount: '4,99,514', trend: 'up', percent: '12.0%', color: 'green' },
+    { id: 2, label: 'DAILY NET D/W', amount: '4,99,514', trend: 'down', percent: '12.0%', color: 'red' },
+    { id: 3, label: 'MONTHLY EQUITY', amount: '4,99,514', trend: 'down', percent: '12.0%', color: 'red' },
+    { id: 4, label: 'TOTAL EQUITY', amount: '4,99,514', trend: 'up', percent: '12.0%', color: 'green' },
+    { id: 5, label: 'NET LIFETIME', amount: '4,99,514', simple: true },
+    { id: 6, label: 'TOTAL EQUITY', amount: '4,99,514', simple: true }
+  ]
+
+  const [visibleColumns, setVisibleColumns] = useState({
+    login: true,
+    balance: true,
+    floatingProfit: true,
+    equity: true,
+    name: true
+  })
+
+  const toggleColumn = (column) => {
+    setVisibleColumns(prev => ({ ...prev, [column]: !prev[column] }))
+  }
+
+  const FaceCard = ({ card }) => {
+    const isGreen = card.color === 'green'
+    const gradientId = `gradient-${card.id}`
+    
+    return (
       <div style={{
-        position: 'fixed', top: 0, left: 0, height: '100vh', width: open ? '260px' : '0px',
-        overflow: 'hidden', background: '#FFFFFF', boxShadow: open ? '2px 0 18px rgba(0,0,0,0.12)' : 'none',
-        transition: 'width 0.26s cubic-bezier(.4,.0,.2,1)', zIndex: 50, borderRight: open ? '1px solid #E5E7EB' : 'none'
+        boxSizing: 'border-box',
+        width: '176px',
+        minWidth: '176px',
+        height: '82px',
+        background: '#FFFFFF',
+        border: card.simple ? '1px solid #F2F2F7' : '1px solid #ECECEC',
+        boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+        borderRadius: '8px',
+        padding: '10px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        flex: 'none'
       }}>
-        {open && (
-          <div style={{padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '18px', fontFamily: 'Outfit'}}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-              <div style={{width: 36, height: 36, borderRadius: 8, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600}}>B</div>
-              <div style={{display: 'flex', flexDirection: 'column'}}>
-                <span style={{fontSize: 14, fontWeight: 600, color: '#2563EB'}}>Broker Eyes</span>
-                <span style={{fontSize: 10, fontWeight: 500, color: '#4B4B4B'}}>Trading Platform</span>
-              </div>
+        {/* Top Section */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
+          {/* Icon + Label */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            {/* Dynamic icon based on card label */}
+            {card.label.includes('LIFETIME') || card.label.includes('NET') ? (
+              // Wallet/Money icon
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M10.5 3H1.5C1.22386 3 1 3.22386 1 3.5V9.5C1 9.77614 1.22386 10 1.5 10H10.5C10.7761 10 11 9.77614 11 9.5V3.5C11 3.22386 10.7761 3 10.5 3Z" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 6.5C8 7.05228 7.55228 7.5 7 7.5C6.44772 7.5 6 7.05228 6 6.5C6 5.94772 6.44772 5.5 7 5.5C7.55228 5.5 8 5.94772 8 6.5Z" fill={card.simple ? "#2563EB" : "#1A63BC"}/>
+              </svg>
+            ) : card.label.includes('DAILY') ? (
+              // Calendar/Day icon
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <rect x="1.5" y="2.5" width="9" height="8" rx="1" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1"/>
+                <path d="M1.5 4.5H10.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1"/>
+                <path d="M3.5 1.5V3.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+                <path d="M8.5 1.5V3.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+            ) : card.label.includes('MONTHLY') ? (
+              // Calendar/Month icon
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <rect x="1.5" y="2.5" width="9" height="8" rx="1" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1"/>
+                <path d="M1.5 4.5H10.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1"/>
+                <path d="M4 6.5H5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+                <path d="M7 6.5H8" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+                <path d="M4 8.5H5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+                <path d="M7 8.5H8" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+            ) : card.label.includes('EQUITY') ? (
+              // Pie chart/Portfolio icon
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1"/>
+                <path d="M6 1.5V6H10.5" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ) : (
+              // Default wallet icon
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M10.5 3H1.5C1.22386 3 1 3.22386 1 3.5V9.5C1 9.77614 1.22386 10 1.5 10H10.5C10.7761 10 11 9.77614 11 9.5V3.5C11 3.22386 10.7761 3 10.5 3Z" stroke={card.simple ? "#2563EB" : "#1A63BC"} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 6.5C8 7.05228 7.55228 7.5 7 7.5C6.44772 7.5 6 7.05228 6 6.5C6 5.94772 6.44772 5.5 7 5.5C7.55228 5.5 8 5.94772 8 6.5Z" fill={card.simple ? "#2563EB" : "#1A63BC"}/>
+              </svg>
+            )}
+            <span style={{
+              fontFamily: 'Outfit',
+              fontStyle: 'normal',
+              fontWeight: 400,
+              fontSize: '8px',
+              lineHeight: '10px',
+              textTransform: 'uppercase',
+              color: card.simple ? '#333333' : '#475467',
+              whiteSpace: 'nowrap'
+            }}>{card.label}</span>
+          </div>
+          
+          {/* Amount */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'baseline',
+            gap: '3px'
+          }}>
+            <span style={{
+              fontFamily: 'Outfit',
+              fontStyle: 'normal',
+              fontWeight: 700,
+              fontSize: '13px',
+              lineHeight: '16px',
+              color: card.simple ? '#333333' : '#4B4B4B',
+              whiteSpace: 'nowrap'
+            }}>{card.amount}</span>
+            <span style={{
+              fontFamily: 'Outfit',
+              fontStyle: 'normal',
+              fontWeight: 400,
+              fontSize: '8px',
+              lineHeight: '10px',
+              color: card.simple ? '#333333' : '#475467'
+            }}>USD</span>
+          </div>
+        </div>
+        
+        {/* Bottom Section - Percentage + Chart (only for non-simple cards) */}
+        {!card.simple && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end'
+          }}>
+            {/* Percentage Badge */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '2px'
+            }}>
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                {card.trend === 'up' ? (
+                  <path d="M3 9L7 5L11 9" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                ) : (
+                  <path d="M11 5L7 9L3 5" stroke="#B91C1C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                )}
+              </svg>
+              <span style={{
+                fontFamily: 'Inter',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '10px',
+                lineHeight: '12px',
+                color: isGreen ? '#15803D' : '#B91C1C'
+              }}>{card.percent}</span>
             </div>
-            <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
-              {[
-                {key: 'dashboard', label: 'Dashboard'},
-                {key: 'clients', label: 'Clients'},
-                {key: 'pending', label: 'Pending Orders'},
-                {key: 'merge', label: 'Merge Level'},
-                {key: 'ibs', label: 'IBs'},
-                {key: 'otherPct', label: 'Other Percentage'},
-                {key: 'comments', label: '% Comments'},
-                {key: 'settings', label: 'Settings'}
-              ].map(item => {
-                const isActive = active === item.key
-                return (
-                  <button key={item.key} onClick={() => onNavigate(item.key)} style={{
-                    textAlign: 'left', border: 'none', background: isActive ? 'rgba(37,99,235,0.09)' : 'transparent',
-                    padding: '10px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                    fontWeight: 500, color: isActive ? '#2563EB' : '#4B4B4B', display: 'flex', alignItems: 'center'
-                  }}>
-                    {item.label}
-                  </button>
-                )
-              })}
-            </div>
-            <div style={{marginTop: 'auto'}}>
-              <button onClick={onClose} style={{
-                width: '100%', background: '#F4F4F4', border: '1px solid #E5E7EB', borderRadius: 10,
-                padding: '10px 12px', fontFamily: 'Outfit', fontSize: 12, fontWeight: 600, color: '#4B4B4B', cursor: 'pointer'
-              }}>Logout</button>
-            </div>
+            
+            {/* Mini Chart */}
+            <svg width="50" height="24" viewBox="0 0 50 24" fill="none" style={{ marginRight: '-5px' }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={isGreen ? "rgba(21, 128, 61, 0.3)" : "rgba(185, 28, 28, 0.3)"} />
+                  <stop offset="100%" stopColor={isGreen ? "rgba(21, 128, 61, 0)" : "rgba(185, 28, 28, 0)"} />
+                </linearGradient>
+              </defs>
+              {isGreen ? (
+                <>
+                  <path d="M0 24V14C7 12 14 10 21 8C28 6 35 7 42 9C45 10 48 8 50 6V24H0Z" fill={`url(#${gradientId})`}/>
+                  <path d="M0 14C7 12 14 10 21 8C28 6 35 7 42 9C45 10 48 8 50 6" stroke="#15803D" strokeWidth="1.5" fill="none"/>
+                </>
+              ) : (
+                <>
+                  <path d="M0 0V10C7 12 14 14 21 16C28 18 35 17 42 15C45 14 48 16 50 18V0H0Z" fill={`url(#${gradientId})`}/>
+                  <path d="M0 10C7 12 14 14 21 16C28 18 35 17 42 15C45 14 48 16 50 18" stroke="#B91C1C" strokeWidth="1.5" fill="none"/>
+                </>
+              )}
+            </svg>
           </div>
         )}
       </div>
-    </>
-  )
-}
-
-// Metrics view (cards list)
-const MetricsView = ({ metrics, onBack }) => {
-  return (
-    <div style={{
-      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-      background: '#F4F4F4', overflowY: 'auto', fontFamily: 'Outfit'
-    }}>
-      {/* Status bar placeholder height to avoid overlap */}
-      <div style={{height: 60}} />
-      {/* Header */}
-      <div style={{padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        <button onClick={onBack} style={{
-          width: 36, height: 36, background: 'rgba(230,238,248,0.44)', border: 'none', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M15 18L9 12L15 6" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <h2 style={{margin: 0, fontSize: 20, fontWeight: 600, color: '#4B4B4B'}}>Client Metrics</h2>
-        <div style={{width: 36, height: 36, background: '#C4C4C4', borderRadius: '50%'}} />
-      </div>
-      <div style={{marginTop: 24, padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12}}>
-        {metrics.map(m => (
-          <div key={m.key} style={{
-            background: '#FFFFFF', border: '1px solid #F2F2F7', boxShadow: '0 0 12px rgba(75,75,75,0.05)',
-            borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-              <span style={{fontSize: 12, fontWeight: 600, color: '#4B4B4B'}}>{m.label}</span>
-              <span style={{fontSize: 18, fontWeight: 700, color: m.color}}>{m.value}</span>
-            </div>
-            <div style={{width: 36, height: 36, background: 'rgba(37,99,235,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="9" stroke="#2563EB" strokeWidth="1.5" />
-                <path d="M10 5V10L13 13" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-        ))}
-        <div style={{height: 90}} />
-      </div>
-    </div>
-  )
-}
-
-const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
-  const [showIBFilterModal, setShowIBFilterModal] = useState(false)
-  const [showGroupsModal, setShowGroupsModal] = useState(false)
-  const [currentTime, setCurrentTime] = useState('5:08')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [showDrawer, setShowDrawer] = useState(false)
-  const [activeNav, setActiveNav] = useState('clients')
-  const [showMetrics, setShowMetrics] = useState(false)
-  const itemsPerPage = 10
-
-  // Update time
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date()
-      const hours = now.getHours()
-      const minutes = now.getMinutes()
-      setCurrentTime(`${hours}:${minutes.toString().padStart(2, '0')}`)
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 60000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Filter clients
-  const filteredClients = (clients || []).filter(client => 
-    client.login?.toString().includes(searchQuery) ||
-    client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  // Calculate totals
-  const totals = {
-    monthlyEquity: filteredClients.reduce((sum, c) => sum + (parseFloat(c.equity) || 0), 0),
-    lifetimeBonusOut: filteredClients.reduce((sum, c) => sum + (parseFloat(c.bonus) || 0), 0)
+    )
   }
 
-  // Pagination
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const displayedClients = filteredClients.slice(startIndex, endIndex)
-
-  // Aggregate metrics for metrics view
-  const metricsData = (() => {
-    const sum = (key) => filteredClients.reduce((acc, c) => acc + (parseFloat(c[key]) || 0), 0)
-    return [
-      { key: 'totalClients', label: 'Total Clients', value: filteredClients.length, color: '#2563EB' },
-      { key: 'totalBalance', label: 'Total Balance', value: sum('balance').toFixed(2), color: '#2563EB' },
-      { key: 'totalCredit', label: 'Total Credit', value: sum('credit').toFixed(2), color: '#2563EB' },
-      { key: 'totalEquity', label: 'Total Equity', value: sum('equity').toFixed(2), color: '#34C759' },
-      { key: 'floatingProfit', label: 'Floating Profit', value: sum('floating_profit').toFixed(2), color: '#34C759' },
-      { key: 'pnl', label: 'PNL', value: sum('pnl').toFixed(2), color: '#34C759' },
-      { key: 'lifetimeBonusOut', label: 'Lifetime Bonus OUT', value: sum('lifetimeBonusOut').toFixed(2), color: '#999999' },
-      { key: 'lifetimeBonusIn', label: 'Lifetime Bonus IN', value: sum('lifetimeBonusIn').toFixed(2), color: '#2563EB' }
-    ]
-  })()
-
   return (
     <div style={{
-      width: '100%',
-      maxWidth: '412px',
-      height: '100vh',
-      margin: '0 auto',
-      background: '#F4F4F4',
       position: 'relative',
+      width: '412px',
+      height: '923px',
+      background: '#F2F2F7',
+      fontFamily: 'Outfit, sans-serif',
       overflow: 'hidden',
-      fontFamily: 'Outfit, sans-serif'
+      borderRadius: '20px'
     }}>
-      <SideDrawer 
-        open={showDrawer} 
-        active={activeNav} 
-        onClose={() => setShowDrawer(false)}
-        onNavigate={(key) => {
-          setActiveNav(key)
-          if (key === 'dashboard') {
-            setShowMetrics(true)
-          } else if (key === 'clients') {
-            setShowMetrics(false)
-          }
-        }}
-      />
-      {/* Status Bar */}
+      {/* Rectangle 41868 - Header */}
       <div style={{
         position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        width: '412px',
+        height: '118px',
+        left: 'calc(50% - 412px/2)',
+        top: '0px',
+        background: '#FFFFFF',
+        boxShadow: '0px 3.64486px 44.9229px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px'
       }}>
-        <span style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '17px',
-          color: '#4B4B4B'
-        }}>{currentTime}</span>
-        
-        <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
-          <svg width="20" height="13" viewBox="0 0 20 13" fill="none">
-            <rect x="0" y="2" width="4" height="9" rx="1" fill="#4B4B4B"/>
-            <rect x="6" y="0" width="4" height="11" rx="1" fill="#4B4B4B"/>
-            <rect x="12" y="3" width="4" height="8" rx="1" fill="#4B4B4B"/>
-            <rect x="18" y="5" width="2" height="6" rx="1" fill="#4B4B4B"/>
-          </svg>
-          <svg width="18" height="13" viewBox="0 0 18 13" fill="none">
-            <path d="M1 6.5C1 6.5 4 1 9 1C14 1 17 6.5 17 6.5C17 6.5 14 12 9 12C4 12 1 6.5 1 6.5Z" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <circle cx="9" cy="6.5" r="2" fill="#4B4B4B"/>
-          </svg>
-          <div style={{ position: 'relative', width: '27px', height: '13px' }}>
-            <rect width="25" height="13" rx="4" fill="none" stroke="#4B4B4B" strokeWidth="1" opacity="0.35"/>
-            <rect x="2" y="2" width="21" height="9" rx="2.5" fill="#4B4B4B"/>
-            <rect x="26" y="4.5" width="1.5" height="4" rx="0.75" fill="#4B4B4B" opacity="0.4"/>
+        {/* Frame 1707486430 - Main Header Row */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0px',
+          gap: '119px',
+          position: 'absolute',
+          width: '372px',
+          height: '36px',
+          left: '20px',
+          top: '62px'
+        }}>
+          {/* Hamburger Menu */}
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px',
+              width: '36px',
+              height: '36px',
+              background: 'rgba(230, 238, 248, 0.44)',
+              boxShadow: 'inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer'
+            }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
+              <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
+              <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#4B4B4B"/>
+            </svg>
+          </button>
+
+          {/* Title & Profile Container */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '118px',
+            flex: 1
+          }}>
+            {/* Clients Title */}
+            <span style={{
+              fontFamily: 'Outfit',
+              fontStyle: 'normal',
+              fontWeight: 600,
+              fontSize: '20px',
+              lineHeight: '17px',
+              color: '#4B4B4B'
+            }}>
+              Clients
+            </span>
+
+            {/* Profile Picture */}
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              boxShadow: 'inset 0px 4px 4px rgba(0, 0, 0, 0.25)'
+            }}>
+              <img 
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces" 
+                alt="Profile"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Header */}
+      {/* Frame 1707486432 - Action Buttons Row */}
       <div style={{
-        position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '62px',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <button 
-          onClick={() => setShowDrawer(true)}
-          style={{
-            width: '36px',
-            height: '36px',
-            background: 'rgba(230, 238, 248, 0.44)',
-            boxShadow: 'inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
-            borderRadius: '8px',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-            <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-            <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-          </svg>
-        </button>
-        
-        <h1 style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '20px',
-          color: '#4B4B4B',
-          margin: 0
-        }}>{showMetrics ? 'Client Metrics' : 'Clients'}</h1>
-        
-        <div style={{
-          width: '36px',
-          height: '36px',
-          background: '#C4C4C4',
-          borderRadius: '50%',
-          boxShadow: 'inset 0px 4px 4px rgba(0, 0, 0, 0.25)'
-        }} />
-      </div>
-
-      {/* View All (hide in metrics view) */}
-      <div style={{
-        position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '138px',
-        display: 'flex',
+        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto'
-      }}>
-        <button style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '12px',
-          color: '#2563EB',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer'
-        }}>View All</button>
-        
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5V19M5 12H19" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" onClick={() => setShowCustomizeModal(true)} style={{cursor: 'pointer'}}>
-            <rect x="4" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="11" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="18" y="7" width="5" height="10" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-        </div>
-      </div>
-
-      {/* Face Cards (hide in metrics view) */}
-      <div style={{
-        position: 'absolute',
-        width: '392px',
-        left: '20px',
-        top: '172px',
-        display: 'flex',
-        gap: '10px',
-        overflowX: 'auto',
-        opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto'
-      }} className="scrollbar-hide">
-        {/* Monthly Equity Card */}
-        <div style={{
-          minWidth: '176px',
-          height: '82px',
-          background: '#FFFFFF',
-          border: '1px solid #F2F2F7',
-          boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-          borderRadius: '8px',
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 400,
-              textTransform: 'uppercase',
-              color: '#333333'
-            }}>MONTHLY EQUITY</span>
-            <div style={{ width: '12px', height: '12px', background: '#2563EB', borderRadius: '2px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#34C759'
-            }}>{totals.monthlyEquity.toFixed(2)}</span>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              color: '#333333'
-            }}>USD</span>
-          </div>
-        </div>
-
-        {/* Lifetime Bonus Out Card */}
-        <div style={{
-          minWidth: '176px',
-          height: '82px',
-          background: '#FFFFFF',
-          border: '1px solid #F2F2F7',
-          boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-          borderRadius: '8px',
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 400,
-              textTransform: 'uppercase',
-              color: '#475467'
-            }}>LIFETIME BONUS OUT</span>
-            <div style={{ width: '12px', height: '12px', background: '#2563EB', borderRadius: '2px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#999999'
-            }}>{totals.lifetimeBonusOut.toFixed(2)}</span>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              color: '#333333'
-            }}>USD</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Carousel Dots (hide in metrics view) */}
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        top: '264px',
-        display: 'flex',
-        gap: '6px',
-        opacity: showMetrics ? 0 : 1
-      }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563EB' }} />
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(37, 99, 235, 0.2)' }} />
-      </div>
-
-      {/* Search & Columns (hide in metrics view) */}
-      <div style={{
+        padding: '0px',
+        gap: '274px',
         position: 'absolute',
         width: '372px',
+        height: '18px',
         left: '20px',
-        top: '294px',
+        top: '138px'
+      }}>
+        {/* View All */}
+        <span style={{
+          width: '36px',
+          height: '11px',
+          fontFamily: 'Outfit',
+          fontStyle: 'normal',
+          fontWeight: 400,
+          fontSize: '10px',
+          lineHeight: '11px',
+          color: '#1A63BC',
+          flex: 'none',
+          order: 0,
+          flexGrow: 0
+        }}>
+          View All
+        </span>
+
+        {/* Frame 1707486431 - Icon Buttons Container */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '0px',
+          gap: '4px',
+          width: '62px',
+          height: '18px',
+          flex: 'none',
+          order: 1,
+          flexGrow: 0
+        }}>
+          {/* Percentage Icon Button */}
+          <button style={{
+            width: '18px',
+            height: '18px',
+            background: 'transparent',
+            border: 'none',
+            padding: '0px',
+            cursor: 'pointer',
+            flex: 'none',
+            order: 0,
+            flexGrow: 0
+          }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6.81846 8.06846C7.26347 8.06846 7.69848 7.9365 8.06849 7.68927C8.4385 7.44204 8.72689 7.09063 8.89719 6.6795C9.06748 6.26837 9.11204 5.81597 9.02523 5.37951C8.93841 4.94305 8.72412 4.54214 8.40945 4.22747C8.09478 3.9128 7.69387 3.69851 7.25741 3.6117C6.82095 3.52488 6.36855 3.56944 5.95742 3.73973C5.54629 3.91003 5.19488 4.19842 4.94765 4.56843C4.70042 4.93844 4.56846 5.37345 4.56846 5.81846C4.56933 6.41502 4.80658 6.98697 5.22841 7.40879C5.65023 7.83062 6.2219 8.06787 6.81846 8.06846ZM6.81846 5.06846C6.9668 5.06846 7.1118 5.11245 7.23514 5.19486C7.35848 5.27727 7.45461 5.3944 7.51137 5.53145C7.56814 5.66849 7.58299 5.81929 7.55405 5.96478C7.52511 6.11027 7.45368 6.2439 7.34879 6.34879C7.2439 6.45368 7.11027 6.52511 6.96478 6.55405C6.81929 6.58299 6.66849 6.56814 6.53145 6.51137C6.3944 6.45461 6.27727 6.35848 6.19486 6.23514C6.11245 6.1118 6.06846 5.9668 6.06846 5.81846C6.06846 5.61955 6.14748 5.42878 6.28813 5.28813C6.42878 5.14748 6.61955 5.06846 6.81846 5.06846ZM13.1815 9.93146C12.7365 9.93146 12.3015 10.0634 11.9315 10.3107C11.5615 10.5579 11.2731 10.9093 11.1028 11.3204C10.9325 11.7316 10.888 12.184 10.9748 12.6204C11.0616 13.0569 11.2759 13.4578 11.5906 13.7725C11.9052 14.0871 12.3062 14.3014 12.7426 14.3882C13.1791 14.475 13.6315 14.4305 14.0426 14.2602C14.4537 14.0899 14.8051 13.8015 15.0524 13.4315C15.2996 13.0615 15.4315 12.6265 15.4315 12.1815C15.4306 11.5849 15.1934 11.013 14.7716 10.5911C14.3497 10.1693 13.778 9.93206 13.1815 9.93146ZM13.1815 12.9315C13.0331 12.9315 12.8881 12.8875 12.7648 12.8051C12.6414 12.7227 12.5453 12.6055 12.4886 12.4685C12.4318 12.3314 12.4169 12.1806 12.4459 12.0351C12.4748 11.8897 12.5462 11.756 12.6511 11.6511C12.756 11.5462 12.8897 11.4748 13.0351 11.4459C13.1806 11.4169 13.3314 11.4318 13.4685 11.4886C13.6055 11.5453 13.7227 11.6414 13.8051 11.7648C13.8875 11.8881 13.9315 12.0331 13.9315 12.1815C13.9315 12.3804 13.8524 12.5711 13.7118 12.7118C13.5711 12.8524 13.3804 12.9315 13.1815 12.9315ZM15.7802 3.21971C15.6395 3.07911 15.4488 3.00012 15.2499 3.00012C15.051 3.00012 14.8603 3.07911 14.7197 3.21971L4.21971 13.7197C4.14888 13.7889 4.09106 13.8717 4.05175 13.9632C4.01244 14.0547 3.99236 14.1531 3.99144 14.2527C3.99053 14.3522 4.00881 14.451 4.04515 14.5432C4.08149 14.6353 4.13517 14.7191 4.20554 14.7895C4.27591 14.8599 4.35966 14.9156 4.45184 14.9533C4.54402 14.991 4.64285 15.01 4.74242 15.0091C4.842 15.0083 4.94056 14.9876 5.03204 14.9483C5.12353 14.909 5.20623 14.8518 5.27571 14.7802L15.7802 4.28021C15.9208 4.13957 15.9998 3.94883 15.9998 3.74996C15.9998 3.55109 15.9208 3.36036 15.7802 3.21971Z" fill="#4B4B4B"/>
+            </svg>
+          </button>
+
+          {/* Download Icon Button */}
+          <button style={{
+            width: '18px',
+            height: '18px',
+            background: 'transparent',
+            border: 'none',
+            padding: '0px',
+            cursor: 'pointer',
+            flex: 'none',
+            order: 1,
+            flexGrow: 0
+          }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 3H10.5V7.5H12.375L9 10.875M9 3H7.5V7.5H5.625L9 10.875" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4.5 14.25H13.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {/* Filter Icon Button */}
+          <button onClick={() => setIsFilterModalOpen(true)} style={{
+            width: '18px',
+            height: '18px',
+            background: 'transparent',
+            border: 'none',
+            padding: '0px',
+            cursor: 'pointer',
+            flex: 'none',
+            order: 2,
+            flexGrow: 0
+          }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5.25 8.25H12.75V9.75H5.25V8.25ZM3 5.25H15V6.75H3V5.25ZM7.5 11.25H10.5V12.75H7.5V11.25Z" fill="#4B4B4B"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Frame 1707486433 - Scrollable Face Cards */}
+      <div style={{
         display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: '0px',
         gap: '10px',
-        opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto'
+        position: 'absolute',
+        width: '392px',
+        height: '82px',
+        left: '20px',
+        top: '166px',
+        overflowX: 'scroll',
+        overflowY: 'hidden'
+      }} className="scrollbar-hide">
+        {faceCards.map((card) => (
+          <FaceCard key={card.id} card={card} />
+        ))}
+      </div>
+
+      {/* Search Input */}
+      <div style={{
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '6px 10px',
+        gap: '10px',
+        position: 'absolute',
+        width: '269px',
+        height: '42px',
+        left: '20px',
+        top: '296px',
+        background: '#FFFFFF',
+        border: '1px solid #ECECEC',
+        boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+        borderRadius: '8px'
       }}>
         <div style={{
-          flex: 1,
-          height: '44px',
-          background: '#FFFFFF',
-          border: '1px solid #E6EEF8',
-          boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-          borderRadius: '12px',
-          padding: '0 16px',
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: '10px'
+          padding: '0px',
+          gap: '10px',
+          width: '100%',
+          height: '24px'
         }}>
+          {/* Search Icon */}
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M13.5233 14.4628L16.7355 17.6742L15.6742 18.7355L12.4628 15.5233C11.2678 16.4812 9.7815 17.0022 8.25 17C4.524 17 1.5 13.976 1.5 10.25C1.5 6.524 4.524 3.5 8.25 3.5C11.976 3.5 15 6.524 15 10.25C15.0022 11.7815 14.4812 13.2678 13.5233 14.4628ZM12.0187 13.9062C12.9704 12.9273 13.5019 11.6153 13.5 10.25C13.5 7.3498 11.1503 5 8.25 5C5.3498 5 3 7.3498 3 10.25C3 13.1503 5.3498 15.5 8.25 15.5C9.6153 15.5019 10.9273 14.9704 11.9062 14.0187L12.0187 13.9062Z" fill="#4B4B4B"/>
           </svg>
-          <input 
+
+          {/* Search Input */}
+          <input
             type="text"
             placeholder="Search by Login, Name and Email....."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              flex: 1,
+              width: '208px',
+              height: '24px',
+              fontFamily: 'Outfit',
+              fontStyle: 'normal',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '23px',
+              letterSpacing: '0.03em',
+              color: '#4B4B4B',
               border: 'none',
               outline: 'none',
-              fontFamily: 'Outfit',
-              fontSize: '12px',
-              color: '#333333',
-              background: 'transparent'
+              background: 'transparent',
+              flex: 'none',
+              order: 1,
+              flexGrow: 0
             }}
           />
         </div>
-        
-        <button 
-          onClick={() => setShowCustomizeModal(true)}
-          style={{
-            width: '93px',
-            height: '44px',
-            background: 'rgba(230, 238, 248, 0.44)',
-            border: '1px solid #F2F2F7',
-            boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="3" y="2" width="3" height="12" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="9" y="2" width="3" height="12" stroke="#999999" strokeWidth="1.5"/>
-          </svg>
-          <span style={{
-            fontFamily: 'Outfit',
-            fontSize: '12px',
-            color: '#333333'
-          }}>Columns</span>
-        </button>
       </div>
 
-      {/* Metrics View */}
-      {showMetrics && (
-        <MetricsView metrics={metricsData} onBack={() => { setShowMetrics(false); setActiveNav('clients') }} />
-      )}
-
-      {/* Pagination & Table Container (hide when metrics) */}
-      <div style={{
-        position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '374px',
-        bottom: '81px',
+      {/* Columns Button */}
+      <div onClick={() => setIsColumnsModalOpen(true)} style={{
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '6px 10px',
         gap: '10px',
-        overflowY: 'auto',
-        opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto'
+        position: 'absolute',
+        width: '93px',
+        height: '42px',
+        left: '299px',
+        top: '296px',
+        background: '#F4F8FC',
+        border: '1px solid #ECECEC',
+        boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05), inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+        borderRadius: '8px',
+        cursor: 'pointer'
       }}>
-        {/* Showing text */}
         <div style={{
-          textAlign: 'center',
-          fontFamily: 'Outfit',
-          fontSize: '12px',
-          fontWeight: 500,
-          color: '#333333'
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '0px',
+          gap: '10px',
+          width: '74px',
+          height: '24px'
         }}>
-          Showing {startIndex + 1}–{Math.min(endIndex, filteredClients.length)} of {filteredClients.length}
-        </div>
+          {/* Columns Icon */}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 4H3.5C3.23478 4 2.98043 4.10536 2.79289 4.29289C2.60536 4.48043 2.5 4.73478 2.5 5V15C2.5 15.2652 2.60536 15.5196 2.79289 15.7071C2.98043 15.8946 3.23478 16 3.5 16H6C6.26522 16 6.51957 15.8946 6.70711 15.7071C6.89464 15.5196 7 15.2652 7 15V5C7 4.73478 6.89464 4.48043 6.70711 4.29289C6.51957 4.10536 6.26522 4 6 4ZM6 15H3.5V5H6V15ZM11.5 4H9C8.73478 4 8.48043 4.10536 8.29289 4.29289C8.10536 4.48043 8 4.73478 8 5V15C8 15.2652 8.10536 15.5196 8.29289 15.7071C8.48043 15.8946 8.73478 16 9 16H11.5C11.7652 16 12.0196 15.8946 12.2071 15.7071C12.3946 15.5196 12.5 15.2652 12.5 15V5C12.5 4.73478 12.3946 4.48043 12.2071 4.29289C12.0196 4.10536 11.7652 4 11.5 4ZM11.5 15H9V5H11.5V15Z" fill="#4B4B4B"/>
+          </svg>
 
-        {/* Pagination buttons */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            style={{
+          {/* Columns Text */}
+          <span style={{
+            width: '48px',
+            height: '24px',
+            fontFamily: 'Outfit',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            fontSize: '12px',
+            lineHeight: '23px',
+            letterSpacing: '0.03em',
+            color: '#4B4B4B'
+          }}>
+            Columns
+          </span>
+        </div>
+      </div>
+
+      {/* Clients Table Container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '0px',
+        gap: '10px',
+        position: 'absolute',
+        width: '372px',
+        height: '455px',
+        left: '21px',
+        top: '378px'
+      }}>
+        {/* Pagination Controls */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0px',
+          width: '372px',
+          height: '25px',
+          flex: 'none',
+          order: 0,
+          alignSelf: 'stretch',
+          flexGrow: 0
+        }}>
+          {/* Showing text */}
+          <span style={{
+            fontFamily: 'Outfit',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            fontSize: '12px',
+            lineHeight: '15px',
+            color: '#666666'
+          }}>
+            Showing 1–10 of 533
+          </span>
+
+          {/* Pagination buttons */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            {/* Previous button */}
+            <button style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
               padding: '6px 14px',
-              border: '1px solid #333333',
+              gap: '16px',
+              width: '66px',
+              height: '25px',
+              opacity: 0.4,
+              border: '1px solid #344459',
               borderRadius: '24px',
               background: 'transparent',
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 500,
-              color: '#333333',
-              opacity: currentPage === 1 ? 0.4 : 1,
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Previous
-          </button>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            style={{
+              cursor: 'not-allowed'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '10px',
+                lineHeight: '13px',
+                textAlign: 'center',
+                color: '#344459'
+              }}>Previous</span>
+            </button>
+
+            {/* Next button */}
+            <button style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
               padding: '6px 14px',
-              border: '1px solid #333333',
+              gap: '16px',
+              width: '50px',
+              height: '25px',
+              border: '1px solid #344459',
               borderRadius: '24px',
               background: 'transparent',
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 500,
-              color: '#333333',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-            }}
-          >
-            Next
-          </button>
+              cursor: 'pointer'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '10px',
+                lineHeight: '13px',
+                textAlign: 'center',
+                color: '#344459'
+              }}>Next</span>
+            </button>
+          </div>
         </div>
 
         {/* Table */}
         <div style={{
-          width: '100%',
-          border: '1px solid #F2F2F7',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          padding: '0px',
+          width: '372px',
+          height: '420px',
+          overflowX: 'scroll',
           borderRadius: '6px',
-          overflowX: 'auto',
-          background: '#FFFFFF'
-        }}>
-          <div style={{ display: 'flex', minWidth: '800px' }}>
-            {/* Login Column */}
-            <div style={{ width: '63px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '1.3px solid #E1E1E1',
+          flex: 'none',
+          order: 1,
+          alignSelf: 'stretch',
+          flexGrow: 0
+        }} className="scrollbar-hide">
+          {/* Sample table data - replace with real data */}
+          {/* Login Column */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '63px',
+            height: '420px',
+            flex: 'none',
+            order: 0,
+            flexGrow: 0
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              width: '63px',
+              height: '35px',
+              background: '#1A63BC',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1',
+              borderRadius: '4px 4px 0px 0px'
+            }}>
+              <span style={{
                 fontFamily: 'Outfit',
-                fontSize: '12px',
+                fontStyle: 'normal',
                 fontWeight: 600,
-                color: '#333333'
-              }}>Login</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => onClientClick && onClientClick(client)}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Outfit',
-                    fontSize: '12px',
-                    color: '#2563EB',
-                    cursor: 'pointer'
-                  }}
-                >{client.login}</div>
-              ))}
-            </div>
-
-            {/* Balance Column */}
-            <div style={{ width: '70px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
                 fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333'
-              }}>Balance</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.balance || 0).toFixed(2)}</div>
-              ))}
+                lineHeight: '15px',
+                color: '#F5F5F5'
+              }}>Login</span>
             </div>
-
-            {/* Floating Profit Column */}
-            <div style={{ width: '105px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
+            {/* Rows */}
+            {['301246', '300154', '301310', '302802', '301475', '300399', '301771', '300073', '300073', '300888', '300888'].map((login, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
                 padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333',
-                textAlign: 'center'
-              }}>Floating Profit</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.floating_profit || 0).toFixed(2)}</div>
-              ))}
-            </div>
+                width: '63px',
+                height: '35px',
+                background: '#FFFFFF',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#1A63BC'
+                }}>{login}</span>
+              </div>
+            ))}
+          </div>
 
-            {/* Equity Column */}
-            <div style={{ width: '58px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '0.93px solid #E1E1E1',
-                fontFamily: 'Poppins',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#333333'
-              }}>Equity</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Poppins',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{parseFloat(client.equity || 0).toFixed(2)}</div>
-              ))}
-            </div>
-
-            {/* Name Column */}
-            <div style={{ width: '121px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EDEDED',
-                borderBottom: '1.3px solid #E1E1E1',
+          {/* Balance Column */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '80px',
+            height: '420px',
+            flex: 'none',
+            order: 1,
+            flexGrow: 0
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              width: '80px',
+              height: '35px',
+              background: '#1A63BC',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
+            }}>
+              <span style={{
                 fontFamily: 'Outfit',
-                fontSize: '12px',
+                fontStyle: 'normal',
                 fontWeight: 600,
-                color: '#333333',
-                textAlign: 'center'
-              }}>Name</div>
-              {displayedClients.map((client, idx) => (
-                <div 
-                  key={idx}
-                  style={{
-                    padding: '10px',
-                    background: '#FFFFFF',
-                    borderBottom: '0.93px solid #E1E1E1',
-                    fontFamily: 'Outfit',
-                    fontSize: '12px',
-                    color: '#333333'
-                  }}
-                >{client.name || '-'}</div>
-              ))}
+                fontSize: '12px',
+                lineHeight: '15px',
+                color: '#F5F5F5'
+              }}>Balance</span>
             </div>
+            {/* Rows */}
+            {['5.03', '0.00', '0.00', '0.00', '-0.72', '103.73', '20.05', '54.54', '0.00', '0.00', '0.00'].map((balance, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                width: '80px',
+                height: '35px',
+                background: '#FFFFFF',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#4B4B4B'
+                }}>{balance}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Floating Profit Column */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '110px',
+            height: '420px',
+            flex: 'none',
+            order: 2,
+            flexGrow: 0
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              width: '110px',
+              height: '35px',
+              background: '#1A63BC',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 600,
+                fontSize: '12px',
+                lineHeight: '15px',
+                color: '#F5F5F5',
+                whiteSpace: 'nowrap'
+              }}>Floating Profit</span>
+            </div>
+            {/* Rows */}
+            {['0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '-5.89', '0.00', '0.00', '0.00', '0.00'].map((profit, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                width: '110px',
+                height: '35px',
+                background: '#FFFFFF',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#4B4B4B'
+                }}>{profit}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Equity Column */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '80px',
+            height: '420px',
+            flex: 'none',
+            order: 3,
+            flexGrow: 0
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              width: '80px',
+              height: '35px',
+              background: '#1A63BC',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 600,
+                fontSize: '12px',
+                lineHeight: '15px',
+                color: '#F5F5F5'
+              }}>Equity</span>
+            </div>
+            {/* Rows */}
+            {['54.54', '103.73', '0.00', '0.00', '-0.72', '20.05', '0.00', '0.00', '5.03', '0.00', '0.00'].map((equity, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                width: '80px',
+                height: '35px',
+                background: '#FFFFFF',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#4B4B4B'
+                }}>{equity}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Name Column */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '120px',
+            height: '420px',
+            flex: 'none',
+            order: 4,
+            flexGrow: 0
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              width: '120px',
+              height: '35px',
+              background: '#1A63BC',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1',
+              borderRadius: '0px 4px 0px 0px'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 600,
+                fontSize: '12px',
+                lineHeight: '15px',
+                color: '#F5F5F5'
+              }}>Name</span>
+            </div>
+            {/* Rows */}
+            {['Priyanka Bha...', 'Faruk', 'Khitindra Ka...', 'Teo Hwee Ch...', 'Yusaf Randil', 'Rahul S. Cha...', 'Moliya Hansa...', 'Ishwar Karid...', 'Ishwar Karid...', 'Tanmay', 'Madan'].map((name, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                width: '120px',
+                height: '35px',
+                background: '#FFFFFF',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#4B4B4B',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>{name}</span>
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Home Indicator */}
-        <div style={{
-          position: 'absolute',
-          bottom: '4px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '76px',
-          height: '6px',
-          background: '#F2F2F7',
-          borderRadius: '40px'
-        }} />
       </div>
-
-      {/* Bottom Navigation */}
-      <div style={{
-        position: 'absolute',
-        width: '100%',
-        height: '81px',
-        background: '#FFFFFF',
-        boxShadow: '0px 22.74px 133px -28.43px rgba(0, 0, 0, 0.2)',
-        borderRadius: '20px',
-        padding: '28px 37px',
-        display: 'flex',
-        justifyContent: 'space-between'
-      }}>
-        {/* Home */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#475467" strokeWidth="1.5"/>
-          </svg>
-        </button>
-        {/* Clients */}
-        <button onClick={() => { setShowMetrics(false); setActiveNav('clients') }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="9" cy="7" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="15" cy="7" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="9" cy="17" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <circle cx="15" cy="17" r="4" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-          </svg>
-          <span style={{ fontFamily: 'Outfit', fontSize: '14.56px', fontWeight: 600, color: showMetrics ? '#475467' : '#2563EB' }}>Clients</span>
-        </button>
-        {/* Metrics */}
-        <button onClick={() => { setShowMetrics(true); setActiveNav('dashboard') }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 3V21L21 21" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M7 17V13M12 17V9M17 17V7" stroke="#4B4B4B" strokeWidth="1.5"/>
-          </svg>
-        </button>
-        {/* More */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M12 1V4M12 20V23M23 12H20M4 12H1M20.49 20.49L18.36 18.36M5.64 5.64L3.51 3.51M20.49 3.51L18.36 5.64M5.64 18.36L3.51 20.49" stroke="#4B4B4B" strokeWidth="1.5"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* Modals */}
-      <CustomizeViewModal
-        isOpen={showCustomizeModal}
-        onClose={() => setShowCustomizeModal(false)}
-        onFilterClick={() => {
-          setShowCustomizeModal(false)
-          console.log('Filter clicked')
-        }}
-        onIBFilterClick={() => {
-          setShowCustomizeModal(false)
-          setShowIBFilterModal(true)
-        }}
-        onGroupsClick={() => {
-          setShowCustomizeModal(false)
-          setShowGroupsModal(true)
-        }}
-        onReset={() => {
-          setSearchQuery('')
-        }}
-        onApply={() => {
-          setShowCustomizeModal(false)
-        }}
-      />
-
-      <IBFilterModal
-        isOpen={showIBFilterModal}
-        onClose={() => setShowIBFilterModal(false)}
-        ibList={[]}
-        onApply={(selectedIBs) => {
-          console.log('Selected IBs:', selectedIBs)
-        }}
-      />
-
-      <LoginGroupsModal
-        isOpen={showGroupsModal}
-        onClose={() => setShowGroupsModal(false)}
-        groups={[]}
-        onCreateGroup={() => {
-          console.log('Create group clicked')
-        }}
-      />
-
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   )
 }
