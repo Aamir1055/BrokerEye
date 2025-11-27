@@ -497,6 +497,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         </div>
         
         {/* View All */}
+        {/* Reordered: View All left, icon buttons right (percentage, download, filter) */}
         <span style={{
           width: '57px',
           height: '22px',
@@ -508,20 +509,48 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           color: '#2563EB',
           cursor: 'pointer'
         }}>View All</span>
+        <div style={{display:'flex',flexDirection:'row',alignItems:'center',gap:'10px',height:'26px'}}>
+          {/* Percentage Button */}
+          <button style={{display:'flex',flexDirection:'column',alignItems:'flex-start',padding:'5px',width:'26px',height:'26px',background:'#FFFFFF',boxShadow:'0px 1px 1px rgba(0,0,0,0.25)',borderRadius:'6px',border:'none',cursor:'pointer'}}>
+            <div style={{display:'flex',flexDirection:'row',alignItems:'center',width:'16px',height:'16px'}}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="4.66667" cy="4.66667" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+                <circle cx="11.3333" cy="11.3333" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+                <path d="M3.33331 12.6667L12.6666 3.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </button>
+          {/* Download Button */}
+          <button style={{display:'flex',flexDirection:'column',alignItems:'flex-start',padding:'5px',width:'26px',height:'26px',background:'#FFFFFF',boxShadow:'0px 1px 1px rgba(0,0,0,0.25)',borderRadius:'6px',border:'none',cursor:'pointer'}}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2.66669V10M8 10L10.6667 7.33335M8 10L5.33333 7.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 12.6667H12" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          {/* Filter Button */}
+          <button onClick={() => setShowCustomizeModal(true)} style={{display:'flex',flexDirection:'column',alignItems:'flex-start',padding:'5px 10px',width:'68px',height:'26px',background:'#FFFFFF',boxShadow:'0px 1px 1px rgba(0,0,0,0.25)',borderRadius:'6px',border:'none',cursor:'pointer'}}>
+            <div style={{display:'flex',flexDirection:'row',alignItems:'center',gap:'4px',width:'48px',height:'16px'}}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2.66669 4.66669H13.3334M4.66669 8H11.3334M6.66669 11.3334H9.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <span style={{fontFamily:'Outfit',fontWeight:400,fontSize:'12px',lineHeight:'16px',color:'#333333'}}>Filter</span>
+            </div>
+          </button>
+        </div>
       </div>
 
-      {/* Frame 1707486466 - Face Cards Container */}
+      {/* Face Cards Scroll Row (Figma top:166px) */}
       <div style={{
         position: 'absolute',
-        width: '372px',
+        width: '392px',
         height: '82px',
         left: '20px',
-        top: '174px',
-        overflowX: 'auto',
+        top: '166px',
+        overflowX: 'scroll',
         overflowY: 'hidden',
+        whiteSpace: 'nowrap',
         opacity: showMetrics ? 0 : 1,
-        pointerEvents: showMetrics ? 'none' : 'auto',
-        whiteSpace: 'nowrap'
+        pointerEvents: showMetrics ? 'none' : 'auto'
       }} className="scrollbar-hide">
         <div style={{
           display: 'inline-flex',
@@ -530,7 +559,125 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           gap: '10px',
           height: '82px'
         }}>
-          {/* Property 1=Default - Monthly Equity Card */}
+          {/* Net Lifetime Bonus Card (first) */}
+          <div style={{
+            boxSizing: 'border-box',
+            position: 'relative',
+            width: '176px',
+            height: '82px',
+            background: '#FFFFFF',
+            border: '1px solid #ECECEC',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px',
+            flexShrink: 0
+          }}>
+            <div style={{
+              position: 'absolute',
+              left: '5.68%',
+              right: '5.68%',
+              top: '12.2%',
+              bottom: '12.2%'
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '0px',
+                gap: '10px',
+                position: 'absolute',
+                left: '0%',
+                right: '34.09%',
+                top: '0%',
+                bottom: '36.59%'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: '6px',
+                  width: '106px',
+                  height: '12px'
+                }}>
+                  <div style={{position:'relative',width:'12px',height:'12px'}}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{position:'absolute',left:0,top:0}}>
+                      <rect x="2" y="3" width="8" height="6" rx="1" stroke="#1A63BC" strokeWidth="1.5"/>
+                      <path d="M6 7V5" stroke="#1A63BC" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <span style={{
+                    width: '109px',
+                    height: '12px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '13px',
+                    textTransform: 'uppercase',
+                    color: '#475467'
+                  }}>NET LIFETIME BONUS</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: '2px',
+                  width: '106px',
+                  height: '20px'
+                }}>
+                  <span style={{
+                    width: '74px',
+                    height: '20px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    lineHeight: '20px',
+                    textTransform: 'uppercase',
+                    color: '#4B4B4B'
+                  }}>{formatValue(totals.lifetimeBonusOut)}</span>
+                  <span style={{
+                    width: '22px',
+                    height: '8px',
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '10px',
+                    lineHeight: '8px',
+                    textTransform: 'uppercase',
+                    color: '#475467'
+                  }}>USD</span>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                gap: '64px',
+                position: 'absolute',
+                left: '0%',
+                right: '0%',
+                top: '46.34%',
+                bottom: '12.2%'
+              }}>
+                <div style={{display:'flex',flexDirection:'row',alignItems:'center',gap:'3px',width:'48px',height:'14px'}}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10.5 4.66667L13.4167 7.58333M13.4167 7.58333L10.5 10.5M13.4167 7.58333H4.66667M4.08333 3.5L0.583328 7L4.08333 10.5" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span style={{width:'32px',height:'13px',fontFamily:'Inter',fontWeight:500,fontSize:'11px',lineHeight:'13px',letterSpacing:'0.01em',color:'#15803D'}}>12.0%</span>
+                </div>
+                <div style={{position:'relative',width:'44px',height:'34px'}}>
+                  <svg width="44" height="34" viewBox="0 0 44 34" fill="none" style={{position:'absolute',left:0,top:0}}>
+                    <path d="M31.59 0C31.59 8 36 17 44 21V34H31.59V0Z" fill="url(#gradBonus)" fillOpacity="0.3"/>
+                    <defs><linearGradient id="gradBonus" x1="44" y1="0" x2="31.59" y2="34" gradientUnits="userSpaceOnUse"><stop stopColor="#15803D" stopOpacity="0.3"/><stop offset="1" stopColor="#15803D" stopOpacity="0"/></linearGradient></defs>
+                  </svg>
+                  <svg width="44" height="21" viewBox="0 0 44 21" fill="none" style={{position:'absolute',left:0,top:0}}>
+                    <path d="M31.59 21C31.59 13 36 4 44 0" stroke="#15803D" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Net D/W Card (second) */}
           <div style={{
             boxSizing: 'border-box',
             position: 'relative',
@@ -1440,13 +1587,13 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         </div>
       </div>
 
-      {/* Group 1707486370 - Carousel Dots */}
+      {/* Carousel Dots (top:268px per Figma) */}
       <div style={{
         position: 'absolute',
         width: '50px',
         height: '8px',
         left: 'calc(50% - 50px/2)',
-        top: '266px',
+        top: '268px',
         display: 'flex',
         gap: '14px',
         opacity: showMetrics ? 0 : 1
