@@ -17,10 +17,9 @@ import { brokerAPI } from '../services/api'
 const ClientsPage = () => {
   const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
-  // Prefer raw snapshot only until WebSocket starts streaming; then use live clients
-  const displayClients = (rawClients.length > 0 && !lastWsReceiveAt) ? rawClients : cachedClients
-  // Alias cached data to expected local names to avoid undefined references
-  const clients = displayClients
+  // Always use rawClients (unnormalized) for Clients module - USC normalization is handled by backend
+  // rawClients contains data without frontend USC normalization (dailyDeposit, balance, etc. are not divided by 100)
+  const clients = rawClients.length > 0 ? rawClients : cachedClients
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
