@@ -212,88 +212,207 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         }}
       />
 
-      {/* Header */}
+      {/* Rounded rectangle - Header Container */}
       <div style={{
         position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '62px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        width: '412px',
+        height: '118px',
+        left: '0px',
+        top: '0px',
+        background: '#FFFFFF',
+        boxShadow: '0px 3.64486px 44.9229px rgba(0, 0, 0, 0.05)',
+        borderRadius: '20px'
       }}>
-        <button 
-          onClick={() => setShowDrawer(true)}
-          style={{
+        {/* Header Content */}
+        <div style={{
+          position: 'absolute',
+          width: '372px',
+          height: '36px',
+          left: '20px',
+          top: '62px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          {/* Hamburger Button */}
+          <button 
+            onClick={() => setShowDrawer(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '11px 8px',
+              gap: '10px',
+              width: '36px',
+              height: '36px',
+              background: 'rgba(230, 238, 248, 0.44)',
+              boxShadow: 'inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
+              <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
+              <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
+            </svg>
+          </button>
+          
+          {/* Text - Clients/Client Percentage */}
+          <h1 style={{
+            position: 'absolute',
+            width: '123px',
+            height: '24px',
+            left: 'calc(50% - 123px/2 + 0.5px)',
+            top: '6px',
+            fontFamily: 'Outfit',
+            fontStyle: 'normal',
+            fontWeight: 600,
+            fontSize: '18px',
+            lineHeight: '24px',
+            textAlign: 'center',
+            color: '#000000',
+            margin: 0
+          }}>{showMetrics ? 'Client Metrics' : 'Clients'}</h1>
+          
+          {/* Profile Image */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '0px',
+            gap: '10px',
             width: '36px',
             height: '36px',
-            background: 'rgba(230, 238, 248, 0.44)',
-            boxShadow: 'inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
-            borderRadius: '8px',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <rect y="3.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-            <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-            <rect y="13.75" width="20" height="2.5" rx="1.25" fill="#999999"/>
-          </svg>
-        </button>
-        
-        <h1 style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '20px',
-          lineHeight: '17px',
-          color: '#4B4B4B',
-          margin: 0
-        }}>{showMetrics ? 'Client Metrics' : 'Client Percentage'}</h1>
-        
-        <div style={{
-          width: '36px',
-          height: '36px',
-          background: '#C4C4C4',
-          borderRadius: '50%',
-          boxShadow: 'inset 0px 4px 4px rgba(0, 0, 0, 0.25)'
-        }} />
+            boxShadow: 'inset 0px 4px 4px rgba(0, 0, 0, 0.25)',
+            borderRadius: '50%',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              background: '#C4C4C4',
+              borderRadius: '50%'
+            }} />
+          </div>
+        </div>
       </div>
 
-      {/* View All (hide in metrics view) */}
+      {/* Frame 1707486462 - Action buttons & View All */}
       <div style={{
-        position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '138px',
         display: 'flex',
+        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        padding: '0px',
+        gap: '175px',
+        position: 'absolute',
+        width: '372px',
+        height: '26px',
+        left: '20px',
+        top: '138px',
         opacity: showMetrics ? 0 : 1,
         pointerEvents: showMetrics ? 'none' : 'auto'
       }}>
-        <button style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '12px',
-          color: '#2563EB',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer'
-        }}>View All</button>
-        
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Download button */}
+        {/* Frame 1707486461 - Action Buttons */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '0px',
+          gap: '10px',
+          width: '140px',
+          height: '26px'
+        }}>
+          {/* Filter Button */}
+          <button
+            onClick={() => setShowCustomizeModal(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '5px 10px',
+              gap: '10px',
+              width: '68px',
+              height: '26px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '48px',
+              height: '16px'
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2.66669 4.66669H13.3334M4.66669 8H11.3334M6.66669 11.3334H9.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <span style={{
+                width: '28px',
+                height: '16px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 400,
+                fontSize: '12px',
+                lineHeight: '16px',
+                color: '#333333'
+              }}>Filter</span>
+            </div>
+          </button>
+          
+          {/* Percentage Button */}
           <button
             style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '5px',
+              gap: '10px',
               width: '26px',
               height: '26px',
+              background: '#FFFFFF',
+              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '16px',
+              height: '16px'
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="4.66667" cy="4.66667" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+                <circle cx="11.3333" cy="11.3333" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
+                <path d="M3.33331 12.6667L12.6666 3.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </button>
+          
+          {/* Download Button */}
+          <button
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
               padding: '5px',
+              gap: '10px',
+              width: '26px',
+              height: '26px',
               background: '#FFFFFF',
               boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
               borderRadius: '6px',
@@ -306,255 +425,419 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               <path d="M4 12.6667H12" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
             </svg>
           </button>
-          
-          {/* Percentage button */}
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '26px',
-              height: '26px',
-              padding: '5px',
-              background: '#FFFFFF',
-              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="4.66667" cy="4.66667" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
-              <circle cx="11.3333" cy="11.3333" r="1.33333" stroke="#333333" strokeWidth="1.2"/>
-              <path d="M3.33331 12.6667L12.6666 3.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-          </button>
-          
-          {/* Filter button */}
-          <button
-            onClick={() => setShowCustomizeModal(true)}
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              padding: '5px 10px',
-              gap: '4px',
-              height: '26px',
-              background: '#FFFFFF',
-              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2.66669 4H13.3334M4.66669 8H11.3334M6.66669 12H9.33335" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontWeight: 400,
-              fontSize: '12px',
-              lineHeight: '16px',
-              color: '#333333'
-            }}>Filter</span>
-          </button>
-          
-          {/* Show/Hide Columns button */}
-          <button
-            onClick={() => setShowColumnsModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '26px',
-              height: '26px',
-              padding: '5px',
-              background: '#FFFFFF',
-              boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.25)',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2 4H14M2 8H14M2 12H14" stroke="#333333" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-          </button>
         </div>
+        
+        {/* View All */}
+        <span style={{
+          width: '57px',
+          height: '22px',
+          fontFamily: 'Outfit',
+          fontStyle: 'normal',
+          fontWeight: 500,
+          fontSize: '16px',
+          lineHeight: '22px',
+          color: '#2563EB',
+          cursor: 'pointer'
+        }}>View All</span>
       </div>
 
-      {/* Face Cards (hide in metrics view) */}
+      {/* Frame 1707486466 - Face Cards */}
       <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: '0px',
+        gap: '10px',
         position: 'absolute',
         width: '392px',
+        height: '62px',
         left: '20px',
-        top: '172px',
-        display: 'flex',
-        gap: '10px',
-        overflowX: 'auto',
+        top: '174px',
+        overflowX: 'scroll',
         opacity: showMetrics ? 0 : 1,
         pointerEvents: showMetrics ? 'none' : 'auto'
       }} className="scrollbar-hide">
-        {/* Monthly Equity Card */}
+        {/* Frame 1707486465 - Monthly Equity Card */}
         <div style={{
-          minWidth: '176px',
-          height: '82px',
-          background: '#FFFFFF',
-          border: '1px solid #F2F2F7',
-          boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-          borderRadius: '8px',
-          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px'
+          alignItems: 'flex-start',
+          padding: '10px',
+          gap: '10px',
+          width: '156px',
+          height: '62px',
+          background: '#FFFFFF',
+          borderRadius: '10px',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 400,
-              textTransform: 'uppercase',
-              color: '#333333'
-            }}>MONTHLY EQUITY</span>
-            <div style={{ width: '12px', height: '12px', background: '#2563EB', borderRadius: '2px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#34C759'
-            }}>{totals.monthlyEquity.toFixed(2)}</span>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              color: '#333333'
-            }}>USD</span>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            gap: '10px',
+            width: '136px',
+            height: '44px'
+          }}>
+            {/* Frame 1686556430 - Label row */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '22px',
+              width: '136px',
+              height: '12px'
+            }}>
+              <span style={{
+                width: '102px',
+                height: '12px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '11px',
+                lineHeight: '14px',
+                color: '#404040'
+              }}>MONTHLY EQUITY</span>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                background: '#2563EB',
+                borderRadius: '2px'
+              }} />
+            </div>
+            
+            {/* Frame 1686556429 - Value row */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '136px',
+              height: '22px'
+            }}>
+              <span style={{
+                width: '81px',
+                height: '22px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '16px',
+                lineHeight: '22px',
+                color: '#000000'
+              }}>{totals.monthlyEquity.toFixed(2)}</span>
+              <span style={{
+                width: '22px',
+                height: '8px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '11px',
+                lineHeight: '14px',
+                color: '#404040'
+              }}>USD</span>
+            </div>
           </div>
         </div>
 
-        {/* Lifetime Bonus Out Card */}
+        {/* Frame 1707486464 - Lifetime Bonus OUT Card */}
         <div style={{
-          minWidth: '176px',
-          height: '82px',
-          background: '#FFFFFF',
-          border: '1px solid #F2F2F7',
-          boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-          borderRadius: '8px',
-          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px'
+          alignItems: 'flex-start',
+          padding: '10px',
+          gap: '10px',
+          width: '156px',
+          height: '62px',
+          background: '#FFFFFF',
+          borderRadius: '10px',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              fontWeight: 400,
-              textTransform: 'uppercase',
-              color: '#475467'
-            }}>LIFETIME BONUS OUT</span>
-            <div style={{ width: '12px', height: '12px', background: '#2563EB', borderRadius: '2px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#999999'
-            }}>{totals.lifetimeBonusOut.toFixed(2)}</span>
-            <span style={{
-              fontFamily: 'Outfit',
-              fontSize: '10px',
-              color: '#333333'
-            }}>USD</span>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            gap: '10px',
+            width: '136px',
+            height: '44px'
+          }}>
+            {/* Frame 1686556430 - Label row */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '22px',
+              width: '136px',
+              height: '12px'
+            }}>
+              <span style={{
+                width: '102px',
+                height: '12px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '11px',
+                lineHeight: '14px',
+                color: '#404040'
+              }}>LIFETIME BONUS OUT</span>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                background: '#2563EB',
+                borderRadius: '2px'
+              }} />
+            </div>
+            
+            {/* Frame 1686556429 - Value row */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '4px',
+              width: '136px',
+              height: '22px'
+            }}>
+              <span style={{
+                width: '83px',
+                height: '22px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '16px',
+                lineHeight: '22px',
+                color: '#FF383C'
+              }}>{totals.lifetimeBonusOut.toFixed(2)}</span>
+              <span style={{
+                width: '22px',
+                height: '8px',
+                fontFamily: 'Outfit',
+                fontStyle: 'normal',
+                fontWeight: 500,
+                fontSize: '11px',
+                lineHeight: '14px',
+                color: '#404040'
+              }}>USD</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Carousel Dots (hide in metrics view) */}
+      {/* Group 1707486370 - Carousel Dots */}
       <div style={{
         position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        top: '264px',
+        width: '50px',
+        height: '8px',
+        left: 'calc(50% - 50px/2)',
+        top: '246px',
         display: 'flex',
-        gap: '6px',
+        gap: '14px',
         opacity: showMetrics ? 0 : 1
       }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563EB' }} />
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(37, 99, 235, 0.2)' }} />
+        <div style={{
+          width: '8px',
+          height: '8px',
+          background: '#2563EB',
+          border: '0.2px solid #F2F2F7',
+          borderRadius: '50%',
+          boxSizing: 'border-box'
+        }} />
+        <div style={{
+          width: '8px',
+          height: '8px',
+          background: '#FFFFFF',
+          border: '0.2px solid #F2F2F7',
+          borderRadius: '50%',
+          boxSizing: 'border-box'
+        }} />
+        <div style={{
+          width: '8px',
+          height: '8px',
+          background: '#FFFFFF',
+          border: '0.2px solid #F2F2F7',
+          borderRadius: '50%',
+          boxSizing: 'border-box'
+        }} />
+        <div style={{
+          width: '8px',
+          height: '8px',
+          background: '#FFFFFF',
+          border: '0.2px solid #F2F2F7',
+          borderRadius: '50%',
+          boxSizing: 'border-box'
+        }} />
       </div>
 
-      {/* Search & Columns (hide in metrics view) */}
+      {/* Frame 1707486468 - Search & Navigation */}
       <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: '0px',
+        gap: '4px',
         position: 'absolute',
         width: '372px',
+        height: '36px',
         left: '20px',
-        top: '294px',
-        display: 'flex',
-        gap: '10px',
+        top: '274px',
         opacity: showMetrics ? 0 : 1,
         pointerEvents: showMetrics ? 'none' : 'auto'
       }}>
+        {/* Frame 1707486456 */}
         <div style={{
-          flex: 1,
-          height: '44px',
-          background: '#FFFFFF',
-          border: '1px solid #E6EEF8',
-          boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-          borderRadius: '12px',
-          padding: '0 16px',
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: '10px'
+          padding: '0px',
+          gap: '10px',
+          width: '292px',
+          height: '36px'
         }}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <input 
-            type="text"
-            placeholder="Search by Login, Name and Email....."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+          {/* Frame 1707486442 - Search Input */}
+          <div style={{
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            padding: '6px 10px',
+            gap: '10px',
+            width: '246px',
+            height: '36px',
+            background: '#FFFFFF',
+            border: '1px solid #EDEDED',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+            borderRadius: '8px'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '10px',
+              width: '226px',
+              height: '25px'
+            }}>
+              <input 
+                type="text"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '40px',
+                  height: '24px',
+                  border: 'none',
+                  outline: 'none',
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '23px',
+                  letterSpacing: '0.03em',
+                  color: '#333333',
+                  background: 'transparent',
+                  flex: 1
+                }}
+              />
+              <svg width="25" height="25" viewBox="0 0 25 25" fill="none">
+                <circle cx="11" cy="11" r="7.5" stroke="#333333" strokeWidth="1"/>
+                <path d="M16.5 16.5L20.5 20.5" stroke="#333333" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </div>
+          
+          {/* Frame 1707486443 - Columns Button */}
+          <button 
+            onClick={() => setShowColumnsModal(true)}
             style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              fontFamily: 'Outfit',
-              fontSize: '12px',
-              color: '#333333',
-              background: 'transparent'
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '6px 10px',
+              gap: '10px',
+              width: '36px',
+              height: '36px',
+              background: '#EFF6FF',
+              border: '1px solid #F2F2F7',
+              boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05), inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+              borderRadius: '8px',
+              cursor: 'pointer'
             }}
-          />
+          >
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: '0px',
+              gap: '10px',
+              width: '16px',
+              height: '16px'
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 2H6V14H3V2Z" stroke="#333333" strokeWidth="1.2"/>
+                <path d="M9 2H12V14H9V2Z" stroke="#333333" strokeWidth="1.2"/>
+              </svg>
+            </div>
+          </button>
         </div>
         
+        {/* Frame 1707486444 - Left Arrow */}
         <button 
-          onClick={() => setShowCustomizeModal(true)}
+          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
           style={{
-            width: '93px',
-            height: '44px',
-            background: 'rgba(230, 238, 248, 0.44)',
-            border: '1px solid #F2F2F7',
-            boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-            borderRadius: '12px',
+            boxSizing: 'border-box',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             justifyContent: 'center',
-            gap: '8px',
-            cursor: 'pointer'
+            alignItems: 'center',
+            padding: '6px 10px',
+            gap: '10px',
+            width: '36px',
+            height: '36px',
+            background: '#FFFFFF',
+            border: '1px solid #F2F2F7',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05), inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+            borderRadius: '8px',
+            cursor: currentPage === 1 ? 'default' : 'pointer',
+            opacity: currentPage === 1 ? 0.5 : 1
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="3" y="2" width="3" height="12" stroke="#999999" strokeWidth="1.5"/>
-            <rect x="9" y="2" width="3" height="12" stroke="#999999" strokeWidth="1.5"/>
+          <svg width="12" height="24" viewBox="0 0 12 24" fill="none" transform="matrix(-1, 0, 0, 1, 0, 0)">
+            <path d="M3 6L9 12L3 18" stroke="#333333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{
-            fontFamily: 'Outfit',
-            fontSize: '12px',
-            color: '#333333'
-          }}>Columns</span>
+        </button>
+        
+        {/* Frame 1707486445 - Right Arrow */}
+        <button 
+          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          style={{
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '6px 10px',
+            gap: '10px',
+            width: '36px',
+            height: '36px',
+            background: '#FFFFFF',
+            border: '1px solid #F2F2F7',
+            boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05), inset 0px 2px 2px rgba(155, 151, 151, 0.2)',
+            borderRadius: '8px',
+            cursor: currentPage === totalPages ? 'default' : 'pointer',
+            opacity: currentPage === totalPages ? 0.5 : 1
+          }}
+        >
+          <svg width="12" height="24" viewBox="0 0 12 24" fill="none">
+            <path d="M3 6L9 12L3 18" stroke="#333333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
 
@@ -563,364 +846,378 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         <MetricsView metrics={metricsData} onBack={() => { setShowMetrics(false); setActiveNav('clients') }} />
       )}
 
-      {/* Pagination & Table Container (hide when metrics) */}
+      {/* Frame 1707486467 - Table Container */}
       <div style={{
-        position: 'absolute',
-        width: '406px',
-        left: '3px',
-        top: '293px',
-        height: '630px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0px',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '0px',
+        gap: '10px',
+        isolation: 'isolate',
+        position: 'absolute',
+        width: '413px',
+        height: '595px',
+        left: '-1px',
+        top: '330px',
         overflowY: 'scroll',
-        overflowX: 'hidden',
         opacity: showMetrics ? 0 : 1,
         pointerEvents: showMetrics ? 'none' : 'auto'
       }}
       className="scrollbar-hide">
         {/* Table */}
         <div style={{
-          width: '406px',
-          border: '1px solid #ECECEC',
-          borderRadius: '6px',
           display: 'flex',
-          isolation: 'isolate',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          padding: '0px',
+          width: '413px',
+          height: '595px',
+          overflowX: 'scroll',
+          border: '1px solid #E0E0E0',
+          borderRadius: '6px',
           background: '#FFFFFF'
-        }}>
-          <div style={{ display: 'flex', overflowX: 'scroll' }} className="scrollbar-hide">
-            {/* Login Column - Fixed */}
-            <div style={{ minWidth: '53px', display: 'flex', flexDirection: 'column', borderRight: '1px solid #BFDBFE' }}>
-              <div style={{
-                padding: '10px',
-                background: '#EFF6FF',
-                boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
-                borderRight: '1px solid #BFDBFE',
+        }} className="scrollbar-hide">
+          {/* Login Column - Fixed */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: '0px',
+            width: '63px',
+            height: '595px',
+            background: '#BFDBFE',
+            flexShrink: 0
+          }}>
+            <div style={{
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px',
+              gap: '13.07px',
+              width: '63px',
+              height: '35px',
+              background: '#EFF6FF',
+              borderRight: '1px solid #BFDBFE',
+              boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
+            }}>
+              <span style={{
+                width: '31px',
+                height: '15px',
                 fontFamily: 'Outfit',
-                fontSize: '12px',
+                fontStyle: 'normal',
                 fontWeight: 600,
-                color: '#4B4B4B',
-                minHeight: '35px',
+                fontSize: '12px',
+                lineHeight: '15px',
+                color: '#404040'
+              }}>Login</span>
+            </div>
+            {displayedClients.map((client, idx) => (
+              <div 
+                key={idx}
+                onClick={() => onClientClick && onClientClick(client)}
+                style={{
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: '10px',
+                  gap: '15.68px',
+                  width: '63px',
+                  height: '35px',
+                  background: '#EFF6FF',
+                  borderRight: '1px solid #BFDBFE',
+                  boxShadow: 'inset 0px -0.931668px 0px #E1E1E1',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  padding: '0px',
+                  gap: '13.07px',
+                  fontFamily: 'Outfit',
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#2563EB'
+                }}>{client.login}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Scrollable columns container */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '0px',
+            overflowX: 'scroll'
+          }} className="scrollbar-hide">
+            {/* Balance Column */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '0px',
+              width: '70px',
+              height: '595px',
+              flexShrink: 0
+            }}>
+              <div style={{
                 display: 'flex',
+                flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center'
-              }}>Login</div>
+                padding: '10px',
+                gap: '13.07px',
+                width: '70px',
+                height: '35px',
+                background: '#F2F2F7',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  width: '50px',
+                  height: '18px',
+                  fontFamily: 'Poppins',
+                  fontStyle: 'normal',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  lineHeight: '18px',
+                  color: '#404040'
+                }}>Balance</span>
+              </div>
               {displayedClients.map((client, idx) => (
                 <div 
                   key={idx}
-                  onClick={() => onClientClick && onClientClick(client)}
                   style={{
-                    padding: '10px',
-                    background: '#EFF6FF',
-                    boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                    borderRight: '1px solid #BFDBFE',
-                    fontFamily: 'Outfit',
-                    fontSize: '12px',
-                    color: '#2563EB',
-                    cursor: 'pointer',
-                    minHeight: '35px',
                     display: 'flex',
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'flex-start'
+                    padding: '10px',
+                    gap: '15.68px',
+                    width: '70px',
+                    height: '35px',
+                    background: '#FFFFFF',
+                    boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
                   }}
-                >{client.login}</div>
+                >
+                  <span style={{
+                    fontFamily: 'Poppins',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '18px',
+                    color: '#404040'
+                  }}>{parseFloat(client.balance || 0).toFixed(2)}</span>
+                </div>
               ))}
             </div>
 
-            {/* Scrollable Columns Container */}
-            <div style={{ display: 'flex', overflowX: 'scroll' }} className="scrollbar-hide">
-              {/* Percentage Column */}
-              <div style={{ minWidth: '91px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+            {/* Floating Profit Column */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '0px',
+              width: '105px',
+              height: '595px',
+              flexShrink: 0
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '10px',
+                gap: '13.07px',
+                width: '105px',
+                height: '35px',
+                background: '#F2F2F7',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  width: '85px',
+                  height: '18px',
                   fontFamily: 'Poppins',
-                  fontSize: '12px',
+                  fontStyle: 'normal',
                   fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>Percentage</div>
-                {displayedClients.map((client, idx) => {
-                  const percentage = parseFloat(client.percentage || Math.random() * 200 - 100);
-                  const isPositive = percentage >= 0;
-                  return (
-                    <div 
-                      key={idx}
-                      style={{
-                        padding: '10px',
-                        background: '#FFFFFF',
-                        boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
-                        fontFamily: 'Poppins',
-                        fontSize: '12px',
-                        color: isPositive ? '#34C759' : '#FF383C',
-                        minHeight: '35px',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                    >{percentage.toFixed(0)}%</div>
-                  );
-                })}
+                  fontSize: '12px',
+                  lineHeight: '18px',
+                  color: '#404040'
+                }}>Floating Profit</span>
               </div>
+              {displayedClients.map((client, idx) => (
+                <div 
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: '10px',
+                    gap: '15.68px',
+                    width: '105px',
+                    height: '35px',
+                    background: '#FFFFFF',
+                    boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+                  }}
+                >
+                  <span style={{
+                    fontFamily: 'Poppins',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '18px',
+                    color: '#404040'
+                  }}>{parseFloat(client.floating_profit || 0).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
 
-              {/* Floating Profit Column */}
-              <div style={{ minWidth: '105px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
+            {/* Equity Column */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '0px',
+              width: '58px',
+              height: '595px',
+              flexShrink: 0
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                gap: '13.07px',
+                width: '58px',
+                height: '35px',
+                background: '#F2F2F7',
+                boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  width: '38px',
+                  height: '18px',
                   fontFamily: 'Poppins',
-                  fontSize: '12px',
+                  fontStyle: 'normal',
                   fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>Floating Profit</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Poppins',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{parseFloat(client.floating_profit || 0).toFixed(2)}</div>
-                ))}
-              </div>
-
-              {/* Volume Column */}
-              <div style={{ minWidth: '68px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                  fontFamily: 'Poppins',
                   fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>Volume</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Poppins',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{parseFloat(client.volume || 0).toFixed(2)}</div>
-                ))}
+                  lineHeight: '18px',
+                  color: '#404040'
+                }}>Equity</span>
               </div>
+              {displayedClients.map((client, idx) => (
+                <div 
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: '10px',
+                    gap: '15.68px',
+                    width: '58px',
+                    height: '35px',
+                    background: '#FFFFFF',
+                    boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+                  }}
+                >
+                  <span style={{
+                    fontFamily: 'Poppins',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '18px',
+                    color: '#404040'
+                  }}>{parseFloat(client.equity || 0).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
 
-              {/* Balance Column */}
-              <div style={{ minWidth: '72px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                  fontFamily: 'Poppins',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>Balance</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Poppins',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{parseFloat(client.balance || 0).toFixed(2)}</div>
-                ))}
-              </div>
-
-              {/* Credit Column */}
-              <div style={{ minWidth: '62px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                  fontFamily: 'Poppins',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>Credit</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Poppins',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{parseFloat(client.credit || 0).toFixed(2)}</div>
-                ))}
-              </div>
-
-              {/* Equity Column */}
-              <div style={{ minWidth: '58px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                  fontFamily: 'Poppins',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>Equity</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Poppins',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{parseFloat(client.equity || 0).toFixed(2)}</div>
-                ))}
-              </div>
-
-              {/* Name Column */}
-              <div style={{ minWidth: '121px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                  padding: '10px',
-                  background: '#F8F8F8',
-                  boxShadow: 'inset 0px -1.3px 0px #E1E1E1',
+            {/* Name Column */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: '0px',
+              width: '121px',
+              height: '595px',
+              flexShrink: 0
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: '10px',
+                gap: '13.07px',
+                width: '121px',
+                height: '35px',
+                background: '#F2F2F7',
+                boxShadow: 'inset 0px -1.30687px 0px #E1E1E1'
+              }}>
+                <span style={{
+                  width: '33px',
+                  height: '15px',
                   fontFamily: 'Outfit',
-                  fontSize: '12px',
+                  fontStyle: 'normal',
                   fontWeight: 600,
-                  color: '#4B4B4B',
-                  minHeight: '35px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>Name</div>
-                {displayedClients.map((client, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px',
-                      background: '#FFFFFF',
-                      boxShadow: 'inset 0px -0.93px 0px #E1E1E1',
-                      fontFamily: 'Outfit',
-                      fontSize: '12px',
-                      color: '#4B4B4B',
-                      minHeight: '35px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >{client.name || '-'}</div>
-                ))}
+                  fontSize: '12px',
+                  lineHeight: '15px',
+                  color: '#404040'
+                }}>Name</span>
               </div>
+              {displayedClients.map((client, idx) => (
+                <div 
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: '10px',
+                    gap: '15.68px',
+                    width: '121px',
+                    height: '35px',
+                    background: '#FFFFFF',
+                    boxShadow: 'inset 0px -0.931668px 0px #E1E1E1'
+                  }}
+                >
+                  <span style={{
+                    fontFamily: 'Outfit',
+                    fontStyle: 'normal',
+                    fontWeight: 400,
+                    fontSize: '12px',
+                    lineHeight: '15px',
+                    color: '#404040'
+                  }}>{client.name || '-'}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* Frame 427319626 - Home Indicator */}
       <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '81px',
-        background: '#FFFFFF',
-        boxShadow: '0px 22.74px 133px -28.43px rgba(0, 0, 0, 0.2)',
-        borderRadius: '20px 20px 0 0',
-        padding: '15px 37px',
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 20
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        padding: '4px',
+        gap: '10px',
+        position: 'absolute',
+        width: '372px',
+        height: '14px',
+        left: '0px',
+        bottom: '0px',
+        zIndex: 1
       }}>
-        {/* Home */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="#475467" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M9 22V12H15V22" stroke="#475467" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        {/* Clients */}
-        <button onClick={() => { setShowMetrics(false); setActiveNav('clients') }} style={{ background: showMetrics ? 'none' : 'rgba(37, 99, 235, 0.1)', border: 'none', borderRadius: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="9" cy="7" r="3.5" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <path d="M3 21C3 17.686 5.686 15 9 15C10.015 15 10.974 15.228 11.832 15.633" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="17" cy="10" r="3" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5"/>
-            <path d="M21 20C21 17.794 19.206 16 17 16C16.126 16 15.319 16.306 14.691 16.814" stroke={showMetrics ? '#475467' : '#2563EB'} strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontFamily: 'Outfit', fontSize: '14.56px', fontWeight: 600, color: showMetrics ? '#475467' : '#2563EB' }}>Clients</span>
-        </button>
-        {/* Metrics */}
-        <button onClick={() => { setShowMetrics(true); setActiveNav('dashboard') }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M3 3V21H21" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M7 17V13M12 17V9M17 17V7" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        {/* More */}
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="2.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-            <path d="M12 1V4M12 20V23M23 12H20M4 12H1M20.49 20.49L18.36 18.36M5.64 5.64L3.51 3.51M20.49 3.51L18.36 5.64M5.64 18.36L3.51 20.49" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        
-        {/* Home Indicator */}
         <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '134px',
-          height: '5px',
-          background: '#000000',
-          borderRadius: '100px'
+          width: '76px',
+          height: '6px',
+          background: '#E0E0E0',
+          borderRadius: '40px'
         }} />
       </div>
 
