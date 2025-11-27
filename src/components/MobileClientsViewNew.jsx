@@ -120,7 +120,6 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showColumnsModal, setShowColumnsModal] = useState(false)
-  const [currentTime, setCurrentTime] = useState('5:08')
   const [currentPage, setCurrentPage] = useState(1)
   const [showDrawer, setShowDrawer] = useState(false)
   const [activeNav, setActiveNav] = useState('clients')
@@ -128,19 +127,6 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   const [visibleColumns, setVisibleColumns] = useState(['login', 'percentage', 'floating', 'volume', 'balance', 'credit', 'equity', 'name'])
   const [showMetrics, setShowMetrics] = useState(false)
   const itemsPerPage = 10
-
-  // Update time
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date()
-      const hours = now.getHours()
-      const minutes = now.getMinutes()
-      setCurrentTime(`${hours}:${minutes.toString().padStart(2, '0')}`)
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 60000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Filter clients
   let filteredClients = (clients || []).filter(client => {
@@ -225,71 +211,6 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           }
         }}
       />
-      {/* Status Bar */}
-      <div style={{
-        position: 'absolute',
-        width: '372px',
-        left: '20px',
-        top: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 10
-      }}>
-        <span style={{
-          fontFamily: 'Outfit',
-          fontWeight: 600,
-          fontSize: '17px',
-          lineHeight: '22px',
-          color: '#4B4B4B'
-        }}>{currentTime}</span>
-        
-        <div style={{ display: 'flex', gap: '7px', alignItems: 'center' }}>
-          {/* Cellular Connection */}
-          <svg width="19.2" height="12.23" viewBox="0 0 20 13" fill="none">
-            <rect x="0" y="5" width="3" height="8" rx="1" fill="#4B4B4B"/>
-            <rect x="5" y="3" width="3" height="10" rx="1" fill="#4B4B4B"/>
-            <rect x="10" y="1" width="3" height="12" rx="1" fill="#4B4B4B"/>
-            <rect x="15" y="0" width="3" height="13" rx="1" fill="#4B4B4B"/>
-          </svg>
-          {/* WiFi */}
-          <svg width="17.14" height="12.33" viewBox="0 0 18 13" fill="none">
-            <path d="M9 13C9.828 13 10.5 12.328 10.5 11.5C10.5 10.672 9.828 10 9 10C8.172 10 7.5 10.672 7.5 11.5C7.5 12.328 8.172 13 9 13Z" fill="#4B4B4B"/>
-            <path d="M9 7C11.21 7 13 8.79 13 11H13.5C13.5 8.515 11.485 6.5 9 6.5C6.515 6.5 4.5 8.515 4.5 11H5C5 8.79 6.79 7 9 7Z" fill="#4B4B4B"/>
-            <path d="M9 3.5C13.142 3.5 16.5 6.858 16.5 11H17C17 6.582 13.418 3 9 3C4.582 3 1 6.582 1 11H1.5C1.5 6.858 4.858 3.5 9 3.5Z" fill="#4B4B4B"/>
-          </svg>
-          {/* Battery */}
-          <div style={{ position: 'relative', width: '27.33px', height: '13px' }}>
-            <div style={{
-              position: 'absolute',
-              width: '25px',
-              height: '13px',
-              border: '1px solid #4B4B4B',
-              borderRadius: '4.3px',
-              opacity: 0.35
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: '21px',
-              height: '9px',
-              left: '2px',
-              top: '2px',
-              background: '#4B4B4B',
-              borderRadius: '2.5px'
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: '1.33px',
-              height: '4px',
-              right: '-1.5px',
-              top: '4.5px',
-              background: '#4B4B4B',
-              opacity: 0.4,
-              borderRadius: '0 2px 2px 0'
-            }} />
-          </div>
-        </div>
-      </div>
 
       {/* Header */}
       <div style={{
