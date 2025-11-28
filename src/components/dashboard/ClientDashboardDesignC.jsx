@@ -131,9 +131,10 @@ export default function ClientDashboardDesignC() {
 
     const handleScroll = () => {
       const scrollLeft = carousel.scrollLeft
-      const cardWidth = 250 + 10 // card width + gap
-      const index = Math.round(scrollLeft / cardWidth)
-      setActiveCardIndex(Math.min(index, cards.length - 1))
+      const cardWidth = 162 + 8 // card width + gap
+      const cardsPerScreen = 2
+      const index = Math.round(scrollLeft / (cardWidth * cardsPerScreen))
+      setActiveCardIndex(Math.min(index, Math.ceil(cards.length / cardsPerScreen) - 1))
     }
 
     carousel.addEventListener('scroll', handleScroll)
@@ -357,27 +358,27 @@ export default function ClientDashboardDesignC() {
       <div className="pb-2">
         <div 
           ref={carouselRef}
-          className="flex gap-[10px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4"
+          className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4"
         >
           {cards.map((card, i) => (
             <div 
               key={i} 
-              className="min-w-[240px] w-[240px] h-[74px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-3 py-3 flex flex-col justify-between snap-start flex-shrink-0"
+              className="min-w-[162px] w-[162px] h-[74px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-3 flex flex-col justify-between snap-start flex-shrink-0"
             >
               <div className="flex items-start justify-between">
-                <span className="text-[#4B4B4B] text-[12px] font-normal leading-[15px]">{card.label}</span>
-                <div className="w-[18px] h-[18px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <span className="text-[#4B4B4B] text-[10px] font-normal leading-[12px] pr-1">{card.label}</span>
+                <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
                     <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
                   </svg>
                 </div>
               </div>
-              <div className="flex items-baseline gap-[6px]">
-                <span className={`text-[20px] font-semibold leading-[25px] tracking-[-0.01em] ${card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+              <div className="flex items-baseline gap-[4px]">
+                <span className={`text-[16px] font-semibold leading-[20px] tracking-[-0.01em] ${card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
                   {card.value}
                 </span>
-                <span className="text-[#4B4B4B] text-[12px] font-normal leading-[15px] uppercase">{card.unit}</span>
+                <span className="text-[#4B4B4B] text-[10px] font-normal leading-[12px] uppercase">{card.unit}</span>
               </div>
             </div>
           ))}
@@ -386,10 +387,10 @@ export default function ClientDashboardDesignC() {
 
       {/* Carousel dots indicator */}
       <div className="flex items-center justify-center gap-[6px] pb-3 pt-2">
-        {cards.map((_, i) => (
+        {Array.from({ length: Math.ceil(cards.length / 2) }).map((_, i) => (
           <div 
             key={i}
-            className={`w-[8px] h-[8px] rounded-full transition-all ${i === activeCardIndex ? 'bg-[#2563EB]' : 'bg-[#2563EB] opacity-20'}`}
+            className={`w-[8px] h-[8px] rounded-full transition-all duration-300 ${i === activeCardIndex ? 'bg-[#2563EB]' : 'bg-[#E5E7EB]'}`}
           />
         ))}
       </div>
@@ -497,11 +498,17 @@ export default function ClientDashboardDesignC() {
           border-inline-end: none !important;
           box-shadow: none !important;
           border-collapse: collapse !important;
+          background-image: none !important;
+          background: none !important;
         }
         .table-no-borders .grid {
           gap: 0 !important;
           grid-gap: 0 !important;
           column-gap: 0 !important;
+          grid-column-gap: 0 !important;
+        }
+        .table-no-borders div[class*="grid"] {
+          border-spacing: 0 !important;
         }
       `}</style>
     </div>
