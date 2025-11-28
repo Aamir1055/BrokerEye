@@ -226,13 +226,14 @@ export default function ClientDashboardDesignC() {
       monthlyPnL: formatNum(c.thisMonthPnL || c.monthlyPnL || 0),
       lifetimePnL: formatNum(c.lifetimePnL || 0)
     }))
-  }, [filteredClients, currentPage, itemsPerPage])
+  }, [filteredClients, currentPage, itemsPerPage, lastWsReceiveAt])
 
   const cards = useMemo(() => {
     console.log('📊 Cards calculation - clientStats:', clientStats)
     console.log('📊 Filtered clients data:', filteredClients?.slice(0, 2))
+    console.log('📊 lastWsReceiveAt:', lastWsReceiveAt)
     
-    // Calculate stats from filtered clients if filters are applied
+    // Always calculate from actual client data for real-time updates
     const dataToUse = (Object.values(filters).some(f => f)) ? filteredClients : clients
     
     const calculateStats = () => {
@@ -288,7 +289,8 @@ export default function ClientDashboardDesignC() {
       }
     }
     
-    const stats = Object.values(filters).some(f => f) ? calculateStats() : clientStats
+    // Always recalculate from client data to ensure real-time updates
+    const stats = calculateStats()
     
     if (showPercent) {
       const sum = (key) => Array.isArray(dataToUse) ? dataToUse.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0
@@ -373,6 +375,15 @@ export default function ClientDashboardDesignC() {
       { label: 'Net Lifetime PnL', value: formatNum((stats?.lifetimePnL || 0) - (stats?.totalCommission || 0)), unit: 'USD' },
     ]
   }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt])
+
+  // Debug: Log when WebSocket data updates
+  useEffect(() => {
+    if (lastWsReceiveAt) {
+      console.log('🔄 WebSocket update received at:', new Date(lastWsReceiveAt).toLocaleTimeString())
+      console.log('📊 Current clients count:', clients?.length)
+      console.log('📊 Sample client data:', clients?.[0])
+    }
+  }, [lastWsReceiveAt, clients])
 
   // Handle scroll to track active card
   useEffect(() => {
