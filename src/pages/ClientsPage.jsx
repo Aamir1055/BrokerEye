@@ -11,7 +11,7 @@ import GroupSelector from '../components/GroupSelector'
 import IBSelector from '../components/IBSelector'
 import GroupModal from '../components/GroupModal'
 import MobileClientsView from '../components/MobileClientsViewNew'
-import ClientDashboardDesignC from '../components/dashboard/ClientDashboardDesignC'
+// import ClientDashboardDesignC from '../components/dashboard/ClientDashboardDesignC'
 import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
@@ -24,20 +24,8 @@ const ClientsPage = () => {
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
-  // Mobile detection hook - force mobile view for mobile devices
-  const [isMobile, setIsMobile] = useState(false)
-  
-  useEffect(() => {
-    const checkMobile = () => {
-      const width = window.innerWidth
-      const isMobileViewport = width <= 768
-      console.log('Mobile detection:', { width, isMobileViewport })
-      setIsMobile(isMobileViewport)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  // Mobile detection - false for desktop page, mobile users go to /client-dashboard-c
+  const [isMobile] = useState(false)
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -98,6 +86,7 @@ const ClientsPage = () => {
 
   // Page zoom states
   const [zoomLevel, setZoomLevel] = useState(100)
+  const [faceCardTheme, setFaceCardTheme] = useState('default')
 
   // Verification handler removed
 
@@ -256,6 +245,10 @@ const ClientsPage = () => {
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [showCardFilterMenu, setShowCardFilterMenu] = useState(false)
+  const [showFaceCards, setShowFaceCards] = useState(true)
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   const filterRefs = useRef({})
   const filterPanelRef = useRef(null)
   const columnSelectorRef = useRef(null)
@@ -310,7 +303,7 @@ const ClientsPage = () => {
   }
   const [faceCardOrder, setFaceCardOrder] = useState(getInitialFaceCardOrder)
 
-  const getInitialCardVisibility = () => {
+  const getInitialCardVisibility = (() => {
     try {
       const saved = localStorage.getItem('clientsCardVisibility')
       if (saved) return JSON.parse(saved)
@@ -324,22 +317,16 @@ const ClientsPage = () => {
     // Then enable only the default cards
     defaultFaceCardOrder.forEach(id => { map[id] = true })
     return map
-  }
-  const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
-  const [faceCardTheme, setFaceCardTheme] = useState('vibrant') // 'vibrant' | 'subtle'
-  const [showFaceCards, setShowFaceCards] = useState(true)
-  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
-  const [selectedClient, setSelectedClient] = useState(null)
-  const [showGroupModal, setShowGroupModal] = useState(false)
-  const [editingGroup, setEditingGroup] = useState(null)
-  const [draggedFaceCard, setDraggedFaceCard] = useState(null)
-  
+  })()
+
   // Default card visibility map for resetting
   const defaultCardVisibility = (() => {
     const map = {}
     defaultFaceCardOrder.forEach(id => { map[id] = true })
     return map
   })()
+
+  const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
 
   const allColumns = [
     { key: 'login', label: 'Login' },
@@ -1273,9 +1260,11 @@ const ClientsPage = () => {
       return
     }
 
-    // Create stable dependency tracking
+    // Create stable dependency tracking with data checksum to detect value changes
     const currentDeps = {
       clientsLength: clients.length,
+      // Add checksum to detect when client data values change (not just array length)
+      clientsChecksum: lastWsReceiveAt || 0, // Use WebSocket receive timestamp as proxy for data freshness
       filterByPositions,
       filterByCredit,
       filterNoDeposit,
@@ -1375,6 +1364,7 @@ const ClientsPage = () => {
     return () => { canceled = true; clearTimeout(t) }
   }, [
     clients,
+    lastWsReceiveAt, // Track WebSocket updates to trigger data refresh
     filterByPositions,
     filterByCredit,
     filterNoDeposit,
