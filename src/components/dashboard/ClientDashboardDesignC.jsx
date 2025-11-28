@@ -183,8 +183,8 @@ export default function ClientDashboardDesignC() {
       </div>
 
       {/* Action buttons and View All row */}
-      <div className="px-0 pt-5 pb-4">
-        <div className="flex items-center justify-between px-4">
+      <div className="pt-5 pb-4 px-4">
+        <div className="flex items-center justify-between">
           {/* Left side - Filter buttons */}
           <div className="flex items-center gap-2">
             <button onClick={() => setIsCustomizeOpen(true)} className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
@@ -354,7 +354,7 @@ export default function ClientDashboardDesignC() {
       )}
 
       {/* Stat cards - Horizontal scrollable carousel */}
-      <div className="px-0 pb-2">
+      <div className="pb-2">
         <div 
           ref={carouselRef}
           className="flex gap-[10px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4"
@@ -395,8 +395,8 @@ export default function ClientDashboardDesignC() {
       </div>
 
       {/* Search and action buttons */}
-      <div className="pb-3">
-          <div className="flex items-center gap-1 px-0">
+      <div className="pb-3 px-4">
+          <div className="flex items-center gap-1">
           {/* Search box - compact, edge-to-edge */}
           <div className="flex-1 min-w-0 h-[40px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
@@ -445,34 +445,34 @@ export default function ClientDashboardDesignC() {
           </button>
         </div>
       </div>      {/* Table area */}
-      <div className="px-0">
+      <div className="">
         <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="min-w-[372px]">
+          <div className="min-w-full">
           {/* Header row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold rounded-t-md">
-            <div className="h-[35px] flex items-center px-2 border-r border-white/10">Login</div>
-            <div className="h-[35px] flex items-center justify-center px-1 border-r border-white/10">Balance</div>
-            <div className="h-[35px] flex items-center justify-center px-1 border-r border-white/10">Floating Profit</div>
-            <div className="h-[35px] flex items-center justify-center px-1 border-r border-white/10">Equity</div>
-            <div className="h-[35px] flex items-center px-2">Name</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold">
+            <div className="h-[35px] flex items-center pl-1">Login</div>
+            <div className="h-[35px] flex items-center justify-center">Balance</div>
+            <div className="h-[35px] flex items-center justify-center">Floating Profit</div>
+            <div className="h-[35px] flex items-center justify-center">Equity</div>
+            <div className="h-[35px] flex items-center pl-1">Name</div>
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
             <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1]">
-              <div className="h-[35px] flex items-center px-2 text-[#1A63BC] font-medium">{r.login}</div>
-              <div className="h-[35px] flex items-center justify-center px-1">{r.balance}</div>
-              <div className="h-[35px] flex items-center justify-center px-1">{r.floating}</div>
-              <div className="h-[35px] flex items-center justify-center px-1">{r.equity}</div>
-              <div className="h-[35px] flex items-center px-2 overflow-hidden">{r.name}</div>
+              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium">{r.login}</div>
+              <div className="h-[35px] flex items-center justify-center">{r.balance}</div>
+              <div className="h-[35px] flex items-center justify-center">{r.floating}</div>
+              <div className="h-[35px] flex items-center justify-center">{r.equity}</div>
+              <div className="h-[35px] flex items-center pl-1 overflow-hidden">{r.name}</div>
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium rounded-b-md">
-            <div className="h-[35px] flex items-center px-2 font-semibold">Total</div>
-            <div className="h-[35px] flex items-center justify-center px-1">0.00</div>
-            <div className="h-[35px] flex items-center justify-center px-1">0.00</div>
-            <div className="h-[35px] flex items-center justify-center px-1">0.00</div>
-            <div className="h-[35px] flex items-center px-2">-</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium">
+            <div className="h-[35px] flex items-center pl-1 font-semibold">Total</div>
+            <div className="h-[35px] flex items-center justify-center">0.00</div>
+            <div className="h-[35px] flex items-center justify-center">0.00</div>
+            <div className="h-[35px] flex items-center justify-center">0.00</div>
+            <div className="h-[35px] flex items-center pl-1">-</div>
           </div>
           </div>
         </div>
