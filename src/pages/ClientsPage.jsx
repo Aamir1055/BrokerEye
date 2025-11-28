@@ -24,12 +24,15 @@ const ClientsPage = () => {
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
-  // Mobile detection hook
+  // Mobile detection hook - force mobile view for mobile devices
   const [isMobile, setIsMobile] = useState(false)
   
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
+      const width = window.innerWidth
+      const isMobileViewport = width <= 768
+      console.log('Mobile detection:', { width, isMobileViewport })
+      setIsMobile(isMobileViewport)
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -589,10 +592,22 @@ const ClientsPage = () => {
         if (prev && incoming < prev) return prev
         return incoming
       })
-      return
     }
-    // Fallback: derive from first 50 clients if context timestamp missing
+  }, [latestServerTimestamp])
+  
+  // Separate effect for client timestamp fallback to avoid infinite loop
+  useEffect(() => {
+    // Only run fallback if we don't have a server timestamp
+    if (latestServerTimestamp) return
+    
     if (clients && clients.length > 0) {
+      const toMs = (ts) => {
+        if (!ts) return 0
+        const n = Number(ts)
+        if (!isFinite(n) || n <= 0) return 0
+        return n < 10000000000 ? n * 1000 : n
+      }
+      
       let maxTs = 0
       for (let i = 0; i < Math.min(clients.length, 50); i++) {
         const rawTs = clients[i]?.serverTimestamp || clients[i]?.lastUpdate || 0
@@ -603,7 +618,7 @@ const ClientsPage = () => {
         setAppTime(prev => (prev && maxTs < prev) ? prev : maxTs)
       }
     }
-  }, [latestServerTimestamp, clients])
+  }, [clients.length, latestServerTimestamp]) // Only depend on length, not full clients array
 
   // Performance monitor - log lag warnings (throttled) - DISABLED
   // The lag warning was misleading because appTime (latestServerTimestamp) doesn't update
@@ -1248,11 +1263,37 @@ const ClientsPage = () => {
 
   // Offload filter/sort/dedup to filter worker; keep group filter on main thread for parity
   const [filteredClients, setFilteredClients] = useState([])
+  
+  // Use refs to track previous values and avoid infinite loops
+  const prevDepsRef = useRef({})
+  
   useEffect(() => {
     if (!Array.isArray(clients) || clients.length === 0) {
       setFilteredClients([])
       return
     }
+
+    // Create stable dependency tracking
+    const currentDeps = {
+      clientsLength: clients.length,
+      filterByPositions,
+      filterByCredit,
+      filterNoDeposit,
+      columnFiltersKeys: Object.keys(columnFilters || {}).sort().join(','),
+      searchQuery: searchQuery || '',
+      sortColumn: sortColumn || '',
+      sortDirection,
+      displayMode,
+      selectedIB: selectedIB || '',
+      hasActiveGroupFilters: !!(activeGroupFilters?.clients),
+      hasIBMT5Accounts: Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
+    }
+    
+    // Check if dependencies actually changed
+    const depsChanged = JSON.stringify(currentDeps) !== JSON.stringify(prevDepsRef.current)
+    if (!depsChanged) return
+    
+    prevDepsRef.current = currentDeps
 
     // Resolve sort column with percentage-aware logic
     let resolvedSortColumn = null
@@ -1346,7 +1387,9 @@ const ClientsPage = () => {
     activeGroupFilters,
     filterByActiveIB,
     selectedIB,
-    ibMT5Accounts
+    ibMT5Accounts,
+    percentageFieldMap,
+    isMetricColumn
   ])
 
   // Financial checksum (filtered) – detect value-only changes for worker recalculation
@@ -2228,6 +2271,21 @@ const ClientsPage = () => {
   // Unified layout: no early return. Mobile handled inside main render.
   const renderMobile = isMobile
 
+  // Early return for mobile - render only mobile component like /client-dashboard-c
+  if (renderMobile) {
+    return (
+      <div className="w-full min-h-screen bg-neutral-900/5">
+        <ClientDashboardDesignC />
+        {selectedClient && (
+          <ClientPositionsModal
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen flex overflow-hidden relative">
       {/* Clean White Background */}
@@ -2248,21 +2306,9 @@ const ClientsPage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-auto relative z-10`}>
         <div className="max-w-full mx-auto flex flex-col min-h-0">
-          {/* Mobile Dashboard */}
-          {renderMobile && (
-            <div className="w-full h-full">
-              <ClientDashboardDesignC />
-              {selectedClient && (
-                <ClientPositionsModal
-                  client={selectedClient}
-                  onClose={() => setSelectedClient(null)}
-                />
-              )}
-            </div>
-          )}
 
-          {/* Desktop / shared header (hidden on mobile for cleaner UI) */}
-          <div className={`flex items-center justify-between mb-6 pb-4 border-b border-gray-200 ${renderMobile ? 'hidden' : ''}`}>
+          {/* Desktop header */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -2681,7 +2727,7 @@ const ClientsPage = () => {
           )}
 
           {/* Stats Summary - Hidden on mobile */}
-          {showFaceCards && !renderMobile && (
+          {showFaceCards && (
           <>
             {/* Drag and Drop Instructions */}
             <div className="flex items-center justify-between mb-2 px-2">
@@ -3071,7 +3117,7 @@ const ClientsPage = () => {
           </>
           )}
 
-          {!renderMobile && (
+          {(
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-blue-700">Show:</span>
@@ -3364,8 +3410,8 @@ const ClientsPage = () => {
           </div>
           )}
 
-          {/* Data Table - Hidden on mobile */}
-          {!renderMobile && (
+          {/* Data Table */}
+          {(
           <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 flex flex-col" style={{ 
             overflow: 'hidden',
             minHeight: '250px',
