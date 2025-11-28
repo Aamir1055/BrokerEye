@@ -385,14 +385,17 @@ export default function ClientDashboardDesignC() {
         </div>
       </div>
 
-      {/* Carousel dots indicator */}
-      <div className="flex items-center justify-center gap-[6px] pb-3 pt-2">
-        {Array.from({ length: Math.ceil(cards.length / 2) }).map((_, i) => (
+      {/* Blue scroll bar indicator */}
+      <div className="flex justify-center pb-3 pt-2">
+        <div className="w-12 h-1 bg-[#E5E7EB] rounded-full overflow-hidden">
           <div 
-            key={i}
-            className={`w-[8px] h-[8px] rounded-full transition-all duration-300 ${i === activeCardIndex ? 'bg-[#2563EB]' : 'bg-[#E5E7EB]'}`}
+            className="h-full bg-[#2563EB] rounded-full transition-all duration-300"
+            style={{
+              width: `${100 / Math.ceil(cards.length / 2)}%`,
+              transform: `translateX(${activeCardIndex * (100 / Math.ceil(cards.length / 2))}%)`
+            }}
           />
-        ))}
+        </div>
       </div>
 
       {/* Search and action buttons */}
@@ -450,12 +453,12 @@ export default function ClientDashboardDesignC() {
         <div className="w-full overflow-x-auto scrollbar-hide">
           <div className="min-w-full">
           {/* Header row */}
-          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[9px] font-semibold" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
-            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
-            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Profit</div>
-            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
-            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
+          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold sticky top-0 z-10" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
+            <div className="h-[40px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
+            <div className="h-[40px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
+            <div className="h-[40px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Profit</div>
+            <div className="h-[40px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
+            <div className="h-[40px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
