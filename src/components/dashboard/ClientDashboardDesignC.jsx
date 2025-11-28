@@ -11,7 +11,7 @@ const formatNum = (n) => {
 }
 
 export default function ClientDashboardDesignC() {
-  const { clients = [], clientStats } = useData()
+  const { clients = [], clientStats, lastWsReceiveAt } = useData()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -21,10 +21,35 @@ export default function ClientDashboardDesignC() {
   const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
   const [isGroupOpen, setIsGroupOpen] = useState(false)
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false)
+  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const columnDropdownRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
   const itemsPerPage = 12
+  
+  // Available columns for the table
+  const [visibleColumns, setVisibleColumns] = useState({
+    login: true,
+    firstName: false,
+    middleName: false,
+    email: false,
+    phoneNo: false,
+    city: false,
+    state: false,
+    country: false,
+    balance: true,
+    floatingProfit: true,
+    equity: true,
+    name: true,
+    credit: false,
+    margin: false,
+    freeMargin: false,
+    dailyPnL: false,
+    weeklyPnL: false,
+    monthlyPnL: false,
+    lifetimePnL: false
+  })
+  const [columnSearchQuery, setColumnSearchQuery] = useState('')
 
   // Filter clients based on applied filters
   const getFilteredClients = () => {
@@ -58,7 +83,7 @@ export default function ClientDashboardDesignC() {
     return filtered
   }
 
-  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters])
+  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt])
   const totalPages = Math.ceil((filteredClients?.length || 0) / itemsPerPage)
 
   // Export functions
@@ -300,7 +325,7 @@ export default function ClientDashboardDesignC() {
       // Additional Calculated Metrics
       { label: 'Net Lifetime PnL', value: formatNum((stats?.lifetimePnL || 0) - (stats?.totalCommission || 0)), unit: 'USD' },
     ]
-  }, [clientStats, clients, filteredClients, filters, showPercent])
+  }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt])
 
   // Handle scroll to track active card
   useEffect(() => {
@@ -626,12 +651,12 @@ export default function ClientDashboardDesignC() {
             />
           </div>
           
-          {/* Column selector button with dropdown */}
+          {/* Column selector button */}
           <div className="relative" ref={columnDropdownRef}>
             <button 
               onClick={(e) => {
                 e.stopPropagation()
-                setIsColumnDropdownOpen(!isColumnDropdownOpen)
+                setIsColumnSelectorOpen(true)
               }}
               className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0"
             >
@@ -641,7 +666,6 @@ export default function ClientDashboardDesignC() {
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
-            {/* Dropdown handled in the download button section above */}
           </div>
 
           {/* Previous button */}
@@ -754,7 +778,146 @@ export default function ClientDashboardDesignC() {
         .table-no-borders .grid:first-child > div:first-child {
           z-index: 30 !important;
         }
+        /* Modal slide-up animation */
+        @keyframes slideUp {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
+        }
       `}</style>
+
+      {/* Column Selector Modal */}
+      {isColumnSelectorOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
+          <div 
+            className="w-full bg-white rounded-t-[24px] max-h-[80vh] overflow-hidden flex flex-col animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative px-6 pt-6 pb-4 border-b border-gray-200">
+              <button 
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="absolute left-4 top-6 w-8 h-8 flex items-center justify-center"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <h2 className="text-center text-xl font-semibold">Show/Hide Columns</h2>
+            </div>
+
+            {/* Search Box */}
+            <div className="px-6 py-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search Columns"
+                  value={columnSearchQuery}
+                  onChange={(e) => setColumnSearchQuery(e.target.value)}
+                  className="w-full h-12 pl-12 pr-4 border border-gray-200 rounded-xl text-base focus:outline-none focus:border-blue-500"
+                />
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <circle cx="11" cy="11" r="8" strokeWidth="2"/>
+                  <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Column List */}
+            <div className="flex-1 overflow-y-auto px-6">
+              {Object.entries({
+                'Login': 'login',
+                'First Name': 'firstName',
+                'Middle Name': 'middleName',
+                'E Mail': 'email',
+                'Phone No': 'phoneNo',
+                'City': 'city',
+                'State': 'state',
+                'Country': 'country',
+                'Balance': 'balance',
+                'Floating Profit': 'floatingProfit',
+                'Equity': 'equity',
+                'Name': 'name',
+                'Credit': 'credit',
+                'Margin': 'margin',
+                'Free Margin': 'freeMargin',
+                'Daily PnL': 'dailyPnL',
+                'Weekly PnL': 'weeklyPnL',
+                'Monthly PnL': 'monthlyPnL',
+                'Lifetime PnL': 'lifetimePnL'
+              }).filter(([label]) => 
+                label.toLowerCase().includes(columnSearchQuery.toLowerCase())
+              ).map(([label, key]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
+                >
+                  <span className="text-base text-gray-800">{label}</span>
+                  <button
+                    onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                    className="w-6 h-6 flex items-center justify-center"
+                  >
+                    {visibleColumns[key] ? (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="4" fill="#3B82F6"/>
+                        <path d="M7 12L10 15L17 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="4" stroke="#D1D5DB" strokeWidth="2" fill="white"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setVisibleColumns({
+                    login: false,
+                    firstName: false,
+                    middleName: false,
+                    email: false,
+                    phoneNo: false,
+                    city: false,
+                    state: false,
+                    country: false,
+                    balance: false,
+                    floatingProfit: false,
+                    equity: false,
+                    name: false,
+                    credit: false,
+                    margin: false,
+                    freeMargin: false,
+                    dailyPnL: false,
+                    weeklyPnL: false,
+                    monthlyPnL: false,
+                    lifetimePnL: false
+                  })
+                }}
+                className="flex-1 h-14 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gray-50 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="flex-1 h-14 rounded-2xl bg-blue-600 text-white text-base font-medium hover:bg-blue-700 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
