@@ -445,34 +445,34 @@ export default function ClientDashboardDesignC() {
           </button>
         </div>
       </div>      {/* Table area */}
-      <div className="">
+      <div className="table-no-borders">
         <div className="w-full overflow-x-auto scrollbar-hide">
           <div className="min-w-full">
           {/* Header row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold gap-0">
-            <div className="h-[35px] flex items-center pl-1 border-0">Login</div>
-            <div className="h-[35px] flex items-center justify-center border-0">Balance</div>
-            <div className="h-[35px] flex items-center justify-center border-0">Floating Profit</div>
-            <div className="h-[35px] flex items-center justify-center border-0">Equity</div>
-            <div className="h-[35px] flex items-center pl-1 border-0">Name</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold gap-0" style={{gap: '0px', gridGap: '0px'}}>
+            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Floating Profit</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
+            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
-            <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] gap-0">
-              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium border-0">{r.login}</div>
-              <div className="h-[35px] flex items-center justify-center border-0">{r.balance}</div>
-              <div className="h-[35px] flex items-center justify-center border-0">{r.floating}</div>
-              <div className="h-[35px] flex items-center justify-center border-0">{r.equity}</div>
-              <div className="h-[35px] flex items-center pl-1 overflow-hidden border-0">{r.name}</div>
+            <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] gap-0" style={{gap: '0px', gridGap: '0px'}}>
+              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.login}</div>
+              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.balance}</div>
+              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.floating}</div>
+              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.equity}</div>
+              <div className="h-[35px] flex items-center pl-1 overflow-hidden" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.name}</div>
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium gap-0">
-            <div className="h-[35px] flex items-center pl-1 font-semibold border-0">Total</div>
-            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
-            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
-            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
-            <div className="h-[35px] flex items-center pl-1 border-0">-</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium gap-0" style={{gap: '0px', gridGap: '0px'}}>
+            <div className="h-[35px] flex items-center pl-1 font-semibold" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Total</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>-</div>
           </div>
           </div>
         </div>
@@ -485,6 +485,15 @@ export default function ClientDashboardDesignC() {
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        /* Completely remove all borders and separators from table */
+        .table-no-borders * {
+          border-left: none !important;
+          border-right: none !important;
+          border-inline: none !important;
+          border-inline-start: none !important;
+          border-inline-end: none !important;
+          box-shadow: none !important;
         }
       `}</style>
     </div>
