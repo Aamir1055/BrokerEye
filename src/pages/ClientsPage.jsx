@@ -29,9 +29,7 @@ const ClientsPage = () => {
   
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth <= 768
-      console.log('🔍 Mobile detection:', { windowWidth: window.innerWidth, isMobile: mobile })
-      setIsMobile(mobile)
+      setIsMobile(window.innerWidth <= 768)
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -2229,7 +2227,6 @@ const ClientsPage = () => {
 
   // Unified layout: no early return. Mobile handled inside main render.
   const renderMobile = isMobile
-  console.log('📱 Render decision:', { isMobile, renderMobile, windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A' })
 
   return (
     <div className="h-screen flex overflow-hidden relative">
@@ -2253,11 +2250,7 @@ const ClientsPage = () => {
         <div className="max-w-full mx-auto flex flex-col min-h-0">
           {/* Mobile Dashboard */}
           {renderMobile && (
-            <div className="mb-4 w-full bg-red-100 border-4 border-red-500 p-4">
-              <div className="bg-yellow-200 p-2 text-center font-bold text-red-800 mb-4">
-                🎯 MOBILE COMPONENT ACTIVE - Width: {typeof window !== 'undefined' ? window.innerWidth : 'N/A'}px
-              </div>
-              {console.log('🎯 Rendering ClientDashboardDesignC mobile component')}
+            <div className="w-full h-full">
               <ClientDashboardDesignC />
               {selectedClient && (
                 <ClientPositionsModal
@@ -2267,14 +2260,7 @@ const ClientsPage = () => {
               )}
             </div>
           )}
-          {/* Desktop Content - Hidden when mobile */}
-          {!renderMobile && (
-            <div className="bg-blue-100 border-4 border-blue-500 p-2">
-              <div className="bg-green-200 p-2 text-center font-bold text-blue-800 mb-4">
-                🖥️ DESKTOP COMPONENT ACTIVE - Width: {typeof window !== 'undefined' ? window.innerWidth : 'N/A'}px
-              </div>
-            </div>
-          )}
+
           {/* Desktop / shared header (hidden on mobile for cleaner UI) */}
           <div className={`flex items-center justify-between mb-6 pb-4 border-b border-gray-200 ${renderMobile ? 'hidden' : ''}`}>
             <div className="flex items-center gap-3">
