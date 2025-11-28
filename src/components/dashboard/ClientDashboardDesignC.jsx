@@ -1,4 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
+import FilterModal from '../FilterModal'
+import IBFilterModal from '../IBFilterModal'
+import GroupModal from '../GroupModal'
 import { useData } from '../../contexts/DataContext'
 
 const formatNum = (n) => {
@@ -11,6 +14,12 @@ export default function ClientDashboardDesignC() {
   const { clients = [], clientStats } = useData()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
+  const [isGroupOpen, setIsGroupOpen] = useState(false)
+  const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
   const itemsPerPage = 12
 
@@ -73,7 +82,7 @@ export default function ClientDashboardDesignC() {
         {/* Group container - full width */}
         <div className="absolute left-0 right-0 top-5 px-4 h-9 flex items-center justify-between">
           {/* Hamburger button - Frame with auto layout */}
-          <button className="w-9 h-9 flex items-center justify-center rounded-[6px] border-0 bg-[rgba(230,238,248,0.44)] shadow-[inset_0px_2px_2px_rgba(155,151,151,0.2)] p-[11px]">
+          <button onClick={() => setIsSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-[6px] border-0 bg-[rgba(230,238,248,0.44)] shadow-[inset_0px_2px_2px_rgba(155,151,151,0.2)] p-[11px]">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <rect y="4" width="20" height="2.5" rx="1.25" fill="#404040"/>
               <rect y="8.75" width="20" height="2.5" rx="1.25" fill="#404040"/>
@@ -99,18 +108,18 @@ export default function ClientDashboardDesignC() {
         <div className="flex items-center justify-between px-4">
           {/* Left side - Filter buttons */}
           <div className="flex items-center gap-2">
-            <button className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
+            <button onClick={() => setIsCustomizeOpen(true)} className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               <span className="text-[#4B4B4B] text-[12px] font-medium">Filter</span>
             </button>
-            <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors">
+                <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M4 12L12 4M4.5 6.5C5.32843 6.5 6 5.82843 6 5C6 4.17157 5.32843 3.5 4.5 3.5C3.67157 3.5 3 4.17157 3 5C3 5.82843 3.67157 6.5 4.5 6.5ZM11.5 12.5C12.3284 12.5 13 11.8284 13 11C13 10.1716 12.3284 9.5 11.5 9.5C10.6716 9.5 10 10.1716 10 11C10 11.8284 10.6716 12.5 11.5 12.5Z" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors">
+                <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors" onClick={() => setIsGroupOpen(true)}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M8 2V10M8 10L5 7M8 10L11 7M3 14H13" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -121,6 +130,144 @@ export default function ClientDashboardDesignC() {
           <span className="text-[#1A63BC] text-[12px] font-semibold leading-[15px] cursor-pointer">View All</span>
         </div>
       </div>
+
+      {/* Customize View Bottom Sheet */}
+      {isCustomizeOpen && (
+        <div className="fixed inset-0 z-40">
+          {/* Dim background */}
+          <div className="absolute inset-0 bg-black/35" onClick={() => setIsCustomizeOpen(false)} />
+          {/* Bottom sheet */}
+          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+            {/* Drag handle */}
+            <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mt-2" />
+            {/* Header */}
+            <div className="px-4 py-3 flex items-center justify-between border-t border-[#F0F0F0]">
+              <button onClick={() => setIsCustomizeOpen(false)} className="w-9 h-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <div className="text-[16px] font-semibold text-[#111827]">Customize view</div>
+              <div className="w-9 h-9" />
+            </div>
+            {/* Items */}
+            <div className="px-4">
+              <div className="divide-y divide-[#EFEFEF]">
+                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsFilterOpen(true); }}>
+                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M6 9h6M7 13h4" stroke="#1F2937" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                  </span>
+                  <span className="text-[14px] text-[#111827]">Filter</span>
+                </button>
+                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsIBFilterOpen(true); }}>
+                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M4 20a8 8 0 0 1 16 0" stroke="#1F2937"/></svg>
+                  </span>
+                  <span className="text-[14px] text-[#111827]">IB Filter</span>
+                </button>
+                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsGroupOpen(true); }}>
+                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M17 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M3 20c0-3.866 3.582-7 8-7s8 3.134 8 7" stroke="#1F2937"/></svg>
+                  </span>
+                  <span className="text-[14px] text-[#111827]">Groups</span>
+                </button>
+              </div>
+            </div>
+            {/* Footer actions */}
+            <div className="px-4 py-4 flex items-center justify-between gap-3">
+              <button className="flex-1 h-10 rounded-xl bg-[#EFF4FB] text-[#1A63BC] text-[13px] font-semibold">Reset</button>
+              <button className="flex-1 h-10 rounded-xl bg-[#1A63BC] text-white text-[13px] font-semibold" onClick={() => setIsCustomizeOpen(false)}>Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hook existing modals */}
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={(newFilters) => { setFilters(newFilters); }}
+        initialFilters={filters}
+      />
+      <IBFilterModal
+        isOpen={isIBFilterOpen}
+        onClose={() => setIsIBFilterOpen(false)}
+        onSelectIB={(ib) => { /* Integrate selection with context or state as needed */ }}
+      />
+      <GroupModal
+        isOpen={isGroupOpen}
+        onClose={() => setIsGroupOpen(false)}
+        availableItems={clients}
+        loginField="login"
+        displayField="name"
+      />
+
+      {/* Sidebar overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-30">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/25"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="absolute left-0 top-0 h-full w-[300px] bg-white shadow-xl rounded-r-2xl flex flex-col">
+            <div className="p-4 flex items-center gap-3 border-b border-[#ECECEC]">
+              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#1A63BC"/></svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold text-[#1A63BC]">Broker Eyes</div>
+                <div className="text-[11px] text-[#7A7A7A]">Trading Platform</div>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)} className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto py-2">
+              <nav className="flex flex-col">
+                {[
+                  {label:'Dashboard', icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#404040"/></svg>
+                  )},
+                  {label:'Clients', active:true, icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#1A63BC"/><circle cx="16" cy="8" r="3" stroke="#1A63BC"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#1A63BC"/></svg>
+                  )},
+                  {label:'Pending Orders', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
+                  )},
+                  {label:'Margin Level', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
+                  )},
+                  {label:'Live Dealing', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#404040"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#404040"/></svg>
+                  )},
+                  {label:'Client Percentage', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
+                  )},
+                  {label:'Settings', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
+                  )},
+                ].map((item, idx) => (
+                  <button key={idx} className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}>
+                    <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="p-4 mt-auto border-t border-[#ECECEC]">
+              <button className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stat cards - Horizontal scrollable carousel */}
       <div className="px-0 pb-2">
@@ -164,23 +311,23 @@ export default function ClientDashboardDesignC() {
       </div>
 
       {/* Search and action buttons */}
-      <div className="px-0 pb-3">
-        <div className="flex items-center gap-2 px-4">
-          {/* Search box - takes more space */}
-          <div className="flex-1 min-w-0 h-[44px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-3 flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+      <div className="pb-3">
+          <div className="flex items-center gap-1 px-0">
+          {/* Search box - compact, edge-to-edge */}
+          <div className="flex-1 min-w-0 h-[40px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
               <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
               <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
             <input 
               placeholder="Search" 
-              className="flex-1 min-w-0 outline-none border-0 text-[13px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent" 
+              className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent" 
             />
           </div>
           
           {/* Column selector button */}
-          <button className="w-[44px] h-[44px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <button className="w-[36px] h-[36px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
               <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
@@ -191,11 +338,11 @@ export default function ClientDashboardDesignC() {
           <button 
             onClick={goToPreviousPage}
             disabled={currentPage === 1}
-            className={`w-[44px] h-[44px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
+            className={`w-[36px] h-[36px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
               currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
             }`}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
               <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -204,11 +351,11 @@ export default function ClientDashboardDesignC() {
           <button 
             onClick={goToNextPage}
             disabled={currentPage === totalPages}
-            className={`w-[44px] h-[44px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
+            className={`w-[36px] h-[36px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
               currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
             }`}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
               <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
