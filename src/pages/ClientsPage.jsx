@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
@@ -16,6 +17,7 @@ import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
+  const navigate = useNavigate()
   const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
   // Always use rawClients (unnormalized) for Clients module - USC values are handled by backend
@@ -24,8 +26,25 @@ const ClientsPage = () => {
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
   
-  // Mobile detection - false for desktop page, mobile users go to /client-dashboard-c
+  // Mobile detection with redirect
   const [isMobile] = useState(false)
+  
+  // Redirect to mobile view on mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileView = window.innerWidth <= 768
+      if (isMobileView) {
+        navigate('/v2/client-dashboard-c')
+      }
+    }
+    
+    // Check on mount
+    checkMobile()
+    
+    // Check on resize
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [navigate])
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
