@@ -168,16 +168,63 @@ export default function ClientDashboardDesignC() {
     setIsColumnDropdownOpen(false)
   }
 
+  // Column configuration with labels and keys
+  const columnConfig = [
+    { key: 'login', label: 'Login', width: '50px', sticky: true },
+    { key: 'firstName', label: 'First Name', width: '80px' },
+    { key: 'middleName', label: 'Middle Name', width: '80px' },
+    { key: 'email', label: 'E Mail', width: '120px' },
+    { key: 'phoneNo', label: 'Phone No', width: '90px' },
+    { key: 'city', label: 'City', width: '70px' },
+    { key: 'state', label: 'State', width: '70px' },
+    { key: 'country', label: 'Country', width: '70px' },
+    { key: 'balance', label: 'Balance', width: '60px' },
+    { key: 'floatingProfit', label: 'Profit', width: '80px' },
+    { key: 'equity', label: 'Equity', width: '60px' },
+    { key: 'name', label: 'Name', width: '1fr' },
+    { key: 'credit', label: 'Credit', width: '60px' },
+    { key: 'margin', label: 'Margin', width: '70px' },
+    { key: 'freeMargin', label: 'Free Margin', width: '80px' },
+    { key: 'dailyPnL', label: 'Daily PnL', width: '70px' },
+    { key: 'weeklyPnL', label: 'Weekly PnL', width: '80px' },
+    { key: 'monthlyPnL', label: 'Monthly PnL', width: '80px' },
+    { key: 'lifetimePnL', label: 'Lifetime PnL', width: '80px' }
+  ]
+
+  // Get visible columns based on state
+  const visibleColumnsList = useMemo(() => {
+    return columnConfig.filter(col => visibleColumns[col.key])
+  }, [visibleColumns])
+
+  // Generate grid template columns string
+  const gridTemplateColumns = useMemo(() => {
+    return visibleColumnsList.map(col => col.width).join(' ')
+  }, [visibleColumnsList])
+
   const rows = useMemo(() => {
     if (!Array.isArray(filteredClients)) return []
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     return filteredClients.slice(startIndex, endIndex).map(c => ({
       login: c.login,
+      firstName: c.firstName || c.first_name || '-',
+      middleName: c.middleName || c.middle_name || '-',
+      email: c.email || '-',
+      phoneNo: c.phone || c.phoneNo || c.phone_number || '-',
+      city: c.city || '-',
+      state: c.state || '-',
+      country: c.country || '-',
       balance: formatNum(c.balance),
-      floating: formatNum(c.floating ?? c.profit ?? 0),
+      floatingProfit: formatNum(c.floating ?? c.profit ?? 0),
       equity: formatNum(c.equity),
-      name: c.name || c.fullName || c.clientName || c.email || '-'
+      name: c.name || c.fullName || c.clientName || c.email || '-',
+      credit: formatNum(c.credit || 0),
+      margin: formatNum(c.margin || 0),
+      freeMargin: formatNum(c.freeMargin || c.free_margin || 0),
+      dailyPnL: formatNum(c.dailyPnL || 0),
+      weeklyPnL: formatNum(c.thisWeekPnL || c.weeklyPnL || 0),
+      monthlyPnL: formatNum(c.thisMonthPnL || c.monthlyPnL || 0),
+      lifetimePnL: formatNum(c.lifetimePnL || 0)
     }))
   }, [filteredClients, currentPage, itemsPerPage])
 
@@ -699,30 +746,49 @@ export default function ClientDashboardDesignC() {
         <div className="w-full overflow-x-auto scrollbar-hide">
           <div className="min-w-full relative">
           {/* Header row */}
-          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#1A63BC] text-white text-[10px] font-semibold sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-            <div className="h-[28px] flex items-center justify-center px-1 sticky left-0 bg-[#1A63BC] z-30" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
-            <div className="h-[28px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
-            <div className="h-[28px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Profit</div>
-            <div className="h-[28px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
-            <div className="h-[28px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
+          <div className="grid bg-[#1A63BC] text-white text-[10px] font-semibold sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+            {visibleColumnsList.map((col, idx) => (
+              <div 
+                key={col.key}
+                className={`h-[28px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+              >
+                {col.label}
+              </div>
+            ))}
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
-            <div key={idx} className="grid grid-cols-[50px_60px_80px_60px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-              <div className="h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.login}</div>
-              <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.balance}</div>
-              <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.floating}</div>
-              <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.equity}</div>
-              <div className="h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.name}</div>
+            <div key={idx} className="grid text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+              {visibleColumnsList.map((col, colIdx) => (
+                <div 
+                  key={col.key}
+                  className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
+                    col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]' : ''
+                  }`}
+                  style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                >
+                  {r[col.key]}
+                </div>
+              ))}
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-            <div className="h-[38px] flex items-center justify-center px-1 font-bold sticky left-0 bg-[#EFF4FB] z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Total</div>
-            <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{formatNum(clientStats?.totalBalance || 0)}</div>
-            <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{formatNum(clientStats?.totalProfit || 0)}</div>
-            <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{formatNum(clientStats?.totalEquity || 0)}</div>
-            <div className="h-[38px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>-</div>
+          <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+            {visibleColumnsList.map((col, idx) => (
+              <div 
+                key={col.key}
+                className={`h-[38px] flex items-center justify-center px-1 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]' : ''}`}
+                style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+              >
+                {col.key === 'login' ? 'Total' : 
+                 col.key === 'balance' ? formatNum(clientStats?.totalBalance || 0) :
+                 col.key === 'floatingProfit' ? formatNum(clientStats?.totalProfit || 0) :
+                 col.key === 'equity' ? formatNum(clientStats?.totalEquity || 0) :
+                 col.key === 'credit' ? formatNum(clientStats?.totalCredit || 0) :
+                 '-'}
+              </div>
+            ))}
           </div>
           </div>
         </div>
