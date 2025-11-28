@@ -743,8 +743,12 @@ export default function ClientDashboardDesignC() {
         </div>
       </div>      {/* Table area */}
       <div className="table-no-borders relative">
-        <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="min-w-full relative">
+        <div className="w-full overflow-x-auto overflow-y-visible" style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#CBD5E0 #F7FAFC'
+        }}>
+          <div className="relative" style={{ minWidth: 'max-content' }}>
           {/* Header row */}
           <div className="grid bg-[#1A63BC] text-white text-[10px] font-semibold sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
             {visibleColumnsList.map((col, idx) => (
@@ -764,7 +768,7 @@ export default function ClientDashboardDesignC() {
                 <div 
                   key={col.key}
                   className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
-                    col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]' : ''
+                    col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10' : ''
                   }`}
                   style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                 >
@@ -778,8 +782,8 @@ export default function ClientDashboardDesignC() {
             {visibleColumnsList.map((col, idx) => (
               <div 
                 key={col.key}
-                className={`h-[38px] flex items-center justify-center px-1 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10 shadow-[2px_0_4px_rgba(0,0,0,0.05)]' : ''}`}
-                style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+                className={`h-[38px] flex items-center justify-center px-1 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
               >
                 {col.key === 'login' ? 'Total' : 
                  col.key === 'balance' ? formatNum(clientStats?.totalBalance || 0) :
@@ -795,12 +799,20 @@ export default function ClientDashboardDesignC() {
       </div>
 
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
+        /* Custom scrollbar styling for table */
+        .table-no-borders > div:first-child::-webkit-scrollbar {
+          height: 6px;
         }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+        .table-no-borders > div:first-child::-webkit-scrollbar-track {
+          background: #F7FAFC;
+          border-radius: 3px;
+        }
+        .table-no-borders > div:first-child::-webkit-scrollbar-thumb {
+          background: #CBD5E0;
+          border-radius: 3px;
+        }
+        .table-no-borders > div:first-child::-webkit-scrollbar-thumb:hover {
+          background: #A0AEC0;
         }
         /* Completely remove all borders and separators from table */
         .table-no-borders,
