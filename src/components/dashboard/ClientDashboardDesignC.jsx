@@ -362,7 +362,7 @@ export default function ClientDashboardDesignC() {
           {cards.map((card, i) => (
             <div 
               key={i} 
-              className="min-w-[250px] h-[74px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-3 py-3 flex flex-col justify-between snap-start"
+              className="min-w-[240px] w-[240px] h-[74px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-3 py-3 flex flex-col justify-between snap-start flex-shrink-0"
             >
               <div className="flex items-start justify-between">
                 <span className="text-[#4B4B4B] text-[12px] font-normal leading-[15px]">{card.label}</span>
@@ -449,30 +449,30 @@ export default function ClientDashboardDesignC() {
         <div className="w-full overflow-x-auto scrollbar-hide">
           <div className="min-w-full">
           {/* Header row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold gap-0" style={{gap: '0px', gridGap: '0px'}}>
-            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Floating Profit</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
-            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
+          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[9px] font-semibold" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Login</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Balance</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Profit</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Equity</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Name</div>
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
-            <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] gap-0" style={{gap: '0px', gridGap: '0px'}}>
-              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.login}</div>
-              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.balance}</div>
-              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.floating}</div>
-              <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.equity}</div>
-              <div className="h-[35px] flex items-center pl-1 overflow-hidden" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.name}</div>
+            <div key={idx} className="grid grid-cols-[50px_60px_80px_60px_1fr] text-[9px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1]" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
+              <div className="h-[35px] flex items-center justify-center px-1 text-[#1A63BC] font-medium" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.login}</div>
+              <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.balance}</div>
+              <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.floating}</div>
+              <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.equity}</div>
+              <div className="h-[35px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>{r.name}</div>
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium gap-0" style={{gap: '0px', gridGap: '0px'}}>
-            <div className="h-[35px] flex items-center pl-1 font-semibold" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Total</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
-            <div className="h-[35px] flex items-center justify-center" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
-            <div className="h-[35px] flex items-center pl-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>-</div>
+          <div className="grid grid-cols-[50px_60px_80px_60px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[9px] font-medium" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
+            <div className="h-[35px] flex items-center justify-center px-1 font-semibold" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>Total</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>0.00</div>
+            <div className="h-[35px] flex items-center justify-center px-1" style={{border: 'none', outline: 'none', boxShadow: 'none'}}>-</div>
           </div>
           </div>
         </div>
@@ -487,13 +487,21 @@ export default function ClientDashboardDesignC() {
           scrollbar-width: none;
         }
         /* Completely remove all borders and separators from table */
-        .table-no-borders * {
+        .table-no-borders,
+        .table-no-borders *,
+        .table-no-borders div {
           border-left: none !important;
           border-right: none !important;
           border-inline: none !important;
           border-inline-start: none !important;
           border-inline-end: none !important;
           box-shadow: none !important;
+          border-collapse: collapse !important;
+        }
+        .table-no-borders .grid {
+          gap: 0 !important;
+          grid-gap: 0 !important;
+          column-gap: 0 !important;
         }
       `}</style>
     </div>
