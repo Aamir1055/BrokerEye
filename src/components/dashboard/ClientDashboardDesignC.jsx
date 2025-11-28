@@ -449,30 +449,30 @@ export default function ClientDashboardDesignC() {
         <div className="w-full overflow-x-auto scrollbar-hide">
           <div className="min-w-full">
           {/* Header row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold">
-            <div className="h-[35px] flex items-center pl-1">Login</div>
-            <div className="h-[35px] flex items-center justify-center">Balance</div>
-            <div className="h-[35px] flex items-center justify-center">Floating Profit</div>
-            <div className="h-[35px] flex items-center justify-center">Equity</div>
-            <div className="h-[35px] flex items-center pl-1">Name</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#1A63BC] text-[#F5F5F5] text-[10px] font-semibold gap-0">
+            <div className="h-[35px] flex items-center pl-1 border-0">Login</div>
+            <div className="h-[35px] flex items-center justify-center border-0">Balance</div>
+            <div className="h-[35px] flex items-center justify-center border-0">Floating Profit</div>
+            <div className="h-[35px] flex items-center justify-center border-0">Equity</div>
+            <div className="h-[35px] flex items-center pl-1 border-0">Name</div>
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
-            <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1]">
-              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium">{r.login}</div>
-              <div className="h-[35px] flex items-center justify-center">{r.balance}</div>
-              <div className="h-[35px] flex items-center justify-center">{r.floating}</div>
-              <div className="h-[35px] flex items-center justify-center">{r.equity}</div>
-              <div className="h-[35px] flex items-center pl-1 overflow-hidden">{r.name}</div>
+            <div key={idx} className="grid grid-cols-[60px_70px_100px_70px_1fr] text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] gap-0">
+              <div className="h-[35px] flex items-center pl-1 text-[#1A63BC] font-medium border-0">{r.login}</div>
+              <div className="h-[35px] flex items-center justify-center border-0">{r.balance}</div>
+              <div className="h-[35px] flex items-center justify-center border-0">{r.floating}</div>
+              <div className="h-[35px] flex items-center justify-center border-0">{r.equity}</div>
+              <div className="h-[35px] flex items-center pl-1 overflow-hidden border-0">{r.name}</div>
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium">
-            <div className="h-[35px] flex items-center pl-1 font-semibold">Total</div>
-            <div className="h-[35px] flex items-center justify-center">0.00</div>
-            <div className="h-[35px] flex items-center justify-center">0.00</div>
-            <div className="h-[35px] flex items-center justify-center">0.00</div>
-            <div className="h-[35px] flex items-center pl-1">-</div>
+          <div className="grid grid-cols-[60px_70px_100px_70px_1fr] bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-medium gap-0">
+            <div className="h-[35px] flex items-center pl-1 font-semibold border-0">Total</div>
+            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
+            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
+            <div className="h-[35px] flex items-center justify-center border-0">0.00</div>
+            <div className="h-[35px] flex items-center pl-1 border-0">-</div>
           </div>
           </div>
         </div>
