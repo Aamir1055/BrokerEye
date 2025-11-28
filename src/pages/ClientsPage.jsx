@@ -34,7 +34,7 @@ const ClientsPage = () => {
     const checkMobile = () => {
       const isMobileView = window.innerWidth <= 768
       if (isMobileView) {
-        navigate('/v2/client-dashboard-c')
+        navigate('/client-dashboard-c')
       }
     }
     
