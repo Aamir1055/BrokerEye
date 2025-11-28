@@ -16,6 +16,7 @@ export default function ClientDashboardDesignC() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
+  const [showPercent, setShowPercent] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
   const [isGroupOpen, setIsGroupOpen] = useState(false)
@@ -38,12 +39,90 @@ export default function ClientDashboardDesignC() {
     }))
   }, [clients, currentPage, itemsPerPage])
 
-  const cards = useMemo(() => ([
-    { label: 'Monthly EQuity', value: formatNum(clientStats?.thisMonthPnL), unit: 'USD' },
-    { label: 'TOTAL EQUITY', value: formatNum(clientStats?.totalEquity), unit: 'USD' },
-    { label: 'LIFETIME PnL', value: formatNum(clientStats?.lifetimePnL), unit: 'USD' },
-    { label: 'DAILY PnL', value: formatNum(clientStats?.dailyPnL), unit: 'USD' },
-  ]), [clientStats])
+  const cards = useMemo(() => {
+    if (showPercent) {
+      const sum = (key) => Array.isArray(clients) ? clients.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0
+      const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      return [
+        { label: 'Monthly EQuity', value: fmt(sum('thisMonthPnL_percentage')), unit: '%' },
+        { label: 'TOTAL EQUITY', value: fmt(sum('equity_percentage')), unit: '%' },
+        { label: 'LIFETIME PnL', value: fmt(sum('lifetimePnL_percentage')), unit: '%' },
+        { label: 'DAILY PnL', value: fmt(sum('dailyPnL_percentage')), unit: '%' },
+      ]
+    }
+    return [
+      // Core Metrics
+      { label: 'Total Clients', value: formatNum(clientStats?.totalClients), unit: 'Count' },
+      { label: 'Total Balance', value: formatNum(clientStats?.totalBalance), unit: 'USD' },
+      { label: 'Total Credit', value: formatNum(clientStats?.totalCredit), unit: 'USD' },
+      { label: 'TOTAL EQUITY', value: formatNum(clientStats?.totalEquity), unit: 'USD' },
+      { label: 'PNL', value: formatNum(clientStats?.totalPnl), unit: 'USD' },
+      { label: 'Floating Profit', value: formatNum(clientStats?.totalProfit), unit: 'USD' },
+      
+      // Daily Metrics
+      { label: 'Daily Deposit', value: formatNum(clientStats?.dailyDeposit), unit: 'USD' },
+      { label: 'Daily Withdrawal', value: formatNum(clientStats?.dailyWithdrawal), unit: 'USD' },
+      { label: 'DAILY PnL', value: formatNum(clientStats?.dailyPnL), unit: 'USD' },
+      { label: 'This Week PnL', value: formatNum(clientStats?.thisWeekPnL), unit: 'USD' },
+      { label: 'Monthly EQuity', value: formatNum(clientStats?.thisMonthPnL), unit: 'USD' },
+      { label: 'LIFETIME PnL', value: formatNum(clientStats?.lifetimePnL), unit: 'USD' },
+      
+      // Net Calculations  
+      { label: 'Daily Net D/W', value: formatNum((clientStats?.dailyDeposit || 0) - (clientStats?.dailyWithdrawal || 0)), unit: 'USD' },
+      { label: 'Book PnL', value: formatNum((clientStats?.lifetimePnL || 0) + (clientStats?.totalProfit || 0)), unit: 'USD' },
+      
+      // Rebate Metrics
+      { label: 'Total Rebate', value: formatNum(clientStats?.totalCommission), unit: 'USD' },
+      { label: 'Available Rebate', value: formatNum(clientStats?.availableCommission), unit: 'USD' },
+      { label: 'Blocked Rebate', value: formatNum(clientStats?.blockedCommission), unit: 'USD' },
+      
+      // Weekly Metrics
+      { label: 'Week Deposit', value: formatNum(clientStats?.weekDeposit), unit: 'USD' },
+      { label: 'Week Withdrawal', value: formatNum(clientStats?.weekWithdrawal), unit: 'USD' },
+      { label: 'NET Week DW', value: formatNum((clientStats?.weekDeposit || 0) - (clientStats?.weekWithdrawal || 0)), unit: 'USD' },
+      
+      // Monthly Metrics
+      { label: 'Monthly Deposit', value: formatNum(clientStats?.monthDeposit), unit: 'USD' },
+      { label: 'Monthly Withdrawal', value: formatNum(clientStats?.monthWithdrawal), unit: 'USD' },
+      { label: 'NET Monthly DW', value: formatNum((clientStats?.monthDeposit || 0) - (clientStats?.monthWithdrawal || 0)), unit: 'USD' },
+      
+      // Lifetime Metrics
+      { label: 'Lifetime Deposit', value: formatNum(clientStats?.lifetimeDeposit), unit: 'USD' },
+      { label: 'Lifetime Withdrawal', value: formatNum(clientStats?.lifetimeWithdrawal), unit: 'USD' },
+      { label: 'NET Lifetime DW', value: formatNum((clientStats?.lifetimeDeposit || 0) - (clientStats?.lifetimeWithdrawal || 0)), unit: 'USD' },
+      
+      // Bonus Metrics
+      { label: 'Daily Bonus IN', value: formatNum(clientStats?.dailyBonusIn), unit: 'USD' },
+      { label: 'Daily Bonus OUT', value: formatNum(clientStats?.dailyBonusOut), unit: 'USD' },
+      { label: 'NET Daily Bonus', value: formatNum(clientStats?.netDailyBonus), unit: 'USD' },
+      { label: 'Week Bonus IN', value: formatNum(clientStats?.weekBonusIn), unit: 'USD' },
+      { label: 'Week Bonus OUT', value: formatNum(clientStats?.weekBonusOut), unit: 'USD' },
+      { label: 'NET Week Bonus', value: formatNum(clientStats?.netWeekBonus), unit: 'USD' },
+      { label: 'Monthly Bonus IN', value: formatNum(clientStats?.monthBonusIn), unit: 'USD' },
+      { label: 'Monthly Bonus OUT', value: formatNum(clientStats?.monthBonusOut), unit: 'USD' },
+      { label: 'NET Monthly Bonus', value: formatNum(clientStats?.netMonthBonus), unit: 'USD' },
+      { label: 'Lifetime Bonus IN', value: formatNum(clientStats?.lifetimeBonusIn), unit: 'USD' },
+      { label: 'Lifetime Bonus OUT', value: formatNum(clientStats?.lifetimeBonusOut), unit: 'USD' },
+      { label: 'NET Lifetime Bonus', value: formatNum(clientStats?.netLifetimeBonus), unit: 'USD' },
+      
+      // Credit Metrics
+      { label: 'Weekly Credit IN', value: formatNum(clientStats?.weekCreditIn), unit: 'USD' },
+      { label: 'Monthly Credit IN', value: formatNum(clientStats?.monthCreditIn), unit: 'USD' },
+      { label: 'Lifetime Credit IN', value: formatNum(clientStats?.lifetimeCreditIn), unit: 'USD' },
+      { label: 'Weekly Credit OUT', value: formatNum(clientStats?.weekCreditOut), unit: 'USD' },
+      { label: 'Monthly Credit OUT', value: formatNum(clientStats?.monthCreditOut), unit: 'USD' },
+      { label: 'Lifetime Credit OUT', value: formatNum(clientStats?.lifetimeCreditOut), unit: 'USD' },
+      { label: 'NET Credit', value: formatNum(clientStats?.netCredit), unit: 'USD' },
+      
+      // Previous Equity Metrics
+      { label: 'Weekly Previous Equity', value: formatNum(clientStats?.weekPreviousEquity), unit: 'USD' },
+      { label: 'Monthly Previous Equity', value: formatNum(clientStats?.monthPreviousEquity), unit: 'USD' },
+      { label: 'Previous Equity', value: formatNum(clientStats?.previousEquity), unit: 'USD' },
+      
+      // Additional Calculated Metrics
+      { label: 'Net Lifetime PnL', value: formatNum((clientStats?.lifetimePnL || 0) - (clientStats?.totalCommission || 0)), unit: 'USD' },
+    ]
+  }, [clientStats, clients, showPercent])
 
   // Handle scroll to track active card
   useEffect(() => {
@@ -114,7 +193,12 @@ export default function ClientDashboardDesignC() {
               </svg>
               <span className="text-[#4B4B4B] text-[12px] font-medium">Filter</span>
             </button>
-                <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => setShowPercent((v) => !v)}
+                  className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
+                    showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#ECECEC] hover:bg-gray-50'
+                  }`}
+                >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M4 12L12 4M4.5 6.5C5.32843 6.5 6 5.82843 6 5C6 4.17157 5.32843 3.5 4.5 3.5C3.67157 3.5 3 4.17157 3 5C3 5.82843 3.67157 6.5 4.5 6.5ZM11.5 12.5C12.3284 12.5 13 11.8284 13 11C13 10.1716 12.3284 9.5 11.5 9.5C10.6716 9.5 10 10.1716 10 11C10 11.8284 10.6716 12.5 11.5 12.5Z" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
