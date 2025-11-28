@@ -119,6 +119,9 @@ export default function ClientDashboardDesignC() {
   }, [clients, currentPage, itemsPerPage])
 
   const cards = useMemo(() => {
+    console.log('📊 Cards calculation - clientStats:', clientStats)
+    console.log('📊 Clients data:', clients?.slice(0, 2))
+    
     if (showPercent) {
       const sum = (key) => Array.isArray(clients) ? clients.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0
       const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -130,21 +133,21 @@ export default function ClientDashboardDesignC() {
       ]
     }
     return [
-      // Core Metrics
-      { label: 'Total Clients', value: formatNum(clientStats?.totalClients), unit: 'Count' },
-      { label: 'Total Balance', value: formatNum(clientStats?.totalBalance), unit: 'USD' },
-      { label: 'Total Credit', value: formatNum(clientStats?.totalCredit), unit: 'USD' },
-      { label: 'TOTAL EQUITY', value: formatNum(clientStats?.totalEquity), unit: 'USD' },
-      { label: 'PNL', value: formatNum(clientStats?.totalPnl), unit: 'USD' },
-      { label: 'Floating Profit', value: formatNum(clientStats?.totalProfit), unit: 'USD' },
+      // Core Metrics  
+      { label: 'Total Clients', value: String(clientStats?.totalClients || clients?.length || 0), unit: 'Count' },
+      { label: 'Total Balance', value: formatNum(clientStats?.totalBalance || 0), unit: 'USD' },
+      { label: 'Total Credit', value: formatNum(clientStats?.totalCredit || 0), unit: 'USD' },
+      { label: 'TOTAL EQUITY', value: formatNum(clientStats?.totalEquity || 0), unit: 'USD' },
+      { label: 'PNL', value: formatNum(clientStats?.totalPnl || clientStats?.dailyPnL || 0), unit: 'USD' },
+      { label: 'Floating Profit', value: formatNum(clientStats?.totalProfit || 0), unit: 'USD' },
       
       // Daily Metrics
-      { label: 'Daily Deposit', value: formatNum(clientStats?.dailyDeposit), unit: 'USD' },
-      { label: 'Daily Withdrawal', value: formatNum(clientStats?.dailyWithdrawal), unit: 'USD' },
-      { label: 'DAILY PnL', value: formatNum(clientStats?.dailyPnL), unit: 'USD' },
-      { label: 'This Week PnL', value: formatNum(clientStats?.thisWeekPnL), unit: 'USD' },
-      { label: 'Monthly EQuity', value: formatNum(clientStats?.thisMonthPnL), unit: 'USD' },
-      { label: 'LIFETIME PnL', value: formatNum(clientStats?.lifetimePnL), unit: 'USD' },
+      { label: 'Daily Deposit', value: formatNum(clientStats?.dailyDeposit || 0), unit: 'USD' },
+      { label: 'Daily Withdrawal', value: formatNum(clientStats?.dailyWithdrawal || 0), unit: 'USD' },
+      { label: 'DAILY PnL', value: formatNum(clientStats?.dailyPnL || 0), unit: 'USD' },
+      { label: 'This Week PnL', value: formatNum(clientStats?.thisWeekPnL || 0), unit: 'USD' },
+      { label: 'Monthly EQuity', value: formatNum(clientStats?.thisMonthPnL || 0), unit: 'USD' },
+      { label: 'LIFETIME PnL', value: formatNum(clientStats?.lifetimePnL || 0), unit: 'USD' },
       
       // Net Calculations  
       { label: 'Daily Net D/W', value: formatNum((clientStats?.dailyDeposit || 0) - (clientStats?.dailyWithdrawal || 0)), unit: 'USD' },
@@ -462,6 +465,19 @@ export default function ClientDashboardDesignC() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Blue scroll bar indicator connected to face cards */}
+      <div className="flex justify-center pb-3 pt-2">
+        <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-[#2563EB] rounded-full transition-all duration-300 ease-out"
+            style={{
+              width: `${100 / Math.ceil(cards.length / 2)}%`,
+              transform: `translateX(${activeCardIndex * (100 / Math.ceil(cards.length / 2))}%)`
+            }}
+          />
         </div>
       </div>
 
