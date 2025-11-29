@@ -4,6 +4,7 @@ import FilterModal from '../FilterModal'
 import IBFilterModal from '../IBFilterModal'
 import GroupModal from '../GroupModal'
 import { useData } from '../../contexts/DataContext'
+import { useIB } from '../../contexts/IBContext'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -14,6 +15,7 @@ const formatNum = (n) => {
 export default function ClientDashboardDesignC() {
   const navigate = useNavigate()
   const { clients = [], clientStats, lastWsReceiveAt } = useData()
+  const { selectedIB, ibMT5Accounts, selectIB, clearIBFilter } = useIB()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -99,10 +101,19 @@ export default function ClientDashboardDesignC() {
       })
     }
 
+    // Apply IB Filter if selected
+    if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+      const ibLoginSet = new Set(ibMT5Accounts.map(acc => String(acc.login || acc)))
+      filtered = filtered.filter(c => {
+        const clientLogin = String(c.login || c.clientID || c.mqid || '')
+        return ibLoginSet.has(clientLogin)
+      })
+    }
+
     return filtered
   }
 
-  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt])
+  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts])
   const totalPages = Math.ceil((filteredClients?.length || 0) / itemsPerPage)
 
   // Export functions
@@ -473,7 +484,7 @@ export default function ClientDashboardDesignC() {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span className="text-[#4B4B4B] text-[12px] font-medium">Filter</span>
+              <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
             </button>
             <button
               onClick={() => setShowPercent((v) => !v)}
@@ -603,7 +614,10 @@ export default function ClientDashboardDesignC() {
       <IBFilterModal
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
-        onSelectIB={(ib) => { /* Integrate selection with context or state as needed */ }}
+        onSelectIB={(ibData) => {
+          selectIB(ibData.email, ibData.mt5Accounts)
+          setIsIBFilterOpen(false)
+        }}
       />
       <GroupModal
         isOpen={isGroupOpen}
@@ -724,7 +738,7 @@ export default function ClientDashboardDesignC() {
             </svg>
             <input 
               placeholder="Search" 
-              className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent" 
+              className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent font-outfit" 
             />
           </div>
           
@@ -780,7 +794,7 @@ export default function ClientDashboardDesignC() {
         }}>
           <div className="relative" style={{ minWidth: 'max-content' }}>
           {/* Header row */}
-          <div className="grid bg-[#1A63BC] text-white text-[10px] font-semibold sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+          <div className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
             {visibleColumnsList.map((col, idx) => (
               <div 
                 key={col.key}
@@ -793,7 +807,7 @@ export default function ClientDashboardDesignC() {
           </div>
           {/* Rows */}
           {rows.map((r, idx) => (
-            <div key={idx} className="grid text-[10px] text-[#4B4B4B] bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+            <div key={idx} className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
               {visibleColumnsList.map((col, colIdx) => (
                 <div 
                   key={col.key}
@@ -917,7 +931,7 @@ export default function ClientDashboardDesignC() {
                   <path d="M15 18L9 12L15 6" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              <h2 className="text-center text-xl font-semibold">Show/Hide Columns</h2>
+              <h2 className="text-center text-xl font-semibold font-outfit">Show/Hide Columns</h2>
             </div>
 
             {/* Search Box */}
@@ -928,7 +942,7 @@ export default function ClientDashboardDesignC() {
                   placeholder="Search Columns"
                   value={columnSearchQuery}
                   onChange={(e) => setColumnSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 border border-gray-200 rounded-xl text-base focus:outline-none focus:border-blue-500"
+                  className="w-full h-12 pl-12 pr-4 border border-gray-200 rounded-xl text-base font-outfit focus:outline-none focus:border-blue-500"
                 />
                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <circle cx="11" cy="11" r="8" strokeWidth="2"/>
@@ -966,7 +980,7 @@ export default function ClientDashboardDesignC() {
                   key={key}
                   className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
                 >
-                  <span className="text-base text-gray-800">{label}</span>
+                  <span className="text-base text-gray-800 font-outfit">{label}</span>
                   <button
                     onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
                     className="w-6 h-6 flex items-center justify-center"
