@@ -308,7 +308,26 @@ export default function ClientDashboardDesignC() {
         }
       }
       
-      const sum = (key) => dataToUse.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0)
+      // Enhanced robust numeric sum helper matching desktop ClientsPage
+      const sum = (key) => dataToUse.reduce((acc, c) => {
+        if (!c || typeof c !== 'object') return acc
+        const v = c[key]
+        // Handle null/undefined explicitly
+        if (v == null) return acc
+        // If already a finite number, use directly
+        if (typeof v === 'number' && Number.isFinite(v)) return acc + v
+        // Attempt string coercion with comma removal
+        if (typeof v === 'string') {
+          const cleaned = v.replace(/,/g, '').trim()
+          if (cleaned === '' || cleaned === '-') return acc
+          const n = Number(cleaned)
+          return acc + (Number.isFinite(n) ? n : 0)
+        }
+        // Coerce other types
+        const n = Number(v)
+        return acc + (Number.isFinite(n) ? n : 0)
+      }, 0)
+      
       return {
         totalClients: dataToUse.length,
         totalBalance: sum('balance'),
