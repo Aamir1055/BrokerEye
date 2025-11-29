@@ -17,7 +17,10 @@ const formatNum = (n) => {
 
 export default function ClientDashboardDesignC() {
   const navigate = useNavigate()
-  const { clients = [], clientStats, lastWsReceiveAt } = useData()
+  const { clients: normalizedClients, rawClients, clientStats, lastWsReceiveAt } = useData()
+  // Use rawClients (unnormalized) to match desktop ClientsPage behavior
+  // rawClients contains data without frontend USC normalization - backend handles USC
+  const clients = rawClients.length > 0 ? rawClients : normalizedClients
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
