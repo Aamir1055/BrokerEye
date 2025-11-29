@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import FilterModal from '../FilterModal'
 import IBFilterModal from '../IBFilterModal'
 import GroupModal from '../GroupModal'
@@ -11,6 +12,7 @@ const formatNum = (n) => {
 }
 
 export default function ClientDashboardDesignC() {
+  const navigate = useNavigate()
   const { clients = [], clientStats, lastWsReceiveAt } = useData()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -26,6 +28,23 @@ export default function ClientDashboardDesignC() {
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
   const itemsPerPage = 12
+  
+  // Redirect to desktop view on desktop viewport
+  useEffect(() => {
+    const checkDesktop = () => {
+      const isDesktopView = window.innerWidth > 768
+      if (isDesktopView) {
+        navigate('/clients')
+      }
+    }
+    
+    // Check on mount
+    checkDesktop()
+    
+    // Check on resize
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [navigate])
   
   // Available columns for the table
   const [visibleColumns, setVisibleColumns] = useState({
