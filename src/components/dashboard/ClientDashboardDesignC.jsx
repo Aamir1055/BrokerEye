@@ -3,19 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import FilterModal from '../FilterModal'
 import IBFilterModal from '../IBFilterModal'
 import GroupModal from '../GroupModal'
+import LoginGroupsModal from '../LoginGroupsModal'
+import LoginGroupModal from '../LoginGroupModal'
 import { useData } from '../../contexts/DataContext'
 import { useIB } from '../../contexts/IBContext'
+import { useGroups } from '../../contexts/GroupContext'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
   if (!isFinite(v)) return '0.00'
-  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export default function ClientDashboardDesignC() {
   const navigate = useNavigate()
   const { clients = [], clientStats, lastWsReceiveAt } = useData()
-  const { selectedIB, ibMT5Accounts, selectIB, clearIBFilter } = useIB()
+  const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
+  const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -24,6 +28,9 @@ export default function ClientDashboardDesignC() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
   const [isGroupOpen, setIsGroupOpen] = useState(false)
+  const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
+  const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const columnDropdownRef = useRef(null)
@@ -78,6 +85,9 @@ export default function ClientDashboardDesignC() {
     
     let filtered = [...clients]
 
+    // Apply group filter first (if active)
+    filtered = filterByActiveGroup(filtered, 'login', 'dashboard')
+
     if (filters.hasFloating) {
       // Filter clients who have floating positions (non-zero)
       filtered = filtered.filter(c => c && c.floating && Math.abs(c.floating) > 0)
@@ -103,7 +113,8 @@ export default function ClientDashboardDesignC() {
 
     // Apply IB Filter if selected
     if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
-      const ibLoginSet = new Set(ibMT5Accounts.map(acc => String(acc.login || acc)))
+      // ibMT5Accounts is already an array of mt5_id numbers
+      const ibLoginSet = new Set(ibMT5Accounts.map(id => String(id)))
       filtered = filtered.filter(c => {
         const clientLogin = String(c.login || c.clientID || c.mqid || '')
         return ibLoginSet.has(clientLogin)
@@ -113,7 +124,7 @@ export default function ClientDashboardDesignC() {
     return filtered
   }
 
-  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts])
+  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
   const totalPages = Math.ceil((filteredClients?.length || 0) / itemsPerPage)
 
   // Export functions
@@ -264,7 +275,11 @@ export default function ClientDashboardDesignC() {
     console.log('📊 lastWsReceiveAt:', lastWsReceiveAt)
     
     // Always calculate from actual client data for real-time updates
-    const dataToUse = (Object.values(filters).some(f => f)) ? filteredClients : clients
+    // Use filteredClients if any filter is active (basic filters OR IB filter OR group filter)
+    const hasBasicFilters = Object.values(filters).some(f => f)
+    const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
+    const hasGroupFilter = activeGroupFilters?.dashboard != null
+    const dataToUse = (hasBasicFilters || hasIBFilter || hasGroupFilter) ? filteredClients : clients
     
     const calculateStats = () => {
       if (!Array.isArray(dataToUse) || dataToUse.length === 0) {
@@ -404,7 +419,7 @@ export default function ClientDashboardDesignC() {
       // Additional Calculated Metrics
       { label: 'Net Lifetime PnL', value: formatNum((stats?.lifetimePnL || 0) - (stats?.totalCommission || 0)), unit: 'USD' },
     ]
-  }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt])
+  }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt, selectedIB, ibMT5Accounts, activeGroupFilters])
 
   // Debug: Log when WebSocket data updates
   useEffect(() => {
@@ -465,12 +480,11 @@ export default function ClientDashboardDesignC() {
           <span className="absolute left-1/2 -translate-x-1/2 top-[6px] font-outfit font-semibold text-[18px] leading-[24px] text-center text-black">Clients</span>
 
           {/* Profile avatar - positioned at right with spacing */}
-          <div className="absolute right-4 w-9 h-9 rounded-full overflow-hidden shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)]">
-            <img 
-              src="data:image/jpeg;base64,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" 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
+          <div className="absolute right-4 w-9 h-9 rounded-full overflow-hidden shadow-[inset_0px_4px_4px_rgba(0,0,0,0.25)] bg-gray-200 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" fill="#9CA3AF"/>
+              <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V20" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
           </div>
         </div>
       </div>
@@ -587,7 +601,7 @@ export default function ClientDashboardDesignC() {
                   </span>
                   <span className="text-[14px] text-[#111827]">IB Filter</span>
                 </button>
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsGroupOpen(true); }}>
+                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
                   <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M17 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M3 20c0-3.866 3.582-7 8-7s8 3.134 8 7" stroke="#1F2937"/></svg>
                   </span>
@@ -597,7 +611,19 @@ export default function ClientDashboardDesignC() {
             </div>
             {/* Footer actions */}
             <div className="px-4 py-4 flex items-center justify-between gap-3">
-              <button className="flex-1 h-10 rounded-xl bg-[#EFF4FB] text-[#1A63BC] text-[13px] font-semibold">Reset</button>
+              <button 
+                className="flex-1 h-10 rounded-xl bg-[#EFF4FB] text-[#1A63BC] text-[13px] font-semibold"
+                onClick={() => {
+                  // Clear all filters
+                  setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+                  // Clear IB filter
+                  clearIBSelection()
+                  // Clear group filter
+                  setActiveGroupFilter('dashboard', null)
+                }}
+              >
+                Reset
+              </button>
               <button className="flex-1 h-10 rounded-xl bg-[#1A63BC] text-white text-[13px] font-semibold" onClick={() => setIsCustomizeOpen(false)}>Apply</button>
             </div>
           </div>
@@ -614,8 +640,19 @@ export default function ClientDashboardDesignC() {
       <IBFilterModal
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
+        currentSelectedIB={selectedIB}
         onSelectIB={(ibData) => {
-          selectIB(ibData.email, ibData.mt5Accounts)
+          if (ibData === null) {
+            // Reset/clear the filter
+            clearIBSelection()
+          } else {
+            // Pass the complete IB object to selectIB
+            selectIB({
+              email: ibData.email,
+              name: ibData.name,
+              percentage: ibData.percentage
+            })
+          }
           setIsIBFilterOpen(false)
         }}
       />
@@ -625,6 +662,54 @@ export default function ClientDashboardDesignC() {
         availableItems={clients}
         loginField="login"
         displayField="name"
+      />
+      <LoginGroupsModal
+        isOpen={isLoginGroupsOpen}
+        onClose={() => setIsLoginGroupsOpen(false)}
+        groups={groups.map(g => ({
+          ...g,
+          loginCount: g.range 
+            ? (g.range.to - g.range.from + 1) 
+            : g.loginIds.length
+        }))}
+        activeGroupName={getActiveGroupFilter('dashboard')}
+        onSelectGroup={(group) => {
+          // Apply group filter or clear if null
+          if (group === null) {
+            setActiveGroupFilter('dashboard', null)
+          } else {
+            setActiveGroupFilter('dashboard', group.name)
+          }
+          setIsLoginGroupsOpen(false)
+        }}
+        onCreateGroup={() => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onEditGroup={(group) => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(group)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onDeleteGroup={(group) => {
+          if (window.confirm(`Delete group "${group.name}"?`)) {
+            deleteGroup(group.name)
+          }
+        }}
+      />
+      <LoginGroupModal
+        isOpen={isLoginGroupModalOpen}
+        onClose={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+        }}
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
+        editGroup={editingGroup}
       />
 
       {/* Sidebar overlay */}

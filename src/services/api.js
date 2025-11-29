@@ -596,4 +596,8 @@ export const brokerAPI = {
   }
 }
 
+// Also export these methods on default api for backwards compatibility
+api.getIBEmails = brokerAPI.getIBEmails
+api.getIBMT5Accounts = brokerAPI.getIBMT5Accounts
+
 export default api

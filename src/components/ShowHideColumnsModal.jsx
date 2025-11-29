@@ -225,7 +225,7 @@ const ShowHideColumnsModal = ({
                   fontWeight: 400,
                   fontSize: '16px',
                   lineHeight: '20px',
-                  color: '#1B2D45',
+                  color: '#000000',
                 }}
               >
                 {column.label}

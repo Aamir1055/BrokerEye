@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaTimes, FaSearch, FaSpinner, FaCheck } from 'react-icons/fa';
 import api from '../services/api';
+import { useGroups } from '../contexts/GroupContext';
 
 const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
+  const { createGroup, createRangeGroup, updateGroup } = useGroups();
   const [activeTab, setActiveTab] = useState('myLogin');
   const [groupName, setGroupName] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +16,6 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalLogins, setTotalLogins] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [selectAll, setSelectAll] = useState(false);
   const limit = 50;
 
   // By Range tab state
@@ -24,18 +24,30 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
 
   // Initialize form with edit data
   useEffect(() => {
-    if (editGroup) {
+    if (isOpen && editGroup) {
       setGroupName(editGroup.name);
-      if (editGroup.type === 'myLogin') {
-        setActiveTab('myLogin');
-        setSelectedLogins(editGroup.logins || []);
-      } else if (editGroup.type === 'range') {
+      if (editGroup.range) {
+        // Range-based group
         setActiveTab('range');
-        setRangeFrom(editGroup.rangeMin?.toString() || '');
-        setRangeTo(editGroup.rangeMax?.toString() || '');
+        setRangeFrom(editGroup.range.from?.toString() || '');
+        setRangeTo(editGroup.range.to?.toString() || '');
+        setSelectedLogins([]);
+      } else if (editGroup.loginIds && editGroup.loginIds.length > 0) {
+        // Manual selection group
+        setActiveTab('myLogin');
+        setSelectedLogins(editGroup.loginIds.map(id => String(id)));
+        setRangeFrom('');
+        setRangeTo('');
       }
+    } else if (isOpen) {
+      // Reset for new group
+      setGroupName('');
+      setSelectedLogins([]);
+      setRangeFrom('');
+      setRangeTo('');
+      setActiveTab('myLogin');
     }
-  }, [editGroup]);
+  }, [isOpen, editGroup]);
 
   // Fetch logins for My Login tab
   const fetchLogins = useCallback(async () => {
@@ -75,40 +87,38 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
 
   // Handle select all on current page
   const handleSelectAll = () => {
-    if (selectAll) {
+    const currentPageLogins = logins.map(l => String(l.login));
+    const allCurrentSelected = currentPageLogins.every(login => selectedLogins.includes(login));
+    
+    if (allCurrentSelected) {
       // Deselect all on current page
-      const currentPageLogins = logins.map(l => l.login);
       setSelectedLogins(prev => prev.filter(login => !currentPageLogins.includes(login)));
-      setSelectAll(false);
     } else {
       // Select all on current page
-      const currentPageLogins = logins.map(l => l.login);
       setSelectedLogins(prev => {
         const newSet = new Set([...prev, ...currentPageLogins]);
         return Array.from(newSet);
       });
-      setSelectAll(true);
     }
   };
 
   // Handle individual login selection
   const handleLoginSelect = (login) => {
+    const loginStr = String(login);
     setSelectedLogins(prev => {
-      if (prev.includes(login)) {
-        return prev.filter(l => l !== login);
+      if (prev.includes(loginStr)) {
+        return prev.filter(l => l !== loginStr);
       } else {
-        return [...prev, login];
+        return [...prev, loginStr];
       }
     });
   };
 
-  // Update selectAll state based on current page selections
-  useEffect(() => {
-    if (logins.length > 0) {
-      const allSelected = logins.every(l => selectedLogins.includes(l.login));
-      setSelectAll(allSelected);
-    }
-  }, [logins, selectedLogins]);
+  // Check if all current page logins are selected
+  const isAllCurrentPageSelected = () => {
+    if (logins.length === 0) return false;
+    return logins.every(l => selectedLogins.includes(String(l.login)));
+  };
 
   // Handle search
   const handleSearch = (e) => {
@@ -125,18 +135,19 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
       return;
     }
 
-    let groupData = {
-      id: editGroup?.id || Date.now(),
-      name: groupName.trim(),
-      type: activeTab === 'myLogin' ? 'myLogin' : 'range'
-    };
-
     if (activeTab === 'myLogin') {
       if (selectedLogins.length === 0) {
         setError('Please select at least one login');
         return;
       }
-      groupData.logins = selectedLogins;
+
+      if (editGroup) {
+        // Update existing group
+        updateGroup(editGroup.name, groupName.trim(), selectedLogins, null);
+      } else {
+        // Create new group
+        createGroup(groupName.trim(), selectedLogins);
+      }
     } else {
       // Range validation
       const min = parseInt(rangeFrom);
@@ -157,11 +168,16 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
         return;
       }
 
-      groupData.rangeMin = min;
-      groupData.rangeMax = max;
+      if (editGroup) {
+        // Update existing group
+        updateGroup(editGroup.name, groupName.trim(), null, { from: min, to: max });
+      } else {
+        // Create new group
+        createRangeGroup(groupName.trim(), min, max);
+      }
     }
 
-    onSave(groupData);
+    onSave();
     handleClose();
   };
 
@@ -181,28 +197,97 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+      {/* Backdrop */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.35)',
+          zIndex: 9998,
+        }}
+        onClick={handleClose}
+      />
+
+      {/* Modal - Bottom Sheet */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '412px',
+          height: 'auto',
+          maxHeight: '85vh',
+          background: '#FFFFFF',
+          borderRadius: '20px 20px 0 0',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Top indicator */}
+        <div
+          style={{
+            width: '47px',
+            height: '2px',
+            background: 'rgba(71, 84, 103, 0.55)',
+            borderRadius: '2px',
+            margin: '10px auto',
+          }}
+        />
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {editGroup ? 'Edit Login Group' : 'Create Login Group'}
-          </h2>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 20px',
+            marginBottom: '10px',
+          }}
+        >
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '5px',
+            }}
           >
-            <FaTimes size={24} />
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{ transform: 'rotate(180deg)' }}>
+              <path d="M1 1L7 7L1 13" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
+
+          <h2
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 600,
+              fontSize: '18px',
+              lineHeight: '24px',
+              color: '#4B4B4B',
+              margin: 0,
+            }}
+          >
+            {editGroup ? 'Edit Login Group' : 'Login Groups'}
+          </h2>
+
+          <div style={{ width: '18px' }} />
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Divider */}
+        <div style={{ width: '100%', height: '1px', background: '#F2F2F7', marginBottom: '16px' }} />
+
+        {/* Content - Scrollable */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
           {/* Group Name Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Enter group name
-            </label>
+          <div style={{ marginBottom: '16px', position: 'relative' }}>
             <input
               type="text"
               value={groupName}
@@ -210,33 +295,71 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
                 setGroupName(e.target.value);
                 setError('');
               }}
-              placeholder="Enter group name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter Group Name"
+              style={{
+                width: '100%',
+                padding: '12px 45px 12px 16px',
+                background: '#FFFFFF',
+                border: '1px solid #E6EEF8',
+                borderRadius: '12px',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                color: '#1B2D45',
+                outline: 'none',
+              }}
             />
-            {error && groupName.trim() === '' && (
-              <p className="text-red-500 text-sm mt-1">{error}</p>
-            )}
+            <svg
+              style={{
+                position: 'absolute',
+                right: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+            >
+              <path d="M10 13C11.6569 13 13 11.6569 13 10C13 8.34315 11.6569 7 10 7C8.34315 7 7 8.34315 7 10C7 11.6569 8.34315 13 10 13Z" stroke="#2563EB" strokeWidth="1.5"/>
+              <path d="M3 18C3 15.2386 5.23858 13 8 13H12C14.7614 13 17 15.2386 17 18" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
             <button
               onClick={() => setActiveTab('myLogin')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-                activeTab === 'myLogin'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                background: activeTab === 'myLogin' ? '#2563EB' : '#FFFFFF',
+                color: activeTab === 'myLogin' ? '#FFFFFF' : '#999999',
+                border: activeTab === 'myLogin' ? 'none' : '1px solid #E6EEF8',
+                borderRadius: '20px',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
             >
               My Login
             </button>
             <button
               onClick={() => setActiveTab('range')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-                activeTab === 'range'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-800'
-              }`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                background: activeTab === 'range' ? '#2563EB' : '#FFFFFF',
+                color: activeTab === 'range' ? '#FFFFFF' : '#999999',
+                border: activeTab === 'range' ? 'none' : '1px solid #E6EEF8',
+                borderRadius: '20px',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
             >
               By Range
             </button>
@@ -245,152 +368,204 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
           {/* My Login Tab */}
           {activeTab === 'myLogin' && (
             <div>
-              {/* Search and Select All */}
-              <div className="flex items-center gap-4 mb-4">
-                <form onSubmit={handleSearch} className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by login, name..."
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <FaSearch />
-                  </button>
-                </form>
-                <button
-                  onClick={handleSelectAll}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-                >
-                  {selectAll ? 'Deselect All' : 'Select All'}
-                </button>
-              </div>
-
-              {/* Selected count info */}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  <span className="font-semibold">{selectedLogins.length}</span> login(s) selected
-                  {totalLogins > 0 && ` out of ${totalLogins} total`}
+              {/* Info text */}
+              <div style={{ marginBottom: '12px' }}>
+                <p style={{
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '12px',
+                  color: '#999999',
+                }}>
+                  Showing {logins.length} items on this page
                 </p>
               </div>
 
-              {/* Logins list */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {/* Search */}
+              <div style={{ marginBottom: '16px', position: 'relative' }}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && fetchLogins()}
+                  placeholder="Search login, name, email"
+                  style={{
+                    width: '100%',
+                    padding: '12px 45px 12px 16px',
+                    background: '#FFFFFF',
+                    border: '1px solid #E6EEF8',
+                    borderRadius: '12px',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '14px',
+                    color: '#1B2D45',
+                    outline: 'none',
+                  }}
+                />
+                <svg
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    cursor: 'pointer',
+                  }}
+                  onClick={fetchLogins}
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                >
+                  <circle cx="8" cy="8" r="6.5" stroke="#999999" strokeWidth="1.5"/>
+                  <path d="M13 13L16 16" stroke="#999999" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+
+              {/* Logins List */}
+              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <FaSpinner className="animate-spin text-blue-500 text-3xl" />
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: '#999999' }}>
+                    Loading...
                   </div>
                 ) : logins.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    {searchQuery ? 'No logins found matching your search' : 'No logins available'}
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: '#999999' }}>
+                    {searchQuery ? 'No logins found' : 'No logins available'}
                   </div>
                 ) : (
-                  <div className="max-h-96 overflow-y-auto">
-                    <table className="w-full">
-                      <thead className="bg-blue-600 text-white sticky top-0">
-                        <tr>
-                          <th className="px-4 py-3 text-left w-12">
-                            <input
-                              type="checkbox"
-                              checked={selectAll}
-                              onChange={handleSelectAll}
-                              className="w-4 h-4 cursor-pointer"
-                            />
-                          </th>
-                          <th className="px-4 py-3 text-left">Login</th>
-                          <th className="px-4 py-3 text-left">Name</th>
-                          <th className="px-4 py-3 text-left">Email</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {logins.map((client, index) => {
-                          const isSelected = selectedLogins.includes(client.login);
-                          return (
-                            <tr
-                              key={client.login}
-                              className={`border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${
-                                isSelected ? 'bg-blue-50' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                              }`}
-                              onClick={() => handleLoginSelect(client.login)}
-                            >
-                              <td className="px-4 py-3">
-                                <div className="flex items-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleLoginSelect(client.login)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="w-4 h-4 cursor-pointer"
-                                  />
-                                  {isSelected && (
-                                    <FaCheck className="text-blue-600 ml-2 text-sm" />
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 font-medium text-gray-900">{client.login}</td>
-                              <td className="px-4 py-3 text-gray-700">{client.name || '-'}</td>
-                              <td className="px-4 py-3 text-gray-700">{client.email || '-'}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  logins.map((client) => {
+                    const isSelected = selectedLogins.includes(String(client.login));
+                    return (
+                      <div
+                        key={client.login}
+                        onClick={() => handleLoginSelect(client.login)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '12px 0',
+                          borderBottom: '1px solid #F2F2F7',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <div
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '4px',
+                            border: isSelected ? '2px solid #2563EB' : '2px solid #E6EEF8',
+                            background: isSelected ? '#2563EB' : '#FFFFFF',
+                            marginRight: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isSelected && (
+                            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                              <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Login Info */}
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#2563EB',
+                            marginBottom: '2px',
+                          }}>
+                            {client.login}
+                          </div>
+                          <div style={{
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '12px',
+                            color: '#999999',
+                          }}>
+                            {client.name || client.email || '-'}
+                            {client.email && client.name && ` (${client.email})`}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
 
               {/* Pagination */}
-              {!loading && totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
-                  <p className="text-sm text-gray-600">
+              {totalPages > 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginTop: '16px',
+                  padding: '12px 0',
+                }}>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: '6px 12px',
+                      background: currentPage === 1 ? '#F2F2F7' : '#2563EB',
+                      color: currentPage === 1 ? '#999999' : '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Previous
+                  </button>
+                  <span style={{
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '12px',
+                    color: '#4B4B4B',
+                  }}>
                     Page {currentPage} of {totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
-                  </div>
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: '6px 12px',
+                      background: currentPage === totalPages ? '#F2F2F7' : '#2563EB',
+                      color: currentPage === totalPages ? '#999999' : '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Next
+                  </button>
                 </div>
-              )}
-
-              {error && selectedLogins.length === 0 && groupName.trim() !== '' && (
-                <p className="text-red-500 text-sm mt-4">{error}</p>
               )}
             </div>
           )}
 
           {/* By Range Tab */}
           {activeTab === 'range' && (
-            <div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800 mb-2">
-                  <strong>Example:</strong> From <span className="font-mono">1</span> to{' '}
-                  <span className="font-mono">30</span> will include all logins from 1 to 30
-                </p>
-                <p className="text-xs text-blue-600">
-                  ℹ️ The range will dynamically include any login that falls within this range, even if
-                  it's added in the future.
-                </p>
-              </div>
+            <div style={{ padding: '8px 0' }}>
+              <p style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                color: '#999999',
+                marginBottom: '16px',
+              }}>
+                Enter a range of login IDs (e.g., from 1 to 30)
+              </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">From</label>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '12px',
+                    color: '#4B4B4B',
+                    marginBottom: '6px',
+                  }}>
+                    From
+                  </label>
                   <input
                     type="number"
                     value={rangeFrom}
@@ -399,12 +574,30 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
                       setError('');
                     }}
                     placeholder="e.g., 1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E6EEF8',
+                      borderRadius: '12px',
+                      fontFamily: 'Outfit, sans-serif',
+                      fontSize: '14px',
+                      color: '#1B2D45',
+                      outline: 'none',
+                    }}
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">To</label>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '12px',
+                    color: '#4B4B4B',
+                    marginBottom: '6px',
+                  }}>
+                    To
+                  </label>
                   <input
                     type="number"
                     value={rangeTo}
@@ -413,35 +606,87 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
                       setError('');
                     }}
                     placeholder="e.g., 30"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E6EEF8',
+                      borderRadius: '12px',
+                      fontFamily: 'Outfit, sans-serif',
+                      fontSize: '14px',
+                      color: '#1B2D45',
+                      outline: 'none',
+                    }}
                   />
                 </div>
-
-                {error && activeTab === 'range' && (
-                  <p className="text-red-500 text-sm">{error}</p>
-                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            padding: '12px 20px',
+            background: '#FEE2E2',
+            borderTop: '1px solid #FCA5A5',
+          }}>
+            <p style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '12px',
+              color: '#DC2626',
+            }}>
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Footer Buttons */}
+        <div style={{
+          padding: '16px 20px',
+          borderTop: '1px solid #F2F2F7',
+          display: 'flex',
+          gap: '10px',
+        }}>
           <button
             onClick={handleClose}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium"
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: '#FFFFFF',
+              border: '1px solid #E6EEF8',
+              borderRadius: '12px',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '14px',
+              color: '#2563EB',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            Cancel
+            Reset
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: '#2563EB',
+              border: 'none',
+              borderRadius: '12px',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '14px',
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            {editGroup ? 'Update Group' : 'Create Group'}
+            Apply
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const LoginGroupsModal = ({ 
   isOpen, 
@@ -6,11 +6,40 @@ const LoginGroupsModal = ({
   groups = [],
   onCreateGroup,
   onEditGroup,
-  onDeleteGroup
+  onDeleteGroup,
+  onSelectGroup,
+  activeGroupName
 }) => {
+  const [tempSelectedGroup, setTempSelectedGroup] = useState(activeGroupName)
+
+  // Update temp selection when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setTempSelectedGroup(activeGroupName)
+    }
+  }, [isOpen, activeGroupName])
+
   if (!isOpen) return null;
 
   const hasGroups = groups && groups.length > 0;
+
+  const handleApply = () => {
+    if (onSelectGroup && tempSelectedGroup) {
+      const group = groups.find(g => g.name === tempSelectedGroup)
+      if (group) {
+        onSelectGroup(group)
+      }
+    }
+    onClose()
+  }
+
+  const handleClear = () => {
+    setTempSelectedGroup(null)
+    if (onSelectGroup) {
+      onSelectGroup(null)
+    }
+    onClose()
+  }
 
   return (
     <>
@@ -107,7 +136,37 @@ const LoginGroupsModal = ({
             Login Groups
           </h2>
 
-          <div style={{ width: '18px' }} /> {/* Spacer for centering */}
+          {/* Create New Group button (+ icon) */}
+          <button
+            onClick={() => {
+              onCreateGroup && onCreateGroup()
+              onClose()
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M12 5V19M5 12H19"
+                stroke="#4B4B4B"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* Divider line */}
@@ -131,121 +190,136 @@ const LoginGroupsModal = ({
           {hasGroups ? (
             // Show groups list with edit/delete icons
             <div style={{ width: '100%', padding: '0 20px' }}>
-              {groups.map((group, index) => (
-                <div
-                  key={group.id || index}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px 0',
-                    borderBottom: index < groups.length - 1 ? '1px solid #F2F2F7' : 'none',
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '16px',
-                        lineHeight: '20px',
-                        color: '#1B2D45',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {group.name}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14px',
-                        lineHeight: '18px',
-                        color: '#999999',
-                        marginTop: '4px',
-                      }}
-                    >
-                      {group.loginCount || 0} logins
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
+              {groups.map((group, index) => {
+                const isSelected = tempSelectedGroup === group.name
+                return (
                   <div
+                    key={group.id || index}
+                    onClick={() => setTempSelectedGroup(group.name)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '16px',
+                      justifyContent: 'space-between',
+                      padding: '12px 0',
+                      borderBottom: index < groups.length - 1 ? '1px solid #F2F2F7' : 'none',
+                      cursor: 'pointer',
+                      background: isSelected ? '#F0F9FF' : 'transparent',
+                      margin: '0 -20px',
+                      paddingLeft: '20px',
+                      paddingRight: '20px',
                     }}
                   >
-                    {/* Edit button */}
-                    <button
-                      onClick={() => onEditGroup && onEditGroup(group)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path
-                          d="M14.166 2.5009C14.3849 2.28203 14.6447 2.10842 14.9307 1.98996C15.2167 1.87151 15.5232 1.81055 15.8327 1.81055C16.1422 1.81055 16.4487 1.87151 16.7347 1.98996C17.0206 2.10842 17.2805 2.28203 17.4993 2.5009C17.7182 2.71977 17.8918 2.97961 18.0103 3.26558C18.1287 3.55154 18.1897 3.85804 18.1897 4.16757C18.1897 4.4771 18.1287 4.7836 18.0103 5.06956C17.8918 5.35553 17.7182 5.61537 17.4993 5.83424L6.24935 17.0842L1.66602 18.3342L2.91602 13.7509L14.166 2.5009Z"
-                          stroke="#999999"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontFamily: 'Outfit, sans-serif',
+                          fontSize: '15px',
+                          lineHeight: '18px',
+                          color: isSelected ? '#2563EB' : '#1B2D45',
+                          fontWeight: isSelected ? 600 : 500,
+                        }}
+                      >
+                        {group.name}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'Outfit, sans-serif',
+                          fontSize: '12px',
+                          lineHeight: '16px',
+                          color: '#999999',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {group.loginCount || 0} logins
+                      </div>
+                    </div>
 
-                    {/* Delete button */}
-                    <button
-                      onClick={() => onDeleteGroup && onDeleteGroup(group)}
+                    {/* Action buttons */}
+                    <div
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '4px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
+                        gap: '12px',
                       }}
                     >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path
-                          d="M2.5 5H4.16667H17.5"
-                          stroke="#FF383C"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M6.66602 5.00008V3.33341C6.66602 2.89139 6.84161 2.46746 7.15417 2.1549C7.46673 1.84234 7.89065 1.66675 8.33268 1.66675H11.666C12.108 1.66675 12.532 1.84234 12.8445 2.1549C13.1571 2.46746 13.3327 2.89139 13.3327 3.33341V5.00008M15.8327 5.00008V16.6667C15.8327 17.1088 15.6571 17.5327 15.3445 17.8453C15.032 18.1578 14.608 18.3334 14.166 18.3334H5.83268C5.39065 18.3334 4.96673 18.1578 4.65417 17.8453C4.34161 17.5327 4.16602 17.1088 4.16602 16.6667V5.00008H15.8327Z"
-                          stroke="#FF383C"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M8.33398 9.16675V14.1667"
-                          stroke="#FF383C"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M11.666 9.16675V14.1667"
-                          stroke="#FF383C"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+                      {/* Edit button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditGroup && onEditGroup(group)
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                          <path
+                            d="M14.166 2.5009C14.3849 2.28203 14.6447 2.10842 14.9307 1.98996C15.2167 1.87151 15.5232 1.81055 15.8327 1.81055C16.1422 1.81055 16.4487 1.87151 16.7347 1.98996C17.0206 2.10842 17.2805 2.28203 17.4993 2.5009C17.7182 2.71977 17.8918 2.97961 18.0103 3.26558C18.1287 3.55154 18.1897 3.85804 18.1897 4.16757C18.1897 4.4771 18.1287 4.7836 18.0103 5.06956C17.8918 5.35553 17.7182 5.61537 17.4993 5.83424L6.24935 17.0842L1.66602 18.3342L2.91602 13.7509L14.166 2.5009Z"
+                            stroke="#999999"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Delete button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDeleteGroup && onDeleteGroup(group)
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                          <path
+                            d="M2.5 5H4.16667H17.5"
+                            stroke="#FF383C"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M6.66602 5.00008V3.33341C6.66602 2.89139 6.84161 2.46746 7.15417 2.1549C7.46673 1.84234 7.89065 1.66675 8.33268 1.66675H11.666C12.108 1.66675 12.532 1.84234 12.8445 2.1549C13.1571 2.46746 13.3327 2.89139 13.3327 3.33341V5.00008M15.8327 5.00008V16.6667C15.8327 17.1088 15.6571 17.5327 15.3445 17.8453C15.032 18.1578 14.608 18.3334 14.166 18.3334H5.83268C5.39065 18.3334 4.96673 18.1578 4.65417 17.8453C4.34161 17.5327 4.16602 17.1088 4.16602 16.6667V5.00008H15.8327Z"
+                            stroke="#FF383C"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M8.33398 9.16675V14.1667"
+                            stroke="#FF383C"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M11.666 9.16675V14.1667"
+                            stroke="#FF383C"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             // Show empty state
@@ -305,8 +379,71 @@ const LoginGroupsModal = ({
           )}
         </div>
 
-        {/* Bottom padding */}
-        <div style={{ height: '20px' }} />
+        {/* Action buttons - Reset and Apply */}
+        {hasGroups && (
+          <div
+            style={{
+              padding: '16px 20px',
+              borderTop: '1px solid #F2F2F7',
+              display: 'flex',
+              gap: '10px',
+            }}
+          >
+            <button
+              onClick={handleClear}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: '#FFFFFF',
+                border: '1px solid #E6EEF8',
+                borderRadius: '12px',
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 500,
+                fontSize: '14px',
+                color: '#2563EB',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#F8FAFC'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#FFFFFF'
+              }}
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleApply}
+              disabled={!tempSelectedGroup}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: tempSelectedGroup ? '#2563EB' : '#E6EEF8',
+                border: 'none',
+                borderRadius: '12px',
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 500,
+                fontSize: '14px',
+                color: tempSelectedGroup ? '#FFFFFF' : '#999999',
+                cursor: tempSelectedGroup ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (tempSelectedGroup) {
+                  e.target.style.background = '#1D4ED8'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (tempSelectedGroup) {
+                  e.target.style.background = '#2563EB'
+                }
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

@@ -1,17 +1,20 @@
 import { useState, useEffect, useMemo } from 'react'
 import api from '../services/api'
 
-const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
+const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
   const [ibEmails, setIbEmails] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState(null)
+  const [tempSelectedIB, setTempSelectedIB] = useState(null)
 
   useEffect(() => {
     if (isOpen) {
       fetchIBEmails()
+      // Set temporary selection to current selection when modal opens
+      setTempSelectedIB(currentSelectedIB)
     }
-  }, [isOpen])
+  }, [isOpen, currentSelectedIB])
 
   const fetchIBEmails = async () => {
     setLoading(true)
@@ -51,20 +54,27 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
     )
   }, [ibEmails, searchQuery])
 
-  const handleSelectIB = async (ib) => {
+  const handleSelectIB = (ib) => {
+    // Just store temporarily, don't apply yet
+    setTempSelectedIB(ib)
+  }
+
+  const handleApply = async () => {
+    if (!tempSelectedIB) return
+    
     try {
       setLoading(true)
       // Fetch MT5 accounts for the selected IB
-      const response = await api.getIBMT5Accounts(ib.email)
+      const response = await api.getIBMT5Accounts(tempSelectedIB.email)
       
       // Handle different response structures
       const mt5Data = response.data?.data?.mt5_accounts || response.data?.mt5_accounts || []
       
       // Pass both IB info and MT5 accounts to parent
       onSelectIB({
-        email: ib.email,
-        name: ib.name,
-        percentage: ib.percentage,
+        email: tempSelectedIB.email,
+        name: tempSelectedIB.name,
+        percentage: tempSelectedIB.percentage,
         mt5Accounts: mt5Data
       })
       onClose()
@@ -74,6 +84,12 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleReset = () => {
+    setTempSelectedIB(null)
+    onSelectIB(null) // Clear the filter
+    onClose()
   }
 
   if (!isOpen) return null
@@ -310,53 +326,120 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB }) => {
               </p>
             </div>
           ) : (
-            filteredEmails.map((ib) => (
-              <button
-                key={ib.id}
-                onClick={() => handleSelectIB(ib)}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px 0',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid #F2F2F7',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.5 : 1,
-                }}
-              >
-                <span
+            filteredEmails.map((ib) => {
+              const isSelected = tempSelectedIB?.email === ib.email
+              return (
+                <button
+                  key={ib.id}
+                  onClick={() => handleSelectIB(ib)}
+                  disabled={loading}
                   style={{
-                    fontFamily: 'Outfit, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '16px',
-                    lineHeight: '20px',
-                    color: '#2563EB',
-                    textAlign: 'left',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px 0',
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid #F2F2F7',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.5 : 1,
                   }}
                 >
-                  {ib.email}
-                </span>
-                <svg
-                  width="8"
-                  height="14"
-                  viewBox="0 0 8 14"
-                  fill="none"
-                >
-                  <path
-                    d="M1 1L7 7L1 13"
-                    stroke="#2563EB"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            ))
+                  <span
+                    style={{
+                      fontFamily: 'Outfit, sans-serif',
+                      fontWeight: isSelected ? 600 : 400,
+                      fontSize: '16px',
+                      lineHeight: '20px',
+                      color: '#2563EB',
+                      textAlign: 'left',
+                    }}
+                  >
+                    {ib.email}
+                  </span>
+                  <svg
+                    width="8"
+                    height="14"
+                    viewBox="0 0 8 14"
+                    fill="none"
+                  >
+                    <path
+                      d="M1 1L7 7L1 13"
+                      stroke="#2563EB"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )
+            })
           )}
+        </div>
+
+        {/* Reset and Apply buttons */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            padding: '20px',
+            borderTop: '1px solid #F2F2F7',
+          }}
+        >
+          <button
+            onClick={handleReset}
+            style={{
+              flex: 1,
+              padding: '14px',
+              background: '#FFFFFF',
+              border: '1px solid #E6EEF8',
+              borderRadius: '12px',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '16px',
+              color: '#2563EB',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#F8FAFC'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#FFFFFF'
+            }}
+          >
+            Reset
+          </button>
+          <button
+            onClick={handleApply}
+            disabled={!tempSelectedIB || loading}
+            style={{
+              flex: 1,
+              padding: '14px',
+              background: tempSelectedIB && !loading ? '#2563EB' : '#E6EEF8',
+              border: 'none',
+              borderRadius: '12px',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '16px',
+              color: tempSelectedIB && !loading ? '#FFFFFF' : '#999999',
+              cursor: tempSelectedIB && !loading ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (tempSelectedIB && !loading) {
+                e.target.style.background = '#1D4ED8'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (tempSelectedIB && !loading) {
+                e.target.style.background = '#2563EB'
+              }
+            }}
+          >
+            Apply
+          </button>
         </div>
       </div>
 
