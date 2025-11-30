@@ -8,6 +8,7 @@ import LoginGroupModal from '../LoginGroupModal'
 import { useData } from '../../contexts/DataContext'
 import { useIB } from '../../contexts/IBContext'
 import { useGroups } from '../../contexts/GroupContext'
+import { brokerAPI } from '../../services/api'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -23,6 +24,7 @@ export default function ClientDashboardDesignC() {
   const clients = rawClients.length > 0 ? rawClients : normalizedClients
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
+  const [commissionTotals, setCommissionTotals] = useState(null)
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -39,6 +41,7 @@ export default function ClientDashboardDesignC() {
   const columnDropdownRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
+  const viewAllRef = useRef(null)
   const itemsPerPage = 12
   
   // Redirect to desktop view on desktop viewport
@@ -57,6 +60,29 @@ export default function ClientDashboardDesignC() {
     window.addEventListener('resize', checkDesktop)
     return () => window.removeEventListener('resize', checkDesktop)
   }, [navigate])
+
+  // Fetch IB Commission Totals on mount and every hour
+  useEffect(() => {
+    const fetchCommissionTotals = async () => {
+      try {
+        console.log('Fetching IB Commission Totals...')
+        const response = await brokerAPI.getIBCommissionTotals()
+        let data = response?.data?.data || response?.data || null
+        console.log('Commission Totals:', data)
+        setCommissionTotals(data)
+      } catch (err) {
+        console.error('Failed to fetch commission totals:', err)
+      }
+    }
+
+    // Initial fetch
+    fetchCommissionTotals()
+
+    // Refresh every hour (3600000 ms)
+    const interval = setInterval(fetchCommissionTotals, 3600000)
+
+    return () => clearInterval(interval)
+  }, [])
   
   // Available columns for the table - matching desktop ClientsPage columns
   const [visibleColumns, setVisibleColumns] = useState({
@@ -430,7 +456,15 @@ export default function ClientDashboardDesignC() {
           lifetimeWithdrawal: 0,
           totalCommission: 0,
           availableCommission: 0,
-          blockedCommission: 0
+          availableCommissionPercent: 0,
+          blockedCommission: 0,
+          dailyBonusIn: 0,
+          dailyBonusOut: 0,
+          weekBonusIn: 0,
+          weekBonusOut: 0,
+          creditBonusIn: 0,
+          creditBonusOut: 0,
+          previousDayEquity: 0
         }
       }
       
@@ -473,9 +507,21 @@ export default function ClientDashboardDesignC() {
         monthWithdrawal: sum('monthWithdrawal'),
         lifetimeDeposit: sum('lifetimeDeposit'),
         lifetimeWithdrawal: sum('lifetimeWithdrawal'),
-        totalCommission: sum('blockedCommission'),
-        availableCommission: sum('availableCommission'),
-        blockedCommission: sum('blockedCommission')
+        // Commission values from API (like desktop)
+        totalCommission: commissionTotals?.total_commission || 0,
+        availableCommission: commissionTotals?.total_available_commission || 0,
+        availableCommissionPercent: commissionTotals?.total_available_commission_percentage || 0,
+        blockedCommission: sum('blockedCommission'),
+        // Bonus values from client data
+        dailyBonusIn: sum('dailyBonusIn'),
+        dailyBonusOut: sum('dailyBonusOut'),
+        weekBonusIn: sum('thisWeekBonusIn'),
+        weekBonusOut: sum('thisWeekBonusOut'),
+        // Credit bonus
+        creditBonusIn: sum('creditBonusIn'),
+        creditBonusOut: sum('creditBonusOut'),
+        // Previous day equity
+        previousDayEquity: sum('yesterdayEquity')
       }
     }
     
@@ -533,38 +579,32 @@ export default function ClientDashboardDesignC() {
       { label: 'Lifetime Withdrawal', value: formatNum(stats?.lifetimeWithdrawal), unit: 'USD' },
       { label: 'NET Lifetime DW', value: formatNum((stats?.lifetimeDeposit || 0) - (stats?.lifetimeWithdrawal || 0)), unit: 'USD' },
       
-      // Bonus Metrics
-      { label: 'Daily Bonus IN', value: formatNum(clientStats?.dailyBonusIn), unit: 'USD' },
-      { label: 'Daily Bonus OUT', value: formatNum(clientStats?.dailyBonusOut), unit: 'USD' },
-      { label: 'NET Daily Bonus', value: formatNum(clientStats?.netDailyBonus), unit: 'USD' },
-      { label: 'Week Bonus IN', value: formatNum(clientStats?.weekBonusIn), unit: 'USD' },
-      { label: 'Week Bonus OUT', value: formatNum(clientStats?.weekBonusOut), unit: 'USD' },
-      { label: 'NET Week Bonus', value: formatNum(clientStats?.netWeekBonus), unit: 'USD' },
-      { label: 'Monthly Bonus IN', value: formatNum(clientStats?.monthBonusIn), unit: 'USD' },
-      { label: 'Monthly Bonus OUT', value: formatNum(clientStats?.monthBonusOut), unit: 'USD' },
-      { label: 'NET Monthly Bonus', value: formatNum(clientStats?.netMonthBonus), unit: 'USD' },
-      { label: 'Lifetime Bonus IN', value: formatNum(clientStats?.lifetimeBonusIn), unit: 'USD' },
-      { label: 'Lifetime Bonus OUT', value: formatNum(clientStats?.lifetimeBonusOut), unit: 'USD' },
-      { label: 'NET Lifetime Bonus', value: formatNum(clientStats?.netLifetimeBonus), unit: 'USD' },
+      // Rebate/Commission Metrics
+      { label: 'Total Rebate', value: formatNum(stats?.totalCommission), unit: 'USD' },
+      { label: 'Available Rebate', value: formatNum(stats?.availableCommission), unit: 'USD' },
+      { label: 'Blocked Rebate', value: formatNum(stats?.blockedCommission), unit: 'USD' },
+      { label: 'Available Rebate %', value: formatNum(stats?.availableCommissionPercent), unit: '%' },
       
-      // Credit Metrics
-      { label: 'Weekly Credit IN', value: formatNum(clientStats?.weekCreditIn), unit: 'USD' },
-      { label: 'Monthly Credit IN', value: formatNum(clientStats?.monthCreditIn), unit: 'USD' },
-      { label: 'Lifetime Credit IN', value: formatNum(clientStats?.lifetimeCreditIn), unit: 'USD' },
-      { label: 'Weekly Credit OUT', value: formatNum(clientStats?.weekCreditOut), unit: 'USD' },
-      { label: 'Monthly Credit OUT', value: formatNum(clientStats?.monthCreditOut), unit: 'USD' },
-      { label: 'Lifetime Credit OUT', value: formatNum(clientStats?.lifetimeCreditOut), unit: 'USD' },
-      { label: 'NET Credit', value: formatNum(clientStats?.netCredit), unit: 'USD' },
+      // Bonus Metrics
+      { label: 'Daily Bonus IN', value: formatNum(stats?.dailyBonusIn), unit: 'USD' },
+      { label: 'Daily Bonus OUT', value: formatNum(stats?.dailyBonusOut), unit: 'USD' },
+      { label: 'NET Daily Bonus', value: formatNum((stats?.dailyBonusIn || 0) - (stats?.dailyBonusOut || 0)), unit: 'USD' },
+      { label: 'Week Bonus IN', value: formatNum(stats?.weekBonusIn), unit: 'USD' },
+      { label: 'Week Bonus OUT', value: formatNum(stats?.weekBonusOut), unit: 'USD' },
+      { label: 'NET Week Bonus', value: formatNum((stats?.weekBonusIn || 0) - (stats?.weekBonusOut || 0)), unit: 'USD' },
+      
+      // Credit Bonus Metrics
+      { label: 'Credit Bonus IN', value: formatNum(stats?.creditBonusIn), unit: 'USD' },
+      { label: 'Credit Bonus OUT', value: formatNum(stats?.creditBonusOut), unit: 'USD' },
+      { label: 'NET Credit Bonus', value: formatNum((stats?.creditBonusIn || 0) - (stats?.creditBonusOut || 0)), unit: 'USD' },
       
       // Previous Equity Metrics
-      { label: 'Weekly Previous Equity', value: formatNum(clientStats?.weekPreviousEquity), unit: 'USD' },
-      { label: 'Monthly Previous Equity', value: formatNum(clientStats?.monthPreviousEquity), unit: 'USD' },
-      { label: 'Previous Equity', value: formatNum(clientStats?.previousEquity), unit: 'USD' },
+      { label: 'Previous Day Equity', value: formatNum(stats?.previousDayEquity), unit: 'USD' },
       
       // Additional Calculated Metrics
       { label: 'Net Lifetime PnL', value: formatNum((stats?.lifetimePnL || 0) - (stats?.totalCommission || 0)), unit: 'USD' },
     ]
-  }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt, selectedIB, ibMT5Accounts, activeGroupFilters])
+  }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt, selectedIB, ibMT5Accounts, activeGroupFilters, commissionTotals])
 
   // Debug: Log when WebSocket data updates
   useEffect(() => {
@@ -591,6 +631,18 @@ export default function ClientDashboardDesignC() {
     carousel.addEventListener('scroll', handleScroll)
     return () => carousel.removeEventListener('scroll', handleScroll)
   }, [cards.length])
+
+  // View All handler: scroll to the start of the card carousel and show all cards
+  useEffect(() => {
+    if (viewAllRef.current) {
+      viewAllRef.current.onclick = () => {
+        if (carouselRef.current) {
+          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' })
+        }
+        setActiveCardIndex(0)
+      }
+    }
+  }, [carouselRef, cards.length])
 
   // Navigate to next page
   const goToNextPage = () => {
@@ -710,7 +762,12 @@ export default function ClientDashboardDesignC() {
           </div>
 
           {/* Right side - View All only */}
-          <span className="text-[#1A63BC] text-[12px] font-semibold leading-[15px] cursor-pointer">View All</span>
+          <span
+            ref={viewAllRef}
+            className="text-[#1A63BC] text-[12px] font-semibold leading-[15px] cursor-pointer"
+          >
+            View All
+          </span>
         </div>
       </div>
 
@@ -876,7 +933,7 @@ export default function ClientDashboardDesignC() {
                 <div className="text-[11px] text-[#7A7A7A]">Trading Platform</div>
               </div>
               <button onClick={() => setIsSidebarOpen(false)} className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
               </button>
             </div>
 
@@ -1052,7 +1109,7 @@ export default function ClientDashboardDesignC() {
             </div>
           ))}
           {/* Footer row */}
-          <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+          <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0', columnGap: '0', gridTemplateColumns}}>
             {visibleColumnsList.map((col, idx) => (
               <div 
                 key={col.key}

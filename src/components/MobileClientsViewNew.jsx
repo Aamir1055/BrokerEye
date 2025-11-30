@@ -6,14 +6,43 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   
-  // Sample card data - replace with real data later
+  // Calculate metrics from clients data
+  const metrics = {
+    totalClients: clients.length,
+    totalBalance: clients.reduce((acc, c) => acc + (c?.balance || 0), 0),
+    totalCredit: clients.reduce((acc, c) => acc + (c?.credit || 0), 0),
+    totalEquity: clients.reduce((acc, c) => acc + (c?.equity || 0), 0),
+    totalRebatePercent: clients.reduce((acc, c) => acc + (c?.rebatePercent || 0), 0),
+    floatingProfit: clients.reduce((acc, c) => acc + (c?.profit || 0), 0),
+    dailyDeposit: clients.reduce((acc, c) => acc + (c?.dailyDeposit || 0), 0),
+    dailyWithdrawal: clients.reduce((acc, c) => acc + (c?.dailyWithdrawal || 0), 0),
+    totalCreditMetric: clients.reduce((acc, c) => acc + (c?.credit || 0), 0),
+    dailyNetDW: clients.reduce((acc, c) => acc + ((c?.dailyDeposit || 0) - (c?.dailyWithdrawal || 0)), 0),
+    monthlyEquity: clients.reduce((acc, c) => acc + (c?.monthlyEquity || 0), 0),
+    netLifetime: clients.reduce((acc, c) => acc + (c?.lifetimePnL || 0), 0),
+    weekWithdrawal: clients.reduce((acc, c) => acc + (c?.thisWeekWithdrawal || 0), 0),
+    netWeekDW: clients.reduce((acc, c) => acc + ((c?.thisWeekDeposit || 0) - (c?.thisWeekWithdrawal || 0)), 0),
+    monthlyWithdrawal: clients.reduce((acc, c) => acc + (c?.thisMonthWithdrawal || 0), 0),
+    netMonthlyDW: clients.reduce((acc, c) => acc + ((c?.thisMonthDeposit || 0) - (c?.thisMonthWithdrawal || 0)), 0)
+  }
+
+  // Card config matching Figma order
   const faceCards = [
-    { id: 1, label: 'NET LIFETIME', amount: '4,99,514', trend: 'up', percent: '12.0%', color: 'green' },
-    { id: 2, label: 'DAILY NET D/W', amount: '4,99,514', trend: 'down', percent: '12.0%', color: 'red' },
-    { id: 3, label: 'MONTHLY EQUITY', amount: '4,99,514', trend: 'down', percent: '12.0%', color: 'red' },
-    { id: 4, label: 'TOTAL EQUITY', amount: '4,99,514', trend: 'up', percent: '12.0%', color: 'green' },
-    { id: 5, label: 'NET LIFETIME', amount: '4,99,514', simple: true },
-    { id: 6, label: 'TOTAL EQUITY', amount: '4,99,514', simple: true }
+    { id: 1, label: 'TOTAL CLIENT', amount: metrics.totalClients, trend: 'up', percent: '', color: 'green' },
+    { id: 2, label: 'TOTAL BALANCE', amount: metrics.totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'up', percent: '', color: 'green' },
+    { id: 3, label: 'TOTAL CREDIT', amount: metrics.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'down', percent: '', color: 'red' },
+    { id: 4, label: 'TOTAL EQUITY', amount: metrics.totalEquity.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'up', percent: '', color: 'green' },
+    { id: 5, label: 'TOTAL REBATE %', amount: metrics.totalRebatePercent.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'up', percent: '', color: 'green' },
+    { id: 6, label: 'FLOATING PROFIT', amount: metrics.floatingProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.floatingProfit >= 0 ? 'up' : 'down', percent: '', color: metrics.floatingProfit >= 0 ? 'green' : 'red' },
+    { id: 7, label: 'DAILY DEPOSIT', amount: metrics.dailyDeposit.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'up', percent: '', color: 'green' },
+    { id: 8, label: 'DAILY WITHDRAWAL', amount: metrics.dailyWithdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'down', percent: '', color: 'red' },
+    { id: 9, label: 'WEEK WITHDRAWAL', amount: metrics.weekWithdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'down', percent: '', color: 'red' },
+    { id: 10, label: 'NET WEEK DW', amount: metrics.netWeekDW.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.netWeekDW >= 0 ? 'up' : 'down', percent: '', color: metrics.netWeekDW >= 0 ? 'green' : 'red' },
+    { id: 11, label: 'MONTHLY WITHDRAWAL', amount: metrics.monthlyWithdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'down', percent: '', color: 'red' },
+    { id: 12, label: 'NET MONTHLY DW', amount: metrics.netMonthlyDW.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.netMonthlyDW >= 0 ? 'up' : 'down', percent: '', color: metrics.netMonthlyDW >= 0 ? 'green' : 'red' },
+    { id: 13, label: 'DAILY NET D/W', amount: metrics.dailyNetDW.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.dailyNetDW >= 0 ? 'up' : 'down', percent: '', color: metrics.dailyNetDW >= 0 ? 'green' : 'red' },
+    { id: 14, label: 'MONTHLY EQUITY', amount: metrics.monthlyEquity.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.monthlyEquity >= 0 ? 'up' : 'down', percent: '', color: metrics.monthlyEquity >= 0 ? 'green' : 'red' },
+    { id: 15, label: 'NET LIFETIME', amount: metrics.netLifetime.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.netLifetime >= 0 ? 'up' : 'down', percent: '', color: metrics.netLifetime >= 0 ? 'green' : 'red' }
   ]
 
   const [visibleColumns, setVisibleColumns] = useState({
@@ -314,19 +343,26 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         top: '110px'
       }}>
         {/* View All */}
-        <span style={{
-          width: '36px',
-          height: '11px',
-          fontFamily: 'Outfit',
-          fontStyle: 'normal',
-          fontWeight: 400,
-          fontSize: '10px',
-          lineHeight: '11px',
-          color: '#1A63BC',
-          flex: 'none',
-          order: 0,
-          flexGrow: 0
-        }}>
+        <span
+          style={{
+            width: '36px',
+            height: '11px',
+            fontFamily: 'Outfit',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            fontSize: '10px',
+            lineHeight: '11px',
+            color: '#1A63BC',
+            flex: 'none',
+            order: 0,
+            flexGrow: 0,
+            cursor: 'pointer',
+            textDecoration: 'underline'
+          }}
+          onClick={() => {
+            document.querySelector('.scrollbar-hide')?.scrollTo({ left: 0, behavior: 'smooth' })
+          }}
+        >
           View All
         </span>
 
