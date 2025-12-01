@@ -2051,33 +2051,52 @@ export const DataProvider = ({ children }) => {
     
     const initialSync = async () => {
       const maxAttempts = 3
+      let fetchedClients = []
+      
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          await Promise.all([
-            fetchClients(true).catch(err => { console.error('[DataContext] Initial clients fetch failed:', err?.message || err) }),
-            fetchPositions(true).catch(err => { console.error('[DataContext] Initial positions fetch failed:', err?.message || err) }),
-            fetchOrders(true).catch(err => { console.error('[DataContext] Initial orders fetch failed:', err?.message || err) }),
-            fetchAccounts(true).catch(err => { console.error('[DataContext] Initial accounts fetch failed:', err?.message || err) })
+          const results = await Promise.allSettled([
+            fetchClients(true),
+            fetchPositions(true),
+            fetchOrders(true),
+            fetchAccounts(true)
           ])
+          
+          // Get the actual fetched clients from the first promise result
+          if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
+            fetchedClients = results[0].value
+          }
+          
+          // Log any failures
+          results.forEach((result, idx) => {
+            if (result.status === 'rejected') {
+              const names = ['clients', 'positions', 'orders', 'accounts']
+              console.error(`[DataContext] Initial ${names[idx]} fetch failed:`, result.reason?.message || result.reason)
+            }
+          })
         } catch (error) {
           console.error('[DataContext] Initial sync error (attempt', attempt, '):', error)
         }
 
         // Success criteria: we must have at least some clients loaded
-        const ok = Array.isArray(clients) ? clients.length > 0 : false
-        if (ok) {
+        if (fetchedClients.length > 0) {
+          console.log(`[DataContext] ✅ Initial sync successful: ${fetchedClients.length} clients loaded`)
           break
         }
+        
         if (attempt < maxAttempts) {
           const backoff = 800 * attempt
+          console.log(`[DataContext] ⚠️ Retrying initial sync after ${backoff}ms (attempt ${attempt + 1}/${maxAttempts})`)
           await new Promise(res => setTimeout(res, backoff))
         }
       }
 
-      // Only mark initial data ready if we actually have clients
-      if (!hasInitialData && Array.isArray(clients) && clients.length > 0) {
+      // Mark initial data ready if we have clients
+      if (!hasInitialData && fetchedClients.length > 0) {
         setHasInitialData(true)
-        console.log('[DataContext] ✅ Initial data loaded, WebSocket will connect now')
+        console.log('[DataContext] 🔌 Initial data ready, WebSocket can now connect')
+      } else if (fetchedClients.length === 0) {
+        console.error('[DataContext] ❌ Failed to load initial data after all attempts')
       }
     }
     
