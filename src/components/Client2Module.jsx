@@ -46,6 +46,7 @@ export default function Client2Module() {
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
+  const [lastUpdate, setLastUpdate] = useState(Date.now())
 
   // Available columns for the table
   const [visibleColumns, setVisibleColumns] = useState({
@@ -125,6 +126,7 @@ export default function Client2Module() {
       setClients(data.clients || [])
       setTotals(data.totals || {})
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
+      setLastUpdate(Date.now())
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
@@ -222,7 +224,7 @@ export default function Client2Module() {
       { label: 'MONTHLY WITHDRAWAL', value: formatNum(t.thisMonthWithdrawal || t.monthWithdrawal || 0) },
       { label: 'NET MONTHLY DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)) }
     ]
-  }, [totals, totalClients])
+  }, [totals, totalClients, lastUpdate])
 
   // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
@@ -633,7 +635,7 @@ export default function Client2Module() {
           >
             {cards.map((card, i) => (
               <div 
-                key={i}
+                key={`${i}-${lastUpdate}`}
                 draggable="true"
                 onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
                 onDragOver={(e) => e.preventDefault()}
