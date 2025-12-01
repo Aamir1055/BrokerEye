@@ -511,8 +511,9 @@ export const DataProvider = ({ children }) => {
       }
 
       // Normalize
-      const normalized = validRawData.map(c => normalizeUSCValues(c, false)) // Apply normalization for positions
-      const unnormalized = validRawData.map(c => normalizeUSCValues(c, true))     // Skip normalization for clients
+      // Backend handles USC normalization - use raw values as-is for clients
+      const normalized = validRawData // No normalization needed
+      const unnormalized = validRawData // Same for both
 
       // Deduplicate by login (last occurrence wins)
       const map = new Map()
@@ -717,8 +718,9 @@ export const DataProvider = ({ children }) => {
         }
         const rawClients = data.data?.clients || data.clients
         if (rawClients && Array.isArray(rawClients)) {
-          const normalized = rawClients.map(normalizeUSCValues)
-          const unnormalized = rawClients.map(c => normalizeUSCValues(c, true))
+          // Backend handles USC normalization - use raw values as-is
+          const normalized = rawClients // No normalization needed
+          const unnormalized = rawClients // Same for both
           
           // Debug: Check RAW values BEFORE normalization
           if (rawClients.length > 0 && rawClients[0]) {
