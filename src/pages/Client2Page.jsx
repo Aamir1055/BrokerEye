@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
+import Client2Module from '../components/Client2Module'
 import { useData } from '../contexts/DataContext'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
@@ -15,6 +16,18 @@ import { useIB } from '../contexts/IBContext'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const Client2Page = () => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // DataContext (align with ClientsPage for positions cache usage)
   const { positions: cachedPositions } = useData()
   // Column value dropdown paging defaults and settings
@@ -2918,6 +2931,21 @@ const Client2Page = () => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown])
+
+  // Early return for mobile - render mobile component
+  if (isMobile) {
+    return (
+      <div className="w-full min-h-screen bg-neutral-900/5">
+        <Client2Module />
+        {selectedClient && (
+          <ClientPositionsModal
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+          />
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex overflow-x-hidden overflow-y-auto relative">

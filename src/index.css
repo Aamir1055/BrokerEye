@@ -211,3 +211,14 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* Table without borders */
+.table-no-borders * {
+  border: none !important;
+  outline: none !important;
+}
+
+.table-no-borders .grid > div {
+  border: none !important;
+  box-sizing: border-box;
+}

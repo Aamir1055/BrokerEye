@@ -91,7 +91,7 @@ export default function ClientDashboardDesignC() {
     lastName: false,
     middleName: false,
     email: false,
-    phone: false,
+    phone: true,
     group: false,
     country: false,
     city: false,
@@ -99,8 +99,8 @@ export default function ClientDashboardDesignC() {
     address: false,
     zipCode: false,
     clientID: false,
-    balance: true,
-    credit: false,
+    balance: false,
+    credit: true,
     equity: true,
     margin: false,
     marginFree: false,
@@ -109,7 +109,7 @@ export default function ClientDashboardDesignC() {
     marginMaintenance: false,
     marginLeverage: false,
     leverage: false,
-    profit: true,
+    profit: false,
     pnl: false,
     currency: false,
     currencyDigits: false,
@@ -148,50 +148,62 @@ export default function ClientDashboardDesignC() {
     thisWeekPnL: false
   })
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
+  // Add missing searchInput state for mobile search bar
+  const [searchInput, setSearchInput] = useState('')
+  const [showViewAllModal, setShowViewAllModal] = useState(false)
+  const [viewAllCards, setViewAllCards] = useState([])
 
   // Filter clients based on applied filters
+  // Desktop-style search logic for mobile
   const getFilteredClients = () => {
-    if (!Array.isArray(clients)) return []
-    
-    let filtered = [...clients]
+    if (!Array.isArray(clients)) return [];
+    let filtered = [...clients];
 
     // Apply group filter first (if active)
-    filtered = filterByActiveGroup(filtered, 'login', 'dashboard')
+    filtered = filterByActiveGroup(filtered, 'login', 'dashboard');
 
     if (filters.hasFloating) {
-      // Filter clients who have floating positions (non-zero)
-      filtered = filtered.filter(c => c && c.floating && Math.abs(c.floating) > 0)
+      filtered = filtered.filter(c => c && c.floating && Math.abs(c.floating) > 0);
     }
-
     if (filters.hasCredit) {
-      // Filter clients who have credit (positive or negative, but not zero)
       filtered = filtered.filter(c => {
-        if (!c) return false
-        const credit = Number(c.credit)
-        return Number.isFinite(credit) && credit !== 0
-      })
+        if (!c) return false;
+        const credit = Number(c.credit);
+        return Number.isFinite(credit) && credit !== 0;
+      });
     }
-
     if (filters.noDeposit) {
-      // Filter clients whose Lifetime Deposit is zero (no deposit history)
       filtered = filtered.filter(c => {
-        if (!c) return false
-        const lifeDep = Number(c.lifetimeDeposit)
-        return !(Number.isFinite(lifeDep) ? lifeDep !== 0 : false)
-      })
+        if (!c) return false;
+        const lifeDep = Number(c.lifetimeDeposit);
+        return !(Number.isFinite(lifeDep) ? lifeDep !== 0 : false);
+      });
     }
-
-    // Apply IB Filter if selected
     if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
-      // ibMT5Accounts is already an array of mt5_id numbers
-      const ibLoginSet = new Set(ibMT5Accounts.map(id => String(id)))
+      const ibLoginSet = new Set(ibMT5Accounts.map(id => String(id)));
       filtered = filtered.filter(c => {
-        const clientLogin = String(c.login || c.clientID || c.mqid || '')
-        return ibLoginSet.has(clientLogin)
-      })
+        const clientLogin = String(c.login || c.clientID || c.mqid || '');
+        return ibLoginSet.has(clientLogin);
+      });
     }
 
-    return filtered
+    // Desktop-style search: filter by search input
+    if (searchInput && searchInput.trim().length > 0) {
+      const q = searchInput.toLowerCase().trim();
+      filtered = filtered.filter(c => {
+        // Search in login, name, lastName, email, phone, group, country
+        return (
+          String(c.login || '').toLowerCase().includes(q) ||
+          String(c.name || '').toLowerCase().includes(q) ||
+          String(c.lastName || '').toLowerCase().includes(q) ||
+          String(c.email || '').toLowerCase().includes(q) ||
+          String(c.phone || '').toLowerCase().includes(q) ||
+          String(c.group || '').toLowerCase().includes(q) ||
+          String(c.country || '').toLowerCase().includes(q)
+        );
+      });
+    }
+    return filtered;
   }
 
   const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
@@ -415,6 +427,10 @@ export default function ClientDashboardDesignC() {
       rightsMask: c.rightsMask || c.rights_mask || '-',
       dailyDeposit: formatNum(c.dailyDeposit || c.daily_deposit || 0),
       dailyWithdrawal: formatNum(c.dailyWithdrawal || c.daily_withdrawal || 0),
+      weekDeposit: formatNum(c.weekDeposit || c.weeklyDeposit || c.weekly_deposit || c.thisWeekDeposit || 0),
+      weekWithdrawal: formatNum(c.weekWithdrawal || c.weeklyWithdrawal || c.weekly_withdrawal || c.thisWeekWithdrawal || 0),
+      monthDeposit: formatNum(c.monthDeposit || c.monthlyDeposit || c.monthly_deposit || c.thisMonthDeposit || 0),
+      monthWithdrawal: formatNum(c.monthWithdrawal || c.monthlyWithdrawal || c.monthly_withdrawal || c.thisMonthWithdrawal || 0),
       lifetimePnL: formatNum(c.lifetimePnL || 0),
       thisMonthPnL: formatNum(c.thisMonthPnL || c.monthlyPnL || 0),
       thisWeekPnL: formatNum(c.thisWeekPnL || c.weeklyPnL || 0)
@@ -501,10 +517,11 @@ export default function ClientDashboardDesignC() {
         thisWeekPnL: sum('thisWeekPnL'),
         thisMonthPnL: sum('thisMonthPnL'),
         lifetimePnL: sum('lifetimePnL'),
-        weekDeposit: sum('weekDeposit'),
-        weekWithdrawal: sum('weekWithdrawal'),
-        monthDeposit: sum('monthDeposit'),
-        monthWithdrawal: sum('monthWithdrawal'),
+        // Try multiple possible field names for week/month deposit/withdrawal
+        weekDeposit: sum('weekDeposit') || sum('thisWeekDeposit') || sum('week_deposit'),
+        weekWithdrawal: sum('weekWithdrawal') || sum('thisWeekWithdrawal') || sum('week_withdrawal'),
+        monthDeposit: sum('monthDeposit') || sum('thisMonthDeposit') || sum('month_deposit'),
+        monthWithdrawal: sum('monthWithdrawal') || sum('thisMonthWithdrawal') || sum('month_withdrawal'),
         lifetimeDeposit: sum('lifetimeDeposit'),
         lifetimeWithdrawal: sum('lifetimeWithdrawal'),
         // Commission values from API (like desktop)
@@ -529,14 +546,23 @@ export default function ClientDashboardDesignC() {
     const stats = calculateStats()
     
     if (showPercent) {
-      const sum = (key) => Array.isArray(dataToUse) ? dataToUse.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0
-      const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      // Show percent for all face cards (match desktop logic)
+      const sum = (key) => Array.isArray(dataToUse) ? dataToUse.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0;
+      const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return [
-        { label: 'Monthly EQuity', value: fmt(sum('thisMonthPnL_percentage')), unit: '%' },
+        { label: 'Total Balance', value: fmt(sum('balance_percentage')), unit: '%' },
+        { label: 'Total Credit', value: fmt(sum('credit_percentage')), unit: '%' },
         { label: 'TOTAL EQUITY', value: fmt(sum('equity_percentage')), unit: '%' },
-        { label: 'LIFETIME PnL', value: fmt(sum('lifetimePnL_percentage')), unit: '%' },
+        { label: 'PNL', value: fmt(sum('pnl_percentage')), unit: '%' },
+        { label: 'Floating Profit', value: fmt(sum('profit_percentage')), unit: '%' },
+        { label: 'Daily Deposit', value: fmt(sum('dailyDeposit_percentage')), unit: '%' },
+        { label: 'Daily Withdrawal', value: fmt(sum('dailyWithdrawal_percentage')), unit: '%' },
         { label: 'DAILY PnL', value: fmt(sum('dailyPnL_percentage')), unit: '%' },
-      ]
+        { label: 'This Week PnL', value: fmt(sum('thisWeekPnL_percentage')), unit: '%' },
+        { label: 'Monthly EQuity', value: fmt(sum('thisMonthPnL_percentage')), unit: '%' },
+        { label: 'LIFETIME PnL', value: fmt(sum('lifetimePnL_percentage')), unit: '%' },
+        // Add more if needed for other face cards
+      ];
     }
     return [
       // Core Metrics  
@@ -632,17 +658,15 @@ export default function ClientDashboardDesignC() {
     return () => carousel.removeEventListener('scroll', handleScroll)
   }, [cards.length])
 
-  // View All handler: scroll to the start of the card carousel and show all cards
+  // View All handler: open modal showing all cards
   useEffect(() => {
     if (viewAllRef.current) {
       viewAllRef.current.onclick = () => {
-        if (carouselRef.current) {
-          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' })
-        }
-        setActiveCardIndex(0)
+        setViewAllCards(cards)
+        setShowViewAllModal(true)
       }
     }
-  }, [carouselRef, cards.length])
+  }, [cards])
 
   // Navigate to next page
   const goToNextPage = () => {
@@ -712,7 +736,7 @@ export default function ClientDashboardDesignC() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsColumnDropdownOpen(!isColumnDropdownOpen);
+                  setIsColumnDropdownOpen(true);
                 }}
                 className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors"
                 title="Download"
@@ -724,39 +748,48 @@ export default function ClientDashboardDesignC() {
               </button>
               {/* Dropdown menu - simple absolute positioning */}
               {isColumnDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-[160px] bg-white border border-[#ECECEC] rounded-[8px] shadow-[0_0_12px_rgba(75,75,75,0.15)] z-50">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      exportTableColumns();
-                      setIsColumnDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-[12px] text-[#404040] hover:bg-gray-50 flex items-center gap-2 border-b border-[#F5F5F5]"
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsColumnDropdownOpen(false)}
+                  />
+                  <div
+                    className="absolute top-full left-0 mt-1 w-[160px] bg-white border border-[#ECECEC] rounded-[8px] shadow-[0_0_12px_rgba(75,75,75,0.15)] z-50"
+                    onClick={e => e.stopPropagation()}
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2" y="3" width="12" height="10" stroke="#404040" strokeWidth="1" rx="1" fill="none"/>
-                      <line x1="2" y1="6" x2="14" y2="6" stroke="#404040" strokeWidth="1"/>
-                      <line x1="6" y1="3" x2="6" y2="13" stroke="#404040" strokeWidth="1"/>
-                    </svg>
-                    Download Table Columns
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      exportAllColumns();
-                      setIsColumnDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-[12px] text-[#404040] hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="1" y="2" width="14" height="12" stroke="#404040" strokeWidth="1" rx="1" fill="none"/>
-                      <line x1="1" y1="5" x2="15" y2="5" stroke="#404040" strokeWidth="1"/>
-                      <line x1="5" y1="2" x2="5" y2="14" stroke="#404040" strokeWidth="1"/>
-                      <line x1="10" y1="2" x2="10" y2="14" stroke="#404040" strokeWidth="1"/>
-                    </svg>
-                    Download All Columns
-                  </button>
-                </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportTableColumns();
+                        setIsColumnDropdownOpen(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-[12px] text-[#404040] hover:bg-gray-50 flex items-center gap-2 border-b border-[#F5F5F5]"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="2" y="3" width="12" height="10" stroke="#404040" strokeWidth="1" rx="1" fill="none"/>
+                        <line x1="2" y1="6" x2="14" y2="6" stroke="#404040" strokeWidth="1"/>
+                        <line x1="6" y1="3" x2="6" y2="13" stroke="#404040" strokeWidth="1"/>
+                      </svg>
+                      Download Table Columns
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportAllColumns();
+                        setIsColumnDropdownOpen(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-[12px] text-[#404040] hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="1" y="2" width="14" height="12" stroke="#404040" strokeWidth="1" rx="1" fill="none"/>
+                        <line x1="1" y1="5" x2="15" y2="5" stroke="#404040" strokeWidth="1"/>
+                        <line x1="5" y1="2" x2="5" y2="14" stroke="#404040" strokeWidth="1"/>
+                        <line x1="10" y1="2" x2="10" y2="14" stroke="#404040" strokeWidth="1"/>
+                      </svg>
+                      Download All Columns
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -940,32 +973,42 @@ export default function ClientDashboardDesignC() {
             <div className="flex-1 overflow-auto py-2">
               <nav className="flex flex-col">
                 {[
-                  {label:'Dashboard', icon: (
+                  {label:'Dashboard', path:'/dashboard', icon: (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#404040"/></svg>
                   )},
-                  {label:'Clients', active:true, icon:(
+                  {label:'Clients', path:'/client-dashboard-c', active:true, icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#1A63BC"/><circle cx="16" cy="8" r="3" stroke="#1A63BC"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#1A63BC"/></svg>
                   )},
-                  {label:'Pending Orders', icon:(
+                  {label:'Client 2', path:'/client2', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Pending Orders', path:'/pending-orders', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
                   )},
-                  {label:'Margin Level', icon:(
+                  {label:'Margin Level', path:'/margin-level', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
                   )},
-                  {label:'Live Dealing', icon:(
+                  {label:'Live Dealing', path:'/live-dealing', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#404040"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#404040"/></svg>
                   )},
-                  {label:'Client Percentage', icon:(
+                  {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', icon:(
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
                   )},
-                  {label:'Settings', icon:(
+                  {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
                 ].map((item, idx) => (
-                  <button key={idx} className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}>
+                  <button 
+                    key={idx} 
+                    onClick={() => {
+                      navigate(item.path)
+                      setIsSidebarOpen(false)
+                    }}
+                    className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}
+                  >
                     <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
@@ -991,11 +1034,24 @@ export default function ClientDashboardDesignC() {
         >
           {cards.map((card, i) => (
             <div 
-              key={i} 
-              className="min-w-[150px] w-[150px] h-[45px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1.5 flex flex-col justify-between snap-start flex-shrink-0"
+              key={i}
+              draggable="true"
+              onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
+                if (fromIndex !== i) {
+                  const newCards = [...cards];
+                  const [movedCard] = newCards.splice(fromIndex, 1);
+                  newCards.splice(i, 0, movedCard);
+                  // Update state if you have card order state
+                }
+              }}
+              className="min-w-[125px] w-[125px] h-[45px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
             >
               <div className="flex items-start justify-between">
-                <span className="text-[#4B4B4B] text-[8px] font-normal leading-[10px] pr-1">{card.label}</span>
+                <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>
                 <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
                   <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
@@ -1004,10 +1060,13 @@ export default function ClientDashboardDesignC() {
                 </div>
               </div>
               <div className="flex items-baseline gap-[4px]">
-                <span className={`text-[14px] font-semibold leading-[18px] tracking-[-0.01em] ${card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
-                  {card.value}
+                <span className={`text-[11px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+                {/* Increase font size to 12.5px */}
                 </span>
-                <span className="text-[#4B4B4B] text-[8px] font-normal leading-[10px] uppercase">{card.unit}</span>
+                <span className={`text-[12.5px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+                  {card.value === '' || card.value === undefined ? '0.00' : card.value}
+                </span>
+                <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>
               </div>
             </div>
           ))}
@@ -1221,23 +1280,6 @@ export default function ClientDashboardDesignC() {
               <h2 className="text-center text-xl font-semibold font-outfit text-black">Show/Hide Columns</h2>
             </div>
 
-            {/* Search Box */}
-            <div className="px-6 py-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search Columns"
-                  value={columnSearchQuery}
-                  onChange={(e) => setColumnSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 border border-gray-200 rounded-xl text-base font-outfit focus:outline-none focus:border-blue-500"
-                />
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <circle cx="11" cy="11" r="8" strokeWidth="2"/>
-                  <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-            </div>
-
             {/* Column List */}
             <div className="flex-1 overflow-y-auto px-6">
               {Object.entries({
@@ -1264,15 +1306,15 @@ export default function ClientDashboardDesignC() {
                 'Margin Maintenance': 'marginMaintenance',
                 'Margin Leverage': 'marginLeverage',
                 'Leverage': 'leverage',
-                'Floating Profit': 'profit',
-                'PNL': 'pnl',
+                'Profit': 'profit',
+                'PnL': 'pnl',
                 'Currency': 'currency',
                 'Currency Digits': 'currencyDigits',
-                'Applied %': 'applied_percentage',
-                'Custom %': 'applied_percentage_is_custom',
+                'Applied Percentage': 'applied_percentage',
+                'Applied Percentage Custom': 'applied_percentage_is_custom',
                 'Assets': 'assets',
                 'Liabilities': 'liabilities',
-                'Blocked Rebate': 'blockedCommission',
+                'Blocked Commission': 'blockedCommission',
                 'Blocked Profit': 'blockedProfit',
                 'Storage': 'storage',
                 'Company': 'company',
@@ -1300,17 +1342,16 @@ export default function ClientDashboardDesignC() {
                 'Daily Withdrawal': 'dailyWithdrawal',
                 'Lifetime PnL': 'lifetimePnL',
                 'This Month PnL': 'thisMonthPnL',
-                'This Week PnL': 'thisWeekPnL'
-              }).filter(([label]) => 
-                label.toLowerCase().includes(columnSearchQuery.toLowerCase())
-              ).map(([label, key]) => (
+                'This Week PnL': 'thisWeekPnL',
+              }).map(([label, key]) => (
                 <div
                   key={key}
-                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
+                  onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
                 >
                   <span className="text-base text-gray-800 font-outfit">{label}</span>
                   <button
-                    onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                    onClick={e => { e.stopPropagation(); setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}}
                     className="w-6 h-6 flex items-center justify-center"
                   >
                     {visibleColumns[key] ? (
@@ -1333,12 +1374,12 @@ export default function ClientDashboardDesignC() {
               <button
                 onClick={() => {
                   setVisibleColumns({
-                    login: false,
-                    name: false,
+                    login: true,
+                    name: true,
                     lastName: false,
                     middleName: false,
                     email: false,
-                    phone: false,
+                    phone: true,
                     group: false,
                     country: false,
                     city: false,
@@ -1347,8 +1388,8 @@ export default function ClientDashboardDesignC() {
                     zipCode: false,
                     clientID: false,
                     balance: false,
-                    credit: false,
-                    equity: false,
+                    credit: true,
+                    equity: true,
                     margin: false,
                     marginFree: false,
                     marginLevel: false,
@@ -1406,6 +1447,99 @@ export default function ClientDashboardDesignC() {
                 Apply
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* View All Modal - Fullscreen */}
+      {showViewAllModal && (
+        <div className="fixed inset-0 bg-[#F5F5F5] z-50 overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-white shadow-md z-10">
+            <div className="px-4 py-5 flex items-center justify-between">
+              <button onClick={() => setShowViewAllModal(false)} className="w-9 h-9 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <h1 className="text-xl font-semibold text-black">Client Matrices</h1>
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="4" fill="#9CA3AF"/>
+                  <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V20" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Drag to reorder header */}
+          <div className="bg-[#E8EEF5] px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Drag cards to reorder</span>
+            </div>
+            <button 
+              onClick={() => {
+                setViewAllCards(cards)
+              }}
+              className="text-blue-600 text-sm font-medium"
+            >
+              Reset order
+            </button>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="p-3 space-y-2">
+            {viewAllCards.map((card, i) => (
+              <div
+                key={i}
+                draggable="true"
+                onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
+                  if (fromIndex !== i) {
+                    const newCards = [...viewAllCards];
+                    const [movedCard] = newCards.splice(fromIndex, 1);
+                    newCards.splice(i, 0, movedCard);
+                    setViewAllCards(newCards);
+                  }
+                }}
+                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move active:scale-95 transition-transform"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="text-xs font-medium text-gray-600 uppercase mb-1">{card.label}</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={`text-xl font-bold ${card.value && card.value.toString().includes('-') ? 'text-red-600' : 'text-black'}`}>
+                        {card.value === '' || card.value === undefined ? '0.00' : card.value}
+                      </span>
+                      {card.value && !card.value.toString().includes('-') && card.value !== '0' && card.value !== '0.00' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-green-500">
+                          <path d="M7 14L12 9L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                      {card.value && card.value.toString().includes('-') && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-red-500">
+                          <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+                      <rect x="14" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+                      <rect x="3" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+                      <rect x="14" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

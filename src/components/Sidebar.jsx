@@ -46,7 +46,10 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   
   const handleNavigate = (path) => {
     navigate(path)
-    // Sidebar should only close via toggle button, not on navigation
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth < 1024 && typeof onClose === 'function') {
+      onClose()
+    }
   }
   
   const isActivePath = (path) => {
@@ -59,6 +62,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
       onClose()
     }
   }
+
   return (
     <>
       {/* Mobile overlay */}
@@ -93,54 +97,30 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
             stroke="currentColor" 
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        {/* Sidebar Header */}
-        <div className={`relative ${isOpen ? 'px-5' : 'px-3'} py-5 border-b border-slate-200 bg-slate-50`}>
-          <div className={`flex items-center ${isOpen ? 'justify-between' : 'justify-center'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`relative ${isOpen ? 'w-10 h-10' : 'w-9 h-9'} bg-blue-600 rounded-xl flex items-center justify-center shadow-md transform hover:scale-105 transition-transform duration-200`}>
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
-              </div>
-              {isOpen && (
-                <div>
-                  <span className="block text-base font-bold text-slate-800">Broker Eyes</span>
-                  <span className="block text-[10px] font-medium text-slate-500">Trading Platform</span>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => typeof onClose === 'function' && onClose()}
-              className="lg:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100 p-2 rounded-lg transition-all duration-200"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <div className="flex flex-col flex-1">
+          <div className={`flex items-center ${isOpen ? 'px-4' : 'px-2'} py-4 border-b border-slate-200`}>
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Sidebar Content */}
-        <div className="flex-1 p-2 lg:p-2 pt-4 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-          {/* Navigation Label - hide when collapsed */}
-          {isOpen && (
-            <div className="px-4 mb-4">
-              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Navigation</h3>
             </div>
-          )}
-          
-          <nav className="space-y-2">
+            {isOpen && (
+              <div className="ml-3">
+                <h1 className="text-lg font-bold text-slate-800 tracking-tight">Broker Eyes</h1>
+                <p className="text-xs text-slate-500">Trading Platform</p>
+              </div>
+            )}
+          </div>
+
+          <nav className="flex-1 overflow-y-auto px-2 py-4">
             {navigationItems.map((item) => (
               <button
-                key={item.path}
+                key={item.name}
                 onClick={() => handleNavigate(item.path)}
-                title={item.name}
                 className={`
                   group w-full text-left flex items-center ${isOpen ? 'px-4' : 'px-2 justify-center'} py-3 rounded-xl text-sm font-medium
                   transition-all duration-200 transform hover:scale-[1.02]

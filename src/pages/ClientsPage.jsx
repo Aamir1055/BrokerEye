@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+// ...existing code...
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
@@ -17,6 +18,8 @@ import workerManager from '../workers/workerManager'
 import { brokerAPI } from '../services/api'
 
 const ClientsPage = () => {
+    // Card filter search query for filter modal
+    const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('');
   const navigate = useNavigate()
   const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
