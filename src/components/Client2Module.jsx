@@ -47,6 +47,7 @@ export default function Client2Module() {
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
   const [cards, setCards] = useState([])
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
 
   // Available columns for the table
   const [visibleColumns, setVisibleColumns] = useState({
@@ -116,6 +117,9 @@ export default function Client2Module() {
   // Fetch clients data via API
   const fetchClients = useCallback(async () => {
     try {
+      const fetchTime = new Date().toLocaleTimeString()
+      console.log('🔄 Fetching clients at:', fetchTime)
+      
       // Use searchClients to get totals data (same as Client2Page desktop)
       const response = await brokerAPI.searchClients({
         page: 1,
@@ -136,6 +140,10 @@ export default function Client2Module() {
       setClients(data.clients || [])
       setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
+      setLastUpdateTime(Date.now())
+      
+      const updateTime = new Date().toLocaleTimeString()
+      console.log('✅ Cards updated at:', updateTime, 'Balance:', t.balance, 'Equity:', t.equity)
       
       // Update face cards directly from API response
       setCards([
@@ -686,13 +694,16 @@ export default function Client2Module() {
 
         {/* Face Cards Carousel */}
         <div className="pb-2 pl-5">
+          <div className="text-[10px] text-gray-500 mb-1">
+            Last Update: {new Date(lastUpdateTime).toLocaleTimeString()}
+          </div>
           <div 
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
             {cards.map((card, i) => (
               <div 
-                key={i}
+                key={`${i}-${lastUpdateTime}`}
                 draggable="true"
                 onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
                 onDragOver={(e) => e.preventDefault()}
