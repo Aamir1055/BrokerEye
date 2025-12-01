@@ -45,7 +45,6 @@ export default function Client2Module() {
   // API data state
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
-  const [loading, setLoading] = useState(false)
   const [totalClients, setTotalClients] = useState(0)
 
   // Available columns for the table
@@ -116,8 +115,6 @@ export default function Client2Module() {
   // Fetch clients data via API
   const fetchClients = useCallback(async () => {
     try {
-      setLoading(true)
-      
       // Use searchClients to get totals data (same as Client2Page desktop)
       const response = await brokerAPI.searchClients({
         page: 1,
@@ -130,8 +127,6 @@ export default function Client2Module() {
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
     } catch (error) {
       console.error('Failed to fetch clients:', error)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
@@ -758,9 +753,7 @@ export default function Client2Module() {
               </div>
               
               {/* Rows */}
-              {loading ? (
-                <div className="py-8 text-center text-gray-500">Loading...</div>
-              ) : paginatedClients.length === 0 ? (
+              {paginatedClients.length === 0 ? (
                 <div className="py-8 text-center text-gray-500">No clients found</div>
               ) : (
                 <>
