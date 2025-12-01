@@ -119,11 +119,19 @@ export default function Client2Module() {
       // Use searchClients to get totals data (same as Client2Page desktop)
       const response = await brokerAPI.searchClients({
         page: 1,
-        limit: 1000
+        limit: 100
       })
       
-      const data = response?.data?.data || response?.data || {}
+      console.log('Client2Module API Response:', response)
+      
+      // Extract data from response.data.data structure
+      const responseData = response?.data || {}
+      const data = responseData?.data || responseData
       const t = data.totals || {}
+      
+      console.log('Response Data:', responseData)
+      console.log('Data:', data)
+      console.log('Totals:', t)
       
       setClients(data.clients || [])
       setTotals(t)
