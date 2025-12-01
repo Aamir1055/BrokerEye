@@ -46,7 +46,7 @@ export default function Client2Module() {
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
-  const [lastUpdate, setLastUpdate] = useState(Date.now())
+  const [cards, setCards] = useState([])
 
   // Available columns for the table
   const [visibleColumns, setVisibleColumns] = useState({
@@ -123,10 +123,83 @@ export default function Client2Module() {
       })
       
       const data = response?.data?.data || response?.data || {}
+      const t = data.totals || {}
+      
       setClients(data.clients || [])
-      setTotals(data.totals || {})
+      setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
-      setLastUpdate(Date.now())
+      
+      // Update face cards directly from API response
+      setCards([
+        { label: 'Total Clients', value: formatNum(data.total || 0) },
+        { label: 'Assets', value: formatNum(t.assets || 0) },
+        { label: 'Balance', value: formatNum(t.balance || 0) },
+        { label: 'Blocked Commission', value: formatNum(t.blockedCommission || 0) },
+        { label: 'Blocked Profit', value: formatNum(t.blockedProfit || 0) },
+        { label: 'Commission', value: formatNum(t.commission || 0) },
+        { label: 'Credit', value: formatNum(t.credit || 0) },
+        { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn || 0) },
+        { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0) },
+        { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0) },
+        { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0) },
+        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0) },
+        { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0) },
+        { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0) },
+        { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0) },
+        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0) },
+        { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)) },
+        { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)) },
+        { label: 'Equity', value: formatNum(t.equity || 0) },
+        { label: 'Floating P/L', value: formatNum(t.floating || 0) },
+        { label: 'Liabilities', value: formatNum(t.liabilities || 0) },
+        { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn || 0) },
+        { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut || 0) },
+        { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0) },
+        { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0) },
+        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0) },
+        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0) },
+        { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0) },
+        { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0) },
+        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0) },
+        { label: 'Margin', value: formatNum(t.margin || 0) },
+        { label: 'Margin Free', value: formatNum(t.marginFree || 0) },
+        { label: 'Margin Initial', value: formatNum(t.marginInitial || 0) },
+        { label: 'Margin Level', value: formatNum(t.marginLevel || 0) },
+        { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance || 0) },
+        { label: 'P&L', value: formatNum(t.pnl || 0) },
+        { label: 'Previous Equity', value: formatNum(t.previousEquity || 0) },
+        { label: 'Profit', value: formatNum(t.profit || 0) },
+        { label: 'SO Equity', value: formatNum(t.soEquity || 0) },
+        { label: 'SO Level', value: formatNum(t.soLevel || 0) },
+        { label: 'SO Margin', value: formatNum(t.soMargin || 0) },
+        { label: 'Storage', value: formatNum(t.storage || 0) },
+        { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn || 0) },
+        { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut || 0) },
+        { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn || 0) },
+        { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut || 0) },
+        { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit || 0) },
+        { label: 'This Month P&L', value: formatNum(t.thisMonthPnL || 0) },
+        { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn || 0) },
+        { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut || 0) },
+        { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal || 0) },
+        { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn || 0) },
+        { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut || 0) },
+        { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn || 0) },
+        { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut || 0) },
+        { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit || 0) },
+        { label: 'This Week P&L', value: formatNum(t.thisWeekPnL || 0) },
+        { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn || 0) },
+        { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut || 0) },
+        { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal || 0) },
+        { label: 'NET Week Bonus', value: formatNum((t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0)) },
+        { label: 'NET Week DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)) },
+        { label: 'NET Monthly Bonus', value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)) },
+        { label: 'NET Monthly DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)) },
+        { label: 'NET Lifetime Bonus', value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)) },
+        { label: 'NET Lifetime DW', value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)) },
+        { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)) },
+        { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)) }
+      ])
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
@@ -193,38 +266,14 @@ export default function Client2Module() {
   const filteredClients = getFilteredClients()
 
   // Calculate totals for table footer
-  const clientStats = useMemo(() => {
-    return {
-      totalBalance: filteredClients.reduce((sum, c) => sum + (Number(c.balance) || 0), 0),
-      totalCredit: filteredClients.reduce((sum, c) => sum + (Number(c.credit) || 0), 0),
-      totalEquity: filteredClients.reduce((sum, c) => sum + (Number(c.equity) || 0), 0),
-      totalProfit: filteredClients.reduce((sum, c) => sum + (Number(c.profit) || 0), 0),
-      totalMargin: filteredClients.reduce((sum, c) => sum + (Number(c.margin) || 0), 0),
-      totalMarginFree: filteredClients.reduce((sum, c) => sum + (Number(c.marginFree) || 0), 0)
-    }
-  }, [filteredClients])
-
-  // Calculate metrics from API totals
-  const cards = useMemo(() => {
-    const t = totals || {}
-    
-    return [
-      { label: 'TOTAL CLIENT', value: formatNum(totalClients) },
-      { label: 'TOTAL BALANCE', value: formatNum(t.balance || 0) },
-      { label: 'TOTAL CREDIT', value: formatNum(t.credit || 0) },
-      { label: 'TOTAL EQUITY', value: formatNum(t.equity || 0) },
-      { label: 'TOTAL REBATE %', value: formatNum(t.availableRebatePercent || 0) },
-      { label: 'FLOATING PROFIT', value: formatNum(t.floating || t.profit || 0) },
-      { label: 'DAILY DEPOSIT', value: formatNum(t.dailyDeposit || 0) },
-      { label: 'DAILY WITHDRAWAL', value: formatNum(t.dailyWithdrawal || 0) },
-      { label: 'WEEK DEPOSIT', value: formatNum(t.thisWeekDeposit || t.weekDeposit || 0) },
-      { label: 'WEEK WITHDRAWAL', value: formatNum(t.thisWeekWithdrawal || t.weekWithdrawal || 0) },
-      { label: 'NET WEEK DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)) },
-      { label: 'MONTHLY DEPOSIT', value: formatNum(t.thisMonthDeposit || t.monthDeposit || 0) },
-      { label: 'MONTHLY WITHDRAWAL', value: formatNum(t.thisMonthWithdrawal || t.monthWithdrawal || 0) },
-      { label: 'NET MONTHLY DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)) }
-    ]
-  }, [totals, totalClients, lastUpdate])
+  const clientStats = {
+    totalBalance: filteredClients.reduce((sum, c) => sum + (Number(c.balance) || 0), 0),
+    totalCredit: filteredClients.reduce((sum, c) => sum + (Number(c.credit) || 0), 0),
+    totalEquity: filteredClients.reduce((sum, c) => sum + (Number(c.equity) || 0), 0),
+    totalProfit: filteredClients.reduce((sum, c) => sum + (Number(c.profit) || 0), 0),
+    totalMargin: filteredClients.reduce((sum, c) => sum + (Number(c.margin) || 0), 0),
+    totalMarginFree: filteredClients.reduce((sum, c) => sum + (Number(c.marginFree) || 0), 0)
+  }
 
   // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
@@ -635,7 +684,7 @@ export default function Client2Module() {
           >
             {cards.map((card, i) => (
               <div 
-                key={`${i}-${lastUpdate}`}
+                key={i}
                 draggable="true"
                 onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
                 onDragOver={(e) => e.preventDefault()}
