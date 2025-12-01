@@ -7,7 +7,7 @@ import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
-import api, { brokerAPI } from '../services/api'
+import { brokerAPI } from '../services/api'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -117,15 +117,9 @@ export default function Client2Module() {
   const fetchClients = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await api.get('/clients', {
-        params: {
-          page: 1,
-          limit: 1000,
-          totals: true
-        }
-      })
+      const response = await brokerAPI.getClients()
       
-      const data = response.data?.data || response.data || {}
+      const data = response?.data || response || {}
       setClients(data.clients || [])
       setTotals(data.totals || {})
       setTotalClients(data.totalClients || data.clients?.length || 0)
