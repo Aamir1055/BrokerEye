@@ -117,12 +117,17 @@ export default function Client2Module() {
   const fetchClients = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await brokerAPI.getClients()
       
-      const data = response?.data || response || {}
+      // Use searchClients to get totals data (same as Client2Page desktop)
+      const response = await brokerAPI.searchClients({
+        page: 1,
+        limit: 1000
+      })
+      
+      const data = response?.data?.data || response?.data || {}
       setClients(data.clients || [])
       setTotals(data.totals || {})
-      setTotalClients(data.totalClients || data.clients?.length || 0)
+      setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     } finally {
