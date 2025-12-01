@@ -138,7 +138,7 @@ export default function Client2Module() {
   // Initial fetch and periodic refresh
   useEffect(() => {
     fetchClients()
-    const interval = setInterval(fetchClients, 30000) // Refresh every 30 seconds
+    const interval = setInterval(fetchClients, 1000) // Refresh every 1 second
     return () => clearInterval(interval)
   }, [fetchClients])
 
