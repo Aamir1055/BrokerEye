@@ -274,23 +274,25 @@ export default function Client2Module() {
     // Apply group filter first (if active)
     filtered = filterByActiveGroup(filtered, 'login', 'client2')
 
-    // Has Floating: exclude rows where floating == 0 (allow negative or positive, match desktop logic)
+    // Has Floating: show clients where profit field (Floating Profit column) has a value (not blank/null/0)
     if (filters.hasFloating) {
       filtered = filtered.filter(c => {
-        const floating = Number(c.floating || c.profit || 0)
-        return floating !== 0
+        const profit = c.profit
+        // Only show if profit exists and is not 0 (can be positive or negative)
+        return profit != null && profit !== '' && Number(profit) !== 0
       })
     }
 
-    // Has Credit: credit strictly greater than 0 (match desktop logic)
+    // Has Credit: show clients where credit > 0
     if (filters.hasCredit) {
       filtered = filtered.filter(c => {
-        const credit = Number(c.credit || 0)
-        return credit > 0
+        const credit = c.credit
+        // Only show if credit exists and is greater than 0
+        return credit != null && credit !== '' && Number(credit) > 0
       })
     }
 
-    // No Deposit: lifetimeDeposit == 0 (match desktop logic)
+    // No Deposit: show clients where lifetimeDeposit is 0
     if (filters.noDeposit) {
       filtered = filtered.filter(c => {
         const lifetimeDeposit = Number(c.lifetimeDeposit || 0)
