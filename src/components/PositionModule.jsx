@@ -429,7 +429,7 @@ export default function PositionModule() {
           setFilters(newFilters)
           setIsFilterOpen(false)
         }}
-        initialFilters={filters}
+        filters={filters}
       />
 
       {/* IB Filter Modal */}
