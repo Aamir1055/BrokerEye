@@ -239,6 +239,8 @@ export default function Client2Module() {
 
   // Calculate cards from filtered clients (when filters active) or API totals (when no filters)
   const cards = useMemo(() => {
+    console.log('[Client2Module] Cards useMemo recalculating. showPercent:', showPercent)
+    
     // Check if any filter is active
     const hasBasicFilters = Object.values(filters).some(f => f)
     const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
@@ -736,7 +738,10 @@ export default function Client2Module() {
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
               </button>
               <button
-                onClick={() => setShowPercent((v) => !v)}
+                onClick={() => {
+                  console.log('[Client2Module] Percentage button clicked. Current:', showPercent, '-> New:', !showPercent)
+                  setShowPercent((v) => !v)
+                }}
                 className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#ECECEC] hover:bg-gray-50'
                 }`}
