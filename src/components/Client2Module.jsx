@@ -136,8 +136,8 @@ export default function Client2Module() {
       const usePercent = overridePercent !== null ? overridePercent : showPercent
       // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients({
-        page: 1,
-        limit: 10000,
+        page: currentPage,
+        limit: 100,
         percentage: usePercent
       })
       
@@ -162,7 +162,7 @@ export default function Client2Module() {
     fetchClients()
     const interval = setInterval(fetchClients, 2000) // Refresh every 2 seconds
     return () => clearInterval(interval)
-  }, [fetchClients])
+  }, [fetchClients, currentPage])
 
   // Filter clients based on applied filters
   const getFilteredClients = () => {
@@ -272,7 +272,7 @@ export default function Client2Module() {
         { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
         { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit },
         { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: t.dailyWithdrawal },
-        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
+        { label: showPercent ? 'Daily Net D/W %' : 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
         { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
         { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
         { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
@@ -302,7 +302,7 @@ export default function Client2Module() {
       { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
       { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
       { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: showPercent ? '%' : 'USD', numericValue: t.dailyWithdrawal || 0 },
-      { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: showPercent ? '%' : 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
+      { label: showPercent ? 'Daily Net D/W %' : 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: showPercent ? '%' : 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
       { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
       { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
       { label: 'Floating P/L', value: formatNum(t.floating || 0), unit: 'USD', numericValue: t.floating || 0 },
