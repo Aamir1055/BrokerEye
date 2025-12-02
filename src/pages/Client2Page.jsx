@@ -16,8 +16,10 @@ import { useIB } from '../contexts/IBContext'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const Client2Page = () => {
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(false)
+  // Mobile detection (initialize from window to avoid first-render desktop effects)
+  const [isMobile, setIsMobile] = useState(() => {
+    try { return typeof window !== 'undefined' ? window.innerWidth <= 768 : false } catch { return false }
+  })
 
   useEffect(() => {
     const checkMobile = () => {
