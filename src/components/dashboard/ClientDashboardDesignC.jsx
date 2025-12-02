@@ -668,6 +668,13 @@ export default function ClientDashboardDesignC() {
     }
   }, [cards])
 
+  // Update viewAllCards when cards change and modal is open
+  useEffect(() => {
+    if (showViewAllModal) {
+      setViewAllCards(cards)
+    }
+  }, [cards, showViewAllModal])
+
   // Navigate to next page
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -982,6 +989,9 @@ export default function ClientDashboardDesignC() {
                   {label:'Client 2', path:'/client2', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
                   )},
+                  {label:'Positions', path:'/positions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="#404040"/></svg>
+                  )},
                   {label:'Pending Orders', path:'/pending-orders', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
                   )},
@@ -1084,6 +1094,8 @@ export default function ClientDashboardDesignC() {
             </svg>
             <input 
               placeholder="Search" 
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent font-outfit" 
             />
           </div>

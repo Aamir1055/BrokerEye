@@ -36,7 +36,8 @@ const CustomizeViewModal = ({
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: '412px',
-          height: '360px',
+          height: 'auto',
+          maxHeight: '90vh',
           background: '#FFFFFF',
           borderRadius: '20px 20px 0 0',
           zIndex: 9999,
@@ -322,7 +323,8 @@ const CustomizeViewModal = ({
           style={{
             display: 'flex',
             gap: '16px',
-            padding: '0 20px 20px',
+            padding: '0 20px 24px',
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
           }}
         >
           {/* Reset button */}

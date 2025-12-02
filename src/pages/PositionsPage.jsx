@@ -11,8 +11,21 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
+import PositionModule from '../components/PositionModule'
 
 const PositionsPage = () => {
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Use cached data from DataContext
   const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
@@ -1885,6 +1898,15 @@ const PositionsPage = () => {
 
   // Only show local loading inside cards/tables; keep the page chrome interactive
   const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
+
+  // Early return for mobile - render mobile component
+  if (isMobile) {
+    return (
+      <div className="w-full min-h-screen bg-neutral-900/5">
+        <PositionModule />
+      </div>
+    )
+  }
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">

@@ -311,6 +311,13 @@ export default function Client2Module() {
     }
   }, [cards])
 
+  // Update viewAllCards when cards change and modal is open
+  useEffect(() => {
+    if (showViewAllModal) {
+      setViewAllCards(cards)
+    }
+  }, [cards, showViewAllModal])
+
   // Navigate to next page
   const goToNextPage = () => {
     if (currentPage < totalPages) {
@@ -588,7 +595,7 @@ export default function Client2Module() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-between">
@@ -705,7 +712,7 @@ export default function Client2Module() {
                     const newCards = [...cards];
                     const [movedCard] = newCards.splice(fromIndex, 1);
                     newCards.splice(i, 0, movedCard);
-                    // Update state if you have card order state
+                    setCards(newCards);
                   }
                 }}
                 className="min-w-[125px] w-[125px] h-[45px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"

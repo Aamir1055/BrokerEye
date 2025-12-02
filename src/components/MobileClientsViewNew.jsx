@@ -26,8 +26,8 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
     netMonthlyDW: clients.reduce((acc, c) => acc + ((c?.thisMonthDeposit || 0) - (c?.thisMonthWithdrawal || 0)), 0)
   }
 
-  // Card config matching Figma order
-  const faceCards = [
+  // Card config matching Figma order with state for drag-and-drop
+  const initialCards = [
     { id: 1, label: 'TOTAL CLIENT', amount: metrics.totalClients, trend: 'up', percent: '', color: 'green' },
     { id: 2, label: 'TOTAL BALANCE', amount: metrics.totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'up', percent: '', color: 'green' },
     { id: 3, label: 'TOTAL CREDIT', amount: metrics.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: 'down', percent: '', color: 'red' },
@@ -44,6 +44,8 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
     { id: 14, label: 'MONTHLY EQUITY', amount: metrics.monthlyEquity.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.monthlyEquity >= 0 ? 'up' : 'down', percent: '', color: metrics.monthlyEquity >= 0 ? 'green' : 'red' },
     { id: 15, label: 'NET LIFETIME', amount: metrics.netLifetime.toLocaleString('en-IN', { minimumFractionDigits: 2 }), trend: metrics.netLifetime >= 0 ? 'up' : 'down', percent: '', color: metrics.netLifetime >= 0 ? 'green' : 'red' }
   ]
+  
+  const [faceCards, setFaceCards] = useState(initialCards)
 
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -448,8 +450,32 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
         overflowX: 'scroll',
         overflowY: 'hidden'
       }} className="scrollbar-hide">
-        {faceCards.map((card) => (
-          <FaceCard key={card.id} card={card} />
+        {faceCards.map((card, index) => (
+          <div
+            key={card.id}
+            draggable="true"
+            onDragStart={(e) => {
+              e.dataTransfer.setData('cardIndex', index)
+              e.dataTransfer.effectAllowed = 'move'
+            }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'))
+              if (fromIndex !== index && !isNaN(fromIndex)) {
+                const newCards = [...faceCards]
+                const [movedCard] = newCards.splice(fromIndex, 1)
+                newCards.splice(index, 0, movedCard)
+                setFaceCards(newCards)
+              }
+            }}
+            style={{ cursor: 'move' }}
+          >
+            <FaceCard card={card} />
+          </div>
         ))}
       </div>
 

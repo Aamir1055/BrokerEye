@@ -324,6 +324,7 @@ const ClientsPage = () => {
     return defaultFaceCardOrder
   }
   const [faceCardOrder, setFaceCardOrder] = useState(getInitialFaceCardOrder)
+  const [draggedFaceCard, setDraggedFaceCard] = useState(null)
 
   const getInitialCardVisibility = (() => {
     try {

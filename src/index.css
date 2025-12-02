@@ -3,6 +3,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile viewport fixes */
+html {
+  /* Prevent elastic scrolling */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  /* Fix mobile viewport height */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  /* Prevent pull-to-refresh */
+  overscroll-behavior-y: contain;
+  /* Prevent text size adjustment */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Fix for mobile browsers URL bar */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
 /* Custom animations for enhanced UI */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
