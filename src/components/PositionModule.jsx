@@ -228,15 +228,6 @@ export default function PositionModule() {
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsCustomizeOpen(true)}
-              className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
-            </button>
             <button className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="9" stroke="#4B4B4B" strokeWidth="2"/>
