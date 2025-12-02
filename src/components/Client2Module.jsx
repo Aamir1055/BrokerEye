@@ -133,10 +133,11 @@ export default function Client2Module() {
   // Fetch clients data via API
   const fetchClients = useCallback(async () => {
     try {
-      // Use searchClients to get totals data (same as Client2Page desktop)
+      // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients({
         page: 1,
-        limit: 10000
+        limit: 10000,
+        percentage: showPercent
       })
       
       // Extract data from response.data.data structure
@@ -153,9 +154,9 @@ export default function Client2Module() {
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
-  }, [])
+  }, [showPercent])
 
-  // Initial fetch and periodic refresh
+  // Initial fetch and periodic refresh every 1 second
   useEffect(() => {
     fetchClients()
     const interval = setInterval(fetchClients, 1000) // Refresh every 1 second
@@ -220,27 +221,8 @@ export default function Client2Module() {
 
   const filteredClients = getFilteredClients()
 
-  // Compute percentage totals from client data (like desktop version)
-  const computedPercentageTotals = useMemo(() => {
-    if (!Array.isArray(filteredClients) || filteredClients.length === 0) {
-      return {
-        dailyDeposit: 0,
-        dailyWithdrawal: 0,
-        lifetimePnL: 0
-      }
-    }
-    
-    return {
-      dailyDeposit: filteredClients.reduce((sum, client) => sum + (parseFloat(client.dailyDeposit_percentage) || 0), 0),
-      dailyWithdrawal: filteredClients.reduce((sum, client) => sum + (parseFloat(client.dailyWithdrawal_percentage) || 0), 0),
-      lifetimePnL: filteredClients.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
-    }
-  }, [filteredClients])
-
   // Calculate cards from filtered clients (when filters active) or API totals (when no filters)
   const cards = useMemo(() => {
-    console.log('[Client2Module] Cards useMemo recalculating. showPercent:', showPercent)
-    
     // Check if any filter is active
     const hasBasicFilters = Object.values(filters).some(f => f)
     const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
@@ -276,6 +258,7 @@ export default function Client2Module() {
       }
       
       // Return cards based on filtered data - always show all 18 cards
+      // API returns percentage values when showPercent=true
       return [
         { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
         { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
@@ -286,14 +269,14 @@ export default function Client2Module() {
         { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
         { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
         { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
-        { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(showPercent ? computedPercentageTotals.dailyDeposit : t.dailyDeposit), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyDeposit : t.dailyDeposit },
-        { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(showPercent ? computedPercentageTotals.dailyWithdrawal : t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyWithdrawal : t.dailyWithdrawal },
-        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
+        { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit },
+        { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: t.dailyWithdrawal },
+        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
         { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
         { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
         { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
         { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
-        { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(showPercent ? computedPercentageTotals.lifetimePnL : t.lifetimePnL), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.lifetimePnL : t.lifetimePnL },
+        { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(t.lifetimePnL), unit: showPercent ? '%' : 'USD', numericValue: t.lifetimePnL },
         { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
       ]
     }
@@ -313,12 +296,12 @@ export default function Client2Module() {
       { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0), unit: 'USD', numericValue: t.dailyBonusOut || 0 },
       { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0), unit: 'USD', numericValue: t.dailyCreditIn || 0 },
       { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0), unit: 'USD', numericValue: t.dailyCreditOut || 0 },
-      { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(showPercent ? computedPercentageTotals.dailyDeposit : (t.dailyDeposit || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyDeposit : (t.dailyDeposit || 0) },
+      { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(t.dailyDeposit || 0), unit: showPercent ? '%' : 'USD', numericValue: t.dailyDeposit || 0 },
       { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0), unit: 'USD', numericValue: t.dailyPnL || 0 },
       { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
       { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
-      { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(showPercent ? computedPercentageTotals.dailyWithdrawal : (t.dailyWithdrawal || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyWithdrawal : (t.dailyWithdrawal || 0) },
-      { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
+      { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: showPercent ? '%' : 'USD', numericValue: t.dailyWithdrawal || 0 },
+      { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: showPercent ? '%' : 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
       { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
       { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
       { label: 'Floating P/L', value: formatNum(t.floating || 0), unit: 'USD', numericValue: t.floating || 0 },
@@ -328,7 +311,7 @@ export default function Client2Module() {
       { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
       { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
       { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
-      { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(showPercent ? computedPercentageTotals.lifetimePnL : (t.lifetimePnL || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.lifetimePnL : (t.lifetimePnL || 0) },
+      { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0), unit: showPercent ? '%' : 'USD', numericValue: t.lifetimePnL || 0 },
       { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
       { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
       { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
@@ -371,7 +354,7 @@ export default function Client2Module() {
       { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
       { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
     ]
-  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent, computedPercentageTotals])
+  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent])
 
   // Initialize and reconcile saved card order whenever cards change
   useEffect(() => {
@@ -738,10 +721,7 @@ export default function Client2Module() {
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
               </button>
               <button
-                onClick={() => {
-                  console.log('[Client2Module] Percentage button clicked. Current:', showPercent, '-> New:', !showPercent)
-                  setShowPercent((v) => !v)
-                }}
+                onClick={() => setShowPercent((v) => !v)}
                 className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#ECECEC] hover:bg-gray-50'
                 }`}
