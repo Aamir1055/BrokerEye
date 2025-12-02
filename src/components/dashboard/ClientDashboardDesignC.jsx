@@ -152,6 +152,23 @@ export default function ClientDashboardDesignC() {
   const [searchInput, setSearchInput] = useState('')
   const [showViewAllModal, setShowViewAllModal] = useState(false)
   const [viewAllCards, setViewAllCards] = useState([])
+  // Persistent card order for mobile face cards
+  const [cardOrder, setCardOrder] = useState([])
+  const CARD_ORDER_KEY = 'client-dashboard-c-order'
+  // Pointer-based drag support (works on touch and mouse)
+  const [dragStartLabel, setDragStartLabel] = useState(null)
+
+  const swapOrder = (fromLabel, toLabel) => {
+    if (!fromLabel || !toLabel || fromLabel === toLabel) return
+    const fromIdx = cardOrder.indexOf(fromLabel)
+    const toIdx = cardOrder.indexOf(toLabel)
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+    const newOrder = [...cardOrder]
+    const [moved] = newOrder.splice(fromIdx, 1)
+    newOrder.splice(toIdx, 0, moved)
+    setCardOrder(newOrder)
+    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+  }
 
   // Filter clients based on applied filters
   // Desktop-style search logic for mobile
@@ -546,49 +563,96 @@ export default function ClientDashboardDesignC() {
     const stats = calculateStats()
     
     if (showPercent) {
-      // Show percent for all face cards (match desktop logic)
+      // Show percent for all face cards - comprehensive mapping
       const sum = (key) => Array.isArray(dataToUse) ? dataToUse.reduce((acc, c) => acc + (Number(c?.[key]) || 0), 0) : 0;
-      const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const getNumericValue = (key) => sum(key);
       return [
-        { label: 'Total Balance', value: fmt(sum('balance_percentage')), unit: '%' },
-        { label: 'Total Credit', value: fmt(sum('credit_percentage')), unit: '%' },
-        { label: 'TOTAL EQUITY', value: fmt(sum('equity_percentage')), unit: '%' },
-        { label: 'PNL', value: fmt(sum('pnl_percentage')), unit: '%' },
-        { label: 'Floating Profit', value: fmt(sum('profit_percentage')), unit: '%' },
-        { label: 'Daily Deposit', value: fmt(sum('dailyDeposit_percentage')), unit: '%' },
-        { label: 'Daily Withdrawal', value: fmt(sum('dailyWithdrawal_percentage')), unit: '%' },
-        { label: 'DAILY PnL', value: fmt(sum('dailyPnL_percentage')), unit: '%' },
-        { label: 'This Week PnL', value: fmt(sum('thisWeekPnL_percentage')), unit: '%' },
-        { label: 'Monthly EQuity', value: fmt(sum('thisMonthPnL_percentage')), unit: '%' },
-        { label: 'LIFETIME PnL', value: fmt(sum('lifetimePnL_percentage')), unit: '%' },
-        // Add more if needed for other face cards
+        // Core Metrics %
+        { label: 'Total Clients', value: String(stats?.totalClients || 0), unit: 'Count', numericValue: stats?.totalClients || 0 },
+        { label: 'Total Balance', value: fmt(sum('balance_percentage')), unit: '%', numericValue: getNumericValue('balance_percentage') },
+        { label: 'Total Credit', value: fmt(sum('credit_percentage')), unit: '%', numericValue: getNumericValue('credit_percentage') },
+        { label: 'TOTAL EQUITY', value: fmt(sum('equity_percentage')), unit: '%', numericValue: getNumericValue('equity_percentage') },
+        { label: 'PNL', value: fmt(sum('pnl_percentage')), unit: '%', numericValue: getNumericValue('pnl_percentage') },
+        { label: 'Floating Profit', value: fmt(sum('profit_percentage')), unit: '%', numericValue: getNumericValue('profit_percentage') },
+        
+        // Daily Metrics %
+        { label: 'Daily Deposit', value: fmt(sum('dailyDeposit_percentage')), unit: '%', numericValue: getNumericValue('dailyDeposit_percentage') },
+        { label: 'Daily Withdrawal', value: fmt(sum('dailyWithdrawal_percentage')), unit: '%', numericValue: getNumericValue('dailyWithdrawal_percentage') },
+        { label: 'DAILY PnL', value: fmt(sum('dailyPnL_percentage')), unit: '%', numericValue: getNumericValue('dailyPnL_percentage') },
+        { label: 'This Week PnL', value: fmt(sum('thisWeekPnL_percentage')), unit: '%', numericValue: getNumericValue('thisWeekPnL_percentage') },
+        { label: 'Monthly EQuity', value: fmt(sum('thisMonthPnL_percentage')), unit: '%', numericValue: getNumericValue('thisMonthPnL_percentage') },
+        { label: 'LIFETIME PnL', value: fmt(sum('lifetimePnL_percentage')), unit: '%', numericValue: getNumericValue('lifetimePnL_percentage') },
+        
+        // Net Calculations % (calculate from percentage values)
+        { label: 'Daily Net D/W', value: fmt(sum('dailyDeposit_percentage') - sum('dailyWithdrawal_percentage')), unit: '%', numericValue: sum('dailyDeposit_percentage') - sum('dailyWithdrawal_percentage') },
+        { label: 'Book PnL', value: fmt(sum('lifetimePnL_percentage') + sum('profit_percentage')), unit: '%', numericValue: sum('lifetimePnL_percentage') + sum('profit_percentage') },
+        
+        // Rebate Metrics % (use API commission totals data)
+        { label: 'Total Rebate', value: fmt(commissionTotals?.total_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_commission_percentage || 0 },
+        { label: 'Available Rebate', value: fmt(commissionTotals?.total_available_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_available_commission_percentage || 0 },
+        { label: 'Blocked Rebate', value: fmt(sum('blockedCommission_percentage') || 0), unit: '%', numericValue: sum('blockedCommission_percentage') || 0 },
+        
+        // Weekly Metrics %
+        { label: 'Week Deposit', value: fmt(sum('weekDeposit_percentage') || sum('thisWeekDeposit_percentage')), unit: '%', numericValue: sum('weekDeposit_percentage') || sum('thisWeekDeposit_percentage') },
+        { label: 'Week Withdrawal', value: fmt(sum('weekWithdrawal_percentage') || sum('thisWeekWithdrawal_percentage')), unit: '%', numericValue: sum('weekWithdrawal_percentage') || sum('thisWeekWithdrawal_percentage') },
+        { label: 'NET Week DW', value: fmt((sum('weekDeposit_percentage') || sum('thisWeekDeposit_percentage')) - (sum('weekWithdrawal_percentage') || sum('thisWeekWithdrawal_percentage'))), unit: '%', numericValue: (sum('weekDeposit_percentage') || sum('thisWeekDeposit_percentage')) - (sum('weekWithdrawal_percentage') || sum('thisWeekWithdrawal_percentage')) },
+        
+        // Monthly Metrics %
+        { label: 'Monthly Deposit', value: fmt(sum('monthDeposit_percentage') || sum('thisMonthDeposit_percentage')), unit: '%', numericValue: sum('monthDeposit_percentage') || sum('thisMonthDeposit_percentage') },
+        { label: 'Monthly Withdrawal', value: fmt(sum('monthWithdrawal_percentage') || sum('thisMonthWithdrawal_percentage')), unit: '%', numericValue: sum('monthWithdrawal_percentage') || sum('thisMonthWithdrawal_percentage') },
+        { label: 'NET Monthly DW', value: fmt((sum('monthDeposit_percentage') || sum('thisMonthDeposit_percentage')) - (sum('monthWithdrawal_percentage') || sum('thisMonthWithdrawal_percentage'))), unit: '%', numericValue: (sum('monthDeposit_percentage') || sum('thisMonthDeposit_percentage')) - (sum('monthWithdrawal_percentage') || sum('thisMonthWithdrawal_percentage')) },
+        
+        // Lifetime Metrics %
+        { label: 'Lifetime Deposit', value: fmt(sum('lifetimeDeposit_percentage')), unit: '%', numericValue: sum('lifetimeDeposit_percentage') },
+        { label: 'Lifetime Withdrawal', value: fmt(sum('lifetimeWithdrawal_percentage')), unit: '%', numericValue: sum('lifetimeWithdrawal_percentage') },
+        { label: 'NET Lifetime DW', value: fmt(sum('lifetimeDeposit_percentage') - sum('lifetimeWithdrawal_percentage')), unit: '%', numericValue: sum('lifetimeDeposit_percentage') - sum('lifetimeWithdrawal_percentage') },
+        
+        // Rebate/Commission Metrics % (from API commission totals)
+        { label: 'Total Rebate', value: fmt(commissionTotals?.total_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_commission_percentage || 0 },
+        { label: 'Available Rebate', value: fmt(commissionTotals?.total_available_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_available_commission_percentage || 0 },
+        { label: 'Blocked Rebate', value: fmt(sum('blockedCommission_percentage') || 0), unit: '%', numericValue: sum('blockedCommission_percentage') || 0 },
+        { label: 'Available Rebate %', value: fmt(commissionTotals?.total_available_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_available_commission_percentage || 0 },
+        
+        // Bonus Metrics %
+        { label: 'Daily Bonus IN', value: fmt(sum('dailyBonusIn_percentage')), unit: '%', numericValue: sum('dailyBonusIn_percentage') },
+        { label: 'Daily Bonus OUT', value: fmt(sum('dailyBonusOut_percentage')), unit: '%', numericValue: sum('dailyBonusOut_percentage') },
+        { label: 'NET Daily Bonus', value: fmt(sum('dailyBonusIn_percentage') - sum('dailyBonusOut_percentage')), unit: '%', numericValue: sum('dailyBonusIn_percentage') - sum('dailyBonusOut_percentage') },
+        { label: 'Week Bonus IN', value: fmt(sum('weekBonusIn_percentage') || sum('thisWeekBonusIn_percentage')), unit: '%', numericValue: sum('weekBonusIn_percentage') || sum('thisWeekBonusIn_percentage') },
+        { label: 'Week Bonus OUT', value: fmt(sum('weekBonusOut_percentage') || sum('thisWeekBonusOut_percentage')), unit: '%', numericValue: sum('weekBonusOut_percentage') || sum('thisWeekBonusOut_percentage') },
+        { label: 'NET Week Bonus', value: fmt((sum('weekBonusIn_percentage') || sum('thisWeekBonusIn_percentage')) - (sum('weekBonusOut_percentage') || sum('thisWeekBonusOut_percentage'))), unit: '%', numericValue: (sum('weekBonusIn_percentage') || sum('thisWeekBonusIn_percentage')) - (sum('weekBonusOut_percentage') || sum('thisWeekBonusOut_percentage')) },
+        
+        // Credit Bonus Metrics %
+        { label: 'Credit Bonus IN', value: fmt(sum('creditBonusIn_percentage')), unit: '%', numericValue: sum('creditBonusIn_percentage') },
+        { label: 'Credit Bonus OUT', value: fmt(sum('creditBonusOut_percentage')), unit: '%', numericValue: sum('creditBonusOut_percentage') },
+        { label: 'NET Credit Bonus', value: fmt(sum('creditBonusIn_percentage') - sum('creditBonusOut_percentage')), unit: '%', numericValue: sum('creditBonusIn_percentage') - sum('creditBonusOut_percentage') },
       ];
     }
     return [
       // Core Metrics  
-      { label: 'Total Clients', value: String(stats?.totalClients || 0), unit: 'Count' },
-      { label: 'Total Balance', value: formatNum(stats?.totalBalance || 0), unit: 'USD' },
-      { label: 'Total Credit', value: formatNum(stats?.totalCredit || 0), unit: 'USD' },
-      { label: 'TOTAL EQUITY', value: formatNum(stats?.totalEquity || 0), unit: 'USD' },
-      { label: 'PNL', value: formatNum(stats?.totalPnl || stats?.dailyPnL || 0), unit: 'USD' },
-      { label: 'Floating Profit', value: formatNum(stats?.totalProfit || 0), unit: 'USD' },
+      { label: 'Total Clients', value: String(stats?.totalClients || 0), unit: 'Count', numericValue: stats?.totalClients || 0 },
+      { label: 'Total Balance', value: formatNum(stats?.totalBalance || 0), unit: 'USD', numericValue: stats?.totalBalance || 0 },
+      { label: 'Total Credit', value: formatNum(stats?.totalCredit || 0), unit: 'USD', numericValue: stats?.totalCredit || 0 },
+      { label: 'TOTAL EQUITY', value: formatNum(stats?.totalEquity || 0), unit: 'USD', numericValue: stats?.totalEquity || 0 },
+      { label: 'PNL', value: formatNum(stats?.totalPnl || stats?.dailyPnL || 0), unit: 'USD', numericValue: stats?.totalPnl || stats?.dailyPnL || 0 },
+      { label: 'Floating Profit', value: formatNum(stats?.totalProfit || 0), unit: 'USD', numericValue: stats?.totalProfit || 0 },
       
       // Daily Metrics
-      { label: 'Daily Deposit', value: formatNum(stats?.dailyDeposit || 0), unit: 'USD' },
-      { label: 'Daily Withdrawal', value: formatNum(stats?.dailyWithdrawal || 0), unit: 'USD' },
-      { label: 'DAILY PnL', value: formatNum(stats?.dailyPnL || 0), unit: 'USD' },
-      { label: 'This Week PnL', value: formatNum(stats?.thisWeekPnL || 0), unit: 'USD' },
-      { label: 'Monthly EQuity', value: formatNum(stats?.thisMonthPnL || 0), unit: 'USD' },
-      { label: 'LIFETIME PnL', value: formatNum(stats?.lifetimePnL || 0), unit: 'USD' },
+      { label: 'Daily Deposit', value: formatNum(stats?.dailyDeposit || 0), unit: 'USD', numericValue: stats?.dailyDeposit || 0 },
+      { label: 'Daily Withdrawal', value: formatNum(stats?.dailyWithdrawal || 0), unit: 'USD', numericValue: stats?.dailyWithdrawal || 0 },
+      { label: 'DAILY PnL', value: formatNum(stats?.dailyPnL || 0), unit: 'USD', numericValue: stats?.dailyPnL || 0 },
+      { label: 'This Week PnL', value: formatNum(stats?.thisWeekPnL || 0), unit: 'USD', numericValue: stats?.thisWeekPnL || 0 },
+      { label: 'Monthly EQuity', value: formatNum(stats?.thisMonthPnL || 0), unit: 'USD', numericValue: stats?.thisMonthPnL || 0 },
+      { label: 'LIFETIME PnL', value: formatNum(stats?.lifetimePnL || 0), unit: 'USD', numericValue: stats?.lifetimePnL || 0 },
       
       // Net Calculations  
-      { label: 'Daily Net D/W', value: formatNum((stats?.dailyDeposit || 0) - (stats?.dailyWithdrawal || 0)), unit: 'USD' },
-      { label: 'Book PnL', value: formatNum((stats?.lifetimePnL || 0) + (stats?.totalProfit || 0)), unit: 'USD' },
+      { label: 'Daily Net D/W', value: formatNum((stats?.dailyDeposit || 0) - (stats?.dailyWithdrawal || 0)), unit: 'USD', numericValue: (stats?.dailyDeposit || 0) - (stats?.dailyWithdrawal || 0) },
+      { label: 'Book PnL', value: formatNum((stats?.lifetimePnL || 0) + (stats?.totalProfit || 0)), unit: 'USD', numericValue: (stats?.lifetimePnL || 0) + (stats?.totalProfit || 0) },
       
-      // Rebate Metrics
-      { label: 'Total Rebate', value: formatNum(stats?.totalCommission), unit: 'USD' },
-      { label: 'Available Rebate', value: formatNum(stats?.availableCommission), unit: 'USD' },
-      { label: 'Blocked Rebate', value: formatNum(stats?.blockedCommission), unit: 'USD' },
+      // Rebate Metrics (from API commission totals)
+      { label: 'Total Rebate', value: formatNum(commissionTotals?.total_commission || 0), unit: 'USD', numericValue: commissionTotals?.total_commission || 0 },
+      { label: 'Available Rebate', value: formatNum(commissionTotals?.total_available_commission || 0), unit: 'USD', numericValue: commissionTotals?.total_available_commission || 0 },
+      { label: 'Blocked Rebate', value: formatNum(stats?.blockedCommission), unit: 'USD', numericValue: stats?.blockedCommission || 0 },
       
       // Weekly Metrics
       { label: 'Week Deposit', value: formatNum(stats?.weekDeposit), unit: 'USD' },
@@ -605,11 +669,11 @@ export default function ClientDashboardDesignC() {
       { label: 'Lifetime Withdrawal', value: formatNum(stats?.lifetimeWithdrawal), unit: 'USD' },
       { label: 'NET Lifetime DW', value: formatNum((stats?.lifetimeDeposit || 0) - (stats?.lifetimeWithdrawal || 0)), unit: 'USD' },
       
-      // Rebate/Commission Metrics
-      { label: 'Total Rebate', value: formatNum(stats?.totalCommission), unit: 'USD' },
-      { label: 'Available Rebate', value: formatNum(stats?.availableCommission), unit: 'USD' },
-      { label: 'Blocked Rebate', value: formatNum(stats?.blockedCommission), unit: 'USD' },
-      { label: 'Available Rebate %', value: formatNum(stats?.availableCommissionPercent), unit: '%' },
+      // Rebate/Commission Metrics (from API commission totals)
+      { label: 'Total Rebate', value: formatNum(commissionTotals?.total_commission || 0), unit: 'USD', numericValue: commissionTotals?.total_commission || 0 },
+      { label: 'Available Rebate', value: formatNum(commissionTotals?.total_available_commission || 0), unit: 'USD', numericValue: commissionTotals?.total_available_commission || 0 },
+      { label: 'Blocked Rebate', value: formatNum(stats?.blockedCommission), unit: 'USD', numericValue: stats?.blockedCommission || 0 },
+      { label: 'Available Rebate %', value: formatNum(commissionTotals?.total_available_commission_percentage || 0), unit: '%', numericValue: commissionTotals?.total_available_commission_percentage || 0 },
       
       // Bonus Metrics
       { label: 'Daily Bonus IN', value: formatNum(stats?.dailyBonusIn), unit: 'USD' },
@@ -632,6 +696,40 @@ export default function ClientDashboardDesignC() {
     ]
   }, [clientStats, clients, filteredClients, filters, showPercent, lastWsReceiveAt, selectedIB, ibMT5Accounts, activeGroupFilters, commissionTotals])
 
+  // Initialize and reconcile saved card order whenever cards change
+  useEffect(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return
+    const labels = Array.from(new Set(cards.map(c => c.label)))
+    let saved = []
+    try {
+      const raw = localStorage.getItem(CARD_ORDER_KEY)
+      saved = raw ? JSON.parse(raw) : []
+    } catch {}
+
+    let order = Array.isArray(saved) && saved.length > 0
+      ? saved.filter(l => labels.includes(l))
+      : [...labels]
+
+    // Append any new labels not in saved order
+    labels.forEach(l => { if (!order.includes(l)) order.push(l) })
+
+    // If order differs, update state and persist
+    const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
+    if (changed) {
+      setCardOrder(order)
+      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(order)) } catch {}
+    }
+  }, [cards])
+
+  // Order cards based on saved order
+  const orderedCards = useMemo(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return []
+    if (!Array.isArray(cardOrder) || cardOrder.length === 0) return cards
+    const firstMap = new Map()
+    for (const c of cards) { if (!firstMap.has(c.label)) firstMap.set(c.label, c) }
+    return cardOrder.map(l => firstMap.get(l)).filter(Boolean)
+  }, [cards, cardOrder])
+
   // Debug: Log when WebSocket data updates
   useEffect(() => {
     if (lastWsReceiveAt) {
@@ -651,29 +749,29 @@ export default function ClientDashboardDesignC() {
       const cardWidth = 150 + 8 // card width + gap
       const cardsPerScreen = 2
       const index = Math.round(scrollLeft / (cardWidth * cardsPerScreen))
-      setActiveCardIndex(Math.min(index, Math.ceil(cards.length / cardsPerScreen) - 1))
+      setActiveCardIndex(Math.min(index, Math.ceil(orderedCards.length / cardsPerScreen) - 1))
     }
 
     carousel.addEventListener('scroll', handleScroll)
     return () => carousel.removeEventListener('scroll', handleScroll)
-  }, [cards.length])
+  }, [orderedCards.length])
 
   // View All handler: open modal showing all cards
   useEffect(() => {
     if (viewAllRef.current) {
       viewAllRef.current.onclick = () => {
-        setViewAllCards(cards)
+        setViewAllCards(orderedCards)
         setShowViewAllModal(true)
       }
     }
-  }, [cards])
+  }, [orderedCards])
 
   // Update viewAllCards when cards change and modal is open
   useEffect(() => {
     if (showViewAllModal) {
-      setViewAllCards(cards)
+      setViewAllCards(orderedCards)
     }
-  }, [cards, showViewAllModal])
+  }, [orderedCards, showViewAllModal])
 
   // Navigate to next page
   const goToNextPage = () => {
@@ -1042,23 +1140,33 @@ export default function ClientDashboardDesignC() {
           ref={carouselRef}
           className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
         >
-          {cards.map((card, i) => (
+          {orderedCards.map((card, i) => (
             <div 
               key={i}
+              data-label={card.label}
               draggable="true"
-              onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+              onDragStart={(e) => {
+                try { e.dataTransfer.setData('cardLabel', card.label) } catch {}
+              }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
-                if (fromIndex !== i) {
-                  const newCards = [...cards];
-                  const [movedCard] = newCards.splice(fromIndex, 1);
-                  newCards.splice(i, 0, movedCard);
-                  // Update state if you have card order state
-                }
+                let fromLabel = ''
+                try { fromLabel = e.dataTransfer.getData('cardLabel') } catch {}
+                const toLabel = card.label
+                swapOrder(fromLabel, toLabel)
               }}
-              className="min-w-[125px] w-[125px] h-[45px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+              onPointerDown={(e) => {
+                setDragStartLabel(card.label)
+                try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
+              }}
+              onPointerUp={(e) => {
+                const toLabel = card.label
+                if (dragStartLabel) swapOrder(dragStartLabel, toLabel)
+                setDragStartLabel(null)
+              }}
+              onPointerCancel={() => setDragStartLabel(null)}
+              className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
             >
               <div className="flex items-start justify-between">
                 <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>
@@ -1070,10 +1178,21 @@ export default function ClientDashboardDesignC() {
                 </div>
               </div>
               <div className="flex items-baseline gap-[4px]">
-                <span className={`text-[11px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
-                {/* Increase font size to 12.5px */}
-                </span>
-                <span className={`text-[12.5px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+                <span className={`text-[14px] font-bold leading-[16px] tracking-[-0.01em] flex items-center gap-1 ${
+                  card.numericValue > 0 ? 'text-[#16A34A]' : 
+                  card.numericValue < 0 ? 'text-[#DC2626]' : 
+                  'text-[#000000]'
+                }`}>
+                  {card.numericValue > 0 && (
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                      <path d="M8 12L2 4H14L8 12Z" fill="currentColor" transform="rotate(180 8 8)"/>
+                    </svg>
+                  )}
+                  {card.numericValue < 0 && (
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                      <path d="M8 12L2 4H14L8 12Z" fill="currentColor"/>
+                    </svg>
+                  )}
                   {card.value === '' || card.value === undefined ? '0.00' : card.value}
                 </span>
                 <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>
@@ -1494,7 +1613,12 @@ export default function ClientDashboardDesignC() {
             </div>
             <button 
               onClick={() => {
-                setViewAllCards(cards)
+                const labels = Array.from(new Set((Array.isArray(cards) ? cards : []).map(c => c.label)))
+                setCardOrder(labels)
+                try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(labels)) } catch {}
+                const firstMap = new Map()
+                for (const c of (Array.isArray(cards) ? cards : [])) { if (!firstMap.has(c.label)) firstMap.set(c.label, c) }
+                setViewAllCards(labels.map(l => firstMap.get(l)).filter(Boolean))
               }}
               className="text-blue-600 text-sm font-medium"
             >
@@ -1507,38 +1631,75 @@ export default function ClientDashboardDesignC() {
             {viewAllCards.map((card, i) => (
               <div
                 key={i}
+                data-label={card.label}
                 draggable="true"
-                onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+                onDragStart={(e) => {
+                  try { e.dataTransfer.setData('cardLabel', card.label) } catch {}
+                }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
-                  if (fromIndex !== i) {
-                    const newCards = [...viewAllCards];
-                    const [movedCard] = newCards.splice(fromIndex, 1);
-                    newCards.splice(i, 0, movedCard);
-                    setViewAllCards(newCards);
-                  }
+                  let fromLabel = ''
+                  try { fromLabel = e.dataTransfer.getData('cardLabel') } catch {}
+                  const toLabel = card.label
+                  if (!fromLabel || !toLabel || fromLabel === toLabel) return
+                  const fromIdx = cardOrder.indexOf(fromLabel)
+                  const toIdx = cardOrder.indexOf(toLabel)
+                  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+                  const newOrder = [...cardOrder]
+                  const [moved] = newOrder.splice(fromIdx, 1)
+                  newOrder.splice(toIdx, 0, moved)
+                  setCardOrder(newOrder)
+                  try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+                  const map = new Map(orderedCards.map(c => [c.label, c]))
+                  setViewAllCards(newOrder.map(l => map.get(l)).filter(Boolean))
                 }}
+                onPointerDown={(e) => {
+                  setDragStartLabel(card.label)
+                  try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
+                }}
+                onPointerUp={(e) => {
+                  const toLabel = card.label
+                  if (dragStartLabel && toLabel && dragStartLabel !== toLabel) {
+                    const fromIdx = cardOrder.indexOf(dragStartLabel)
+                    const toIdx = cardOrder.indexOf(toLabel)
+                    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+                      const newOrder = [...cardOrder]
+                      const [moved] = newOrder.splice(fromIdx, 1)
+                      newOrder.splice(toIdx, 0, moved)
+                      setCardOrder(newOrder)
+                      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+                      const map = new Map(orderedCards.map(c => [c.label, c]))
+                      setViewAllCards(newOrder.map(l => map.get(l)).filter(Boolean))
+                    }
+                  }
+                  setDragStartLabel(null)
+                }}
+                onPointerCancel={() => setDragStartLabel(null)}
                 className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move active:scale-95 transition-transform"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="text-xs font-medium text-gray-600 uppercase mb-1">{card.label}</div>
                     <div className="flex items-baseline gap-1.5">
-                      <span className={`text-xl font-bold ${card.value && card.value.toString().includes('-') ? 'text-red-600' : 'text-black'}`}>
+                      <span className={`text-xl font-bold flex items-center gap-1.5 ${
+                        card.numericValue > 0 ? 'text-[#16A34A]' : 
+                        card.numericValue < 0 ? 'text-[#DC2626]' : 
+                        'text-[#000000]'
+                      }`}>
+                        {card.numericValue > 0 && (
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                            <path d="M8 12L2 4H14L8 12Z" fill="currentColor" transform="rotate(180 8 8)"/>
+                          </svg>
+                        )}
+                        {card.numericValue < 0 && (
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+                            <path d="M8 12L2 4H14L8 12Z" fill="currentColor"/>
+                          </svg>
+                        )}
                         {card.value === '' || card.value === undefined ? '0.00' : card.value}
                       </span>
-                      {card.value && !card.value.toString().includes('-') && card.value !== '0' && card.value !== '0.00' && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-green-500">
-                          <path d="M7 14L12 9L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                      {card.value && card.value.toString().includes('-') && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-red-500">
-                          <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
+                      <span className="text-xs font-normal text-gray-500 uppercase">{card.unit}</span>
                     </div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
