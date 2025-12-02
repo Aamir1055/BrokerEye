@@ -162,40 +162,6 @@ export default function Client2Module() {
     return () => clearInterval(interval)
   }, [fetchClients])
 
-  // Initialize and reconcile saved card order whenever cards change
-  useEffect(() => {
-    if (!Array.isArray(cards) || cards.length === 0) return
-    const labels = Array.from(new Set(cards.map(c => c.label)))
-    let saved = []
-    try {
-      const raw = localStorage.getItem(CARD_ORDER_KEY)
-      saved = raw ? JSON.parse(raw) : []
-    } catch {}
-
-    let order = Array.isArray(saved) && saved.length > 0
-      ? saved.filter(l => labels.includes(l))
-      : [...labels]
-
-    // Append any new labels not in saved order
-    labels.forEach(l => { if (!order.includes(l)) order.push(l) })
-
-    // If order differs, update state and persist
-    const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
-    if (changed) {
-      setCardOrder(order)
-      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(order)) } catch {}
-    }
-  }, [cards])
-
-  // Order cards based on saved order
-  const orderedCards = useMemo(() => {
-    if (!Array.isArray(cards) || cards.length === 0) return []
-    if (!Array.isArray(cardOrder) || cardOrder.length === 0) return cards
-    const firstMap = new Map()
-    for (const c of cards) { if (!firstMap.has(c.label)) firstMap.set(c.label, c) }
-    return cardOrder.map(l => firstMap.get(l)).filter(Boolean)
-  }, [cards, cardOrder])
-
   // Filter clients based on applied filters
   const getFilteredClients = () => {
     if (!Array.isArray(clients)) return []
@@ -386,6 +352,40 @@ export default function Client2Module() {
       { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
     ]
   }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput])
+
+  // Initialize and reconcile saved card order whenever cards change
+  useEffect(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return
+    const labels = Array.from(new Set(cards.map(c => c.label)))
+    let saved = []
+    try {
+      const raw = localStorage.getItem(CARD_ORDER_KEY)
+      saved = raw ? JSON.parse(raw) : []
+    } catch {}
+
+    let order = Array.isArray(saved) && saved.length > 0
+      ? saved.filter(l => labels.includes(l))
+      : [...labels]
+
+    // Append any new labels not in saved order
+    labels.forEach(l => { if (!order.includes(l)) order.push(l) })
+
+    // If order differs, update state and persist
+    const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
+    if (changed) {
+      setCardOrder(order)
+      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(order)) } catch {}
+    }
+  }, [cards])
+
+  // Order cards based on saved order
+  const orderedCards = useMemo(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return []
+    if (!Array.isArray(cardOrder) || cardOrder.length === 0) return cards
+    const firstMap = new Map()
+    for (const c of cards) { if (!firstMap.has(c.label)) firstMap.set(c.label, c) }
+    return cardOrder.map(l => firstMap.get(l)).filter(Boolean)
+  }, [cards, cardOrder])
 
   // Calculate totals for table footer
   const clientStats = {
