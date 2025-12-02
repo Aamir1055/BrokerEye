@@ -131,13 +131,14 @@ export default function Client2Module() {
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
 
   // Fetch clients data via API
-  const fetchClients = useCallback(async () => {
+  const fetchClients = useCallback(async (overridePercent = null) => {
     try {
+      const usePercent = overridePercent !== null ? overridePercent : showPercent
       // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients({
         page: 1,
         limit: 10000,
-        percentage: showPercent
+        percentage: usePercent
       })
       
       // Extract data from response.data.data structure
@@ -721,7 +722,12 @@ export default function Client2Module() {
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
               </button>
               <button
-                onClick={() => setShowPercent((v) => !v)}
+                onClick={() => {
+                  const next = !showPercent
+                  setShowPercent(next)
+                  // Immediately refetch with the next percentage state
+                  fetchClients(next)
+                }}
                 className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#ECECEC] hover:bg-gray-50'
                 }`}
