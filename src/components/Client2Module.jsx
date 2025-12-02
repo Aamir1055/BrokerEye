@@ -160,14 +160,14 @@ export default function Client2Module() {
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
-  }, [showPercent, filters, selectedIB, getActiveGroupFilter])
+  }, [showPercent, filters, selectedIB, getActiveGroupFilter, currentPage])
 
   // Initial fetch and periodic refresh every 2 seconds
   useEffect(() => {
     fetchClients()
     const interval = setInterval(fetchClients, 2000) // Refresh every 2 seconds
     return () => clearInterval(interval)
-  }, [fetchClients, currentPage, filters, selectedIB])
+  }, [fetchClients])
 
   // Filter clients based on applied filters
   const getFilteredClients = () => {
