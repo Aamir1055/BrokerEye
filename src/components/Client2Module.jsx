@@ -40,7 +40,23 @@ export default function Client2Module() {
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
   const [showViewAllModal, setShowViewAllModal] = useState(false)
-  const [viewAllCards, setViewAllCards] = useState([])
+  // Persistent card order for mobile face cards
+  const [cardOrder, setCardOrder] = useState([])
+  const CARD_ORDER_KEY = 'client2-module-order'
+  // Pointer-based drag support (works on touch and mouse)
+  const [dragStartLabel, setDragStartLabel] = useState(null)
+
+  const swapOrder = (fromLabel, toLabel) => {
+    if (!fromLabel || !toLabel || fromLabel === toLabel) return
+    const fromIdx = cardOrder.indexOf(fromLabel)
+    const toIdx = cardOrder.indexOf(toLabel)
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+    const newOrder = [...cardOrder]
+    const [moved] = newOrder.splice(fromIdx, 1)
+    newOrder.splice(toIdx, 0, moved)
+    setCardOrder(newOrder)
+    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+  }
   
   // API data state
   const [clients, setClients] = useState([])
@@ -133,76 +149,76 @@ export default function Client2Module() {
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
       
-      // Update face cards directly from API response
+      // Update face cards directly from API response with numericValue for arrows
       setCards([
-        { label: 'Total Clients', value: formatNum(data.total || 0) },
-        { label: 'Assets', value: formatNum(t.assets || 0) },
-        { label: 'Balance', value: formatNum(t.balance || 0) },
-        { label: 'Blocked Commission', value: formatNum(t.blockedCommission || 0) },
-        { label: 'Blocked Profit', value: formatNum(t.blockedProfit || 0) },
-        { label: 'Commission', value: formatNum(t.commission || 0) },
-        { label: 'Credit', value: formatNum(t.credit || 0) },
-        { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn || 0) },
-        { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0) },
-        { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0) },
-        { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0) },
-        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0) },
-        { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0) },
-        { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0) },
-        { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0) },
-        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0) },
-        { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)) },
-        { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)) },
-        { label: 'Equity', value: formatNum(t.equity || 0) },
-        { label: 'Floating P/L', value: formatNum(t.floating || 0) },
-        { label: 'Liabilities', value: formatNum(t.liabilities || 0) },
-        { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn || 0) },
-        { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut || 0) },
-        { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0) },
-        { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0) },
-        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0) },
-        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0) },
-        { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0) },
-        { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0) },
-        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0) },
-        { label: 'Margin', value: formatNum(t.margin || 0) },
-        { label: 'Margin Free', value: formatNum(t.marginFree || 0) },
-        { label: 'Margin Initial', value: formatNum(t.marginInitial || 0) },
-        { label: 'Margin Level', value: formatNum(t.marginLevel || 0) },
-        { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance || 0) },
-        { label: 'P&L', value: formatNum(t.pnl || 0) },
-        { label: 'Previous Equity', value: formatNum(t.previousEquity || 0) },
-        { label: 'Profit', value: formatNum(t.profit || 0) },
-        { label: 'SO Equity', value: formatNum(t.soEquity || 0) },
-        { label: 'SO Level', value: formatNum(t.soLevel || 0) },
-        { label: 'SO Margin', value: formatNum(t.soMargin || 0) },
-        { label: 'Storage', value: formatNum(t.storage || 0) },
-        { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn || 0) },
-        { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut || 0) },
-        { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn || 0) },
-        { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut || 0) },
-        { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit || 0) },
-        { label: 'This Month P&L', value: formatNum(t.thisMonthPnL || 0) },
-        { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn || 0) },
-        { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut || 0) },
-        { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal || 0) },
-        { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn || 0) },
-        { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut || 0) },
-        { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn || 0) },
-        { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut || 0) },
-        { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit || 0) },
-        { label: 'This Week P&L', value: formatNum(t.thisWeekPnL || 0) },
-        { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn || 0) },
-        { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut || 0) },
-        { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal || 0) },
-        { label: 'NET Week Bonus', value: formatNum((t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0)) },
-        { label: 'NET Week DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)) },
-        { label: 'NET Monthly Bonus', value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)) },
-        { label: 'NET Monthly DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)) },
-        { label: 'NET Lifetime Bonus', value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)) },
-        { label: 'NET Lifetime DW', value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)) },
-        { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)) },
-        { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)) }
+        { label: 'Total Clients', value: formatNum(data.total || 0), unit: 'Count', numericValue: data.total || 0 },
+        { label: 'Assets', value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
+        { label: 'Balance', value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
+        { label: 'Blocked Commission', value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
+        { label: 'Blocked Profit', value: formatNum(t.blockedProfit || 0), unit: 'USD', numericValue: t.blockedProfit || 0 },
+        { label: 'Commission', value: formatNum(t.commission || 0), unit: 'USD', numericValue: t.commission || 0 },
+        { label: 'Credit', value: formatNum(t.credit || 0), unit: 'USD', numericValue: t.credit || 0 },
+        { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn || 0), unit: 'USD', numericValue: t.dailyBonusIn || 0 },
+        { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0), unit: 'USD', numericValue: t.dailyBonusOut || 0 },
+        { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0), unit: 'USD', numericValue: t.dailyCreditIn || 0 },
+        { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0), unit: 'USD', numericValue: t.dailyCreditOut || 0 },
+        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0), unit: 'USD', numericValue: t.dailyDeposit || 0 },
+        { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0), unit: 'USD', numericValue: t.dailyPnL || 0 },
+        { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
+        { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
+        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: 'USD', numericValue: t.dailyWithdrawal || 0 },
+        { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
+        { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
+        { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
+        { label: 'Floating P/L', value: formatNum(t.floating || 0), unit: 'USD', numericValue: t.floating || 0 },
+        { label: 'Liabilities', value: formatNum(t.liabilities || 0), unit: 'USD', numericValue: t.liabilities || 0 },
+        { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn || 0), unit: 'USD', numericValue: t.lifetimeBonusIn || 0 },
+        { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut || 0), unit: 'USD', numericValue: t.lifetimeBonusOut || 0 },
+        { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
+        { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
+        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
+        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
+        { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
+        { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
+        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
+        { label: 'Margin', value: formatNum(t.margin || 0), unit: 'USD', numericValue: t.margin || 0 },
+        { label: 'Margin Free', value: formatNum(t.marginFree || 0), unit: 'USD', numericValue: t.marginFree || 0 },
+        { label: 'Margin Initial', value: formatNum(t.marginInitial || 0), unit: 'USD', numericValue: t.marginInitial || 0 },
+        { label: 'Margin Level', value: formatNum(t.marginLevel || 0), unit: '%', numericValue: t.marginLevel || 0 },
+        { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance || 0), unit: 'USD', numericValue: t.marginMaintenance || 0 },
+        { label: 'P&L', value: formatNum(t.pnl || 0), unit: 'USD', numericValue: t.pnl || 0 },
+        { label: 'Previous Equity', value: formatNum(t.previousEquity || 0), unit: 'USD', numericValue: t.previousEquity || 0 },
+        { label: 'Profit', value: formatNum(t.profit || 0), unit: 'USD', numericValue: t.profit || 0 },
+        { label: 'SO Equity', value: formatNum(t.soEquity || 0), unit: 'USD', numericValue: t.soEquity || 0 },
+        { label: 'SO Level', value: formatNum(t.soLevel || 0), unit: '%', numericValue: t.soLevel || 0 },
+        { label: 'SO Margin', value: formatNum(t.soMargin || 0), unit: 'USD', numericValue: t.soMargin || 0 },
+        { label: 'Storage', value: formatNum(t.storage || 0), unit: 'USD', numericValue: t.storage || 0 },
+        { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn || 0), unit: 'USD', numericValue: t.thisMonthBonusIn || 0 },
+        { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut || 0), unit: 'USD', numericValue: t.thisMonthBonusOut || 0 },
+        { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn || 0), unit: 'USD', numericValue: t.thisMonthCreditIn || 0 },
+        { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut || 0), unit: 'USD', numericValue: t.thisMonthCreditOut || 0 },
+        { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit || 0), unit: 'USD', numericValue: t.thisMonthDeposit || 0 },
+        { label: 'This Month P&L', value: formatNum(t.thisMonthPnL || 0), unit: 'USD', numericValue: t.thisMonthPnL || 0 },
+        { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationIn || 0 },
+        { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationOut || 0 },
+        { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal || 0), unit: 'USD', numericValue: t.thisMonthWithdrawal || 0 },
+        { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn || 0), unit: 'USD', numericValue: t.thisWeekBonusIn || 0 },
+        { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut || 0), unit: 'USD', numericValue: t.thisWeekBonusOut || 0 },
+        { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn || 0), unit: 'USD', numericValue: t.thisWeekCreditIn || 0 },
+        { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut || 0), unit: 'USD', numericValue: t.thisWeekCreditOut || 0 },
+        { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit || 0), unit: 'USD', numericValue: t.thisWeekDeposit || 0 },
+        { label: 'This Week P&L', value: formatNum(t.thisWeekPnL || 0), unit: 'USD', numericValue: t.thisWeekPnL || 0 },
+        { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationIn || 0 },
+        { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationOut || 0 },
+        { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal || 0), unit: 'USD', numericValue: t.thisWeekWithdrawal || 0 },
+        { label: 'NET Week Bonus', value: formatNum((t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0)), unit: 'USD', numericValue: (t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0) },
+        { label: 'NET Week DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)), unit: 'USD', numericValue: (t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0) },
+        { label: 'NET Monthly Bonus', value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)), unit: 'USD', numericValue: (t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0) },
+        { label: 'NET Monthly DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)), unit: 'USD', numericValue: (t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0) },
+        { label: 'NET Lifetime Bonus', value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)), unit: 'USD', numericValue: (t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0) },
+        { label: 'NET Lifetime DW', value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
+        { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
+        { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
       ])
     } catch (error) {
       console.error('Failed to fetch clients:', error)
@@ -216,6 +232,40 @@ export default function Client2Module() {
     return () => clearInterval(interval)
   }, [fetchClients])
 
+  // Initialize and reconcile saved card order whenever cards change
+  useEffect(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return
+    const labels = Array.from(new Set(cards.map(c => c.label)))
+    let saved = []
+    try {
+      const raw = localStorage.getItem(CARD_ORDER_KEY)
+      saved = raw ? JSON.parse(raw) : []
+    } catch {}
+
+    let order = Array.isArray(saved) && saved.length > 0
+      ? saved.filter(l => labels.includes(l))
+      : [...labels]
+
+    // Append any new labels not in saved order
+    labels.forEach(l => { if (!order.includes(l)) order.push(l) })
+
+    // If order differs, update state and persist
+    const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
+    if (changed) {
+      setCardOrder(order)
+      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(order)) } catch {}
+    }
+  }, [cards])
+
+  // Order cards based on saved order
+  const orderedCards = useMemo(() => {
+    if (!Array.isArray(cards) || cards.length === 0) return []
+    if (!Array.isArray(cardOrder) || cardOrder.length === 0) return cards
+    const firstMap = new Map()
+    for (const c of cards) { if (!firstMap.has(c.label)) firstMap.set(c.label, c) }
+    return cardOrder.map(l => firstMap.get(l)).filter(Boolean)
+  }, [cards, cardOrder])
+
   // Filter clients based on applied filters
   const getFilteredClients = () => {
     if (!Array.isArray(clients)) return []
@@ -224,13 +274,15 @@ export default function Client2Module() {
     // Apply group filter first (if active)
     filtered = filterByActiveGroup(filtered, 'login', 'client2')
 
+    // Has Floating: exclude rows where floating == 0 (allow negative or positive, match desktop logic)
     if (filters.hasFloating) {
       filtered = filtered.filter(c => {
         const floating = Number(c.floating || c.profit || 0)
-        return Math.abs(floating) >= 0.01
+        return floating !== 0
       })
     }
 
+    // Has Credit: credit strictly greater than 0 (match desktop logic)
     if (filters.hasCredit) {
       filtered = filtered.filter(c => {
         const credit = Number(c.credit || 0)
@@ -238,10 +290,11 @@ export default function Client2Module() {
       })
     }
 
+    // No Deposit: lifetimeDeposit == 0 (match desktop logic)
     if (filters.noDeposit) {
       filtered = filtered.filter(c => {
-        const deposit = Number(c.dailyDeposit || c.lifetimeDeposit || 0)
-        return deposit === 0
+        const lifetimeDeposit = Number(c.lifetimeDeposit || 0)
+        return lifetimeDeposit === 0
       })
     }
 
@@ -305,18 +358,10 @@ export default function Client2Module() {
   useEffect(() => {
     if (viewAllRef.current) {
       viewAllRef.current.onclick = () => {
-        setViewAllCards(cards)
         setShowViewAllModal(true)
       }
     }
   }, [cards])
-
-  // Update viewAllCards when cards change and modal is open
-  useEffect(() => {
-    if (showViewAllModal) {
-      setViewAllCards(cards)
-    }
-  }, [cards, showViewAllModal])
 
   // Navigate to next page
   const goToNextPage = () => {
@@ -699,23 +744,26 @@ export default function Client2Module() {
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {cards.map((card, i) => (
+            {orderedCards.map((card, i) => (
               <div 
-                key={`${i}-${lastUpdateTime}`}
+                key={`${card.label}-${lastUpdateTime}`}
                 draggable="true"
-                onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+                onDragStart={(e) => e.dataTransfer.setData('cardLabel', card.label)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
-                  if (fromIndex !== i) {
-                    const newCards = [...cards];
-                    const [movedCard] = newCards.splice(fromIndex, 1);
-                    newCards.splice(i, 0, movedCard);
-                    setCards(newCards);
-                  }
+                  const fromLabel = e.dataTransfer.getData('cardLabel');
+                  swapOrder(fromLabel, card.label);
                 }}
-                className="min-w-[125px] w-[125px] h-[45px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                onPointerDown={() => setDragStartLabel(card.label)}
+                onPointerUp={(e) => {
+                  if (dragStartLabel && dragStartLabel !== card.label) {
+                    swapOrder(dragStartLabel, card.label);
+                  }
+                  setDragStartLabel(null);
+                }}
+                onPointerCancel={() => setDragStartLabel(null)}
+                className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
               >
                 <div className="flex items-start justify-between">
                   <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>
@@ -727,7 +775,22 @@ export default function Client2Module() {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-[4px]">
-                  <span className={`text-[12.5px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+                  {card.numericValue > 0 && (
+                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                      <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
+                    </svg>
+                  )}
+                  {card.numericValue < 0 && (
+                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                      <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
+                    </svg>
+                  )}
+                  {card.numericValue === 0 && (
+                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                      <polygon points="4,0 8,8 0,8" fill="#000000"/>
+                    </svg>
+                  )}
+                  <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
                     {card.value === '' || card.value === undefined ? '0.00' : card.value}
                   </span>
                   <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>
@@ -916,12 +979,6 @@ export default function Client2Module() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M4 20a8 8 0 0 1 16 0" stroke="#1F2937"/></svg>
                   </span>
                   <span className="text-[14px] text-[#111827]">IB Filter</span>
-                </button>
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsGroupOpen(true); }}>
-                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M17 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M3 20c0-3.866 3.582-7 8-7s8 3.134 8 7" stroke="#1F2937"/></svg>
-                  </span>
-                  <span className="text-[14px] text-[#111827]">Groups</span>
                 </button>
                 <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
                   <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
@@ -1228,7 +1285,10 @@ export default function Client2Module() {
               <span>Drag cards to reorder</span>
             </div>
             <button 
-              onClick={() => setViewAllCards(cards)}
+              onClick={() => {
+                localStorage.removeItem(CARD_ORDER_KEY);
+                setCardOrder([]);
+              }}
               className="text-blue-600 text-sm font-medium"
             >
               Reset order
@@ -1236,41 +1296,50 @@ export default function Client2Module() {
           </div>
 
           <div className="p-3 space-y-2">
-            {viewAllCards.map((card, i) => (
+            {orderedCards.map((card) => (
               <div
-                key={i}
+                key={card.label}
                 draggable="true"
-                onDragStart={(e) => e.dataTransfer.setData('cardIndex', i)}
+                onDragStart={(e) => e.dataTransfer.setData('cardLabel', card.label)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'));
-                  if (fromIndex !== i) {
-                    const newCards = [...viewAllCards];
-                    const [movedCard] = newCards.splice(fromIndex, 1);
-                    newCards.splice(i, 0, movedCard);
-                    setViewAllCards(newCards);
-                  }
+                  const fromLabel = e.dataTransfer.getData('cardLabel');
+                  swapOrder(fromLabel, card.label);
                 }}
+                onPointerDown={() => setDragStartLabel(card.label)}
+                onPointerUp={(e) => {
+                  if (dragStartLabel && dragStartLabel !== card.label) {
+                    swapOrder(dragStartLabel, card.label);
+                  }
+                  setDragStartLabel(null);
+                }}
+                onPointerCancel={() => setDragStartLabel(null)}
                 className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move active:scale-95 transition-transform"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="text-xs font-medium text-gray-600 uppercase mb-1">{card.label}</div>
                     <div className="flex items-baseline gap-1.5">
+                      {card.numericValue > 0 && (
+                        <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                          <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
+                        </svg>
+                      )}
+                      {card.numericValue < 0 && (
+                        <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                          <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
+                        </svg>
+                      )}
+                      {card.numericValue === 0 && (
+                        <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                          <polygon points="4,0 8,8 0,8" fill="#000000"/>
+                        </svg>
+                      )}
                       <span className={`text-xl font-bold ${card.value && card.value.toString().includes('-') ? 'text-red-600' : 'text-black'}`}>
                         {card.value === '' || card.value === undefined ? '0.00' : card.value}
                       </span>
-                      {card.value && !card.value.toString().includes('-') && card.value !== '0' && card.value !== '0.00' && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-green-500">
-                          <path d="M7 14L12 9L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                      {card.value && card.value.toString().includes('-') && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-red-500">
-                          <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
+                      <span className="text-gray-600 text-xs font-normal uppercase">{card.unit}</span>
                     </div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
