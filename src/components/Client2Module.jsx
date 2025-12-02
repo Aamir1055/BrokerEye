@@ -817,10 +817,6 @@ export default function Client2Module() {
 
         {/* Face Cards Carousel */}
         <div className="pb-2 pl-5">
-          <div className="text-[10px] text-gray-500 mb-1 flex items-center gap-2">
-            <span>Last Update: {new Date(lastUpdateTime).toLocaleTimeString()}</span>
-            {showPercent && <span className="text-blue-600 font-semibold">(Percentage Mode Active)</span>}
-          </div>
           <div 
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
