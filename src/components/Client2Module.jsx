@@ -790,7 +790,7 @@ export default function Client2Module() {
                       <polygon points="4,0 8,8 0,8" fill="#000000"/>
                     </svg>
                   )}
-                  <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${card.value && card.value.includes('-') ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
+                  <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${card.numericValue > 0 ? 'text-[#16A34A]' : card.numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
                     {card.value === '' || card.value === undefined ? '0.00' : card.value}
                   </span>
                   <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>
@@ -984,7 +984,7 @@ export default function Client2Module() {
                   <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="3" y="13" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="13" width="8" height="6" rx="1" stroke="#1F2937"/></svg>
                   </span>
-                  <span className="text-[14px] text-[#111827]">Login Groups</span>
+                  <span className="text-[14px] text-[#111827]">Groups</span>
                 </button>
               </div>
             </div>
@@ -1336,7 +1336,7 @@ export default function Client2Module() {
                           <polygon points="4,0 8,8 0,8" fill="#000000"/>
                         </svg>
                       )}
-                      <span className={`text-xl font-bold ${card.value && card.value.toString().includes('-') ? 'text-red-600' : 'text-black'}`}>
+                      <span className={`text-xl font-bold ${card.numericValue > 0 ? 'text-[#16A34A]' : card.numericValue < 0 ? 'text-[#DC2626]' : 'text-black'}`}>
                         {card.value === '' || card.value === undefined ? '0.00' : card.value}
                       </span>
                       <span className="text-gray-600 text-xs font-normal uppercase">{card.unit}</span>
