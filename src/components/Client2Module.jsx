@@ -136,10 +136,15 @@ export default function Client2Module() {
   const fetchClients = useCallback(async (overridePercent = null) => {
     try {
       const usePercent = overridePercent !== null ? overridePercent : showPercent
+      // Check if any filter is active to determine if we need all data
+      const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
+                               selectedIB || getActiveGroupFilter()
+      
       // Use searchClients to get totals data with percentage parameter
+      // Fetch all records if filters are active, otherwise paginate
       const response = await brokerAPI.searchClients({
-        page: currentPage,
-        limit: 100,
+        page: hasActiveFilters ? 1 : currentPage,
+        limit: hasActiveFilters ? 10000 : 100,
         percentage: usePercent
       })
       
@@ -148,8 +153,19 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const t = data.totals || {}
       
+      // Strip % from all numeric values in totals if they come as strings
+      const cleanTotals = {}
+      Object.keys(t).forEach(key => {
+        const val = t[key]
+        if (typeof val === 'string' && val.includes('%')) {
+          cleanTotals[key] = parseFloat(val.replace(/%/g, '').trim())
+        } else {
+          cleanTotals[key] = val
+        }
+      })
+      
       setClients(data.clients || [])
-      setTotals(t)
+      setTotals(cleanTotals)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
       
@@ -157,14 +173,14 @@ export default function Client2Module() {
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
-  }, [showPercent])
+  }, [showPercent, filters, selectedIB, getActiveGroupFilter])
 
   // Initial fetch and periodic refresh every 2 seconds
   useEffect(() => {
     fetchClients()
     const interval = setInterval(fetchClients, 2000) // Refresh every 2 seconds
     return () => clearInterval(interval)
-  }, [fetchClients, currentPage])
+  }, [fetchClients, currentPage, filters, selectedIB])
 
   // Filter clients based on applied filters
   const getFilteredClients = () => {
