@@ -10,7 +10,9 @@ import { useGroups } from '../contexts/GroupContext'
 import { brokerAPI } from '../services/api'
 
 const formatNum = (n) => {
-  const v = Number(n || 0)
+  // Strip any % sign from the value if present
+  const cleaned = typeof n === 'string' ? n.replace(/%/g, '').trim() : n
+  const v = Number(cleaned || 0)
   if (!isFinite(v)) return '0.00'
   return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
