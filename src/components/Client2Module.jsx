@@ -156,10 +156,10 @@ export default function Client2Module() {
     }
   }, [showPercent])
 
-  // Initial fetch and periodic refresh every 1 second
+  // Initial fetch and periodic refresh every 2 seconds
   useEffect(() => {
     fetchClients()
-    const interval = setInterval(fetchClients, 1000) // Refresh every 1 second
+    const interval = setInterval(fetchClients, 2000) // Refresh every 2 seconds
     return () => clearInterval(interval)
   }, [fetchClients])
 
@@ -1164,7 +1164,7 @@ export default function Client2Module() {
                   placeholder="Search Columns"
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-base font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[13px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <svg 
                   width="20" 

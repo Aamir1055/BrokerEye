@@ -1246,12 +1246,12 @@ const Client2Page = () => {
 
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
 
-  // Auto-refresh every 1 second to keep data updated (including filtered data) - desktop only
+  // Auto-refresh every 2 seconds to keep data updated (including filtered data) - desktop only
   useEffect(() => {
     if (isMobile) return
     const intervalId = setInterval(() => {
       fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
-    }, 1000) // 1 second refresh for real-time updates
+    }, 2000) // 2 second refresh for real-time updates
     return () => clearInterval(intervalId)
   }, [fetchClients, isMobile])
 
