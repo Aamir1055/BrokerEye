@@ -273,52 +273,31 @@ export default function Client2Module() {
         lifetimePnL: sum('lifetimePnL')
       }
       
-      // Return cards based on filtered data
-      if (showPercent) {
-        // Show percentage values
-        return [
-          { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
-          { label: 'Daily Deposit %', value: formatNum(computedPercentageTotals.dailyDeposit), unit: '%', numericValue: computedPercentageTotals.dailyDeposit },
-          { label: 'Daily Withdrawal %', value: formatNum(computedPercentageTotals.dailyWithdrawal), unit: '%', numericValue: computedPercentageTotals.dailyWithdrawal },
-          { label: 'Lifetime PnL %', value: formatNum(computedPercentageTotals.lifetimePnL), unit: '%', numericValue: computedPercentageTotals.lifetimePnL }
-        ]
-      } else {
-        // Show regular values
-        return [
-          { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
-          { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
-          { label: 'Balance', value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
-          { label: 'Credit', value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
-          { label: 'Equity', value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
-          { label: 'Floating P/L', value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
-          { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
-          { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
-          { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
-          { label: 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: 'USD', numericValue: t.dailyDeposit },
-          { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyWithdrawal },
-          { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
-          { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
-          { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
-          { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
-          { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
-          { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL), unit: 'USD', numericValue: t.lifetimePnL },
-          { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
-        ]
-      }
-    }
-    
-    // No filters, use API totals
-    const t = totals || {}
-    
-    if (showPercent) {
-      // Show percentage values from API
+      // Return cards based on filtered data - always show all 18 cards
       return [
-        { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
-        { label: 'Daily Deposit %', value: formatNum(computedPercentageTotals.dailyDeposit), unit: '%', numericValue: computedPercentageTotals.dailyDeposit },
-        { label: 'Daily Withdrawal %', value: formatNum(computedPercentageTotals.dailyWithdrawal), unit: '%', numericValue: computedPercentageTotals.dailyWithdrawal },
-        { label: 'Lifetime PnL %', value: formatNum(computedPercentageTotals.lifetimePnL), unit: '%', numericValue: computedPercentageTotals.lifetimePnL }
+        { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
+        { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
+        { label: 'Balance', value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
+        { label: 'Credit', value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
+        { label: 'Equity', value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
+        { label: 'Floating P/L', value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
+        { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
+        { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
+        { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
+        { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(showPercent ? computedPercentageTotals.dailyDeposit : t.dailyDeposit), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyDeposit : t.dailyDeposit },
+        { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(showPercent ? computedPercentageTotals.dailyWithdrawal : t.dailyWithdrawal), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyWithdrawal : t.dailyWithdrawal },
+        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
+        { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
+        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
+        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
+        { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
+        { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(showPercent ? computedPercentageTotals.lifetimePnL : t.lifetimePnL), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.lifetimePnL : t.lifetimePnL },
+        { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
       ]
     }
+    
+    // No filters, use API totals - always show all 69 cards with percentage toggle for specific fields
+    const t = totals || {}
     
     return [
       { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
@@ -332,11 +311,11 @@ export default function Client2Module() {
       { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0), unit: 'USD', numericValue: t.dailyBonusOut || 0 },
       { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0), unit: 'USD', numericValue: t.dailyCreditIn || 0 },
       { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0), unit: 'USD', numericValue: t.dailyCreditOut || 0 },
-      { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0), unit: 'USD', numericValue: t.dailyDeposit || 0 },
+      { label: showPercent ? 'Daily Deposit %' : 'Daily Deposit', value: formatNum(showPercent ? computedPercentageTotals.dailyDeposit : (t.dailyDeposit || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyDeposit : (t.dailyDeposit || 0) },
       { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0), unit: 'USD', numericValue: t.dailyPnL || 0 },
       { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
       { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
-      { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: 'USD', numericValue: t.dailyWithdrawal || 0 },
+      { label: showPercent ? 'Daily Withdrawal %' : 'Daily Withdrawal', value: formatNum(showPercent ? computedPercentageTotals.dailyWithdrawal : (t.dailyWithdrawal || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.dailyWithdrawal : (t.dailyWithdrawal || 0) },
       { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
       { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
       { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
@@ -347,7 +326,7 @@ export default function Client2Module() {
       { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
       { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
       { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
-      { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
+      { label: showPercent ? 'Lifetime PnL %' : 'Lifetime P&L', value: formatNum(showPercent ? computedPercentageTotals.lifetimePnL : (t.lifetimePnL || 0)), unit: showPercent ? '%' : 'USD', numericValue: showPercent ? computedPercentageTotals.lifetimePnL : (t.lifetimePnL || 0) },
       { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
       { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
       { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
