@@ -136,7 +136,7 @@ export default function Client2Module() {
       // Use searchClients to get totals data (same as Client2Page desktop)
       const response = await brokerAPI.searchClients({
         page: 1,
-        limit: 100
+        limit: 10000
       })
       
       // Extract data from response.data.data structure
@@ -878,7 +878,7 @@ export default function Client2Module() {
                 placeholder="Search" 
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#4B4B4B] placeholder:text-[#999999] bg-transparent font-outfit" 
+                className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#000000] placeholder:text-[#999999] bg-transparent font-outfit" 
               />
             </div>
             
