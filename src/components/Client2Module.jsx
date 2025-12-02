@@ -32,6 +32,7 @@ export default function Client2Module() {
   const [editingGroup, setEditingGroup] = useState(null)
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
+  const [columnSearch, setColumnSearch] = useState('')
   const columnDropdownRef = useRef(null)
   const columnSelectorButtonRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
@@ -62,7 +63,6 @@ export default function Client2Module() {
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
-  const [cards, setCards] = useState([])
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
 
   // Available columns for the table
@@ -131,6 +131,230 @@ export default function Client2Module() {
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
 
   // Fetch clients data via API
+  // Calculate cards from filtered clients (when filters active) or API totals (when no filters)
+  const cards = useMemo(() => {
+    // Check if any filter is active
+    const hasBasicFilters = Object.values(filters).some(f => f)
+    const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
+    const hasGroupFilter = getActiveGroupFilter('client2') != null
+    const isFiltered = hasBasicFilters || hasIBFilter || hasGroupFilter || (searchInput && searchInput.trim().length > 0)
+    
+    // If filtered, calculate from filteredClients; otherwise use API totals
+    if (isFiltered && Array.isArray(filteredClients)) {
+      const sum = (key) => filteredClients.reduce((acc, c) => {
+        const v = c[key]
+        if (v == null) return acc
+        if (typeof v === 'number' && Number.isFinite(v)) return acc + v
+        const n = Number(v)
+        return acc + (Number.isFinite(n) ? n : 0)
+      }, 0)
+      
+      const t = {
+        assets: sum('assets'),
+        balance: sum('balance'),
+        blockedCommission: sum('blockedCommission'),
+        blockedProfit: sum('blockedProfit'),
+        commission: sum('commission'),
+        credit: sum('credit'),
+        dailyBonusIn: sum('dailyBonusIn'),
+        dailyBonusOut: sum('dailyBonusOut'),
+        dailyCreditIn: sum('dailyCreditIn'),
+        dailyCreditOut: sum('dailyCreditOut'),
+        dailyDeposit: sum('dailyDeposit'),
+        dailyPnL: sum('dailyPnL'),
+        dailySOCompensationIn: sum('dailySOCompensationIn'),
+        dailySOCompensationOut: sum('dailySOCompensationOut'),
+        dailyWithdrawal: sum('dailyWithdrawal'),
+        equity: sum('equity'),
+        floating: sum('profit') || sum('floating'),
+        liabilities: sum('liabilities'),
+        lifetimeBonusIn: sum('lifetimeBonusIn'),
+        lifetimeBonusOut: sum('lifetimeBonusOut'),
+        lifetimeCreditIn: sum('lifetimeCreditIn'),
+        lifetimeCreditOut: sum('lifetimeCreditOut'),
+        lifetimeDeposit: sum('lifetimeDeposit'),
+        lifetimePnL: sum('lifetimePnL'),
+        lifetimeSOCompensationIn: sum('lifetimeSOCompensationIn'),
+        lifetimeSOCompensationOut: sum('lifetimeSOCompensationOut'),
+        lifetimeWithdrawal: sum('lifetimeWithdrawal'),
+        margin: sum('margin'),
+        marginFree: sum('marginFree'),
+        marginInitial: sum('marginInitial'),
+        marginLevel: sum('marginLevel'),
+        marginMaintenance: sum('marginMaintenance'),
+        pnl: sum('pnl'),
+        previousEquity: sum('previousEquity'),
+        profit: sum('profit'),
+        soEquity: sum('soEquity'),
+        soLevel: sum('soLevel'),
+        soMargin: sum('soMargin'),
+        storage: sum('storage'),
+        thisMonthBonusIn: sum('thisMonthBonusIn'),
+        thisMonthBonusOut: sum('thisMonthBonusOut'),
+        thisMonthCreditIn: sum('thisMonthCreditIn'),
+        thisMonthCreditOut: sum('thisMonthCreditOut'),
+        thisMonthDeposit: sum('thisMonthDeposit'),
+        thisMonthPnL: sum('thisMonthPnL'),
+        thisMonthSOCompensationIn: sum('thisMonthSOCompensationIn'),
+        thisMonthSOCompensationOut: sum('thisMonthSOCompensationOut'),
+        thisMonthWithdrawal: sum('thisMonthWithdrawal'),
+        thisWeekBonusIn: sum('thisWeekBonusIn'),
+        thisWeekBonusOut: sum('thisWeekBonusOut'),
+        thisWeekCreditIn: sum('thisWeekCreditIn'),
+        thisWeekCreditOut: sum('thisWeekCreditOut'),
+        thisWeekDeposit: sum('thisWeekDeposit'),
+        thisWeekPnL: sum('thisWeekPnL'),
+        thisWeekSOCompensationIn: sum('thisWeekSOCompensationIn'),
+        thisWeekSOCompensationOut: sum('thisWeekSOCompensationOut'),
+        thisWeekWithdrawal: sum('thisWeekWithdrawal')
+      }
+      
+      return [
+        { label: 'Total Clients', value: formatNum(filteredClients.length), unit: 'Count', numericValue: filteredClients.length },
+        { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
+        { label: 'Balance', value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
+        { label: 'Blocked Commission', value: formatNum(t.blockedCommission), unit: 'USD', numericValue: t.blockedCommission },
+        { label: 'Blocked Profit', value: formatNum(t.blockedProfit), unit: 'USD', numericValue: t.blockedProfit },
+        { label: 'Commission', value: formatNum(t.commission), unit: 'USD', numericValue: t.commission },
+        { label: 'Credit', value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
+        { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn), unit: 'USD', numericValue: t.dailyBonusIn },
+        { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut), unit: 'USD', numericValue: t.dailyBonusOut },
+        { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn), unit: 'USD', numericValue: t.dailyCreditIn },
+        { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut), unit: 'USD', numericValue: t.dailyCreditOut },
+        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: 'USD', numericValue: t.dailyDeposit },
+        { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
+        { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn), unit: 'USD', numericValue: t.dailySOCompensationIn },
+        { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut), unit: 'USD', numericValue: t.dailySOCompensationOut },
+        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyWithdrawal },
+        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
+        { label: 'NET Daily Bonus', value: formatNum(t.dailyBonusIn - t.dailyBonusOut), unit: 'USD', numericValue: t.dailyBonusIn - t.dailyBonusOut },
+        { label: 'Equity', value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
+        { label: 'Floating P/L', value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
+        { label: 'Liabilities', value: formatNum(t.liabilities), unit: 'USD', numericValue: t.liabilities },
+        { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn), unit: 'USD', numericValue: t.lifetimeBonusIn },
+        { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut), unit: 'USD', numericValue: t.lifetimeBonusOut },
+        { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn), unit: 'USD', numericValue: t.lifetimeCreditIn },
+        { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut), unit: 'USD', numericValue: t.lifetimeCreditOut },
+        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
+        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL), unit: 'USD', numericValue: t.lifetimePnL },
+        { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn), unit: 'USD', numericValue: t.lifetimeSOCompensationIn },
+        { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut), unit: 'USD', numericValue: t.lifetimeSOCompensationOut },
+        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
+        { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
+        { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
+        { label: 'Margin Initial', value: formatNum(t.marginInitial), unit: 'USD', numericValue: t.marginInitial },
+        { label: 'Margin Level', value: formatNum(t.marginLevel), unit: '%', numericValue: t.marginLevel },
+        { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance), unit: 'USD', numericValue: t.marginMaintenance },
+        { label: 'P&L', value: formatNum(t.pnl), unit: 'USD', numericValue: t.pnl },
+        { label: 'Previous Equity', value: formatNum(t.previousEquity), unit: 'USD', numericValue: t.previousEquity },
+        { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
+        { label: 'SO Equity', value: formatNum(t.soEquity), unit: 'USD', numericValue: t.soEquity },
+        { label: 'SO Level', value: formatNum(t.soLevel), unit: '%', numericValue: t.soLevel },
+        { label: 'SO Margin', value: formatNum(t.soMargin), unit: 'USD', numericValue: t.soMargin },
+        { label: 'Storage', value: formatNum(t.storage), unit: 'USD', numericValue: t.storage },
+        { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn), unit: 'USD', numericValue: t.thisMonthBonusIn },
+        { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut), unit: 'USD', numericValue: t.thisMonthBonusOut },
+        { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn), unit: 'USD', numericValue: t.thisMonthCreditIn },
+        { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut), unit: 'USD', numericValue: t.thisMonthCreditOut },
+        { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit), unit: 'USD', numericValue: t.thisMonthDeposit },
+        { label: 'This Month P&L', value: formatNum(t.thisMonthPnL), unit: 'USD', numericValue: t.thisMonthPnL },
+        { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn), unit: 'USD', numericValue: t.thisMonthSOCompensationIn },
+        { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut), unit: 'USD', numericValue: t.thisMonthSOCompensationOut },
+        { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal), unit: 'USD', numericValue: t.thisMonthWithdrawal },
+        { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn), unit: 'USD', numericValue: t.thisWeekBonusIn },
+        { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut), unit: 'USD', numericValue: t.thisWeekBonusOut },
+        { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn), unit: 'USD', numericValue: t.thisWeekCreditIn },
+        { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut), unit: 'USD', numericValue: t.thisWeekCreditOut },
+        { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit), unit: 'USD', numericValue: t.thisWeekDeposit },
+        { label: 'This Week P&L', value: formatNum(t.thisWeekPnL), unit: 'USD', numericValue: t.thisWeekPnL },
+        { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn), unit: 'USD', numericValue: t.thisWeekSOCompensationIn },
+        { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut), unit: 'USD', numericValue: t.thisWeekSOCompensationOut },
+        { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal), unit: 'USD', numericValue: t.thisWeekWithdrawal },
+        { label: 'NET Week Bonus', value: formatNum(t.thisWeekBonusIn - t.thisWeekBonusOut), unit: 'USD', numericValue: t.thisWeekBonusIn - t.thisWeekBonusOut },
+        { label: 'NET Week DW', value: formatNum(t.thisWeekDeposit - t.thisWeekWithdrawal), unit: 'USD', numericValue: t.thisWeekDeposit - t.thisWeekWithdrawal },
+        { label: 'NET Monthly Bonus', value: formatNum(t.thisMonthBonusIn - t.thisMonthBonusOut), unit: 'USD', numericValue: t.thisMonthBonusIn - t.thisMonthBonusOut },
+        { label: 'NET Monthly DW', value: formatNum(t.thisMonthDeposit - t.thisMonthWithdrawal), unit: 'USD', numericValue: t.thisMonthDeposit - t.thisMonthWithdrawal },
+        { label: 'NET Lifetime Bonus', value: formatNum(t.lifetimeBonusIn - t.lifetimeBonusOut), unit: 'USD', numericValue: t.lifetimeBonusIn - t.lifetimeBonusOut },
+        { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
+        { label: 'NET Credit', value: formatNum(t.lifetimeCreditIn - t.lifetimeCreditOut), unit: 'USD', numericValue: t.lifetimeCreditIn - t.lifetimeCreditOut },
+        { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
+      ]
+    }
+    
+    // No filters, use API totals
+    const t = totals || {}
+    return [
+      { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
+      { label: 'Assets', value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
+      { label: 'Balance', value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
+      { label: 'Blocked Commission', value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
+      { label: 'Blocked Profit', value: formatNum(t.blockedProfit || 0), unit: 'USD', numericValue: t.blockedProfit || 0 },
+      { label: 'Commission', value: formatNum(t.commission || 0), unit: 'USD', numericValue: t.commission || 0 },
+      { label: 'Credit', value: formatNum(t.credit || 0), unit: 'USD', numericValue: t.credit || 0 },
+      { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn || 0), unit: 'USD', numericValue: t.dailyBonusIn || 0 },
+      { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0), unit: 'USD', numericValue: t.dailyBonusOut || 0 },
+      { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0), unit: 'USD', numericValue: t.dailyCreditIn || 0 },
+      { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0), unit: 'USD', numericValue: t.dailyCreditOut || 0 },
+      { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0), unit: 'USD', numericValue: t.dailyDeposit || 0 },
+      { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0), unit: 'USD', numericValue: t.dailyPnL || 0 },
+      { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
+      { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
+      { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: 'USD', numericValue: t.dailyWithdrawal || 0 },
+      { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
+      { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
+      { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
+      { label: 'Floating P/L', value: formatNum(t.floating || 0), unit: 'USD', numericValue: t.floating || 0 },
+      { label: 'Liabilities', value: formatNum(t.liabilities || 0), unit: 'USD', numericValue: t.liabilities || 0 },
+      { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn || 0), unit: 'USD', numericValue: t.lifetimeBonusIn || 0 },
+      { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut || 0), unit: 'USD', numericValue: t.lifetimeBonusOut || 0 },
+      { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
+      { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
+      { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
+      { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
+      { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
+      { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
+      { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
+      { label: 'Margin', value: formatNum(t.margin || 0), unit: 'USD', numericValue: t.margin || 0 },
+      { label: 'Margin Free', value: formatNum(t.marginFree || 0), unit: 'USD', numericValue: t.marginFree || 0 },
+      { label: 'Margin Initial', value: formatNum(t.marginInitial || 0), unit: 'USD', numericValue: t.marginInitial || 0 },
+      { label: 'Margin Level', value: formatNum(t.marginLevel || 0), unit: '%', numericValue: t.marginLevel || 0 },
+      { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance || 0), unit: 'USD', numericValue: t.marginMaintenance || 0 },
+      { label: 'P&L', value: formatNum(t.pnl || 0), unit: 'USD', numericValue: t.pnl || 0 },
+      { label: 'Previous Equity', value: formatNum(t.previousEquity || 0), unit: 'USD', numericValue: t.previousEquity || 0 },
+      { label: 'Profit', value: formatNum(t.profit || 0), unit: 'USD', numericValue: t.profit || 0 },
+      { label: 'SO Equity', value: formatNum(t.soEquity || 0), unit: 'USD', numericValue: t.soEquity || 0 },
+      { label: 'SO Level', value: formatNum(t.soLevel || 0), unit: '%', numericValue: t.soLevel || 0 },
+      { label: 'SO Margin', value: formatNum(t.soMargin || 0), unit: 'USD', numericValue: t.soMargin || 0 },
+      { label: 'Storage', value: formatNum(t.storage || 0), unit: 'USD', numericValue: t.storage || 0 },
+      { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn || 0), unit: 'USD', numericValue: t.thisMonthBonusIn || 0 },
+      { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut || 0), unit: 'USD', numericValue: t.thisMonthBonusOut || 0 },
+      { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn || 0), unit: 'USD', numericValue: t.thisMonthCreditIn || 0 },
+      { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut || 0), unit: 'USD', numericValue: t.thisMonthCreditOut || 0 },
+      { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit || 0), unit: 'USD', numericValue: t.thisMonthDeposit || 0 },
+      { label: 'This Month P&L', value: formatNum(t.thisMonthPnL || 0), unit: 'USD', numericValue: t.thisMonthPnL || 0 },
+      { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationIn || 0 },
+      { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationOut || 0 },
+      { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal || 0), unit: 'USD', numericValue: t.thisMonthWithdrawal || 0 },
+      { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn || 0), unit: 'USD', numericValue: t.thisWeekBonusIn || 0 },
+      { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut || 0), unit: 'USD', numericValue: t.thisWeekBonusOut || 0 },
+      { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn || 0), unit: 'USD', numericValue: t.thisWeekCreditIn || 0 },
+      { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut || 0), unit: 'USD', numericValue: t.thisWeekCreditOut || 0 },
+      { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit || 0), unit: 'USD', numericValue: t.thisWeekDeposit || 0 },
+      { label: 'This Week P&L', value: formatNum(t.thisWeekPnL || 0), unit: 'USD', numericValue: t.thisWeekPnL || 0 },
+      { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationIn || 0 },
+      { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationOut || 0 },
+      { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal || 0), unit: 'USD', numericValue: t.thisWeekWithdrawal || 0 },
+      { label: 'NET Week Bonus', value: formatNum((t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0)), unit: 'USD', numericValue: (t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0) },
+      { label: 'NET Week DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)), unit: 'USD', numericValue: (t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0) },
+      { label: 'NET Monthly Bonus', value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)), unit: 'USD', numericValue: (t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0) },
+      { label: 'NET Monthly DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)), unit: 'USD', numericValue: (t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0) },
+      { label: 'NET Lifetime Bonus', value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)), unit: 'USD', numericValue: (t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0) },
+      { label: 'NET Lifetime DW', value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
+      { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
+      { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
+    ]
+  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput])
+
   const fetchClients = useCallback(async () => {
     try {
       // Use searchClients to get totals data (same as Client2Page desktop)
@@ -149,77 +373,7 @@ export default function Client2Module() {
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
       
-      // Update face cards directly from API response with numericValue for arrows
-      setCards([
-        { label: 'Total Clients', value: formatNum(data.total || 0), unit: 'Count', numericValue: data.total || 0 },
-        { label: 'Assets', value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
-        { label: 'Balance', value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
-        { label: 'Blocked Commission', value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
-        { label: 'Blocked Profit', value: formatNum(t.blockedProfit || 0), unit: 'USD', numericValue: t.blockedProfit || 0 },
-        { label: 'Commission', value: formatNum(t.commission || 0), unit: 'USD', numericValue: t.commission || 0 },
-        { label: 'Credit', value: formatNum(t.credit || 0), unit: 'USD', numericValue: t.credit || 0 },
-        { label: 'Daily Bonus In', value: formatNum(t.dailyBonusIn || 0), unit: 'USD', numericValue: t.dailyBonusIn || 0 },
-        { label: 'Daily Bonus Out', value: formatNum(t.dailyBonusOut || 0), unit: 'USD', numericValue: t.dailyBonusOut || 0 },
-        { label: 'Daily Credit In', value: formatNum(t.dailyCreditIn || 0), unit: 'USD', numericValue: t.dailyCreditIn || 0 },
-        { label: 'Daily Credit Out', value: formatNum(t.dailyCreditOut || 0), unit: 'USD', numericValue: t.dailyCreditOut || 0 },
-        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit || 0), unit: 'USD', numericValue: t.dailyDeposit || 0 },
-        { label: 'Daily P&L', value: formatNum(t.dailyPnL || 0), unit: 'USD', numericValue: t.dailyPnL || 0 },
-        { label: 'Daily SO Compensation In', value: formatNum(t.dailySOCompensationIn || 0), unit: 'USD', numericValue: t.dailySOCompensationIn || 0 },
-        { label: 'Daily SO Compensation Out', value: formatNum(t.dailySOCompensationOut || 0), unit: 'USD', numericValue: t.dailySOCompensationOut || 0 },
-        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal || 0), unit: 'USD', numericValue: t.dailyWithdrawal || 0 },
-        { label: 'Daily Net D/W', value: formatNum((t.dailyDeposit || 0) - (t.dailyWithdrawal || 0)), unit: 'USD', numericValue: (t.dailyDeposit || 0) - (t.dailyWithdrawal || 0) },
-        { label: 'NET Daily Bonus', value: formatNum((t.dailyBonusIn || 0) - (t.dailyBonusOut || 0)), unit: 'USD', numericValue: (t.dailyBonusIn || 0) - (t.dailyBonusOut || 0) },
-        { label: 'Equity', value: formatNum(t.equity || 0), unit: 'USD', numericValue: t.equity || 0 },
-        { label: 'Floating P/L', value: formatNum(t.floating || 0), unit: 'USD', numericValue: t.floating || 0 },
-        { label: 'Liabilities', value: formatNum(t.liabilities || 0), unit: 'USD', numericValue: t.liabilities || 0 },
-        { label: 'Lifetime Bonus In', value: formatNum(t.lifetimeBonusIn || 0), unit: 'USD', numericValue: t.lifetimeBonusIn || 0 },
-        { label: 'Lifetime Bonus Out', value: formatNum(t.lifetimeBonusOut || 0), unit: 'USD', numericValue: t.lifetimeBonusOut || 0 },
-        { label: 'Lifetime Credit In', value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
-        { label: 'Lifetime Credit Out', value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
-        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
-        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
-        { label: 'Lifetime SO Compensation In', value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
-        { label: 'Lifetime SO Compensation Out', value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
-        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
-        { label: 'Margin', value: formatNum(t.margin || 0), unit: 'USD', numericValue: t.margin || 0 },
-        { label: 'Margin Free', value: formatNum(t.marginFree || 0), unit: 'USD', numericValue: t.marginFree || 0 },
-        { label: 'Margin Initial', value: formatNum(t.marginInitial || 0), unit: 'USD', numericValue: t.marginInitial || 0 },
-        { label: 'Margin Level', value: formatNum(t.marginLevel || 0), unit: '%', numericValue: t.marginLevel || 0 },
-        { label: 'Margin Maintenance', value: formatNum(t.marginMaintenance || 0), unit: 'USD', numericValue: t.marginMaintenance || 0 },
-        { label: 'P&L', value: formatNum(t.pnl || 0), unit: 'USD', numericValue: t.pnl || 0 },
-        { label: 'Previous Equity', value: formatNum(t.previousEquity || 0), unit: 'USD', numericValue: t.previousEquity || 0 },
-        { label: 'Profit', value: formatNum(t.profit || 0), unit: 'USD', numericValue: t.profit || 0 },
-        { label: 'SO Equity', value: formatNum(t.soEquity || 0), unit: 'USD', numericValue: t.soEquity || 0 },
-        { label: 'SO Level', value: formatNum(t.soLevel || 0), unit: '%', numericValue: t.soLevel || 0 },
-        { label: 'SO Margin', value: formatNum(t.soMargin || 0), unit: 'USD', numericValue: t.soMargin || 0 },
-        { label: 'Storage', value: formatNum(t.storage || 0), unit: 'USD', numericValue: t.storage || 0 },
-        { label: 'This Month Bonus In', value: formatNum(t.thisMonthBonusIn || 0), unit: 'USD', numericValue: t.thisMonthBonusIn || 0 },
-        { label: 'This Month Bonus Out', value: formatNum(t.thisMonthBonusOut || 0), unit: 'USD', numericValue: t.thisMonthBonusOut || 0 },
-        { label: 'This Month Credit In', value: formatNum(t.thisMonthCreditIn || 0), unit: 'USD', numericValue: t.thisMonthCreditIn || 0 },
-        { label: 'This Month Credit Out', value: formatNum(t.thisMonthCreditOut || 0), unit: 'USD', numericValue: t.thisMonthCreditOut || 0 },
-        { label: 'This Month Deposit', value: formatNum(t.thisMonthDeposit || 0), unit: 'USD', numericValue: t.thisMonthDeposit || 0 },
-        { label: 'This Month P&L', value: formatNum(t.thisMonthPnL || 0), unit: 'USD', numericValue: t.thisMonthPnL || 0 },
-        { label: 'This Month SO Compensation In', value: formatNum(t.thisMonthSOCompensationIn || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationIn || 0 },
-        { label: 'This Month SO Compensation Out', value: formatNum(t.thisMonthSOCompensationOut || 0), unit: 'USD', numericValue: t.thisMonthSOCompensationOut || 0 },
-        { label: 'This Month Withdrawal', value: formatNum(t.thisMonthWithdrawal || 0), unit: 'USD', numericValue: t.thisMonthWithdrawal || 0 },
-        { label: 'This Week Bonus In', value: formatNum(t.thisWeekBonusIn || 0), unit: 'USD', numericValue: t.thisWeekBonusIn || 0 },
-        { label: 'This Week Bonus Out', value: formatNum(t.thisWeekBonusOut || 0), unit: 'USD', numericValue: t.thisWeekBonusOut || 0 },
-        { label: 'This Week Credit In', value: formatNum(t.thisWeekCreditIn || 0), unit: 'USD', numericValue: t.thisWeekCreditIn || 0 },
-        { label: 'This Week Credit Out', value: formatNum(t.thisWeekCreditOut || 0), unit: 'USD', numericValue: t.thisWeekCreditOut || 0 },
-        { label: 'This Week Deposit', value: formatNum(t.thisWeekDeposit || 0), unit: 'USD', numericValue: t.thisWeekDeposit || 0 },
-        { label: 'This Week P&L', value: formatNum(t.thisWeekPnL || 0), unit: 'USD', numericValue: t.thisWeekPnL || 0 },
-        { label: 'This Week SO Compensation In', value: formatNum(t.thisWeekSOCompensationIn || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationIn || 0 },
-        { label: 'This Week SO Compensation Out', value: formatNum(t.thisWeekSOCompensationOut || 0), unit: 'USD', numericValue: t.thisWeekSOCompensationOut || 0 },
-        { label: 'This Week Withdrawal', value: formatNum(t.thisWeekWithdrawal || 0), unit: 'USD', numericValue: t.thisWeekWithdrawal || 0 },
-        { label: 'NET Week Bonus', value: formatNum((t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0)), unit: 'USD', numericValue: (t.thisWeekBonusIn || 0) - (t.thisWeekBonusOut || 0) },
-        { label: 'NET Week DW', value: formatNum((t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0)), unit: 'USD', numericValue: (t.thisWeekDeposit || 0) - (t.thisWeekWithdrawal || 0) },
-        { label: 'NET Monthly Bonus', value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)), unit: 'USD', numericValue: (t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0) },
-        { label: 'NET Monthly DW', value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)), unit: 'USD', numericValue: (t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0) },
-        { label: 'NET Lifetime Bonus', value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)), unit: 'USD', numericValue: (t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0) },
-        { label: 'NET Lifetime DW', value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
-        { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
-        { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
-      ])
+      // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
@@ -1090,6 +1244,29 @@ export default function Client2Module() {
               <h2 className="text-center text-xl font-semibold font-outfit text-black">Show/Hide Columns</h2>
             </div>
 
+            {/* Search Columns Input */}
+            <div className="px-6 py-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search Columns"
+                  value={columnSearch}
+                  onChange={(e) => setColumnSearch(e.target.value)}
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-base font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M14 14L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto px-6">
               {Object.entries({
                 'Login': 'login',
@@ -1152,7 +1329,9 @@ export default function Client2Module() {
                 'Lifetime PnL': 'lifetimePnL',
                 'This Month PnL': 'thisMonthPnL',
                 'This Week PnL': 'thisWeekPnL',
-              }).map(([label, key]) => (
+              }).filter(([label]) => 
+                !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
+              ).map(([label, key]) => (
                 <div
                   key={key}
                   className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
