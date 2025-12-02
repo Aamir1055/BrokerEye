@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const FilterModal = ({ 
   isOpen, 
   onClose, 
   onApply,
-  initialFilters = {}
+  filters = {}
 }) => {
-  const [hasFloating, setHasFloating] = useState(initialFilters.hasFloating || false);
-  const [hasCredit, setHasCredit] = useState(initialFilters.hasCredit || false);
-  const [noDeposit, setNoDeposit] = useState(initialFilters.noDeposit || false);
+  const [hasFloating, setHasFloating] = useState(filters.hasFloating || false);
+  const [hasCredit, setHasCredit] = useState(filters.hasCredit || false);
+  const [noDeposit, setNoDeposit] = useState(filters.noDeposit || false);
+
+  // Sync state with filters prop when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setHasFloating(filters.hasFloating || false);
+      setHasCredit(filters.hasCredit || false);
+      setNoDeposit(filters.noDeposit || false);
+    }
+  }, [isOpen, filters]);
 
   if (!isOpen) return null;
 
@@ -25,6 +34,12 @@ const FilterModal = ({
     setHasFloating(false);
     setHasCredit(false);
     setNoDeposit(false);
+    onApply({
+      hasFloating: false,
+      hasCredit: false,
+      noDeposit: false
+    });
+    onClose();
   };
 
   return (

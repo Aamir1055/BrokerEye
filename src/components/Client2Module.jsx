@@ -878,7 +878,7 @@ export default function Client2Module() {
                 placeholder="Search" 
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 min-w-0 outline-none border-0 text-[11px] text-[#000000] placeholder:text-[#999999] bg-transparent font-outfit" 
+                className="flex-1 min-w-0 outline-none border-0 text-[13px] text-black font-semibold placeholder:text-[#999999] bg-transparent font-outfit" 
               />
             </div>
             
