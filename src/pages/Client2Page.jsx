@@ -1173,10 +1173,11 @@ const Client2Page = () => {
     setSelectedColumnValues({})
   }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery, quickFilters])
 
-  // Refetch when any percent face card visibility toggles
+  // Refetch when any percent face card visibility toggles (desktop only)
   useEffect(() => {
+    if (isMobile) return
     fetchClients(false)
-  }, [percentModeActive, fetchClients])
+  }, [percentModeActive, fetchClients, isMobile])
 
   // Pass-through - filtering done by API (like ClientsPage)
   const sortedClients = useMemo(() => {
@@ -1221,33 +1222,36 @@ const Client2Page = () => {
     }
   }, [])
 
-  // Initial fetch and refetch on dependency changes
+  // Initial fetch and refetch on dependency changes (desktop only)
   useEffect(() => {
+    if (isMobile) return
     console.log('[Client2] ⚡ useEffect triggered - fetchClients dependency changed')
     console.log('[Client2] Current columnFilters:', JSON.stringify(columnFilters, null, 2))
     fetchClients()
     fetchRebateTotals()
-  }, [fetchClients, fetchRebateTotals])
+  }, [fetchClients, fetchRebateTotals, isMobile])
 
-  // Auto-refresh rebate totals every 1 hour
+  // Auto-refresh rebate totals every 1 hour (desktop only)
   useEffect(() => {
+    if (isMobile) return
     const intervalId = setInterval(() => {
       fetchRebateTotals()
     }, 3600000) // 3600000ms = 1 hour
     return () => clearInterval(intervalId)
-  }, [fetchRebateTotals])
+  }, [fetchRebateTotals, isMobile])
 
   // Removed server-side quick filter refetch; quick filters now apply client-side to current page only
 
   // Percentage view is now controlled by Card Filter (cardVisibility.percentage) and fetched together with main data
 
-  // Auto-refresh every 1 second to keep data updated (including filtered data)
+  // Auto-refresh every 1 second to keep data updated (including filtered data) - desktop only
   useEffect(() => {
+    if (isMobile) return
     const intervalId = setInterval(() => {
       fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
     }, 1000) // 1 second refresh for real-time updates
     return () => clearInterval(intervalId)
-  }, [fetchClients])
+  }, [fetchClients, isMobile])
 
   // Handle search
   const handleSearch = () => {
