@@ -2411,15 +2411,15 @@ const Client2Page = () => {
       dailyBonusOut: { label: 'Daily Bonus Out', color: 'red', getValue: () => totals?.dailyBonusOut || 0 },
       dailyCreditIn: { label: 'Daily Credit In', color: 'emerald', getValue: () => totals?.dailyCreditIn || 0 },
       dailyCreditOut: { label: 'Daily Credit Out', color: 'red', getValue: () => totals?.dailyCreditOut || 0 },
-      dailyDeposit: { label: 'Daily Deposit', color: 'green', getValue: () => totals?.dailyDeposit || 0 },
+      dailyDeposit: { label: percentModeActive ? 'Daily Deposit %' : 'Daily Deposit', color: 'green', getValue: () => percentModeActive ? (totalsPercent?.dailyDeposit || 0) : (totals?.dailyDeposit || 0) },
       dailyDepositPercent: { label: 'Daily Deposit %', color: 'emerald', getValue: () => computedPercentageTotals?.dailyDeposit || 0 },
       dailyPnL: { label: 'Daily P&L', color: 'cyan', getValue: () => totals?.dailyPnL || 0, colorCheck: true },
       dailySOCompensationIn: { label: 'Daily SO Compensation In', color: 'purple', getValue: () => totals?.dailySOCompensationIn || 0 },
       dailySOCompensationOut: { label: 'Daily SO Compensation Out', color: 'orange', getValue: () => totals?.dailySOCompensationOut || 0 },
-      dailyWithdrawal: { label: 'Daily Withdrawal', color: 'red', getValue: () => totals?.dailyWithdrawal || 0 },
+      dailyWithdrawal: { label: percentModeActive ? 'Daily Withdrawal %' : 'Daily Withdrawal', color: 'red', getValue: () => percentModeActive ? (totalsPercent?.dailyWithdrawal || 0) : (totals?.dailyWithdrawal || 0) },
       dailyWithdrawalPercent: { label: 'Daily Withdrawal %', color: 'rose', getValue: () => computedPercentageTotals?.dailyWithdrawal || 0 },
       // Computed: Daily Net D/W = Daily Deposit - Daily Withdrawal
-      dailyNetDW: { label: 'Daily Net D/W', color: 'blue', getValue: () => (totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0), colorCheck: true },
+      dailyNetDW: { label: percentModeActive ? 'Daily Net D/W %' : 'Daily Net D/W', color: 'blue', getValue: () => percentModeActive ? ((totalsPercent?.dailyDeposit || 0) - (totalsPercent?.dailyWithdrawal || 0)) : ((totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0)), colorCheck: true },
       // Computed: NET Daily Bonus = Daily Bonus In - Daily Bonus Out
       netDailyBonus: { label: 'NET Daily Bonus', color: 'blue', getValue: () => (totals?.dailyBonusIn || 0) - (totals?.dailyBonusOut || 0), colorCheck: true },
 
@@ -2438,7 +2438,7 @@ const Client2Page = () => {
       lifetimeCreditIn: { label: 'Lifetime Credit In', color: 'emerald', getValue: () => totals?.lifetimeCreditIn || 0 },
       lifetimeCreditOut: { label: 'Lifetime Credit Out', color: 'red', getValue: () => totals?.lifetimeCreditOut || 0 },
       lifetimeDeposit: { label: 'Lifetime Deposit', color: 'green', getValue: () => totals?.lifetimeDeposit || 0 },
-      lifetimePnL: { label: 'Lifetime P&L', color: 'indigo', getValue: () => totals?.lifetimePnL || 0, colorCheck: true },
+      lifetimePnL: { label: percentModeActive ? 'Lifetime P&L %' : 'Lifetime P&L', color: 'indigo', getValue: () => percentModeActive ? (totalsPercent?.lifetimePnL || 0) : (totals?.lifetimePnL || 0), colorCheck: true },
       lifetimePnLPercent: { label: 'Lifetime PnL %', color: 'violet', getValue: () => computedPercentageTotals?.lifetimePnL || 0, colorCheck: true },
       lifetimeSOCompensationIn: { label: 'Lifetime SO Compensation In', color: 'purple', getValue: () => totals?.lifetimeSOCompensationIn || 0 },
       lifetimeSOCompensationOut: { label: 'Lifetime SO Compensation Out', color: 'orange', getValue: () => totals?.lifetimeSOCompensationOut || 0 },
@@ -3472,29 +3472,14 @@ const Client2Page = () => {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
                 {faceCardOrder.map((cardKey) => {
-                  // Determine which card variant to show based on percentage mode
-                  let displayCardKey = cardKey
-
-                  // Switch to percentage variants when in percentage mode
-                  if (cardFilterPercentMode) {
-                    if (cardKey === 'availableRebate') displayCardKey = 'availableRebatePercent'
-                    if (cardKey === 'totalRebate') displayCardKey = 'totalRebatePercent'
-                    if (cardKey === 'netLifetimePnL') displayCardKey = 'netLifetimePnLPercent'
-                    if (cardKey === 'bookPnL') displayCardKey = 'bookPnLPercent'
-                  }
-
-                  // Skip percentage variants in card order (they're accessed via switching above)
+                  // Skip percentage variants in card order (they're accessed via main cards)
                   if (cardKey.endsWith('Percent')) return null
 
-                  // Use totalsPercent when in percentage mode, otherwise use totals
-                  const dataSource = cardFilterPercentMode ? totalsPercent : totals
-                  const card = getClient2CardConfig(displayCardKey, dataSource)
+                  const card = getClient2CardConfig(cardKey)
                   if (!card || cardVisibility[cardKey] === false) return null
 
-                  // Add % to label when in percentage mode (except for cards that already have it)
-                  const displayLabel = cardFilterPercentMode && !card.label.includes('%')
-                    ? `${card.label} %`
-                    : card.label
+                  // Label already includes % sign based on percentModeActive in card config
+                  const displayLabel = card.label
 
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
