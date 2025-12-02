@@ -10,9 +10,7 @@ import { useGroups } from '../contexts/GroupContext'
 import { brokerAPI } from '../services/api'
 
 const formatNum = (n) => {
-  // Strip any % sign from the value if present
-  const cleaned = typeof n === 'string' ? n.replace(/%/g, '').trim() : n
-  const v = Number(cleaned || 0)
+  const v = Number(n || 0)
   if (!isFinite(v)) return '0.00'
   return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -153,19 +151,8 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const t = data.totals || {}
       
-      // Strip % from all numeric values in totals if they come as strings
-      const cleanTotals = {}
-      Object.keys(t).forEach(key => {
-        const val = t[key]
-        if (typeof val === 'string' && val.includes('%')) {
-          cleanTotals[key] = parseFloat(val.replace(/%/g, '').trim())
-        } else {
-          cleanTotals[key] = val
-        }
-      })
-      
       setClients(data.clients || [])
-      setTotals(cleanTotals)
+      setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
       
