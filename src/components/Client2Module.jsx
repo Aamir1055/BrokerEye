@@ -220,6 +220,23 @@ export default function Client2Module() {
 
   const filteredClients = getFilteredClients()
 
+  // Compute percentage totals from client data (like desktop version)
+  const computedPercentageTotals = useMemo(() => {
+    if (!Array.isArray(filteredClients) || filteredClients.length === 0) {
+      return {
+        dailyDeposit: 0,
+        dailyWithdrawal: 0,
+        lifetimePnL: 0
+      }
+    }
+    
+    return {
+      dailyDeposit: filteredClients.reduce((sum, client) => sum + (parseFloat(client.dailyDeposit_percentage) || 0), 0),
+      dailyWithdrawal: filteredClients.reduce((sum, client) => sum + (parseFloat(client.dailyWithdrawal_percentage) || 0), 0),
+      lifetimePnL: filteredClients.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
+    }
+  }, [filteredClients])
+
   // Calculate cards from filtered clients (when filters active) or API totals (when no filters)
   const cards = useMemo(() => {
     // Check if any filter is active
@@ -257,30 +274,52 @@ export default function Client2Module() {
       }
       
       // Return cards based on filtered data
-      return [
-        { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
-        { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
-        { label: 'Balance', value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
-        { label: 'Credit', value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
-        { label: 'Equity', value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
-        { label: 'Floating P/L', value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
-        { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
-        { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
-        { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
-        { label: 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: 'USD', numericValue: t.dailyDeposit },
-        { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyWithdrawal },
-        { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
-        { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
-        { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
-        { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
-        { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
-        { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL), unit: 'USD', numericValue: t.lifetimePnL },
-        { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
-      ]
+      if (showPercent) {
+        // Show percentage values
+        return [
+          { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
+          { label: 'Daily Deposit %', value: formatNum(computedPercentageTotals.dailyDeposit), unit: '%', numericValue: computedPercentageTotals.dailyDeposit },
+          { label: 'Daily Withdrawal %', value: formatNum(computedPercentageTotals.dailyWithdrawal), unit: '%', numericValue: computedPercentageTotals.dailyWithdrawal },
+          { label: 'Lifetime PnL %', value: formatNum(computedPercentageTotals.lifetimePnL), unit: '%', numericValue: computedPercentageTotals.lifetimePnL }
+        ]
+      } else {
+        // Show regular values
+        return [
+          { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
+          { label: 'Assets', value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
+          { label: 'Balance', value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
+          { label: 'Credit', value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
+          { label: 'Equity', value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
+          { label: 'Floating P/L', value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
+          { label: 'Profit', value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
+          { label: 'Margin', value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
+          { label: 'Margin Free', value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
+          { label: 'Daily Deposit', value: formatNum(t.dailyDeposit), unit: 'USD', numericValue: t.dailyDeposit },
+          { label: 'Daily Withdrawal', value: formatNum(t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyWithdrawal },
+          { label: 'Daily Net D/W', value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
+          { label: 'Daily P&L', value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
+          { label: 'Lifetime Deposit', value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
+          { label: 'Lifetime Withdrawal', value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
+          { label: 'NET Lifetime DW', value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
+          { label: 'Lifetime P&L', value: formatNum(t.lifetimePnL), unit: 'USD', numericValue: t.lifetimePnL },
+          { label: 'Book PnL', value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
+        ]
+      }
     }
     
     // No filters, use API totals
     const t = totals || {}
+    
+    if (showPercent) {
+      // Show percentage values from API
+      return [
+        { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
+        { label: 'Daily Deposit %', value: formatNum(computedPercentageTotals.dailyDeposit), unit: '%', numericValue: computedPercentageTotals.dailyDeposit },
+        { label: 'Daily Withdrawal %', value: formatNum(computedPercentageTotals.dailyWithdrawal), unit: '%', numericValue: computedPercentageTotals.dailyWithdrawal },
+        { label: 'Lifetime PnL %', value: formatNum(computedPercentageTotals.lifetimePnL), unit: '%', numericValue: computedPercentageTotals.lifetimePnL }
+      ]
+    }
+    
     return [
       { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
       { label: 'Assets', value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
@@ -351,7 +390,7 @@ export default function Client2Module() {
       { label: 'NET Credit', value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
       { label: 'Book PnL', value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
     ]
-  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput])
+  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent, computedPercentageTotals])
 
   // Initialize and reconcile saved card order whenever cards change
   useEffect(() => {
@@ -869,7 +908,7 @@ export default function Client2Module() {
         <div className="pb-3 px-4">
           <div className="flex items-center gap-1">
             {/* Search box - compact, edge-to-edge */}
-            <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+            <div className="flex-1 min-w-0 h-[32px] bg-[#F5F5F5] border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
                 <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
                 <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
