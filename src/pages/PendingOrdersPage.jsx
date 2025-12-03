@@ -15,20 +15,7 @@ const PendingOrdersPage = () => {
   // Detect mobile device
   const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  // If mobile, use mobile module
-  if (isMobile) {
-    return <PendingOrdersModule />
-  }
-  // Use cached data from DataContext
+  // Use cached data from DataContext - MUST be called before conditional return
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
@@ -901,6 +888,21 @@ const PendingOrdersPage = () => {
         </div>
       </th>
     )
+  }
+
+  // Detect mobile and update state
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <PendingOrdersModule />
   }
 
   if (loading.orders) return <LoadingSpinner />
