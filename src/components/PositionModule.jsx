@@ -37,6 +37,8 @@ export default function PositionModule() {
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 15
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     firstName: false,
@@ -93,14 +95,53 @@ export default function PositionModule() {
   }, [ibFilteredPositions])
 
   // Filter positions based on search
-  const filteredPositions = ibFilteredPositions.filter(pos => {
-    if (!searchInput.trim()) return true
-    const query = searchInput.toLowerCase()
-    return (
-      String(pos.symbol || '').toLowerCase().includes(query) ||
-      String(pos.login || '').toLowerCase().includes(query)
-    )
-  })
+  const filteredPositions = useMemo(() => {
+    let filtered = ibFilteredPositions.filter(pos => {
+      if (!searchInput.trim()) return true
+      const query = searchInput.toLowerCase()
+      return (
+        String(pos.symbol || '').toLowerCase().includes(query) ||
+        String(pos.login || '').toLowerCase().includes(query)
+      )
+    })
+
+    // Apply sorting
+    if (sortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        let aVal = a[sortColumn]
+        let bVal = b[sortColumn]
+        
+        // Handle numeric values
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+        }
+        
+        // Handle string values
+        aVal = String(aVal || '').toLowerCase()
+        bVal = String(bVal || '').toLowerCase()
+        
+        if (sortDirection === 'asc') {
+          return aVal.localeCompare(bVal)
+        } else {
+          return bVal.localeCompare(aVal)
+        }
+      })
+    }
+
+    return filtered
+  }, [ibFilteredPositions, searchInput, sortColumn, sortDirection])
+
+  // Handle column sorting
+  const handleSort = (columnKey) => {
+    if (sortColumn === columnKey) {
+      // Toggle direction if same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setSortColumn(columnKey)
+      setSortDirection('asc')
+    }
+  }
 
   // Calculate totals
   const totalProfit = filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0)
@@ -523,10 +564,22 @@ export default function PositionModule() {
                   {activeColumns.map(col => (
                     <div 
                       key={col.key} 
-                      className={`h-[28px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                      onClick={() => handleSort(col.key)}
+                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:bg-[#1450A0] transition-colors ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
                       style={{border: 'none', outline: 'none', boxShadow: 'none'}}
                     >
-                      {col.label}
+                      <span>{col.label}</span>
+                      {sortColumn === col.key && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                          <path 
+                            d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
+                            stroke="white" 
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
                     </div>
                   ))}
                 </div>
