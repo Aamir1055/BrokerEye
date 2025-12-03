@@ -371,27 +371,33 @@ export default function PositionModule() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
-          <div className="flex items-center gap-2">
-            <button className="h-10 px-4 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="#1A63BC" strokeWidth="2"/>
-                <path d="M12 8v8M8 12h8" stroke="#1A63BC" strokeWidth="2"/>
+          <div className="flex items-center gap-3">
+            <button className="h-10 px-3 rounded-[10px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke="#1A63BC" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              <span className="text-[#1A63BC] text-[13px] font-semibold font-outfit">Net Positions</span>
+              <span className="text-[#1A63BC] text-[13px] font-medium font-outfit">Filter</span>
             </button>
-            <button className="h-10 px-4 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
+            <button className="h-10 px-4 rounded-[10px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="8" cy="8" r="3" stroke="#1A63BC" strokeWidth="1.5"/>
-                <circle cx="16" cy="8" r="3" stroke="#1A63BC" strokeWidth="1.5"/>
-                <path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#1A63BC" strokeWidth="1.5"/>
+                <circle cx="12" cy="12" r="9" stroke="#666666" strokeWidth="2"/>
+                <path d="M12 8v8M8 12h8" stroke="#666666" strokeWidth="2"/>
               </svg>
-              <span className="text-[#1A63BC] text-[13px] font-semibold font-outfit">Client Net</span>
+              <span className="text-[#666666] text-[13px] font-medium font-outfit">Net Positions</span>
+            </button>
+            <button className="h-10 px-4 rounded-[10px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke="#666666" strokeWidth="2"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <span className="text-[#666666] text-[13px] font-medium font-outfit">Client Net</span>
             </button>
             <button 
               onClick={() => window.location.reload()}
               className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#1A63BC] to-[#1450A0] shadow-md flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all duration-200"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="animate-spin-slow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
