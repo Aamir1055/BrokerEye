@@ -355,27 +355,12 @@ export default function PendingOrdersModule() {
           <div className="flex items-center justify-center gap-3">
             <button 
               onClick={() => setIsCustomizeOpen(true)} 
-              className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+              className="flex-1 h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
-            </button>
-            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="#666666" strokeWidth="2"/>
-                <path d="M12 8v8M8 12h8" stroke="#666666" strokeWidth="2"/>
-              </svg>
-              <span className="text-[#666666] text-[10px] font-medium font-outfit">Net Orders</span>
-            </button>
-            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke="#666666" strokeWidth="2"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              <span className="text-[#666666] text-[10px] font-medium font-outfit">Client Net</span>
             </button>
             <button 
               onClick={() => window.location.reload()}
