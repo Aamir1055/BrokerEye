@@ -9,6 +9,7 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
+import MarginLevelModule from '../components/MarginLevelModule'
 
 // Helpers
 const getMarginLevelPercent = (obj) => {
@@ -23,7 +24,10 @@ const getMarginLevelPercent = (obj) => {
 }
 
 const MarginLevelPage = () => {
-  // Use cached data from DataContext
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Use cached data from DataContext - MUST be called before conditional return
   const { accounts: cachedAccounts, positions: cachedPositions, fetchAccounts, loading, connectionState } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
@@ -792,6 +796,22 @@ const MarginLevelPage = () => {
         </div>
       </th>
     )
+  }
+
+  // Mobile detection effect - Must be after all other hooks
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Use mobile view on small screens
+  if (isMobile) {
+    return <MarginLevelModule />
   }
 
   return (

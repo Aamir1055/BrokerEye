@@ -162,10 +162,10 @@ export default function Client2Module() {
     }
   }, [showPercent, filters, selectedIB, getActiveGroupFilter, currentPage])
 
-  // Initial fetch and periodic refresh every 2 seconds
+  // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
     fetchClients()
-    const interval = setInterval(fetchClients, 2000) // Refresh every 2 seconds
+    const interval = setInterval(fetchClients, 1000) // Refresh every 1 second
     return () => clearInterval(interval)
   }, [fetchClients])
 

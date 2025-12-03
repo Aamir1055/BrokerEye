@@ -11,10 +11,14 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
+import LiveDealingModule from '../components/LiveDealingModule'
 
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const LiveDealingPage = () => {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+  
   const { positions: cachedPositions } = useData() // Get positions from DataContext
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
@@ -1465,6 +1469,22 @@ const LiveDealingPage = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
         </svg>
       )
+  }
+
+  // Mobile detection effect - Must be after all other hooks
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Use mobile view on small screens
+  if (isMobile) {
+    return <LiveDealingModule />
   }
 
   return (
