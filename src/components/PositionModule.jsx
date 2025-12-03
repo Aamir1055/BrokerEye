@@ -391,8 +391,8 @@ export default function PositionModule() {
               onClick={() => window.location.reload()}
               className="w-11 h-11 rounded-[12px] bg-gradient-to-br from-[#1A63BC] to-[#1450A0] shadow-sm flex items-center justify-center hover:shadow-md transition-all"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
           </div>
