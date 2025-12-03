@@ -4,6 +4,7 @@ const CustomizeViewModal = ({
   isOpen, 
   onClose, 
   onFilterClick,
+  onDealsClick,
   onIBFilterClick,
   onGroupsClick,
   onReset,
@@ -121,6 +122,152 @@ const CustomizeViewModal = ({
 
         {/* Menu options */}
         <div style={{ flex: 1, padding: '0 20px' }}>
+          {/* Filter option */}
+          <button
+            onClick={onFilterClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'rgba(230, 238, 248, 0.44)',
+                borderRadius: '8px',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M4 6h10M2 3h14M6 9h6"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '20px',
+                color: '#1B2D45',
+                textAlign: 'left',
+              }}
+            >
+              Filter
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div
+            style={{
+              width: '100%',
+              height: '1px',
+              background: '#F2F2F7',
+              margin: '12px 0',
+            }}
+          />
+
+          {/* Deals option */}
+          <button
+            onClick={onDealsClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                background: 'rgba(230, 238, 248, 0.44)',
+                borderRadius: '8px',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M3 6L7.5 2L12 6L16.5 2"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <rect
+                  x="2"
+                  y="8"
+                  width="4"
+                  height="8"
+                  rx="1"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <rect
+                  x="7"
+                  y="6"
+                  width="4"
+                  height="10"
+                  rx="1"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+                <rect
+                  x="12"
+                  y="10"
+                  width="4"
+                  height="6"
+                  rx="1"
+                  stroke="#999999"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '20px',
+                color: '#1B2D45',
+                textAlign: 'left',
+              }}
+            >
+              Deals
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div
+            style={{
+              width: '100%',
+              height: '1px',
+              background: '#F2F2F7',
+              margin: '12px 0',
+            }}
+          />
+
           {/* IB Filter option */}
           <button
             onClick={onIBFilterClick}

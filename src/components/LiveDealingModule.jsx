@@ -7,6 +7,8 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import TimeFilterModal from './TimeFilterModal'
+import DealsFilterModal from './DealsFilterModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import websocketService from '../services/websocket'
@@ -37,6 +39,8 @@ export default function LiveDealingModule() {
   const [searchInput, setSearchInput] = useState('')
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false)
+  const [isDealsFilterOpen, setIsDealsFilterOpen] = useState(false)
   const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
   const [isGroupOpen, setIsGroupOpen] = useState(false)
   const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
@@ -54,7 +58,12 @@ export default function LiveDealingModule() {
   // Deals state
   const [deals, setDeals] = useState([])
   const [connectionState, setConnectionState] = useState('disconnected')
-  const [timeFilter, setTimeFilter] = useState('24h')
+  const [timeFilter, setTimeFilter] = useState('24h') // '24h', '7d', 'custom'
+  const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
+  const [customFromDate, setCustomFromDate] = useState('')
+  const [customToDate, setCustomToDate] = useState('')
+  const [appliedFromDate, setAppliedFromDate] = useState('')
+  const [appliedToDate, setAppliedToDate] = useState('')
   
   const [visibleColumns, setVisibleColumns] = useState({
     time: true,
@@ -154,7 +163,7 @@ export default function LiveDealingModule() {
 
       setDeals(prevDeals => {
         if (prevDeals.some(d => d.id === dealEntry.id)) return prevDeals
-        const updated = [dealEntry, ...prevDeals].slice(0, 500)
+        const updated = [dealEntry, ...prevDeals].slice(0, 1000)
         saveWsCache(updated.slice(0, 200))
         return updated
       })
@@ -181,49 +190,79 @@ export default function LiveDealingModule() {
     }
   }, [])
 
-  // Filter deals by time (24h by default)
+  // Filter deals by time
   const filteredByTime = useMemo(() => {
     const now = Date.now() / 1000
-    const cutoff = now - (24 * 60 * 60) // 24 hours
+    let cutoff
+    
+    if (timeFilter === '24h') {
+      cutoff = now - (24 * 60 * 60) // 24 hours
+    } else if (timeFilter === '7d') {
+      cutoff = now - (7 * 24 * 60 * 60) // 7 days
+    } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
+      // Custom range - filter by applied dates
+      const fromTimestamp = new Date(appliedFromDate).getTime() / 1000
+      const toTimestamp = new Date(appliedToDate).setHours(23, 59, 59, 999) / 1000
+      return deals.filter(deal => {
+        const dealTime = deal.timestamp || 0
+        return dealTime >= fromTimestamp && dealTime <= toTimestamp
+      })
+    } else {
+      // custom but no dates applied - show all
+      cutoff = 0
+    }
+    
     return deals.filter(deal => {
       const dealTime = deal.timestamp || 0
       return dealTime >= cutoff
     })
-  }, [deals, timeFilter])
+  }, [deals, timeFilter, appliedFromDate, appliedToDate])
 
   // Apply search filter
   const searchedDeals = useMemo(() => {
     if (!searchInput.trim()) return filteredByTime
-    const query = searchInput.toLowerCase()
-    return filteredByTime.filter(deal => 
-      String(deal.login || '').toLowerCase().includes(query) ||
-      String(deal.rawData?.symbol || '').toLowerCase().includes(query) ||
-      String(deal.id || '').toLowerCase().includes(query)
-    )
+    const query = searchInput.toLowerCase().trim()
+    return filteredByTime.filter(deal => {
+      const login = String(deal.login || '').toLowerCase()
+      const symbol = String(deal.rawData?.symbol || '').toLowerCase()
+      const dealId = String(deal.id || '').toLowerCase()
+      
+      return login.includes(query) || symbol.includes(query) || dealId.includes(query)
+    })
   }, [filteredByTime, searchInput])
+
+  // Filter by module type (deals/money/both)
+  const isTradeAction = (action) => {
+    const label = String(action || '').toLowerCase()
+    return (
+      label === 'buy' ||
+      label === 'sell' ||
+      label.includes('cancel') ||
+      label.includes('stop out') ||
+      label.includes('tp close') ||
+      label.includes('sl close')
+    )
+  }
+
+  const moduleFilteredDeals = useMemo(() => {
+    if (moduleFilter === 'both') return searchedDeals
+    return searchedDeals.filter(deal => {
+      const action = deal.rawData?.action
+      if (moduleFilter === 'deal' && isTradeAction(action)) return true
+      if (moduleFilter === 'money' && !isTradeAction(action)) return true
+      return false
+    })
+  }, [searchedDeals, moduleFilter])
 
   // Apply group filter
   const groupFilteredDeals = useMemo(() => {
-    return filterByActiveGroup(searchedDeals, 'login', 'livedealing')
-  }, [searchedDeals, filterByActiveGroup, activeGroupFilters])
+    return filterByActiveGroup(moduleFilteredDeals, 'login', 'livedealing')
+  }, [moduleFilteredDeals, filterByActiveGroup, activeGroupFilters])
 
   // Apply IB filter
   const ibFilteredDeals = useMemo(() => {
     return filterByActiveIB(groupFilteredDeals, 'login')
   }, [groupFilteredDeals, filterByActiveIB, selectedIB, ibMT5Accounts])
-
-  // Calculate summary statistics
-  const summaryStats = useMemo(() => {
-    const totalDeals = ibFilteredDeals.length
-    const uniqueLogins = new Set(ibFilteredDeals.map(d => d.login)).size
-    const totalPositions = cachedPositions.length
-    
-    return {
-      totalDeals,
-      uniqueLogins,
-      totalPositions
-    }
-  }, [ibFilteredDeals, cachedPositions])
 
   // Sort the filtered deals
   const sortedDeals = useMemo(() => {
@@ -253,6 +292,22 @@ export default function LiveDealingModule() {
           aVal = a.rawData?.price || 0
           bVal = b.rawData?.price || 0
           break
+        case 'totalProfit':
+          aVal = a.rawData?.profit || 0
+          bVal = b.rawData?.profit || 0
+          break
+        case 'commission':
+          aVal = a.rawData?.commission || 0
+          bVal = b.rawData?.commission || 0
+          break
+        case 'storage':
+          aVal = a.rawData?.storage || 0
+          bVal = b.rawData?.storage || 0
+          break
+        case 'symbol':
+          aVal = a.rawData?.symbol || ''
+          bVal = b.rawData?.symbol || ''
+          break
         default:
           aVal = a.rawData?.[sortColumn] || 0
           bVal = b.rawData?.[sortColumn] || 0
@@ -268,15 +323,24 @@ export default function LiveDealingModule() {
         return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
       }
       
-      const aStr = String(aVal).toLowerCase()
-      const bStr = String(bVal).toLowerCase()
-      if (sortDirection === 'asc') {
-        return aStr.localeCompare(bStr)
-      } else {
-        return bStr.localeCompare(aStr)
-      }
+      return sortDirection === 'asc' 
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal))
     })
   }, [ibFilteredDeals, sortColumn, sortDirection])
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    const totalDeals = sortedDeals.length
+    const uniqueLogins = new Set(sortedDeals.map(d => d.login)).size
+    const totalPositions = cachedPositions.length
+    
+    return {
+      totalDeals,
+      uniqueLogins,
+      totalPositions
+    }
+  }, [sortedDeals, cachedPositions])
 
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
@@ -288,16 +352,19 @@ export default function LiveDealingModule() {
   }
 
   // Face cards data - use useMemo to avoid infinite loop
-  const cards = useMemo(() => [
-    { label: 'DEALS (24H)', value: String(summaryStats.totalDeals) },
-    { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
-    { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) }
-  ], [summaryStats])
+  const cards = useMemo(() => {
+    const timeLabel = timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'DEALS (CUSTOM)'
+    return [
+      { label: timeLabel, value: String(summaryStats.totalDeals) },
+      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
+      { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) }
+    ]
+  }, [summaryStats, timeFilter])
 
   // Get visible columns
   const allColumns = [
-    { key: 'time', label: 'Time', width: '80px', sticky: true },
-    { key: 'login', label: 'Login', width: '80px' },
+    { key: 'login', label: 'Login', width: '80px', sticky: true },
+    { key: 'time', label: 'Time', width: '80px' },
     { key: 'netType', label: 'Net Type', width: '80px' },
     { key: 'netVolume', label: 'Net Volume', width: '100px' },
     { key: 'averagePrice', label: 'Average Price', width: '110px' },
@@ -410,7 +477,7 @@ export default function LiveDealingModule() {
   )
 
   return (
-    <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-x-hidden overflow-y-hidden max-w-full" style={{ height: '100dvh', width: '100vw', maxWidth: '100vw', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
         <button 
@@ -432,47 +499,96 @@ export default function LiveDealingModule() {
 
       {/* Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setIsSidebarOpen(false)}>
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-[#ECECEC]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">BE</span>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[#000000]">Broker Eyes</div>
+                  <div className="text-xs text-[#404040]">Trading Platform</div>
+                </div>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto py-2">
+              <nav className="flex flex-col">
+                {[
+                  {label:'Dashboard', path:'/dashboard', icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#404040"/></svg>
+                  )},
+                  {label:'Clients', path:'/client-dashboard-c', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Client 2', path:'/client2', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Positions', path:'/positions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="11" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="16" width="18" height="3" rx="1" stroke="#404040"/></svg>
+                  )},
+                  {label:'Pending Orders', path:'/pending-orders', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
+                  )},
+                  {label:'Margin Level', path:'/margin-level', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
+                  )},
+                  {label:'Live Dealing', path:'/live-dealing', active:true, icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#1A63BC"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#1A63BC"/></svg>
+                  )},
+                  {label:'Client Percentage', path:'/client-percentage', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
+                  )},
+                  {label:'Settings', path:'/settings', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
+                  )},
+                ].map((item, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => {
+                      navigate(item.path)
+                      setIsSidebarOpen(false)
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                      item.active 
+                        ? 'bg-[#EFF6FF] border-l-4 border-[#1A63BC]' 
+                        : 'hover:bg-[#F8F8F8]'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">{item.icon}</div>
+                    <span className={`text-sm ${
+                      item.active ? 'text-[#1A63BC] font-semibold' : 'text-[#404040]'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Sidebar */}
-      <div 
-        className={`fixed left-0 top-0 h-full w-[280px] bg-white z-50 transform transition-transform duration-300 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold">Menu</h2>
-            <button onClick={() => setIsSidebarOpen(false)}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="#000" strokeWidth="2"/>
-              </svg>
-            </button>
-          </div>
-          
-          <nav className="space-y-2">
-            <button onClick={() => navigate('/dashboard')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">Dashboard</button>
-            <button onClick={() => navigate('/positions')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">Positions</button>
-            <button onClick={() => navigate('/pending-orders')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">Pending Orders</button>
-            <button onClick={() => navigate('/margin-level')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">Margin Level</button>
-            <button onClick={() => navigate('/live-dealing')} className="w-full text-left px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-medium">Live Dealing</button>
-            <button onClick={() => navigate('/clients')} className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700">Clients</button>
-          </nav>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100vw' }}>
         {/* Action Buttons + View All */}
         <div className="px-5 pt-3 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex gap-[8px]">
               <button 
-                onClick={() => setIsFilterOpen(true)} 
+                onClick={() => setIsCustomizeOpen(true)} 
                 className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -554,8 +670,8 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Search and Pagination Controls */}
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="px-4 pb-2" style={{ minWidth: '100%', width: '100%' }}>
+          <div className="flex items-center gap-2" style={{ width: '100%' }}>
             <div className="flex-1 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
@@ -566,7 +682,7 @@ export default function LiveDealingModule() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search"
-                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
+                className="flex-1 min-w-0 text-[11px] text-[#000000] font-semibold placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
             <button 
@@ -600,12 +716,13 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Table */}
-        <div className="px-4 pb-4">
-          <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+        <div className="pb-4" style={{ maxWidth: '100vw', overflow: 'hidden' }}>
+          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 #F7FAFC'
+              scrollbarColor: '#CBD5E0 #F7FAFC',
+              touchAction: 'pan-x pan-y'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
@@ -739,11 +856,144 @@ export default function LiveDealingModule() {
       )}
 
       {/* Modals */}
-      {isFilterOpen && <FilterModal onClose={() => setIsFilterOpen(false)} />}
-      {isIBFilterOpen && <IBFilterModal onClose={() => setIsIBFilterOpen(false)} />}
-      {isGroupOpen && <GroupModal onClose={() => setIsGroupOpen(false)} group={editingGroup} />}
-      {isLoginGroupsOpen && <LoginGroupsModal onClose={() => setIsLoginGroupsOpen(false)} />}
-      {isLoginGroupModalOpen && <LoginGroupModal onClose={() => setIsLoginGroupModalOpen(false)} />}
+      
+      {/* CustomizeView Modal */}
+      <CustomizeViewModal
+        isOpen={isCustomizeOpen}
+        onClose={() => setIsCustomizeOpen(false)}
+        onFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsTimeFilterOpen(true)
+        }}
+        onIBFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsIBFilterOpen(true)
+        }}
+        onGroupsClick={() => {
+          setIsCustomizeOpen(false)
+          setIsLoginGroupsOpen(true)
+        }}
+        onDealsClick={() => {
+          setIsCustomizeOpen(false)
+          setIsDealsFilterOpen(true)
+        }}
+        onReset={() => {
+          setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+          clearIBSelection()
+          setActiveGroupFilter('livedealing', null)
+          setTimeFilter('24h')
+          setModuleFilter('both')
+        }}
+        onApply={() => {
+          setIsCustomizeOpen(false)
+        }}
+      />
+
+      {/* Time Filter Modal */}
+      <TimeFilterModal
+        isOpen={isTimeFilterOpen}
+        onClose={() => setIsTimeFilterOpen(false)}
+        onApply={(newFilter) => {
+          setTimeFilter(newFilter)
+          setIsTimeFilterOpen(false)
+        }}
+        currentFilter={timeFilter}
+        customFromDate={customFromDate}
+        customToDate={customToDate}
+        onCustomFromDateChange={setCustomFromDate}
+        onCustomToDateChange={setCustomToDate}
+        onApplyCustomDates={() => {
+          setAppliedFromDate(customFromDate)
+          setAppliedToDate(customToDate)
+        }}
+      />
+
+      {/* Deals Filter Modal */}
+      <DealsFilterModal
+        isOpen={isDealsFilterOpen}
+        onClose={() => setIsDealsFilterOpen(false)}
+        onApply={(newFilter) => {
+          setModuleFilter(newFilter)
+          setIsDealsFilterOpen(false)
+        }}
+        currentFilter={moduleFilter}
+      />
+
+      {/* Filter Modal (hasFloating/hasCredit/noDeposit) */}
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={(newFilters) => {
+          setFilters(newFilters)
+          setIsFilterOpen(false)
+        }}
+        filters={filters}
+      />
+
+      {/* IB Filter Modal */}
+      <IBFilterModal
+        isOpen={isIBFilterOpen}
+        onClose={() => setIsIBFilterOpen(false)}
+        onSelectIB={(ib) => {
+          if (ib) {
+            selectIB(ib)
+          } else {
+            clearIBSelection()
+          }
+          setIsIBFilterOpen(false)
+        }}
+        currentSelectedIB={selectedIB}
+      />
+      {/* Group Modal */}
+      <GroupModal
+        isOpen={isGroupOpen}
+        onClose={() => setIsGroupOpen(false)}
+        availableItems={ibFilteredDeals}
+        loginField="login"
+        displayField="symbol"
+      />
+
+      {/* Login Groups Modal */}
+      <LoginGroupsModal
+        isOpen={isLoginGroupsOpen}
+        onClose={() => setIsLoginGroupsOpen(false)}
+        groups={groups.map(g => ({
+          ...g,
+          loginCount: g.range 
+            ? (g.range.to - g.range.from + 1) 
+            : g.loginIds.length
+        }))}
+        activeGroupName={getActiveGroupFilter('livedealing')}
+        onSelectGroup={(group) => {
+          if (group === null) {
+            setActiveGroupFilter('livedealing', null)
+          } else {
+            setActiveGroupFilter('livedealing', group.name)
+          }
+          setIsLoginGroupsOpen(false)
+        }}
+        onCreateGroup={() => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onEditGroup={(group) => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(group)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onDeleteGroup={deleteGroup}
+      />
+
+      {/* Login Group Modal */}
+      <LoginGroupModal
+        isOpen={isLoginGroupModalOpen}
+        onClose={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+        }}
+        editGroup={editingGroup}
+      />
     </div>
   )
 }
