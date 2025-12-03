@@ -372,6 +372,15 @@ export default function PositionModule() {
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-center gap-3">
+            <button 
+              onClick={() => setIsCustomizeOpen(true)} 
+              className="h-11 px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="text-[#4B4B4B] text-[13px] font-medium font-outfit">Filter</span>
+            </button>
             <button className="flex-1 h-11 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="9" stroke="#666666" strokeWidth="2"/>
@@ -389,9 +398,9 @@ export default function PositionModule() {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-11 h-11 rounded-[12px] bg-gradient-to-br from-[#1A63BC] to-[#1450A0] shadow-sm flex items-center justify-center hover:shadow-md transition-all"
+              className="w-11 h-11 rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
             >
-              <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth={2}>
+              <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
