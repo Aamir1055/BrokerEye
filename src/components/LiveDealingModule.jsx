@@ -10,6 +10,7 @@ import LoginGroupModal from './LoginGroupModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import websocketService from '../services/websocket'
+import { brokerAPI } from '../services/api'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -71,39 +72,112 @@ export default function LiveDealingModule() {
     entry: false
   })
 
-  // Load deals from WebSocket cache on mount
-  useEffect(() => {
-    const WS_CACHE_KEY = 'liveDealsWsCache'
+  // Format request text from deal data
+  const formatRequestFromDeal = (deal) => {
+    const action = deal.action || '-'
+    const symbol = deal.symbol || '-'
+    const volume = formatNum(deal.volume || 0, 2)
+    const price = formatNum(deal.price || 0, 2)
+    return `${action} ${volume} ${symbol} at ${price}`
+  }
+
+  // Load and save deals cache
+  const WS_CACHE_KEY = 'liveDealsWsCache'
+  const loadWsCache = () => {
     try {
       const raw = localStorage.getItem(WS_CACHE_KEY)
       const arr = raw ? JSON.parse(raw) : []
-      if (Array.isArray(arr)) {
-        setDeals(arr)
-      }
+      return Array.isArray(arr) ? arr : []
     } catch {
-      setDeals([])
+      return []
     }
+  }
+  const saveWsCache = (list) => {
+    try {
+      localStorage.setItem(WS_CACHE_KEY, JSON.stringify(list))
+    } catch {}
+  }
+
+  // Fetch deals from API (24h by default)
+  const fetchDeals = async () => {
+    try {
+      const nowUTC = Math.floor(Date.now() / 1000)
+      const to = nowUTC + (12 * 60 * 60) // Add 12 hours buffer
+      const from = nowUTC - (24 * 60 * 60) // 24 hours ago
+      
+      const response = await brokerAPI.getAllDeals(from, to, 10000)
+      const dealsData = response.data?.deals || response.deals || []
+      
+      // Transform deals
+      const transformedDeals = dealsData.map(deal => ({
+        id: deal.deal || deal.id,
+        timestamp: deal.time || deal.timestamp,
+        login: deal.login,
+        rawData: deal
+      }))
+      
+      // Sort newest first
+      transformedDeals.sort((a, b) => b.timestamp - a.timestamp)
+      
+      // Merge with WebSocket cache
+      const wsCached = loadWsCache()
+      const apiDealIds = new Set(transformedDeals.map(d => d.id))
+      const relevantCachedDeals = wsCached.filter(d => {
+        if (!d || !d.id) return false
+        if (apiDealIds.has(d.id)) return false
+        const dealTime = d.timestamp || 0
+        return dealTime >= from && dealTime <= to
+      })
+      
+      const merged = [...relevantCachedDeals, ...transformedDeals]
+      saveWsCache(relevantCachedDeals.slice(0, 200))
+      setDeals(merged)
+    } catch (error) {
+      console.error('[LiveDealingModule] Error fetching deals:', error)
+    }
+  }
+
+  // Initial fetch and WebSocket subscription
+  useEffect(() => {
+    // Fetch initial data
+    fetchDeals()
 
     // Subscribe to WebSocket updates
-    const handleWsUpdate = (event) => {
-      if (event.detail?.deals) {
-        setDeals(event.detail.deals)
+    const handleDealAdded = (data) => {
+      const dealData = data.data || data
+      const dealEntry = {
+        id: dealData.deal || Date.now() + Math.random(),
+        timestamp: dealData.time || dealData.timestamp || Math.floor(Date.now() / 1000),
+        login: dealData.login,
+        rawData: dealData
       }
-      if (event.detail?.connectionState) {
-        setConnectionState(event.detail.connectionState)
-      }
+
+      setDeals(prevDeals => {
+        if (prevDeals.some(d => d.id === dealEntry.id)) return prevDeals
+        const updated = [dealEntry, ...prevDeals].slice(0, 500)
+        saveWsCache(updated.slice(0, 200))
+        return updated
+      })
     }
 
-    window.addEventListener('liveDealingUpdate', handleWsUpdate)
-    
-    // Get initial connection state
+    const unsubscribeDealAdded = websocketService.subscribe('DEAL_ADDED', handleDealAdded)
+    const unsubscribeDealCreated = websocketService.subscribe('DEAL_CREATED', handleDealAdded)
+
+    // Get connection state
     const service = websocketService
     if (service.socket?.readyState === WebSocket.OPEN) {
       setConnectionState('connected')
     }
 
+    const handleConnectionState = (event) => {
+      setConnectionState(event.detail)
+    }
+    const unsubscribeConnectionState = websocketService.subscribe('connectionState', handleConnectionState)
+
     return () => {
-      window.removeEventListener('liveDealingUpdate', handleWsUpdate)
+      unsubscribeDealAdded()
+      unsubscribeDealCreated()
+      unsubscribeConnectionState()
     }
   }, [])
 
@@ -213,27 +287,12 @@ export default function LiveDealingModule() {
     }
   }
 
-  // Face cards data
-  const [cards, setCards] = useState([])
-  
-  useEffect(() => {
-    const newCards = [
-      { label: 'DEALS (24H)...', value: String(summaryStats.totalDeals) },
-      { label: 'DEALS (24H)...', value: String(summaryStats.totalDeals) },
-      { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) }
-    ]
-    
-    if (cards.length === 0) {
-      setCards(newCards)
-    } else {
-      setCards(prevCards => {
-        return prevCards.map(prevCard => {
-          const updated = newCards.find(c => c.label === prevCard.label)
-          return updated || prevCard
-        })
-      })
-    }
-  }, [summaryStats])
+  // Face cards data - use useMemo to avoid infinite loop
+  const cards = useMemo(() => [
+    { label: 'DEALS (24H)', value: String(summaryStats.totalDeals) },
+    { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
+    { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) }
+  ], [summaryStats])
 
   // Get visible columns
   const allColumns = [
