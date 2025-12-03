@@ -33,6 +33,36 @@ export default function PositionModule() {
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
+  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
+  const [columnSearch, setColumnSearch] = useState('')
+  const [visibleColumns, setVisibleColumns] = useState({
+    login: false,
+    firstName: false,
+    middleName: false,
+    lastName: false,
+    email: false,
+    phone: false,
+    position: false,
+    symbol: true,
+    action: false,
+    netType: true,
+    volume: false,
+    volumePercentage: false,
+    priceOpen: true,
+    priceCurrent: false,
+    netVolume: true,
+    sl: false,
+    tp: false,
+    profit: false,
+    totalProfit: true,
+    profitPercentage: false,
+    storage: false,
+    storagePercentage: false,
+    appliedPercentage: false,
+    reason: false,
+    comment: false,
+    commission: false
+  })
 
   // Apply group and IB filters to positions (same as desktop)
   const groupFilteredPositions = useMemo(() => {
@@ -72,6 +102,118 @@ export default function PositionModule() {
 
   // Calculate totals
   const totalProfit = filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0)
+
+  // Get active columns for dynamic table rendering
+  const activeColumns = useMemo(() => {
+    const columnDefs = [
+      { key: 'login', label: 'Login', width: '80px', sticky: true },
+      { key: 'firstName', label: 'First Name', width: '100px' },
+      { key: 'middleName', label: 'Middle Name', width: '100px' },
+      { key: 'lastName', label: 'Last Name', width: '100px' },
+      { key: 'email', label: 'Email', width: '140px' },
+      { key: 'phone', label: 'Phone', width: '100px' },
+      { key: 'position', label: 'Position', width: '80px' },
+      { key: 'symbol', label: 'Symbol', width: '80px' },
+      { key: 'action', label: 'Action', width: '70px' },
+      { key: 'netType', label: 'Net Type', width: '70px' },
+      { key: 'volume', label: 'Volume', width: '80px' },
+      { key: 'volumePercentage', label: 'Volume %', width: '80px' },
+      { key: 'priceOpen', label: 'Avg Price', width: '90px' },
+      { key: 'priceCurrent', label: 'Price Current', width: '100px' },
+      { key: 'netVolume', label: 'Net Volume', width: '90px' },
+      { key: 'sl', label: 'S/L', width: '80px' },
+      { key: 'tp', label: 'T/P', width: '80px' },
+      { key: 'profit', label: 'Profit', width: '80px' },
+      { key: 'totalProfit', label: 'Total Profit', width: '90px' },
+      { key: 'profitPercentage', label: 'Profit %', width: '80px' },
+      { key: 'storage', label: 'Storage', width: '80px' },
+      { key: 'storagePercentage', label: 'Storage %', width: '90px' },
+      { key: 'appliedPercentage', label: 'Applied %', width: '90px' },
+      { key: 'reason', label: 'Reason', width: '100px' },
+      { key: 'comment', label: 'Comment', width: '100px' },
+      { key: 'commission', label: 'Commission', width: '90px' },
+    ]
+    const filtered = columnDefs.filter(col => visibleColumns[col.key])
+    // Make first column sticky if it's not already login
+    if (filtered.length > 0 && filtered[0].key !== 'login') {
+      filtered[0].sticky = true
+    }
+    return filtered
+  }, [visibleColumns])
+
+  // Generate grid template columns for the table
+  const gridTemplateColumns = useMemo(() => {
+    return activeColumns.map(col => col.width || '1fr').join(' ')
+  }, [activeColumns])
+
+  // Render cell value based on column key
+  const renderCellValue = (pos, columnKey, isSticky = false) => {
+    const stickyClass = isSticky ? 'sticky left-0 bg-white z-10' : ''
+    const stickyStyle = isSticky ? { boxShadow: '2px 0 4px rgba(0,0,0,0.05)' } : {}
+    
+    switch(columnKey) {
+      case 'symbol':
+        return <div className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap text-[#1A63BC] font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
+      case 'netType':
+      case 'action':
+        return (
+          <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
+              pos.type === 0 || pos.type === 'Buy' 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-red-100 text-red-700'
+            }`}>
+              {pos.type === 0 || pos.type === 'Buy' ? 'Buy' : 'Sell'}
+            </span>
+          </div>
+        )
+      case 'totalProfit':
+      case 'profit':
+        return (
+          <div className={`h-[38px] flex items-center justify-center px-1 font-medium ${
+            (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+          } ${stickyClass}`} style={stickyStyle}>
+            {formatNum(pos.profit || 0)}
+          </div>
+        )
+      case 'priceOpen':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
+      case 'priceCurrent':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceCurrent || 0)}</div>
+      case 'volume':
+      case 'netVolume':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
+      case 'volumePercentage':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
+      case 'profitPercentage':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
+      case 'storage':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
+      case 'storagePercentage':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
+      case 'appliedPercentage':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.appliedPercentage || 0)}%</div>
+      case 'sl':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
+      case 'tp':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
+      case 'commission':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
+      case 'login':
+        return <div className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass}`} style={stickyStyle}>{pos.login || '-'}</div>
+      case 'firstName':
+      case 'middleName':
+      case 'lastName':
+      case 'email':
+      case 'phone':
+      case 'position':
+      case 'reason':
+      case 'comment':
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
+      default:
+        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>-</div>
+    }
+  }
 
   // Face cards data - matching desktop layout with persistent state
   const [cards, setCards] = useState([])
@@ -228,24 +370,24 @@ export default function PositionModule() {
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center gap-2">
-            <button className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="#4B4B4B" strokeWidth="2"/>
-                <path d="M12 8v8M8 12h8" stroke="#4B4B4B" strokeWidth="2"/>
-              </svg>
-              <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Net Positions</span>
-            </button>
-            <button className="h-9 px-3 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="8" cy="8" r="3" stroke="#4B4B4B"/>
-                <circle cx="16" cy="8" r="3" stroke="#4B4B4B"/>
-                <path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#4B4B4B"/>
-              </svg>
-              <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Client Net</span>
-            </button>
-            <button className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors">
+            <button className="h-10 px-4 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="#4B4B4B" strokeWidth="2"/>
+                <circle cx="12" cy="12" r="9" stroke="#1A63BC" strokeWidth="2"/>
+                <path d="M12 8v8M8 12h8" stroke="#1A63BC" strokeWidth="2"/>
+              </svg>
+              <span className="text-[#1A63BC] text-[13px] font-semibold font-outfit">Net Positions</span>
+            </button>
+            <button className="h-10 px-4 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="8" cy="8" r="3" stroke="#1A63BC" strokeWidth="1.5"/>
+                <circle cx="16" cy="8" r="3" stroke="#1A63BC" strokeWidth="1.5"/>
+                <path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#1A63BC" strokeWidth="1.5"/>
+              </svg>
+              <span className="text-[#1A63BC] text-[13px] font-semibold font-outfit">Client Net</span>
+            </button>
+            <button className="w-10 h-10 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="#1A63BC" strokeWidth="2"/>
               </svg>
             </button>
           </div>
@@ -315,7 +457,9 @@ export default function PositionModule() {
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
-            <button className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50">
+            <button 
+              onClick={() => setIsColumnSelectorOpen(true)}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                 <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
                 <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
@@ -338,49 +482,74 @@ export default function PositionModule() {
         {/* Table */}
         <div className="px-4 pb-4">
           <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-            {/* Table Header */}
-            <div className="grid grid-cols-5 bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-              <div className="h-[28px] flex items-center justify-center px-1">Symbol</div>
-              <div className="h-[28px] flex items-center justify-center px-1">Net Type</div>
-              <div className="h-[28px] flex items-center justify-center px-1">Avg Price</div>
-              <div className="h-[28px] flex items-center justify-center px-1">Net Volume</div>
-              <div className="h-[28px] flex items-center justify-center px-1">Total Profit</div>
-            </div>
-
-            {/* Table Rows */}
-            {filteredPositions.slice(0, 15).map((pos, idx) => (
-              <div 
-                key={idx} 
-                className="grid grid-cols-5 text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
-                style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}
-              >
-                <div className="h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap text-[#1A63BC] font-semibold">{pos.symbol || pos.login || '-'}</div>
-                <div className="h-[38px] flex items-center justify-center px-1">
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
-                    pos.type === 0 || pos.type === 'Buy' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {pos.type === 0 || pos.type === 'Buy' ? 'Buy' : 'Sell'}
-                  </span>
+            <div className="w-full overflow-x-auto overflow-y-visible" style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#CBD5E0 #F7FAFC'
+            }}>
+              <div className="relative" style={{ minWidth: 'max-content' }}>
+                {/* Table Header */}
+                <div 
+                  className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+                  style={{
+                    gap: '0px', 
+                    gridGap: '0px', 
+                    columnGap: '0px',
+                    gridTemplateColumns
+                  }}
+                >
+                  {activeColumns.map(col => (
+                    <div 
+                      key={col.key} 
+                      className={`h-[28px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                      style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+                    >
+                      {col.label}
+                    </div>
+                  ))}
                 </div>
-                <div className="h-[38px] flex items-center justify-center px-1">{formatNum(pos.priceOpen || 0)}</div>
-                <div className="h-[38px] flex items-center justify-center px-1">{formatNum(pos.volume || 0)}</div>
-                <div className={`h-[38px] flex items-center justify-center px-1 font-medium ${
-                  (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatNum(pos.profit || 0)}
+
+                {/* Table Rows */}
+                {filteredPositions.slice(0, 15).map((pos, idx) => (
+                  <div 
+                    key={idx} 
+                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    {activeColumns.map(col => (
+                      <React.Fragment key={col.key}>
+                        {renderCellValue(pos, col.key, col.sticky)}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                ))}
+
+                {/* Table Footer */}
+                <div 
+                  className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]"
+                  style={{
+                    gap: '0px', 
+                    gridGap: '0px', 
+                    columnGap: '0px',
+                    gridTemplateColumns
+                  }}
+                >
+                  {activeColumns.map((col, idx) => (
+                    <div 
+                      key={col.key} 
+                      className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                      style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                    >
+                      {idx === 0 ? 'Total' : (col.key === 'totalProfit' || col.key === 'profit') ? formatNum(totalProfit) : '-'}
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-
-            {/* Table Footer */}
-            <div className="grid grid-cols-5 bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit" style={{gap: '0px', gridGap: '0px', columnGap: '0px'}}>
-              <div className="h-[28px] flex items-center justify-center px-1">Total</div>
-              <div className="h-[28px] flex items-center justify-center px-1">-</div>
-              <div className="h-[28px] flex items-center justify-center px-1">-</div>
-              <div className="h-[28px] flex items-center justify-center px-1">-</div>
-              <div className="h-[28px] flex items-center justify-center px-1">{formatNum(totalProfit)}</div>
             </div>
           </div>
         </div>
@@ -497,6 +666,151 @@ export default function PositionModule() {
         }}
         editGroup={editingGroup}
       />
+
+      {/* Column Selector Modal */}
+      {isColumnSelectorOpen && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
+          <div
+            className="w-full bg-white rounded-t-[24px] max-h-[80vh] overflow-hidden flex flex-col animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative px-6 pt-6 pb-4 border-b border-gray-200">
+              <button 
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="absolute left-4 top-6 w-8 h-8 flex items-center justify-center"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <h2 className="text-center text-xl font-semibold font-outfit text-black">Show/Hide Columns</h2>
+            </div>
+
+            {/* Search Columns Input */}
+            <div className="px-6 py-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search Columns"
+                  value={columnSearch}
+                  onChange={(e) => setColumnSearch(e.target.value)}
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[13px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M14 14L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6">
+              {Object.entries({
+                'Login': 'login',
+                'First Name': 'firstName',
+                'Middle Name': 'middleName',
+                'Last Name': 'lastName',
+                'Email': 'email',
+                'Phone': 'phone',
+                'Position': 'position',
+                'Symbol': 'symbol',
+                'Action': 'action',
+                'Net Type': 'netType',
+                'Volume': 'volume',
+                'Volume %': 'volumePercentage',
+                'Price Open': 'priceOpen',
+                'Price Current': 'priceCurrent',
+                'Net Volume': 'netVolume',
+                'S/L': 'sl',
+                'T/P': 'tp',
+                'Profit': 'profit',
+                'Total Profit': 'totalProfit',
+                'Profit %': 'profitPercentage',
+                'Storage': 'storage',
+                'Storage %': 'storagePercentage',
+                'Applied %': 'appliedPercentage',
+                'Reason': 'reason',
+                'Comment': 'comment',
+                'Commission': 'commission',
+              }).filter(([label]) => 
+                !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
+              ).map(([label, key]) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
+                  onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                >
+                  <span className="text-base text-gray-800 font-outfit">{label}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}}
+                    className="w-6 h-6 flex items-center justify-center"
+                  >
+                    {visibleColumns[key] ? (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="4" fill="#3B82F6"/>
+                        <path d="M7 12L10 15L17 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="4" stroke="#D1D5DB" strokeWidth="2" fill="white"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setVisibleColumns({
+                    login: false,
+                    firstName: false,
+                    middleName: false,
+                    lastName: false,
+                    email: false,
+                    phone: false,
+                    position: false,
+                    symbol: true,
+                    action: false,
+                    netType: true,
+                    volume: false,
+                    volumePercentage: false,
+                    priceOpen: true,
+                    priceCurrent: false,
+                    netVolume: true,
+                    sl: false,
+                    tp: false,
+                    profit: false,
+                    totalProfit: true,
+                    profitPercentage: false,
+                    storage: false,
+                    storagePercentage: false,
+                    appliedPercentage: false,
+                    reason: false,
+                    comment: false,
+                    commission: false,
+                  })
+                }}
+                className="flex-1 h-14 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gray-50 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="flex-1 h-14 rounded-2xl bg-blue-600 text-white text-base font-medium hover:bg-blue-700 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
