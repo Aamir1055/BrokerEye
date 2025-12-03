@@ -9,8 +9,25 @@ import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
+import PendingOrdersModule from '../components/PendingOrdersModule'
 
 const PendingOrdersPage = () => {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // If mobile, use mobile module
+  if (isMobile) {
+    return <PendingOrdersModule />
+  }
   // Use cached data from DataContext
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
