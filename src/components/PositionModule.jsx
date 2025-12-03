@@ -35,8 +35,10 @@ export default function PositionModule() {
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 15
   const [visibleColumns, setVisibleColumns] = useState({
-    login: false,
+    login: true,
     firstName: false,
     middleName: false,
     lastName: false,
@@ -385,9 +387,12 @@ export default function PositionModule() {
               </svg>
               <span className="text-[#1A63BC] text-[13px] font-semibold font-outfit">Client Net</span>
             </button>
-            <button className="w-10 h-10 rounded-[10px] bg-white border-2 border-[#E5E7EB] shadow-sm flex items-center justify-center hover:border-[#1A63BC] hover:bg-[#F0F7FF] transition-all">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="#1A63BC" strokeWidth="2"/>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-[#1A63BC] to-[#1450A0] shadow-md flex items-center justify-center hover:shadow-lg hover:scale-105 transition-all duration-200"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="animate-spin-slow">
+                <path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 15-6.7M20 15a9 9 0 0 1-15 6.7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
@@ -466,12 +471,20 @@ export default function PositionModule() {
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
-            <button className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredPositions.length / itemsPerPage), prev + 1))}
+              disabled={currentPage >= Math.ceil(filteredPositions.length / itemsPerPage)}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -510,7 +523,7 @@ export default function PositionModule() {
                 </div>
 
                 {/* Table Rows */}
-                {filteredPositions.slice(0, 15).map((pos, idx) => (
+                {filteredPositions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pos, idx) => (
                   <div 
                     key={idx} 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
@@ -769,7 +782,7 @@ export default function PositionModule() {
               <button
                 onClick={() => {
                   setVisibleColumns({
-                    login: false,
+                    login: true,
                     firstName: false,
                     middleName: false,
                     lastName: false,
