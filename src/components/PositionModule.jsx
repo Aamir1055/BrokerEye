@@ -389,7 +389,7 @@ export default function PositionModule() {
                       navigate(item.path)
                       setIsSidebarOpen(false)
                     }}
-                    className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}
+                    className={`flex items-center gap-3 px-4 h-[37px] text-[10px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}
                   >
                     <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
                     <span>{item.label}</span>
@@ -399,7 +399,7 @@ export default function PositionModule() {
             </div>
 
             <div className="p-4 mt-auto border-t border-[#ECECEC]">
-              <button className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]">
+              <button className="flex items-center gap-3 px-2 h-[37px] text-[10px] text-[#404040]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
                 <span>Logout</span>
               </button>
@@ -415,31 +415,31 @@ export default function PositionModule() {
           <div className="flex items-center justify-center gap-3">
             <button 
               onClick={() => setIsCustomizeOpen(true)} 
-              className="h-11 px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+              className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
-              <span className="text-[#4B4B4B] text-[13px] font-medium font-outfit">Filter</span>
+              <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
             </button>
-            <button className="flex-1 h-11 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="9" stroke="#666666" strokeWidth="2"/>
                 <path d="M12 8v8M8 12h8" stroke="#666666" strokeWidth="2"/>
               </svg>
-              <span className="text-[#666666] text-[13px] font-medium font-outfit">Net Positions</span>
+              <span className="text-[#666666] text-[10px] font-medium font-outfit">Net Positions</span>
             </button>
-            <button className="flex-1 h-11 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
                 <circle cx="9" cy="7" r="4" stroke="#666666" strokeWidth="2"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              <span className="text-[#666666] text-[13px] font-medium font-outfit">Client Net</span>
+              <span className="text-[#666666] text-[10px] font-medium font-outfit">Client Net</span>
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-11 h-11 rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
+              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
             >
               <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -769,7 +769,7 @@ export default function PositionModule() {
                   placeholder="Search Columns"
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[13px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[10px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <svg 
                   width="20" 
