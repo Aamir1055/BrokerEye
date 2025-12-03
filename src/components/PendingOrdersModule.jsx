@@ -142,21 +142,30 @@ export default function PendingOrdersModule() {
     }
   }
 
-  // Face cards data
-  const [cards, setCards] = useState([
-    { label: 'Total Orders', value: summaryStats.totalOrders, isProfit: false },
-    { label: 'Unique Logins', value: summaryStats.uniqueLogins, isProfit: false },
-    { label: 'Symbols', value: summaryStats.uniqueSymbols, isProfit: false },
-    { label: 'Total Volume', value: formatNum(summaryStats.totalVolume, 2), isProfit: false }
-  ])
-
+  // Face cards data - matching desktop layout with persistent state
+  const [cards, setCards] = useState([])
+  
+  // Update cards when summary stats change
   useEffect(() => {
-    setCards([
-      { label: 'Total Orders', value: summaryStats.totalOrders, isProfit: false },
-      { label: 'Unique Logins', value: summaryStats.uniqueLogins, isProfit: false },
-      { label: 'Symbols', value: summaryStats.uniqueSymbols, isProfit: false },
-      { label: 'Total Volume', value: formatNum(summaryStats.totalVolume, 2), isProfit: false }
-    ])
+    const newCards = [
+      { label: 'TOTAL PENDING ORDERS', value: String(summaryStats.totalOrders) },
+      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
+      { label: 'SYMBOLS', value: String(summaryStats.uniqueSymbols) },
+      { label: 'TOTAL VOLUME', value: formatNum(summaryStats.totalVolume, 2) }
+    ]
+    
+    // Only update if cards length is different (initial load) or keep existing order
+    if (cards.length === 0) {
+      setCards(newCards)
+    } else {
+      // Update values while preserving order
+      setCards(prevCards => {
+        return prevCards.map(prevCard => {
+          const updated = newCards.find(c => c.label === prevCard.label)
+          return updated || prevCard
+        })
+      })
+    }
   }, [summaryStats])
 
   // Get visible columns
@@ -237,15 +246,15 @@ export default function PendingOrdersModule() {
   )
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-[#EFF4FB] to-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          className="w-12 h-12 rounded-full bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center"
+          className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M3 12h18M3 6h18M3 18h18" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
         
