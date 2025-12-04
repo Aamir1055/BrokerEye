@@ -475,6 +475,8 @@ export default function ClientPercentageModule() {
               >
                 <div className="flex items-start justify-between">
                   <p className="text-[7px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
+                </div>
+                <div className="flex items-center gap-1">
                   <div className="flex-shrink-0">
                     {card.numericValue > 0 && (
                       <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
@@ -490,8 +492,8 @@ export default function ClientPercentageModule() {
                       <div className="w-[10px] h-[10px]" />
                     )}
                   </div>
+                  <p className="text-[#000000] text-base font-bold leading-none">{card.value}</p>
                 </div>
-                <p className="text-[#000000] text-base font-bold leading-none">{card.value}</p>
               </div>
             ))}
           </div>

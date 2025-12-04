@@ -524,7 +524,7 @@ export default function LiveDealingModule() {
           const volPercent = deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) : '0.00'
           value = `${volValue} (${volPercent}%)`
         } else if (displayMode === 'percentage') {
-          value = deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) + '%' : '0.00%'
+          value = deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) : '0.00'
         } else {
           value = formatNum(deal.rawData?.volume || 0, 2)
         }
@@ -540,7 +540,7 @@ export default function LiveDealingModule() {
           const profPercent = deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) : '0.00'
           profitValue = `${profVal} (${profPercent}%)`
         } else if (displayMode === 'percentage') {
-          profitValue = deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) + '%' : '0.00%'
+          profitValue = deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) : '0.00'
         } else {
           profitValue = formatNum(profit, 2)
         }
@@ -564,7 +564,7 @@ export default function LiveDealingModule() {
           const commPercent = deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) : '0.00'
           value = `${commValue} (${commPercent}%)`
         } else if (displayMode === 'percentage') {
-          value = deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) + '%' : '0.00%'
+          value = deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) : '0.00'
         } else {
           value = formatNum(deal.rawData?.commission || 0, 2)
         }
@@ -575,7 +575,7 @@ export default function LiveDealingModule() {
           const storPercent = deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) : '0.00'
           value = `${storValue} (${storPercent}%)`
         } else if (displayMode === 'percentage') {
-          value = deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) + '%' : '0.00%'
+          value = deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) : '0.00'
         } else {
           value = formatNum(deal.rawData?.storage || 0, 2)
         }
