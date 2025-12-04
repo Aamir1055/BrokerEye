@@ -189,10 +189,10 @@ export default function ClientPercentageModule() {
   
   useEffect(() => {
     const newCards = [
-      { label: 'TOTAL CLIENTS', value: String(summaryStats.totalClients) },
-      { label: 'CUSTOM %', value: String(summaryStats.customClients) },
-      { label: 'DEFAULT', value: String(summaryStats.defaultClients) },
-      { label: 'AVG %', value: formatNum(summaryStats.avgPercentage, 2) + '%' }
+      { label: 'TOTAL CLIENTS', value: String(summaryStats.totalClients), numericValue: summaryStats.totalClients },
+      { label: 'CUSTOM %', value: String(summaryStats.customClients), numericValue: summaryStats.customClients },
+      { label: 'DEFAULT', value: String(summaryStats.defaultClients), numericValue: summaryStats.defaultClients },
+      { label: 'AVG %', value: formatNum(summaryStats.avgPercentage, 2) + '%', numericValue: summaryStats.avgPercentage }
     ]
     
     if (cards.length === 0) {
@@ -471,20 +471,27 @@ export default function ClientPercentageModule() {
                     setCards(newCards)
                   }
                 }}
-                className="flex-shrink-0 w-[156px] h-[70px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
+                className="flex-shrink-0 w-[156px] h-[60px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
               >
                 <div className="flex items-start justify-between">
-                  <p className="text-[6px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 14L8 8L14 2M14 2H9M14 2V7" stroke={
-                      card.label.includes('CUSTOM') ? '#10B981' : 
-                      card.label.includes('DEFAULT') ? '#EF4444' : 
-                      card.label.includes('AVG') ? '#F59E0B' : 
-                      '#3B82F6'
-                    } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <p className="text-[7px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
+                  <div className="flex-shrink-0">
+                    {card.numericValue > 0 && (
+                      <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
+                        <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
+                      </svg>
+                    )}
+                    {card.numericValue < 0 && (
+                      <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
+                        <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
+                      </svg>
+                    )}
+                    {card.numericValue === 0 && (
+                      <div className="w-[10px] h-[10px]" />
+                    )}
+                  </div>
                 </div>
-                <p className="text-[#000000] text-lg font-bold leading-none">{card.value}</p>
+                <p className="text-[#000000] text-base font-bold leading-none">{card.value}</p>
               </div>
             ))}
           </div>
