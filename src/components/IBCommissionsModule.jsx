@@ -40,6 +40,7 @@ export default function IBCommissionsModule() {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
+    checkbox: true,
     id: true,
     name: true,
     email: true,
@@ -53,6 +54,12 @@ export default function IBCommissionsModule() {
   // Edit modal states
   const [editingIB, setEditingIB] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
+
+  // Bulk update states
+  const [selectedIBs, setSelectedIBs] = useState([])
+  const [bulkPercentage, setBulkPercentage] = useState('')
+  const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
 
   // API State
   const [commissions, setCommissions] = useState([])
@@ -211,6 +218,7 @@ export default function IBCommissionsModule() {
 
   // Get visible columns
   const allColumns = [
+    { key: 'checkbox', label: 'Select', width: '60px', sticky: false },
     { key: 'id', label: 'ID', width: '80px', sticky: true },
     { key: 'name', label: 'Name', width: '150px' },
     { key: 'email', label: 'Email', width: '200px' },
@@ -228,6 +236,17 @@ export default function IBCommissionsModule() {
     let value = '-'
     
     switch (key) {
+      case 'checkbox':
+        return (
+          <div className="h-[28px] flex items-center justify-center px-1">
+            <input
+              type="checkbox"
+              checked={selectedIBs.includes(item.id)}
+              onChange={() => handleSelectIB(item.id)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+            />
+          </div>
+        )
       case 'id':
         value = item.id || '-'
         break
@@ -386,6 +405,74 @@ export default function IBCommissionsModule() {
     fetchCommissionTotals()
   }
 
+  // Handle select all checkbox
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIBs(paginatedData.map(ib => ib.id))
+    } else {
+      setSelectedIBs([])
+    }
+  }
+
+  // Handle individual checkbox
+  const handleSelectIB = (ibId) => {
+    setSelectedIBs(prev => {
+      if (prev.includes(ibId)) {
+        return prev.filter(id => id !== ibId)
+      } else {
+        return [...prev, ibId]
+      }
+    })
+  }
+
+  // Handle opening bulk update modal
+  const handleOpenBulkModal = () => {
+    if (selectedIBs.length === 0) {
+      setError('Please select at least one IB by checking the checkboxes')
+      setTimeout(() => setError(''), 3000)
+      return
+    }
+    setShowBulkUpdateModal(true)
+  }
+
+  // Handle bulk update
+  const handleBulkUpdate = async () => {
+    const percentage = parseFloat(bulkPercentage)
+    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+      setError('Please enter a valid percentage between 0 and 100')
+      setTimeout(() => setError(''), 3000)
+      return
+    }
+
+    try {
+      setBulkUpdating(true)
+      
+      const updates = selectedIBs.map(id => ({
+        id,
+        percentage
+      }))
+      
+      const response = await brokerAPI.bulkUpdateIBPercentages(updates)
+      
+      if (response.status === 'success') {
+        setSelectedIBs([])
+        setBulkPercentage('')
+        setShowBulkUpdateModal(false)
+        fetchAllIBCommissions()
+        fetchCommissionTotals()
+      } else {
+        setError('Bulk update failed: ' + (response.message || 'Unknown error'))
+        setTimeout(() => setError(''), 3000)
+      }
+    } catch (error) {
+      console.error('Error during bulk update:', error)
+      setError('Bulk update failed: ' + (error.response?.data?.message || error.message))
+      setTimeout(() => setError(''), 3000)
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden">
       {/* Loading Overlay */}
@@ -448,6 +535,16 @@ export default function IBCommissionsModule() {
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
+              </button>
+              <button 
+                onClick={handleOpenBulkModal}
+                className="h-[37px] px-3 rounded-[12px] bg-blue-600 border border-blue-600 shadow-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
+                title="Bulk Update Selected IBs"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 3.5V10.5M3.5 7H10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span className="text-white text-[10px] font-medium font-outfit">Bulk Update</span>
               </button>
               <button 
                 onClick={handleExportToCSV}
@@ -569,12 +666,14 @@ export default function IBCommissionsModule() {
                     columnGap: '0px',
                     gridTemplateColumns
                   }}
-                >
+                >  
                   {activeColumns.map(col => (
                     <div 
                       key={col.key}
-                      onClick={() => col.key !== 'actions' && handleSort(col.key)}
-                      className={`h-[36px] flex items-center justify-center px-1 cursor-pointer hover:bg-[#1E3A8A] transition-colors ${
+                      onClick={() => col.key !== 'actions' && col.key !== 'checkbox' && handleSort(col.key)}
+                      className={`h-[36px] flex items-center justify-center px-1 ${
+                        col.key !== 'checkbox' ? 'cursor-pointer hover:bg-[#1E3A8A]' : ''
+                      } transition-colors ${
                         col.sticky ? 'sticky left-0 z-30' : ''
                       }`}
                       style={{
@@ -584,9 +683,20 @@ export default function IBCommissionsModule() {
                         boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
-                      <span className="truncate">{col.label}</span>
-                      {sortColumn === col.key && (
-                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                      {col.key === 'checkbox' ? (
+                        <input
+                          type="checkbox"
+                          checked={paginatedData.length > 0 && selectedIBs.length === paginatedData.length}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                      ) : (
+                        <>
+                          <span className="truncate">{col.label}</span>
+                          {sortColumn === col.key && (
+                            <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </>
                       )}
                     </div>
                   ))}
@@ -720,6 +830,125 @@ export default function IBCommissionsModule() {
           }}
           onSuccess={handleEditSuccess}
         />
+      )}
+
+      {/* Bulk Update Modal */}
+      {showBulkUpdateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Bulk Update Percentage
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowBulkUpdateModal(false)
+                    setBulkPercentage('')
+                  }}
+                  className="text-white hover:text-gray-200 transition-colors"
+                  disabled={bulkUpdating}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Info Message */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> Please check the IDs you want to update using the checkboxes in the table, then enter the percentage value to apply.
+                </p>
+              </div>
+
+              {/* Selected IDs Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Selected IB IDs ({selectedIBs.length})
+                </label>
+                <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
+                  {selectedIBs.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedIBs.map(id => (
+                        <span
+                          key={id}
+                          className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
+                        >
+                          #{id}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Percentage Input Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Percentage Value (%)
+                </label>
+                <input
+                  type="number"
+                  value={bulkPercentage}
+                  onChange={(e) => setBulkPercentage(e.target.value)}
+                  placeholder="Enter percentage (0-100)"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  disabled={bulkUpdating}
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This percentage will be applied to all {selectedIBs.length} selected IB(s)
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBulkUpdateModal(false)
+                  setBulkPercentage('')
+                }}
+                disabled={bulkUpdating}
+                className="flex-1 px-4 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkUpdate}
+                disabled={bulkUpdating || selectedIBs.length === 0}
+                className="flex-1 px-4 py-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {bulkUpdating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Update All</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Column Selector Modal */}
