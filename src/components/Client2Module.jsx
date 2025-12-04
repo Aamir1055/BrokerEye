@@ -5,6 +5,7 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import { brokerAPI } from '../services/api'
@@ -30,6 +31,7 @@ export default function Client2Module() {
   const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
