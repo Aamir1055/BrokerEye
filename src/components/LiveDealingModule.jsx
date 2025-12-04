@@ -9,6 +9,7 @@ import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
 import TimeFilterModal from './TimeFilterModal'
 import DealsFilterModal from './DealsFilterModal'
+import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import websocketService from '../services/websocket'
@@ -46,6 +47,7 @@ export default function LiveDealingModule() {
   const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)

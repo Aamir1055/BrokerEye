@@ -994,8 +994,9 @@ export default function Client2Module() {
                         {visibleColumnsList.map((col, colIdx) => (
                           <div 
                             key={col.key}
+                            onClick={() => col.key === 'login' && setSelectedClient(client)}
                             className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
-                              col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10' : ''
+                              col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
                             }`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
@@ -1459,6 +1460,14 @@ export default function Client2Module() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Client Details Mobile Modal */}
+      {selectedClient && (
+        <ClientDetailsMobileModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+        />
       )}
     </div>
   )
