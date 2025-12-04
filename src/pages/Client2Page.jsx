@@ -2954,10 +2954,7 @@ const Client2Page = () => {
   }
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden overflow-y-auto relative">
-      {/* Clean White Background */}
-      <div className="absolute inset-0 bg-white"></div>
-
+    <div className="min-h-screen flex overflow-x-hidden overflow-y-auto relative bg-[#F8FAFC]">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => {
@@ -2973,170 +2970,186 @@ const Client2Page = () => {
         }}
       />
 
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
-        <div className="max-w-full mx-auto h-full flex flex-col min-h-0" style={{ zoom: '90%' }}>
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-5 border-b-2 border-blue-200 shadow-sm">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-slate-700 hover:text-slate-900 p-2.5 rounded-xl hover:bg-slate-100 border border-slate-300 transition-all shadow-sm hover:shadow"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+      <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+        <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-4 mb-6">
+            <div className="flex items-center justify-between">
+              {/* Left: Title */}
               <div>
-                <h1 className="text-2xl font-bold text-blue-600 tracking-tight">Client 2</h1>
-                <p className="text-xs text-slate-500 mt-0.5">Advanced client management & analytics</p>
+                <h1 className="text-2xl font-bold text-[#1A1A1A]">Clients</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              {/* Filter Button (Green/Emerald Theme) */}
-              <div className="relative flex items-center" ref={filterMenuRef}>
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-emerald-400 text-emerald-700 hover:bg-emerald-50 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:border-emerald-500"
-                  title="Filter Options"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  <span className="relative flex items-center">
-                    Filter
+              {/* Right: Action Buttons */}
+              <div className="flex items-center gap-3">
+                {/* Filter Button */}
+                <div className="relative flex items-center" ref={filterMenuRef}>
+                  <button
+                    onClick={() => setShowFilterMenu(!showFilterMenu)}
+                    className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                    title="Filter Options"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 6H12M5.5 9H10.5M7 12H9" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <span className="text-sm font-medium text-[#374151]">Filter</span>
                     {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
-                      <span
-                        className="ml-1.5 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold h-5 min-w-5 px-1.5 leading-none shadow-md ring-2 ring-white"
-                        title="Active filters count"
-                      >
+                      <span className="ml-1 inline-flex items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none">
                         {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
                       </span>
                     )}
-                  </span>
-                </button>
-
-                {showFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border-2 border-emerald-400 z-50">
-                    <div className="p-4">
-                      <div className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                        </svg>
-                        Quick Filters
-                      </div>
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
-                          <input
-                            type="checkbox"
-                            checked={quickFilters.hasFloating}
-                            onChange={(e) => {
-                              setQuickFilters(prev => ({
-                                ...prev,
-                                hasFloating: e.target.checked
-                              }))
-                              setCurrentPage(1)
-                              // useEffect will handle fetching with updated filters
-                            }}
-                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
-                          />
-                          <span className="text-sm font-medium text-slate-700">Has Floating</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
-                          <input
-                            type="checkbox"
-                            checked={quickFilters.hasCredit}
-                            onChange={(e) => {
-                              setQuickFilters(prev => ({
-                                ...prev,
-                                hasCredit: e.target.checked
-                              }))
-                              setCurrentPage(1)
-                              // useEffect will handle fetching with updated filters
-                            }}
-                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
-                          />
-                          <span className="text-sm font-medium text-slate-700">Has Credit</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer hover:bg-emerald-50 p-3 rounded-lg transition-all border border-transparent hover:border-emerald-200 hover:shadow-sm">
-                          <input
-                            type="checkbox"
-                            checked={quickFilters.noDeposit}
-                            onChange={(e) => {
-                              setQuickFilters(prev => ({
-                                ...prev,
-                                noDeposit: e.target.checked
-                              }))
-                              setCurrentPage(1)
-                              // useEffect will handle fetching with updated filters
-                            }}
-                            className="w-5 h-5 text-emerald-600 border-slate-300 rounded-md focus:ring-emerald-500 focus:ring-2"
-                          />
-                          <span className="text-sm font-medium text-slate-700">No Deposit</span>
-                        </label>
-                      </div>
-
-
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Card Filter Button (Pink Theme) */}
-              <div className="relative flex items-center" ref={cardFilterMenuRef}>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
-                    className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-pink-400 text-pink-700 hover:bg-pink-50 transition-all font-semibold text-sm shadow-sm hover:shadow-md hover:border-pink-500"
-                    title="Toggle Card Visibility"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
-                    Card Filter
                   </button>
 
-                  {/* Percentage Toggle - Now outside the menu */}
-                  <div className="flex items-center gap-2 bg-white border-2 border-pink-400 rounded-xl px-3 h-10 shadow-sm">
-                    <span className="text-xs font-medium text-pink-700">%</span>
-                    <button
-                      onClick={() => setCardFilterPercentMode(v => !v)}
-                      className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${cardFilterPercentMode ? 'bg-pink-600' : 'bg-gray-400'
-                        }`}
-                      title="Toggle percentage cards"
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cardFilterPercentMode ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                      />
-                    </button>
-                    <span className="text-xs font-medium text-pink-700">Mode</span>
-                  </div>
+                  {showFilterMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50">
+                      <div className="p-4">
+                        <div className="text-sm font-semibold text-[#1F2937] mb-3">Quick Filters</div>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                            <input
+                              type="checkbox"
+                              checked={quickFilters.hasFloating}
+                              onChange={(e) => {
+                                setQuickFilters(prev => ({
+                                  ...prev,
+                                  hasFloating: e.target.checked
+                                }))
+                                setCurrentPage(1)
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-[#374151]">Has Floating</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                            <input
+                              type="checkbox"
+                              checked={quickFilters.hasCredit}
+                              onChange={(e) => {
+                                setQuickFilters(prev => ({
+                                  ...prev,
+                                  hasCredit: e.target.checked
+                                }))
+                                setCurrentPage(1)
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-[#374151]">Has Credit</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                            <input
+                              type="checkbox"
+                              checked={quickFilters.noDeposit}
+                              onChange={(e) => {
+                                setQuickFilters(prev => ({
+                                  ...prev,
+                                  noDeposit: e.target.checked
+                                }))
+                                setCurrentPage(1)
+                              }}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-[#374151]">No Deposit</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
+                {/* IB Filter Button - Match Figma style */}
+                <IBSelector />
+
+                {/* Groups Button - Match Figma style */}
+                <GroupSelector
+                  onCreateClick={() => setShowGroupModal(true)}
+                  onEditClick={() => setShowGroupModal(true)}
+                  moduleName="client2"
+                />
+
+                {/* Percentage Toggle Button */}
+                <button
+                  onClick={() => setCardFilterPercentMode(v => !v)}
+                  className={`h-10 w-10 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                    cardFilterPercentMode ? 'bg-blue-50 border-blue-400' : 'bg-white hover:bg-gray-50'
+                  }`}
+                  title="Toggle percentage mode"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 12L12 4M4.5 6.5C5.32843 6.5 6 5.82843 6 5C6 4.17157 5.32843 3.5 4.5 3.5C3.67157 3.5 3 4.17157 3 5C3 5.82843 3.67157 6.5 4.5 6.5ZM11.5 12.5C12.3284 12.5 13 11.8284 13 11C13 10.1716 12.3284 9.5 11.5 9.5C10.6716 9.5 10 10.1716 10 11C10 11.8284 10.6716 12.5 11.5 12.5Z" 
+                      stroke={cardFilterPercentMode ? '#2563EB' : '#4B5563'} 
+                      strokeWidth="1.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* Download Button */}
+                <div className="relative" ref={exportMenuRef}>
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    title="Download as Excel (CSV)"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 3v10m0 0l-4-4m4 4l4-4" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <rect x="4" y="15" width="12" height="2" rx="1" fill="#4B5563"/>
+                    </svg>
+                  </button>
+
+                  {showExportMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50 overflow-hidden">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleExportToExcel('table')}
+                          className="w-full text-left px-4 py-2 text-sm text-[#374151] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="3" width="12" height="10" stroke="#4B5563" strokeWidth="1" rx="1" fill="none"/>
+                            <line x1="2" y1="6" x2="14" y2="6" stroke="#4B5563" strokeWidth="1"/>
+                            <line x1="6" y1="3" x2="6" y2="13" stroke="#4B5563" strokeWidth="1"/>
+                          </svg>
+                          Download Table Columns
+                        </button>
+                        <button
+                          onClick={() => handleExportToExcel('all')}
+                          className="w-full text-left px-4 py-2 text-sm text-[#374151] hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <rect x="1" y="2" width="14" height="12" stroke="#4B5563" strokeWidth="1" rx="1" fill="none"/>
+                            <line x1="1" y1="5" x2="15" y2="5" stroke="#4B5563" strokeWidth="1"/>
+                            <line x1="5" y1="2" x2="5" y2="14" stroke="#4B5563" strokeWidth="1"/>
+                            <line x1="10" y1="2" x2="10" y2="14" stroke="#4B5563" strokeWidth="1"/>
+                          </svg>
+                          Download All Columns
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Filter Button */}
+                <div className="relative flex items-center" ref={cardFilterMenuRef}>
+                  <button
+                    onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
+                    className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                    title="Toggle Card Visibility"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="2" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
+                      <rect x="9" y="2" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
+                      <rect x="2" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
+                      <rect x="9" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
+                    </svg>
+                    <span className="text-sm font-medium text-[#374151]">Customize</span>
+                  </button>
+
                 {showCardFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border-2 border-pink-300 z-[200] max-h-96 overflow-y-auto" style={{
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: '#9ca3af #f3f4f6'
-                  }}>
-                    <style>{`
-                      .overflow-y-auto::-webkit-scrollbar {
-                        width: 8px;
-                      }
-                      .overflow-y-auto::-webkit-scrollbar-track {
-                        background: #f3f4f6;
-                      }
-                      .overflow-y-auto::-webkit-scrollbar-thumb {
-                        background: #9ca3af;
-                        border-radius: 4px;
-                      }
-                      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                        background: #6b7280;
-                      }
-                    `}</style>
-                    <div className="p-3">
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-[200] max-h-96 overflow-y-auto">
+                    <div className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-xs font-semibold text-gray-700">Show/Hide Cards</div>
+                        <div className="text-sm font-semibold text-[#1F2937]">Show/Hide Cards</div>
                         <button
                           onClick={() => {
                             // Determine the keys currently displayed in the menu and toggle only those
@@ -3456,21 +3469,8 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-3" ref={faceCardsRef}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-semibold text-gray-700">Summary Statistics {cardFilterPercentMode ? '(Percentage Mode)' : ''}</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={resetClient2FaceCardOrder}
-                    className="px-2 py-1 text-[10px] font-semibold rounded border border-blue-300 text-blue-600 hover:bg-blue-50"
-                    title="Reset face cards to default order"
-                  >
-                    Reset Order
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+            <div className="mb-6" ref={faceCardsRef}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3498,23 +3498,30 @@ const Client2Page = () => {
 
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
-                  // Clean, professional color scheme
-                  let textColorClass = 'text-slate-700'
-                  let labelColorClass = 'text-slate-500'
+                  
+                  // Color scheme matching Figma
+                  let textColorClass = 'text-[#16A34A]' // Green for positive
+                  let iconColor = '#16A34A'
+                  let iconRotation = ''
                   
                   if (card.colorCheck) {
                     if (rawValue >= 0) {
-                      textColorClass = 'text-emerald-600'
-                      labelColorClass = 'text-emerald-500'
+                      textColorClass = 'text-[#16A34A]'
+                      iconColor = '#16A34A'
+                      iconRotation = ''
                     } else {
-                      textColorClass = 'text-rose-600'
-                      labelColorClass = 'text-rose-500'
+                      textColorClass = 'text-[#DC2626]'
+                      iconColor = '#DC2626'
+                      iconRotation = 'rotate-180'
                     }
+                  } else {
+                    textColorClass = 'text-[#1F2937]'
                   }
+                  
                   return (
                     <div
                       key={cardKey}
-                      className={`bg-white rounded-xl shadow-md border border-slate-200 p-3 hover:shadow-lg transition-all duration-300 cursor-move hover:border-blue-300 hover:-translate-y-1`}
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 hover:shadow-md transition-all duration-200 cursor-move"
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragOver={handleCardDragOver}
@@ -3522,24 +3529,29 @@ const Client2Page = () => {
                       onDragEnd={handleCardDragEnd}
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
-                      <div className={`text-[10px] font-semibold ${labelColorClass} mb-1.5 uppercase tracking-wide`}>
-                        {displayLabel}
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                          {displayLabel}
+                        </span>
+                        <div className="w-6 h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                            <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                          </svg>
+                        </div>
                       </div>
-                      <div className={`text-base font-bold ${textColorClass} flex items-center gap-1.5`}>
+                      <div className={`text-lg font-bold ${textColorClass} flex items-center gap-2`}>
                         {card.colorCheck && (
-                          rawValue >= 0 ? (
-                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
-                              <path d="M6 2L11 10H1z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12">
-                              <path d="M6 10L1 2h10z" />
-                            </svg>
-                          )
+                          <svg width="10" height="10" viewBox="0 0 10 10" className={iconRotation}>
+                            <polygon points="5,0 10,10 0,10" fill={iconColor}/>
+                          </svg>
                         )}
-                        {card.format === 'integer'
-                          ? formatIndianNumber(String(Math.round(rawValue || 0)))
-                          : formatIndianNumber((rawValue || 0).toFixed(2))}
+                        <span>
+                          {card.format === 'integer'
+                            ? formatIndianNumber(String(Math.round(rawValue || 0)))
+                            : formatIndianNumber((rawValue || 0).toFixed(2))}
+                        </span>
+                        <span className="text-xs font-normal text-[#6B7280]">USD</span>
                       </div>
                     </div>
                   )
@@ -3550,84 +3562,25 @@ const Client2Page = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Pagination Controls - Top - Only show when there's data */}
+            {/* Search and Controls Bar */}
             {clients && clients.length > 0 && (
-            <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 rounded-xl shadow-sm border-2 border-slate-200 p-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-600">Show:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                  className="px-2 text-xs font-semibold border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 cursor-pointer transition-all shadow-sm h-10"
-                >
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                  <option value="500">500</option>
-                </select>
-                <span className="text-xs font-semibold text-slate-600">entries</span>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Page Navigation */}
-                <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === 1
-                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
-                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                        }`}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-
-                    <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-lg shadow-md">
-                      Page {currentPage} of {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className={`p-2 rounded-lg transition-all shadow-sm ${currentPage === totalPages
-                          ? 'text-slate-300 bg-slate-100 cursor-not-allowed border-2 border-slate-200'
-                          : 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                        }`}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-
-                {/* Columns Selector Button */}
-                <div className="relative" ref={columnSelectorRef}>
-                  <button
-                    onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="text-amber-700 hover:text-amber-800 px-3 py-2 rounded-lg hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm h-10"
-                    title="Show/Hide Columns"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+            <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                {/* Left: Search */}
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
-                    Columns
-                  </button>
-                </div>
-
-                {/* Search Bar */}
-                <div className="flex items-center gap-1.5">
-                  <div className="relative">
                     <input
                       type="text"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      placeholder="Search login, name, email..."
-                      className="w-64 pl-3 pr-8 text-xs font-medium border-2 border-slate-300 rounded-lg bg-white text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all shadow-sm placeholder:text-slate-400 h-10"
+                      placeholder="Search"
+                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
-                    {/* Inline Clear X Icon */}
                     {searchInput && (
                       <button
                         onClick={() => {
@@ -3635,27 +3588,70 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
                         title="Clear search"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                     )}
                   </div>
+                </div>
 
-                  {/* Search Button */}
-                  <button
-                    onClick={handleSearch}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-xs font-semibold h-10"
-                    title="Search"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Search</span>
-                  </button>
+                {/* Right: Pagination and Controls */}
+                <div className="flex items-center gap-3">
+                  {/* Columns Button */}
+                  <div className="relative" ref={columnSelectorRef}>
+                    <button
+                      onClick={() => setShowColumnSelector(!showColumnSelector)}
+                      className="h-10 px-3 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                      title="Show/Hide Columns"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                        <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                      </svg>
+                      <span className="text-sm font-medium text-[#374151]">Columns</span>
+                    </button>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        currentPage === 1
+                          ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                          : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+
+                    <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                      <span className="text-[#1F2937] font-semibold">{currentPage}</span>
+                      <span className="text-[#9CA3AF] mx-1">/</span>
+                      <span className="text-[#6B7280]">{totalPages}</span>
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        currentPage === totalPages
+                          ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                          : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3665,7 +3661,7 @@ const Client2Page = () => {
             {showColumnSelector && (
               <div
                 ref={columnSelectorRef}
-                className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col"
+                className="fixed bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-3 flex flex-col"
                 style={{
                   top: '15%',
                   right: '10px',
@@ -3675,41 +3671,29 @@ const Client2Page = () => {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="px-3 py-2 border-b border-amber-200 flex items-center justify-between">
-                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Show/Hide Columns</p>
+                <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
                   <button
                     onClick={() => setShowColumnSelector(false)}
-                    className="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-100"
+                    className="text-[#9CA3AF] hover:text-[#4B5563] p-1 rounded hover:bg-gray-50"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
 
-                <div className="px-3 py-2 border-b border-amber-200">
+                <div className="px-4 py-2 border-b border-[#F3F4F6]">
                   <input
                     type="text"
                     placeholder="Search columns..."
                     value={columnSearchQuery}
                     onChange={(e) => setColumnSearchQuery(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs text-gray-700 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
+                    className="w-full px-3 py-2 text-sm text-[#1F2937] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-[#9CA3AF]"
                   />
                 </div>
 
-                <div className="overflow-y-auto flex-1 px-2 py-2" style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#9ca3af #f3f4f6'
-                }}>
-                  <style>{`
-                  .overflow-y-auto::-webkit-scrollbar {
-                    width: 8px;
-                  }
-                  .overflow-y-auto::-webkit-scrollbar-track {
-                    background: #f3f4f6;
-                  }
-                  .overflow-y-auto::-webkit-scrollbar-thumb {
-                    background: #9ca3af;
+                <div className="overflow-y-auto flex-1 px-2 py-2">
                     border-radius: 4px;
                   }
                   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
