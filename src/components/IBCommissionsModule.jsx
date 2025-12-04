@@ -502,6 +502,14 @@ export default function IBCommissionsModule() {
       <div className="flex-shrink-0 bg-white border-b border-[#E5E7EB] px-5 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3 12h18M3 6h18M3 18h18" stroke="#1F2937" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
             <h1 className="text-xl font-bold text-[#1F2937]">IB Commissions</h1>
           </div>
           <button 
@@ -516,7 +524,7 @@ export default function IBCommissionsModule() {
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
         {/* Action Buttons + View All */}
-        <div className="pt-3 pb-2">
+        <div className="pt-3 pb-2 px-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex gap-[8px]">
               <button 
@@ -1021,8 +1029,8 @@ export default function IBCommissionsModule() {
         </>
       )}
 
-      {/* Sidebar - Hidden */}
-      {false && (
+      {/* Sidebar */}
+      {isSidebarOpen && (
         <>
           <div 
             className="fixed inset-0 bg-black/50 z-40"
