@@ -5,8 +5,12 @@ import BulkSyncModal from '../components/BulkSyncModal'
 import BulkUpdatePercentageModal from '../components/BulkUpdatePercentageModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import Sidebar from '../components/Sidebar'
+import IBCommissionsModule from '../components/IBCommissionsModule'
 
 const IBCommissionsPage = () => {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+  
   const getInitialSidebarOpen = () => {
     try {
       const v = localStorage.getItem('sidebarOpen')
@@ -311,6 +315,21 @@ const IBCommissionsPage = () => {
       localStorage.setItem('ibColumnWidths', JSON.stringify(columnWidths))
     } catch (e) {}
   }, [columnWidths])
+
+  // Detect mobile and update state
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <IBCommissionsModule />
+  }
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
