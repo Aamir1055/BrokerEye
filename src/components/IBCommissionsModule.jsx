@@ -525,7 +525,7 @@ export default function IBCommissionsModule() {
       <div className="flex-1 overflow-y-auto">
         {/* Action Buttons + View All */}
         <div className="pt-3 pb-2">
-          <div className="flex items-center justify-between mb-3 px-2">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex gap-[8px]">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
@@ -564,7 +564,7 @@ export default function IBCommissionsModule() {
         <div className="pb-2">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-2"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory"
           >
             {cards.map((card, i) => (
               <div 
@@ -608,7 +608,7 @@ export default function IBCommissionsModule() {
 
         {/* Search and Pagination Controls */}
         <div className="pb-2">
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
