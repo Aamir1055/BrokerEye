@@ -43,7 +43,9 @@ export default function ClientPercentageModule() {
     login: true,
     percentage: true,
     type: true,
-    comment: false
+    comment: false,
+    updatedAt: false,
+    actions: false
   })
 
   // API State
@@ -198,7 +200,9 @@ export default function ClientPercentageModule() {
     { key: 'login', label: 'Login', width: '100px', sticky: true },
     { key: 'percentage', label: 'Percentage', width: '120px' },
     { key: 'type', label: 'Type', width: '100px' },
-    { key: 'comment', label: 'Comment', width: '200px' }
+    { key: 'comment', label: 'Comment', width: '200px' },
+    { key: 'updatedAt', label: 'Last Updated', width: '150px' },
+    { key: 'actions', label: 'Actions', width: '80px' }
   ]
 
   const activeColumns = allColumns.filter(col => visibleColumns[col.key])
@@ -220,6 +224,17 @@ export default function ClientPercentageModule() {
       case 'comment':
         value = item.comment || '-'
         break
+      case 'updatedAt':
+        value = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'
+        break
+      case 'actions':
+        return (
+          <div className="h-[28px] flex items-center justify-center px-1">
+            <button className="text-blue-600 hover:text-blue-800 text-xs">
+              Edit
+            </button>
+          </div>
+        )
       default:
         value = item[key] || '-'
     }
@@ -266,6 +281,12 @@ export default function ClientPercentageModule() {
               break
             case 'comment':
               value = item.comment || '-'
+              break
+            case 'updatedAt':
+              value = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'
+              break
+            case 'actions':
+              value = 'N/A'
               break
             default:
               value = item[col.key] || '-'
@@ -668,22 +689,52 @@ export default function ClientPercentageModule() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-3">
-              {allColumns.map(col => (
+              <div className="mb-3">
+                <input 
+                  type="text"
+                  value={columnSearch}
+                  onChange={(e) => setColumnSearch(e.target.value)}
+                  placeholder="Search Columns"
+                  className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {allColumns
+                .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
+                .map(col => (
                 <label 
                   key={col.key} 
-                  className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer"
-                  onClick={() => toggleColumn(col.key)}
+                  className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer hover:bg-gray-50 px-2 rounded"
                 >
                   <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
-                  <div className={`w-12 h-6 rounded-full transition-colors ${
-                    visibleColumns[col.key] ? 'bg-[#2563EB]' : 'bg-[#E5E7EB]'
-                  }`}>
-                    <div className={`w-5 h-5 bg-white rounded-full mt-0.5 transition-transform ${
-                      visibleColumns[col.key] ? 'ml-6' : 'ml-0.5'
-                    }`} />
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[col.key]}
+                    onChange={() => toggleColumn(col.key)}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
                 </label>
               ))}
+            </div>
+            <div className="flex-shrink-0 px-5 py-3 border-t border-[#F2F2F7] flex gap-2">
+              <button
+                onClick={() => {
+                  const allChecked = allColumns.every(col => visibleColumns[col.key])
+                  const newState = {}
+                  allColumns.forEach(col => {
+                    newState[col.key] = !allChecked
+                  })
+                  setVisibleColumns(newState)
+                }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {allColumns.every(col => visibleColumns[col.key]) ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Apply
+              </button>
             </div>
           </div>
         </>
