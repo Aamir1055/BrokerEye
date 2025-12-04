@@ -502,14 +502,6 @@ export default function IBCommissionsModule() {
       <div className="flex-shrink-0 bg-white border-b border-[#E5E7EB] px-5 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M3 12h18M3 6h18M3 18h18" stroke="#1F2937" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
             <h1 className="text-xl font-bold text-[#1F2937]">IB Commissions</h1>
           </div>
           <button 
@@ -561,7 +553,7 @@ export default function IBCommissionsModule() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2">
+        <div className="pb-2 px-4">
           <div 
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory"
@@ -607,7 +599,7 @@ export default function IBCommissionsModule() {
         </div>
 
         {/* Search and Pagination Controls */}
-        <div className="pb-2">
+        <div className="pb-2 px-4">
           <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -1029,8 +1021,8 @@ export default function IBCommissionsModule() {
         </>
       )}
 
-      {/* Sidebar */}
-      {isSidebarOpen && (
+      {/* Sidebar - Hidden */}
+      {false && (
         <>
           <div 
             className="fixed inset-0 bg-black/50 z-40"
