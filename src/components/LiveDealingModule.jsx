@@ -712,7 +712,16 @@ export default function LiveDealingModule() {
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
               </button>
               <button 
-                onClick={() => setDisplayMode(prev => prev === 'value' ? 'percentage' : 'value')}
+                onClick={() => {
+                  setDisplayMode(prev => prev === 'value' ? 'percentage' : 'value')
+                  // Toggle percentage-related columns
+                  setVisibleColumns(prev => ({
+                    ...prev,
+                    totalProfit: displayMode === 'value' ? true : prev.totalProfit,
+                    commission: displayMode === 'value' ? true : prev.commission,
+                    storage: displayMode === 'value' ? true : prev.storage
+                  }))
+                }}
                 className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all ${
                   displayMode === 'percentage' ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
@@ -733,10 +742,10 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2">
+        <div className="pb-2 px-4">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-2"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory"
           >
             {cards.map((card, i) => (
               <div 
