@@ -699,8 +699,8 @@ export default function LiveDealingModule() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100vw' }}>
         {/* Action Buttons + View All */}
-        <div className="px-5 pt-3 pb-2">
-          <div className="flex items-center justify-between mb-3">
+        <div className="pt-3 pb-2">
+          <div className="flex items-center justify-between mb-3 px-2">
             <div className="flex gap-[8px]">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
@@ -733,10 +733,10 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2 pl-5">
+        <div className="pb-2">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-2"
           >
             {cards.map((card, i) => (
               <div 
@@ -786,8 +786,8 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Search and Pagination Controls */}
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="pb-2">
+          <div className="flex items-center gap-2 px-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
@@ -832,7 +832,7 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Table */}
-        <div className="pb-4" style={{ maxWidth: '100vw', overflow: 'hidden' }}>
+        <div style={{ maxWidth: '100vw', overflow: 'hidden' }}>
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
