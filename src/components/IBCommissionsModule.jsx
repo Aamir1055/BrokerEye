@@ -738,7 +738,10 @@ export default function IBCommissionsModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
-        onApplyIBFilter={() => setIsIBFilterOpen(true)}
+        onIBFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsIBFilterOpen(true)
+        }}
       />
 
       {/* Filter Modal */}
