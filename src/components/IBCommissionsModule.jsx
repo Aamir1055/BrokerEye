@@ -600,7 +600,7 @@ export default function IBCommissionsModule() {
                     } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <p className="text-[#000000] text-xl leading-none">{card.value}</p>
+                <p className="text-[#000000] text-lg font-bold leading-none">{card.value}</p>
               </div>
             ))}
           </div>
@@ -653,8 +653,8 @@ export default function IBCommissionsModule() {
         </div>
 
         {/* Table */}
-        <div className="px-4 pb-4">
-          <div className="bg-white rounded-[16px] shadow-[0_0_20px_rgba(75,75,75,0.08)] overflow-hidden">
+        <div>
+          <div className="bg-white shadow-[0_0_20px_rgba(75,75,75,0.08)] overflow-hidden">
             <div className="overflow-x-auto">
               <div className="min-w-full">
                 {/* Table Header */}
