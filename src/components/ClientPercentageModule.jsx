@@ -471,12 +471,12 @@ export default function ClientPercentageModule() {
                     setCards(newCards)
                   }
                 }}
-                className="flex-shrink-0 w-[156px] h-[80px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
+                className="flex-shrink-0 w-[156px] h-[70px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
               >
                 <div className="flex items-start justify-between">
-                  <p className="text-[9px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
+                  <p className="text-[6px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 3.33334V12.6667M8 12.6667L12 8.66667M8 12.6667L4 8.66667" stroke={
+                    <path d="M2 14L8 8L14 2M14 2H9M14 2V7" stroke={
                       card.label.includes('CUSTOM') ? '#10B981' : 
                       card.label.includes('DEFAULT') ? '#EF4444' : 
                       card.label.includes('AVG') ? '#F59E0B' : 
@@ -484,7 +484,7 @@ export default function ClientPercentageModule() {
                     } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <p className="text-[#000000] text-xl font-bold leading-none">{card.value}</p>
+                <p className="text-[#000000] text-lg font-bold leading-none">{card.value}</p>
               </div>
             ))}
           </div>

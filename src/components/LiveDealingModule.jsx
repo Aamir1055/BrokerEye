@@ -523,10 +523,10 @@ export default function LiveDealingModule() {
           const volValue = formatNum(deal.rawData?.volume || 0, 2)
           const volPercent = deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) : '0.00'
           value = `${volValue} (${volPercent}%)`
+        } else if (displayMode === 'percentage') {
+          value = deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) + '%' : '0.00%'
         } else {
-          value = displayMode === 'percentage'
-            ? (deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) : '0.00')
-            : formatNum(deal.rawData?.volume || 0, 2)
+          value = formatNum(deal.rawData?.volume || 0, 2)
         }
         break
       case 'averagePrice':
@@ -539,10 +539,10 @@ export default function LiveDealingModule() {
           const profVal = formatNum(profit, 2)
           const profPercent = deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) : '0.00'
           profitValue = `${profVal} (${profPercent}%)`
+        } else if (displayMode === 'percentage') {
+          profitValue = deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) + '%' : '0.00%'
         } else {
-          profitValue = displayMode === 'percentage'
-            ? (deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) : '0.00')
-            : formatNum(profit, 2)
+          profitValue = formatNum(profit, 2)
         }
         return (
           <div 
@@ -563,10 +563,10 @@ export default function LiveDealingModule() {
           const commValue = formatNum(deal.rawData?.commission || 0, 2)
           const commPercent = deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) : '0.00'
           value = `${commValue} (${commPercent}%)`
+        } else if (displayMode === 'percentage') {
+          value = deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) + '%' : '0.00%'
         } else {
-          value = displayMode === 'percentage'
-            ? (deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) : '0.00')
-            : formatNum(deal.rawData?.commission || 0, 2)
+          value = formatNum(deal.rawData?.commission || 0, 2)
         }
         break
       case 'storage':
@@ -574,10 +574,10 @@ export default function LiveDealingModule() {
           const storValue = formatNum(deal.rawData?.storage || 0, 2)
           const storPercent = deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) : '0.00'
           value = `${storValue} (${storPercent}%)`
+        } else if (displayMode === 'percentage') {
+          value = deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) + '%' : '0.00%'
         } else {
-          value = displayMode === 'percentage'
-            ? (deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) : '0.00')
-            : formatNum(deal.rawData?.storage || 0, 2)
+          value = formatNum(deal.rawData?.storage || 0, 2)
         }
         break
       case 'appliedPercentage':
@@ -786,7 +786,7 @@ export default function LiveDealingModule() {
                     setCards(newCards)
                   }
                 }}
-                className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move active:opacity-50 transition-opacity"
+                className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move active:opacity-50 transition-opacity"
               >
                 <div className="flex items-start justify-between">
                   <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>
@@ -805,7 +805,7 @@ export default function LiveDealingModule() {
                     }/>
                   </svg>
                 </div>
-                <p className="text-[#000000] text-xl font-bold leading-none">{card.value}</p>
+                <p className="text-[#000000] text-base font-bold leading-none">{card.value}</p>
               </div>
             ))}
           </div>
