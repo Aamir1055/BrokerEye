@@ -3057,10 +3057,10 @@ const Client2Page = () => {
                   )}
                 </div>
 
-                {/* IB Filter Button - Match Figma style */}
+                {/* IB Filter Button */}
                 <IBSelector />
 
-                {/* Groups Button - Match Figma style */}
+                {/* Groups Button */}
                 <GroupSelector
                   onCreateClick={() => setShowGroupModal(true)}
                   onEditClick={() => setShowGroupModal(true)}
@@ -3129,7 +3129,7 @@ const Client2Page = () => {
                   )}
                 </div>
 
-                {/* Card Filter Button */}
+                {/* Customize Button */}
                 <div className="relative flex items-center" ref={cardFilterMenuRef}>
                   <button
                     onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
@@ -3386,84 +3386,19 @@ const Client2Page = () => {
                 )}
               </div>
 
-              {/* Groups Button */}
-              <GroupSelector
-                onCreateClick={() => setShowGroupModal(true)}
-                onEditClick={() => setShowGroupModal(true)}
-                moduleName="client2"
-              />
-
-              {/* IB Filter Button */}
-              <IBSelector />
-
-              {/* Cards Toggle Button */}
+              {/* Cards Toggle Button with Switch */}
               <button
                 onClick={() => setShowFaceCards(v => !v)}
-                className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shadow-sm text-sm font-semibold h-10 ${showFaceCards
-                    ? 'bg-blue-50 border-blue-400 text-blue-700 hover:border-blue-500 hover:shadow-md'
-                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400'
-                  }`}
+                className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
-                <span>Cards</span>
-                <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-400'
-                  }`}>
+                <span className="text-sm font-medium text-[#374151]">Cards</span>
+                <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-300'}`}>
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-4' : 'translate-x-0.5'}`}
                   />
                 </div>
               </button>
-
-              {/* Refresh Button */}
-              <button
-                onClick={handleManualRefresh}
-                disabled={isRefreshing}
-                className={`text-blue-600 hover:text-blue-700 p-2 rounded-xl border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title="Refresh clients data"
-              >
-                <svg className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-
-              {/* Excel Export with Dropdown */}
-              <div className="relative" ref={exportMenuRef}>
-                <button
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="text-emerald-600 hover:text-emerald-700 p-2 rounded-xl border-2 border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 bg-white transition-all shadow-sm h-10 w-10 flex items-center justify-center"
-                  title="Download as Excel (CSV)"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </button>
-
-                {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border-2 border-emerald-300 z-50 overflow-hidden">
-                    <div className="py-1.5">
-                      <button
-                        onClick={() => handleExportToExcel('table')}
-                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export Table View
-                      </button>
-                      <button
-                        onClick={() => handleExportToExcel('all')}
-                        className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors flex items-center gap-3"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                        </svg>
-                        Export All Data
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -3694,12 +3629,6 @@ const Client2Page = () => {
                 </div>
 
                 <div className="overflow-y-auto flex-1 px-2 py-2">
-                    border-radius: 4px;
-                  }
-                  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                    background: #6b7280;
-                  }
-                `}</style>
                   {allColumns
                     .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
                     .map(col => (
@@ -4833,6 +4762,7 @@ const Client2Page = () => {
               </div>
             )}
           </div>
+        </div>
         </div>
       </main>
 
