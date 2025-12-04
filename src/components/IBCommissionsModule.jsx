@@ -524,8 +524,8 @@ export default function IBCommissionsModule() {
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
         {/* Action Buttons + View All */}
-        <div className="px-5 pt-3 pb-2">
-          <div className="flex items-center justify-between mb-3">
+        <div className="pt-3 pb-2">
+          <div className="flex items-center justify-between mb-3 px-2">
             <div className="flex gap-[8px]">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
@@ -561,10 +561,10 @@ export default function IBCommissionsModule() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2 pl-5">
+        <div className="pb-2">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory px-2"
           >
             {cards.map((card, i) => (
               <div 
@@ -588,7 +588,7 @@ export default function IBCommissionsModule() {
                     setCards(newCards)
                   }
                 }}
-                className="flex-shrink-0 w-[156px] h-[80px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
+                className="flex-shrink-0 w-[156px] h-[55px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
               >
                 <div className="flex items-start justify-between">
                   <p className="text-[9px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
@@ -600,15 +600,15 @@ export default function IBCommissionsModule() {
                     } strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <p className="text-[#000000] text-xl font-bold leading-none">{card.value}</p>
+                <p className="text-[#000000] text-xl leading-none">{card.value}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Search and Pagination Controls */}
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="pb-2">
+          <div className="flex items-center gap-2 px-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>

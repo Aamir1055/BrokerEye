@@ -8,6 +8,7 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import SetCustomPercentageModal from './SetCustomPercentageModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 
@@ -45,8 +46,12 @@ export default function ClientPercentageModule() {
     type: true,
     comment: false,
     updatedAt: false,
-    actions: false
+    actions: true
   })
+
+  // Edit Modal State
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedClient, setSelectedClient] = useState(null)
 
   // API State
   const [clients, setClients] = useState([])
@@ -85,6 +90,19 @@ export default function ClientPercentageModule() {
       setError('Failed to load client percentages')
       setLoading(false)
     }
+  }
+
+  // Handle edit click
+  const handleEditClick = (client) => {
+    setSelectedClient(client)
+    setShowEditModal(true)
+  }
+
+  // Handle edit success
+  const handleEditSuccess = async () => {
+    await fetchAllClientPercentages()
+    setShowEditModal(false)
+    setSelectedClient(null)
   }
 
   // Use clients data instead of placeholder
@@ -230,7 +248,10 @@ export default function ClientPercentageModule() {
       case 'actions':
         return (
           <div className="h-[28px] flex items-center justify-center px-1">
-            <button className="text-blue-600 hover:text-blue-800 text-xs">
+            <button 
+              onClick={() => handleEditClick(item)}
+              className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+            >
               Edit
             </button>
           </div>
@@ -813,6 +834,18 @@ export default function ClientPercentageModule() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Set Custom Percentage Modal */}
+      {showEditModal && selectedClient && (
+        <SetCustomPercentageModal
+          client={selectedClient}
+          onClose={() => {
+            setShowEditModal(false)
+            setSelectedClient(null)
+          }}
+          onSuccess={handleEditSuccess}
+        />
       )}
     </div>
   )
