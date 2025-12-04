@@ -65,7 +65,7 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router basename="/v2">
+    <Router>
       <AuthProvider>
         <DataProvider>
           <GroupProvider>
