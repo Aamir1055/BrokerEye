@@ -64,6 +64,7 @@ export default function LiveDealingModule() {
   const [customToDate, setCustomToDate] = useState('')
   const [appliedFromDate, setAppliedFromDate] = useState('')
   const [appliedToDate, setAppliedToDate] = useState('')
+  const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage'
   
   const [visibleColumns, setVisibleColumns] = useState({
     time: true,
@@ -110,9 +111,38 @@ export default function LiveDealingModule() {
   // Fetch deals from API (24h by default)
   const fetchDeals = async () => {
     try {
-      const nowUTC = Math.floor(Date.now() / 1000)
-      const to = nowUTC + (12 * 60 * 60) // Add 12 hours buffer
-      const from = nowUTC - (24 * 60 * 60) // 24 hours ago
+      let from, to
+      
+      if (timeFilter === '24h') {
+        const nowUTC = Math.floor(Date.now() / 1000)
+        to = nowUTC + (12 * 60 * 60) // Add 12 hours buffer
+        from = nowUTC - (24 * 60 * 60) // 24 hours ago
+      } else if (timeFilter === '7d') {
+        const nowUTC = Math.floor(Date.now() / 1000)
+        to = nowUTC + (12 * 60 * 60)
+        from = nowUTC - (7 * 24 * 60 * 60) // 7 days ago
+      } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
+        // Parse custom dates and convert to UTC epoch seconds
+        const fromDate = new Date(appliedFromDate)
+        const toDate = new Date(appliedToDate)
+        
+        from = Math.floor(fromDate.getTime() / 1000)
+        // Add 12 hours to custom 'to' date to capture full day
+        to = Math.floor(toDate.getTime() / 1000) + (12 * 60 * 60)
+      } else {
+        // Default to 24h if custom dates not set
+        const nowUTC = Math.floor(Date.now() / 1000)
+        to = nowUTC + (12 * 60 * 60)
+        from = nowUTC - (24 * 60 * 60)
+      }
+      
+      console.log('[LiveDealingModule] 📅 Fetching deals with time range:', {
+        filter: timeFilter,
+        from,
+        to,
+        fromDate: new Date(from * 1000).toISOString(),
+        toDate: new Date(to * 1000).toISOString()
+      })
       
       const response = await brokerAPI.getAllDeals(from, to, 10000)
       const dealsData = response.data?.deals || response.deals || []
@@ -146,11 +176,13 @@ export default function LiveDealingModule() {
     }
   }
 
-  // Initial fetch and WebSocket subscription
+  // Initial fetch and refetch when time filter changes
   useEffect(() => {
-    // Fetch initial data
     fetchDeals()
+  }, [timeFilter, appliedFromDate, appliedToDate])
 
+  // WebSocket subscription
+  useEffect(() => {
     // Subscribe to WebSocket updates
     const handleDealAdded = (data) => {
       const dealData = data.data || data
@@ -169,7 +201,7 @@ export default function LiveDealingModule() {
       })
     }
 
-    const unsubscribeDealAdded = websocketService.subscribe('DEAL_ADDED', handleDealAdded)
+    const unsubscribeDeals = websocketService.subscribe('deal_added', handleDealAdded)
     const unsubscribeDealCreated = websocketService.subscribe('DEAL_CREATED', handleDealAdded)
 
     // Get connection state
@@ -184,39 +216,18 @@ export default function LiveDealingModule() {
     const unsubscribeConnectionState = websocketService.subscribe('connectionState', handleConnectionState)
 
     return () => {
-      unsubscribeDealAdded()
+      unsubscribeDeals()
       unsubscribeDealCreated()
       unsubscribeConnectionState()
     }
   }, [])
 
-  // Filter deals by time
+  // Filter deals by time - API already filters, this is just for any WebSocket additions
   const filteredByTime = useMemo(() => {
-    const now = Date.now() / 1000
-    let cutoff
-    
-    if (timeFilter === '24h') {
-      cutoff = now - (24 * 60 * 60) // 24 hours
-    } else if (timeFilter === '7d') {
-      cutoff = now - (7 * 24 * 60 * 60) // 7 days
-    } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
-      // Custom range - filter by applied dates
-      const fromTimestamp = new Date(appliedFromDate).getTime() / 1000
-      const toTimestamp = new Date(appliedToDate).setHours(23, 59, 59, 999) / 1000
-      return deals.filter(deal => {
-        const dealTime = deal.timestamp || 0
-        return dealTime >= fromTimestamp && dealTime <= toTimestamp
-      })
-    } else {
-      // custom but no dates applied - show all
-      cutoff = 0
-    }
-    
-    return deals.filter(deal => {
-      const dealTime = deal.timestamp || 0
-      return dealTime >= cutoff
-    })
-  }, [deals, timeFilter, appliedFromDate, appliedToDate])
+    // Since we fetch from API with the correct time range, just return all deals
+    // WebSocket additions are already filtered to relevant time in the handler
+    return deals
+  }, [deals])
 
   // Apply search filter
   const searchedDeals = useMemo(() => {
@@ -381,6 +392,101 @@ export default function LiveDealingModule() {
   const activeColumns = allColumns.filter(col => visibleColumns[col.key])
   const gridTemplateColumns = activeColumns.map(col => col.width).join(' ')
 
+  // Export to CSV
+  const handleExportToCSV = () => {
+    try {
+      const dataToExport = sortedDeals
+      if (!dataToExport || dataToExport.length === 0) {
+        alert('No data to export')
+        return
+      }
+
+      const exportColumns = activeColumns
+      const headers = exportColumns.map(col => col.label).join(',')
+      
+      const rows = dataToExport.map(deal => {
+        return exportColumns.map(col => {
+          let value = ''
+          
+          switch(col.key) {
+            case 'time':
+              value = deal.rawData?.time ? new Date(deal.rawData.time * 1000).toLocaleString() : '-'
+              break
+            case 'login':
+              value = deal.login || '-'
+              break
+            case 'netType':
+              value = deal.rawData?.action || '-'
+              break
+            case 'netVolume':
+              value = displayMode === 'percentage' 
+                ? (deal.rawData?.volume_percentage || 0)
+                : (deal.rawData?.volume || 0)
+              break
+            case 'averagePrice':
+              value = deal.rawData?.price || 0
+              break
+            case 'totalProfit':
+              value = displayMode === 'percentage'
+                ? (deal.rawData?.profit_percentage || 0)
+                : (deal.rawData?.profit || 0)
+              break
+            case 'commission':
+              value = displayMode === 'percentage'
+                ? (deal.rawData?.commission_percentage || 0)
+                : (deal.rawData?.commission || 0)
+              break
+            case 'storage':
+              value = displayMode === 'percentage'
+                ? (deal.rawData?.storage_percentage || 0)
+                : (deal.rawData?.storage || 0)
+              break
+            case 'appliedPercentage':
+              value = (deal.rawData?.appliedPercentage || 0) + '%'
+              break
+            case 'symbol':
+              value = deal.rawData?.symbol || '-'
+              break
+            case 'action':
+              value = deal.rawData?.action || '-'
+              break
+            case 'deal':
+              value = deal.rawData?.deal || deal.id || '-'
+              break
+            case 'entry':
+              value = deal.rawData?.entry || '-'
+              break
+            default:
+              value = deal.rawData?.[col.key] || '-'
+          }
+          
+          if (typeof value === 'string') {
+            value = value.replace(/"/g, '""')
+            if (value.includes(',') || value.includes('"')) {
+              value = `"${value}"`
+            }
+          }
+          
+          return value
+        }).join(',')
+      }).join('\\n')
+      
+      const csvContent = headers + '\\n' + rows
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `live_dealing_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('[LiveDealingModule] Export failed:', error)
+      alert('Export failed. Please try again.')
+    }
+  }
+
   const renderCellValue = (deal, key, isSticky = false) => {
     let value = '-'
     
@@ -412,13 +518,18 @@ export default function LiveDealingModule() {
           </div>
         )
       case 'netVolume':
-        value = formatNum(deal.rawData?.volume || 0, 2)
+        value = displayMode === 'percentage'
+          ? (deal.rawData?.volume_percentage != null ? formatNum(deal.rawData.volume_percentage, 2) : '0.00')
+          : formatNum(deal.rawData?.volume || 0, 2)
         break
       case 'averagePrice':
         value = formatNum(deal.rawData?.price || 0, 2)
         break
       case 'totalProfit':
         const profit = deal.rawData?.profit || 0
+        const profitValue = displayMode === 'percentage'
+          ? (deal.rawData?.profit_percentage != null ? formatNum(deal.rawData.profit_percentage, 2) : '0.00')
+          : formatNum(profit, 2)
         return (
           <div 
             className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
@@ -429,15 +540,19 @@ export default function LiveDealingModule() {
             }}
           >
             <span className={profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-              {formatNum(profit, 2)}
+              {profitValue}
             </span>
           </div>
         )
       case 'commission':
-        value = formatNum(deal.rawData?.commission || 0, 2)
+        value = displayMode === 'percentage'
+          ? (deal.rawData?.commission_percentage != null ? formatNum(deal.rawData.commission_percentage, 2) : '0.00')
+          : formatNum(deal.rawData?.commission || 0, 2)
         break
       case 'storage':
-        value = formatNum(deal.rawData?.storage || 0, 2)
+        value = displayMode === 'percentage'
+          ? (deal.rawData?.storage_percentage != null ? formatNum(deal.rawData.storage_percentage, 2) : '0.00')
+          : formatNum(deal.rawData?.storage || 0, 2)
         break
       case 'appliedPercentage':
         value = formatNum(deal.rawData?.appliedPercentage || 0, 2) + '%'
@@ -597,14 +712,15 @@ export default function LiveDealingModule() {
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
               </button>
               <button 
-                className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                onClick={() => setDisplayMode(prev => prev === 'value' ? 'percentage' : 'value')}
+                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all ${
+                  displayMode === 'percentage' ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
+                }`}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 2v10M2 7h10" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">%</span>
+                <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">%</span>
               </button>
               <button 
+                onClick={handleExportToCSV}
                 className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -670,9 +786,9 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Search and Pagination Controls */}
-        <div className="px-4 pb-2" style={{ minWidth: '100%', width: '100%' }}>
-          <div className="flex items-center gap-2" style={{ width: '100%' }}>
-            <div className="flex-1 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
+        <div className="px-4 pb-2">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
                 <path d="M9 9L12 12" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
@@ -682,7 +798,7 @@ export default function LiveDealingModule() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search"
-                className="flex-1 min-w-0 text-[11px] text-[#000000] font-semibold placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
+                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
             <button 
@@ -769,7 +885,7 @@ export default function LiveDealingModule() {
                     }}
                   >
                     {activeColumns.map(col => (
-                      <React.Fragment key={col.key}>
+                      <React.Fragment key={`${col.key}-${displayMode}`}>
                         {renderCellValue(deal, col.key, col.sticky)}
                       </React.Fragment>
                     ))}

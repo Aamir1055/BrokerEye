@@ -9,8 +9,12 @@ import WebSocketIndicator from '../components/WebSocketIndicator'
 import ClientPositionsModal from '../components/ClientPositionsModal'
 import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
+import ClientPercentageModule from '../components/ClientPercentageModule'
 
 const ClientPercentagePage = () => {
+  // Detect mobile device
+  const [isMobile, setIsMobile] = useState(false)
+  
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const { positions: cachedPositions } = useData()
@@ -759,7 +763,7 @@ const ClientPercentagePage = () => {
         </svg>
       )
     }
-    return sortDirection === 'asc' ? (
+      return sortDirection === 'asc' ? (
       <svg className="w-3 h-3 text-white transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
@@ -768,6 +772,21 @@ const ClientPercentagePage = () => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     )
+  }
+
+  // Detect mobile and update state
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <ClientPercentageModule />
   }
 
   return (
