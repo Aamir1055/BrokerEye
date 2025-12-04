@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
-import CustomizeViewModal from './CustomizeViewModal'
 import FilterModal from './FilterModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
@@ -427,7 +426,7 @@ export default function ClientPercentageModule() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
+                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Customize</span>
               </button>
               <button 
                 onClick={handleExportToCSV}
@@ -618,15 +617,32 @@ export default function ClientPercentageModule() {
         </div>
       </div>
 
-      {/* Customize View Modal */}
-      <CustomizeViewModal
-        isOpen={isCustomizeOpen}
-        onClose={() => setIsCustomizeOpen(false)}
-        onApplyFilter={() => setIsFilterOpen(true)}
-        onApplyIBFilter={() => setIsIBFilterOpen(true)}
-        onManageGroups={handleOpenGroup}
-        onLoginGroups={() => setIsLoginGroupsOpen(true)}
-      />
+      {/* Customize View Bottom Sheet */}
+      {isCustomizeOpen && (
+        <div className="fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/35" onClick={() => setIsCustomizeOpen(false)} />
+          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
+            <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mt-2" />
+            <div className="px-4 py-3 flex items-center justify-between border-t border-[#F0F0F0]">
+              <button onClick={() => setIsCustomizeOpen(false)} className="w-9 h-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <div className="text-[16px] font-semibold text-[#111827]">Customize view</div>
+              <div className="w-9 h-9" />
+            </div>
+            <div className="px-4 pb-4">
+              <div className="divide-y divide-[#EFEFEF]">
+                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
+                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="3" y="13" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="13" width="8" height="6" rx="1" stroke="#1F2937"/></svg>
+                  </span>
+                  <span className="text-[14px] text-[#111827]">Groups</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter Modal */}
       <FilterModal
