@@ -575,11 +575,12 @@ export default function IBCommissionsModule() {
                       key={col.key}
                       onClick={() => col.key !== 'actions' && handleSort(col.key)}
                       className={`h-[36px] flex items-center justify-center px-1 cursor-pointer hover:bg-[#1E3A8A] transition-colors ${
-                        col.sticky ? 'sticky left-0 bg-[#1E40AF] z-30' : ''
+                        col.sticky ? 'sticky left-0 z-30' : ''
                       }`}
                       style={{
                         border: 'none',
                         outline: 'none',
+                        backgroundColor: '#1E40AF',
                         boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
@@ -627,10 +628,7 @@ export default function IBCommissionsModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
-        onApplyFilter={() => setIsFilterOpen(true)}
         onApplyIBFilter={() => setIsIBFilterOpen(true)}
-        onManageGroups={handleOpenGroup}
-        onLoginGroups={() => setIsLoginGroupsOpen(true)}
       />
 
       {/* Filter Modal */}
@@ -754,7 +752,7 @@ export default function IBCommissionsModule() {
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
                   placeholder="Search Columns"
-                  className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               {allColumns
