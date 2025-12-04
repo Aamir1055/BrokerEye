@@ -7,6 +7,7 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import EditPercentageModal from './EditPercentageModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 
@@ -43,11 +44,15 @@ export default function IBCommissionsModule() {
     name: true,
     email: true,
     percentage: true,
-    totalRebate: false,
-    availableRebate: false,
-    lastSynced: false,
-    actions: false
+    total_commission: false,
+    available_commission: false,
+    last_synced_at: false,
+    actions: true
   })
+
+  // Edit modal states
+  const [editingIB, setEditingIB] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   // API State
   const [commissions, setCommissions] = useState([])
@@ -210,9 +215,9 @@ export default function IBCommissionsModule() {
     { key: 'name', label: 'Name', width: '150px' },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
-    { key: 'totalRebate', label: 'Total Rebate', width: '150px' },
-    { key: 'availableRebate', label: 'Available Rebate', width: '150px' },
-    { key: 'lastSynced', label: 'Last Synced', width: '150px' },
+    { key: 'total_commission', label: 'Total Rebate', width: '150px' },
+    { key: 'available_commission', label: 'Available Rebate', width: '150px' },
+    { key: 'last_synced_at', label: 'Last Synced', width: '150px' },
     { key: 'actions', label: 'Actions', width: '80px' }
   ]
 
@@ -235,19 +240,25 @@ export default function IBCommissionsModule() {
       case 'percentage':
         value = item.percentage ? `${item.percentage}%` : '-'
         break
-      case 'totalRebate':
+      case 'total_commission':
         value = formatNum(item.total_commission || 0, 2)
         break
-      case 'availableRebate':
+      case 'available_commission':
         value = formatNum(item.available_commission || 0, 2)
         break
-      case 'lastSynced':
+      case 'last_synced_at':
         value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleString() : '-'
         break
       case 'actions':
         return (
           <div className="h-[28px] flex items-center justify-center px-1">
-            <button className="text-blue-600 hover:text-blue-800 text-xs">
+            <button 
+              onClick={() => {
+                setEditingIB(item)
+                setShowEditModal(true)
+              }}
+              className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+            >
               Edit
             </button>
           </div>
@@ -299,13 +310,13 @@ export default function IBCommissionsModule() {
             case 'percentage':
               value = item.percentage || 0
               break
-            case 'totalRebate':
+            case 'total_commission':
               value = formatNum(item.total_commission || 0, 2)
               break
-            case 'availableRebate':
+            case 'available_commission':
               value = formatNum(item.available_commission || 0, 2)
               break
-            case 'lastSynced':
+            case 'last_synced_at':
               value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleString() : '-'
               break
             case 'actions':
@@ -366,6 +377,13 @@ export default function IBCommissionsModule() {
   const handleGroupApply = (groupId) => {
     setActiveGroupFilter('ibcommissions', groupId)
     setIsGroupOpen(false)
+  }
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false)
+    setEditingIB(null)
+    fetchAllIBCommissions()
+    fetchCommissionTotals()
   }
 
   return (
@@ -681,6 +699,30 @@ export default function IBCommissionsModule() {
         editingGroup={editingGroup}
         moduleName="ibcommissions"
       />
+
+      {/* Edit Percentage Modal */}
+      {showEditModal && editingIB && (
+        <EditPercentageModal
+          ib={editingIB}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingIB(null)
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Edit Percentage Modal */}
+      {showEditModal && editingIB && (
+        <EditPercentageModal
+          ib={editingIB}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingIB(null)
+          }}
+          onSuccess={handleEditSuccess}
+        />
+      )}
 
       {/* Column Selector Modal */}
       {isColumnSelectorOpen && (
