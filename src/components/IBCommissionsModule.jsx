@@ -1031,77 +1031,84 @@ export default function IBCommissionsModule() {
 
       {/* Sidebar */}
       {isSidebarOpen && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
+        <div className="fixed inset-0 z-30">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/25"
             onClick={() => setIsSidebarOpen(false)}
           />
-          <div className="fixed left-0 top-0 bottom-0 w-64 bg-white z-50 shadow-xl overflow-y-auto">
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold">
-                    B
-                  </div>
-                  <span className="font-bold text-lg">Broker Eye</span>
-                </div>
-                <button onClick={() => setIsSidebarOpen(false)}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18M6 6L18 18" stroke="#000" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </button>
+          {/* Drawer */}
+          <div className="absolute left-0 top-0 h-full w-[300px] bg-white shadow-xl rounded-r-2xl flex flex-col">
+            <div className="p-4 flex items-center gap-3 border-b border-[#ECECEC]">
+              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#1A63BC"/></svg>
               </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold text-[#1A63BC]">Broker Eyes</div>
+                <div className="text-[11px] text-[#7A7A7A]">Trading Platform</div>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)} className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+            </div>
 
-              <nav className="space-y-2">
+            <div className="flex-1 overflow-auto py-2">
+              <nav className="flex flex-col">
                 {[
-                  {label:'Dashboard', path:'/dashboard', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="#404040"/><rect x="14" y="3" width="7" height="7" stroke="#404040"/><rect x="3" y="14" width="7" height="7" stroke="#404040"/><rect x="14" y="14" width="7" height="7" stroke="#404040"/></svg>
+                  {label:'Dashboard', path:'/dashboard', icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#404040"/></svg>
                   )},
-                  {label:'Clients', path:'/clients', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#404040"/><circle cx="12" cy="7" r="4" stroke="#404040"/></svg>
+                  {label:'Clients', path:'/client-dashboard-c', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
                   )},
                   {label:'Client 2', path:'/client2', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#404040"/><circle cx="9" cy="7" r="4" stroke="#404040"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="#404040"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="#404040"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
                   )},
                   {label:'Positions', path:'/positions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21 10L12 3 3 10v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9z" stroke="#404040"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="#404040"/></svg>
                   )},
                   {label:'Pending Orders', path:'/pending-orders', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#404040"/><path d="M12 6v6l4 2" stroke="#404040"/></svg>
-                  )},
-                  {label:'Live Dealing', path:'/live-dealing', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#404040"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
                   )},
                   {label:'Margin Level', path:'/margin-level', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
+                  )},
+                  {label:'Live Dealing', path:'/live-dealing', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#404040"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#404040"/></svg>
                   )},
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="#404040"/></svg>
-                  )}
-                ].map((item, index) => (
-                  <button
-                    key={index}
+                  {label:'IB Commissions', path:'/ib-commissions', active:true, icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#1A63BC"/><path d="M12 7v10M8 10h8" stroke="#1A63BC"/></svg>
+                  )},
+                  {label:'Settings', path:'/settings', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
+                  )},
+                ].map((item, idx) => (
+                  <button 
+                    key={idx} 
                     onClick={() => {
                       navigate(item.path)
                       setIsSidebarOpen(false)
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      window.location.pathname === item.path 
-                        ? 'bg-[#2563EB] text-white' 
-                        : 'text-[#404040] hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}
                   >
-                    {item.icon}
-                    <span className="font-medium">{item.label}</span>
+                    <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
+                    <span>{item.label}</span>
                   </button>
                 ))}
               </nav>
             </div>
+
+            <div className="p-4 mt-auto border-t border-[#ECECEC]">
+              <button className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
