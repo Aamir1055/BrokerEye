@@ -536,16 +536,16 @@ const ClientPercentagePage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider hover:bg-blue-700 transition-colors select-none group">
-        <div className="flex items-center gap-1 justify-between">
+      <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider hover:bg-gray-50 transition-colors select-none group border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-2 justify-between">
           <div 
-            className="flex items-center gap-1 cursor-pointer flex-1 text-white"
+            className="flex items-center gap-1 cursor-pointer flex-1 text-[#6B7280]"
             onClick={() => {
               setSortColumn(actualSortKey)
               setSortDirection(prev => sortColumn === actualSortKey && prev === 'asc' ? 'desc' : 'asc')
             }}
           >
-            <span className="text-white">{label}</span>
+            <span>{label}</span>
             {getSortIcon(actualSortKey)}
           </div>
           
@@ -558,14 +558,14 @@ const ClientPercentagePage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
+              className={`p-1 rounded hover:bg-gray-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-[#9CA3AF]'}`}
               title="Filter column"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               {filterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-yellow-400 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {filterCount}
                 </span>
               )}
@@ -758,17 +758,17 @@ const ClientPercentagePage = () => {
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
       return (
-        <svg className="w-3 h-3 opacity-0 group-hover:opacity-30 text-white transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 opacity-0 group-hover:opacity-40 text-[#9CA3AF] transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
         </svg>
       )
     }
       return sortDirection === 'asc' ? (
-      <svg className="w-3 h-3 text-white transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-[#6B7280] transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     ) : (
-      <svg className="w-3 h-3 text-white rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-[#6B7280] rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     )
@@ -797,24 +797,31 @@ const ClientPercentagePage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
-      <div className={`flex-1 flex flex-col overflow-hidden ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-4 py-3">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
+          {/* Header */}
+          <div className="mb-4">
+            {/* Title and Subtitle */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Client Percentage</h1>
-                <p className="text-sm text-gray-500">Manage custom profit-sharing percentages</p>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-[#1F2937]">Client Percentage</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Manage custom profit-sharing percentages</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Separator */}
+            <div className="border-b border-[#E5E7EB] my-3"></div>
+            
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center gap-2">
               {/* Groups Dropdown */}
               <GroupSelector 
                 moduleName="clientpercentage" 
@@ -831,133 +838,72 @@ const ClientPercentagePage = () => {
               <WebSocketIndicator />
             </div>
           </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4">
           {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-500 rounded-r p-4 shadow-sm">
               <p className="text-red-700">{error}</p>
             </div>
           )}
 
-          {/* Stats Summary */}
+          {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Clients</p>
-              <p className="text-sm font-bold text-gray-900">{stats.total}</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Total Clients</p>
+              <p className="text-xl font-bold text-[#1F2937]">{stats.total}</p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-              <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Custom Percentages</p>
-              <p className="text-sm font-bold text-green-600">{stats.total_custom}</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Custom Percentages</p>
+              <p className="text-xl font-bold text-[#1F2937]">{stats.total_custom}</p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
-              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Using Default</p>
-              <p className="text-sm font-bold text-purple-600">{stats.total_default}</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Using Default</p>
+              <p className="text-xl font-bold text-[#1F2937]">{stats.total_default}</p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
-              <p className="text-[10px] font-semibold text-orange-600 uppercase mb-0">Default Percentage</p>
-              <p className="text-sm font-bold text-orange-600">{stats.default_percentage}%</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Default Percentage</p>
+              <p className="text-xl font-bold text-[#1F2937]">{stats.default_percentage}%</p>
             </div>
           </div>
 
-          {/* Pagination - Top */}
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {getAvailableOptions().map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-              <span className="text-sm text-gray-600">entries</span>
-              
-              {/* Navigation Buttons next to dropdown */}
-              <div className="flex items-center gap-1 ml-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    currentPage === 1
-                      ? 'text-gray-300 cursor-not-allowed bg-gray-100'
-                      : 'text-gray-600 hover:bg-blue-100 cursor-pointer border border-gray-300'
-                  }`}
-                  title="Previous page"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          {/* Search and Controls Bar */}
+          {sortedClients() && sortedClients().length > 0 && (
+          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Left: Search and Columns */}
+              <div className="flex items-center gap-2 flex-1">
+                {/* Search Bar */}
+                <div className="relative flex-1 max-w-md" ref={searchRef}>
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                </button>
-                
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-gray-300 cursor-not-allowed bg-gray-100'
-                      : 'text-gray-600 hover:bg-blue-100 cursor-pointer border border-gray-300'
-                  }`}
-                  title="Next page"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Page Navigation Info */}
-              <span className="text-sm text-gray-700 font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
-              
-              {/* Module Type Filter removed per request (belongs to Live Dealing) */}
-
-              {/* Columns Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="px-3 py-2 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
-                >
-                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Columns
-                </button>
-                {showColumnSelector && (
-                  <div
-                    ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
-                    </div>
-                    {allColumns.map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative" ref={searchRef}>
-                <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
@@ -967,52 +913,123 @@ const ClientPercentagePage = () => {
                       setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        setShowSuggestions(false)
-                      }
-                    }}
-                    placeholder="Search login, percentage..."
-                    className="pl-9 pr-9 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 placeholder-gray-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search"
+                    className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
-                  <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
                   {searchQuery && (
                     <button
                       onClick={() => {
                         setSearchQuery('')
                         setShowSuggestions(false)
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                      title="Clear search"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
+                  
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && getSuggestions().length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
+                      {getSuggestions().map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
-                {/* Suggestions Dropdown */}
-                {showSuggestions && getSuggestions().length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                    {getSuggestions().map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Columns Button (icon only) */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColumnSelector(!showColumnSelector)}
+                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    title="Show/Hide Columns"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                      <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                    </svg>
+                  </button>
+                  {showColumnSelector && (
+                    <div
+                      ref={columnSelectorRef}
+                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                      style={{ maxHeight: '400px', overflowY: 'auto' }}
+                    >
+                      <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                        <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
+                      </div>
+                      {allColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns[col.key]}
+                            onChange={() => toggleColumn(col.key)}
+                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} - {Math.min(endIndex, sortedClients().length)} of {sortedClients().length}
+
+              {/* Right: Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === 1
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                  <span className="text-[#1F2937] font-semibold">{currentPage}</span>
+                  <span className="text-[#9CA3AF] mx-1">/</span>
+                  <span className="text-[#6B7280]">{totalPages}</span>
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === totalPages
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </div>
+          </div>
+          )}
+
+          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
+            Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedClients().length)} of {sortedClients().length}
           </div>
 
           {/* Table */}
@@ -1023,22 +1040,22 @@ const ClientPercentagePage = () => {
               <p className="text-sm text-gray-500">Client percentage data will appear here</p>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col flex-1">
               <div className="overflow-y-auto flex-1">
-                <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-blue-600 sticky top-0 shadow-md">
+                <table className="min-w-full divide-y divide-[#E5E7EB]">
+                <thead className="bg-[#F9FAFB] sticky top-0 z-10">
                   <tr>
                     {visibleColumns.login && renderHeaderCell('client_login', 'Client Login', 'client_login')}
                     {visibleColumns.percentage && renderHeaderCell('percentage', 'Percentage')}
                     {visibleColumns.type && renderHeaderCell('is_custom', 'Type', 'is_custom')}
                     {visibleColumns.comment && (
-                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                         Comment
                       </th>
                     )}
                     {visibleColumns.updatedAt && renderHeaderCell('updated_at', 'Last Updated', 'updated_at')}
                     {visibleColumns.actions && (
-                      <th className="px-4 py-3 text-left text-[11px] font-bold text-white uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                         Actions
                       </th>
                     )}
