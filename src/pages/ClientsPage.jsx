@@ -2694,7 +2694,13 @@ const ClientsPage = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 md:mb-6 [&>div]:shadow-md [&>div]:border-2">
+            <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory mb-4 md:mb-6 pb-2"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
@@ -2726,90 +2732,53 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Apply themed colors
-                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  // Render compact Client2-style card
+                  const isPositive = card.numericValue > 0
+                  const isNegative = card.numericValue < 0
+                  const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
+                  const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
                   
-                  // Simple cards (no icons)
-                  if (card.simple) {
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
-                          {card.formattedValue != null ? card.formattedValue : card.value}
-                        </p>
-                      </div>
-                    )
-                  }
-                  
-                  // Cards with icon (PNL, Floating Profit)
-                  if (card.withIcon) {
-                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
-                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
-                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              {card.id === 5 && card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                              )}
-                              {card.id === 5 && !card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                              )}
-                              {card.id === 6 && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                              )}
-                            </svg>
-                          </div>
+                  return (
+                    <div
+                      key={`${card.id}-${card.value}`}
+                      draggable
+                      onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                      onDragEnd={handleFaceCardDragEnd}
+                      onDragOver={handleFaceCardDragOver}
+                      onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                      className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                    >
+                      <div className="flex items-start justify-between">
+                        <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                        <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                            <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                          </svg>
                         </div>
-                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
                       </div>
-                    )
-                  }
-                  
-                  // Cards with arrow (PnL cards)
-                  if (card.withArrow) {
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
+                      <div className="flex items-baseline gap-[4px]">
+                        {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                          {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
+                        </span>
                       </div>
-                    )
-                  }
-                  
-                  return null
+                    </div>
+                  )
                 })}
               </>
             )}
@@ -2855,90 +2824,53 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Apply themed colors
-                  const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
+                  // Render compact Client2-style card
+                  const isPositive = card.numericValue > 0
+                  const isNegative = card.numericValue < 0
+                  const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
+                  const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
                   
-                  // Simple cards (no icons)
-                  if (card.simple) {
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
-                          {card.formattedValue != null ? card.formattedValue : card.value}
-                        </p>
-                      </div>
-                    )
-                  }
-                  
-                  // Cards with icon (PNL, Floating Profit)
-                  if (card.withIcon) {
-                    const iconColor = card.iconColor || (card.isPositive ? 'green' : 'red')
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
-                          <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
-                            <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              {card.id === 5 && card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                              )}
-                              {card.id === 5 && !card.isPositive && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                              )}
-                              {card.id === 6 && (
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                              )}
-                            </svg>
-                          </div>
+                  return (
+                    <div
+                      key={`${card.id}-${card.value}`}
+                      draggable
+                      onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
+                      onDragEnd={handleFaceCardDragEnd}
+                      onDragOver={handleFaceCardDragOver}
+                      onDrop={(e) => handleFaceCardDrop(e, card.id)}
+                      className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                    >
+                      <div className="flex items-start justify-between">
+                        <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                        <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                            <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                          </svg>
                         </div>
-                        <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
                       </div>
-                    )
-                  }
-                  
-                  // Cards with arrow (PnL cards)
-                  if (card.withArrow) {
-                    return (
-                      <div
-                        key={`${card.id}-${card.value}`}
-                        draggable
-                        onDragStart={(e) => handleFaceCardDragStart(e, card.id)}
-                        onDragEnd={handleFaceCardDragEnd}
-                        onDragOver={handleFaceCardDragOver}
-                        onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                        className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                      >
-                        <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
-                        <p className={`text-sm font-bold ${themedColors.valueColor}`}>
-                          {card.isPositive ? '▲ ' : '▼ '}
-                          {card.isPositive ? '' : '-'}
-                          {card.formattedValue}
-                        </p>
+                      <div className="flex items-baseline gap-[4px]">
+                        {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                          </svg>
+                        )}
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                          {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
+                        </span>
                       </div>
-                    )
-                  }
-                  
-                  return null
+                    </div>
+                  )
                 })}
               </>
             )}
@@ -2974,90 +2906,53 @@ const ClientsPage = () => {
                   }
                   
                   return cards.map(card => {
-                    // Apply themed colors
-                    const themedColors = getThemedColors(card.borderColor, card.textColor, card.valueColor)
-                  
-                    // Simple cards (no icons)
-                    if (card.simple) {
-                      return (
-                        <div
-                          key={card.renderKey}
-                          draggable
-                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
-                          onDragEnd={handleFaceCardDragEnd}
-                          onDragOver={handleFaceCardDragOver}
-                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                          className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                        >
-                          <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase tracking-wider mb-1`}>{card.title}</p>
-                          <p className={`text-sm font-bold ${themedColors.valueColor || 'text-gray-900'}`}>
-                            {card.formattedValue != null ? card.formattedValue : card.value}
-                          </p>
-                        </div>
-                      )
-                    }
+                    // Render compact Client2-style card
+                    const isPositive = card.numericValue > 0
+                    const isNegative = card.numericValue < 0
+                    const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
+                    const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
                     
-                    // Cards with icon (Market Exposure and Credit)
-                    if (card.withIcon) {
-                      const iconColor = card.id === 5 ? (card.isPositive ? 'green' : 'red') : 'blue'
-                      return (
-                        <div
-                          key={card.renderKey}
-                          draggable
-                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
-                          onDragEnd={handleFaceCardDragEnd}
-                          onDragOver={handleFaceCardDragOver}
-                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                          className={`bg-white rounded shadow-sm border ${card.isPositive ? `border-${iconColor}-200` : `border-${iconColor === 'green' ? 'red' : iconColor}-200`} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <p className={`text-[10px] font-semibold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`} uppercase`}>{card.title}</p>
-                            <div className={`w-6 h-6 ${card.isPositive ? `bg-${iconColor}-50 border border-${iconColor}-100` : `bg-${iconColor === 'green' ? 'red' : iconColor}-50 border border-${iconColor === 'green' ? 'red' : iconColor}-100`} rounded-lg flex items-center justify-center`}>
-                              <svg className={`w-3 h-3 ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                                {card.id === 5 && card.isPositive && (
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                )}
-                                {card.id === 5 && !card.isPositive && (
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                                )}
-                                {card.id === 6 && (
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                                )}
-                              </svg>
-                            </div>
+                    return (
+                      <div
+                        key={card.renderKey}
+                        draggable
+                        onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
+                        onDragEnd={handleFaceCardDragEnd}
+                        onDragOver={handleFaceCardDragOver}
+                        onDrop={(e) => handleFaceCardDrop(e, cardId)}
+                        className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                      >
+                        <div className="flex items-start justify-between">
+                          <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                            </svg>
                           </div>
-                          <p className={`text-sm font-bold ${card.isPositive ? `text-${iconColor}-600` : `text-${iconColor === 'green' ? 'red' : iconColor}-600`}`}>
-                            {card.isPositive ? '▲ ' : '▼ '}
-                            {card.isPositive ? '' : '-'}
-                            {card.formattedValue}
-                          </p>
                         </div>
-                      )
-                    }
-                    
-                    // Cards with arrow (PnL cards)
-                    if (card.withArrow) {
-                      return (
-                        <div
-                          key={card.renderKey}
-                          draggable
-                          onDragStart={(e) => handleFaceCardDragStart(e, cardId)}
-                          onDragEnd={handleFaceCardDragEnd}
-                          onDragOver={handleFaceCardDragOver}
-                          onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                          className={`bg-white rounded shadow-sm border ${themedColors.borderColor} p-2 cursor-move transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95`}
-                        >
-                          <p className={`text-[10px] font-semibold ${themedColors.textColor} uppercase mb-1`}>{card.title}</p>
-                          <p className={`text-sm font-bold ${themedColors.valueColor}`}>
-                            {card.isPositive ? '▲ ' : '▼ '}
-                            {card.isPositive ? '' : '-'}
-                            {card.formattedValue}
-                          </p>
+                        <div className="flex items-baseline gap-[4px]">
+                          {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                            <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                              <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            </svg>
+                          )}
+                          {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                            <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                              <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                            </svg>
+                          )}
+                          {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                            <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
+                              <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            </svg>
+                          )}
+                          <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                            {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
+                          </span>
                         </div>
-                      )
-                    }
-                    
-                    return null
+                      </div>
+                    )
                   })
                 })}
               </>
