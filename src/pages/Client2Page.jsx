@@ -3548,10 +3548,16 @@ const Client2Page = () => {
                         const rect = btn.getBoundingClientRect()
                         const scrollY = window.scrollY || document.documentElement.scrollTop || 0
                         const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
-                        setColumnSelectorPos({
-                          top: rect.top + scrollY + rect.height + 8,
-                          left: rect.left + scrollX
-                        })
+                        const panelWidth = 300
+                        const gap = 8
+                        let top = rect.top + scrollY
+                        let left = rect.right + scrollX + gap
+                        const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+                        // If overflow on the right, place to the left of the button
+                        if (left + panelWidth > scrollX + viewportWidth) {
+                          left = rect.left + scrollX - panelWidth - gap
+                        }
+                        setColumnSelectorPos({ top, left })
                         setShowColumnSelector(v => !v)
                       }}
                       className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
