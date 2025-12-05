@@ -3201,9 +3201,7 @@ const ClientsPage = () => {
                   </svg>
                 </button>
                 {showColumnSelector && (
-                  <div className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col" style={{ 
-                    top: '15%',
-                    right: '10px',
+                  <div className="absolute top-full left-0 mt-2 bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col" style={{ 
                     width: '300px',
                     maxHeight: '70vh',
                     zIndex: 20000000
@@ -3281,35 +3279,35 @@ const ClientsPage = () => {
             <div className="flex items-center gap-3">
               {/* Page Navigation */}
               {totalPages > 1 && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 bg-white rounded-lg border border-[#E5E7EB] px-3 py-2 shadow-sm">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`p-2 rounded-md transition-all shadow-sm ${
+                    className={`p-1 rounded transition-colors ${
                       currentPage === 1
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
                   
-                  <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-md shadow-md border border-blue-700">
-                    Page {currentPage} of {totalPages}
+                  <span className="text-sm font-semibold text-gray-700 min-w-[60px] text-center">
+                    {currentPage} / {totalPages}
                   </span>
                   
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`p-2 rounded-md transition-all shadow-sm ${
+                    className={`p-1 rounded transition-colors ${
                       currentPage === totalPages
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
