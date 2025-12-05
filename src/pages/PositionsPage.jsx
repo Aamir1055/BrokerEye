@@ -2678,10 +2678,37 @@ const PositionsPage = () => {
 
               {/* Client NET Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
-                {/* Controls: pagination left; actions right */}
+                {/* Controls: search and pagination left; actions right */}
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  {/* Left: pagination */}
-                  <div className="flex items-center flex-wrap gap-2">
+                  {/* Left: search and pagination */}
+                  <div className="flex items-center flex-wrap gap-3">
+                    {/* Client NET search at extreme left */}
+                    <div className="relative" ref={clientNetSearchRef}>
+                      <input
+                        type="text"
+                        value={clientNetSearchQuery}
+                        onChange={(e)=>{ setClientNetSearchQuery(e.target.value); setClientNetShowSuggestions(true); setClientNetCurrentPage(1) }}
+                        onFocus={()=>setClientNetShowSuggestions(true)}
+                        onKeyDown={handleClientNetSearchKeyDown}
+                        placeholder="Search login, symbol or NET type..."
+                        className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                      />
+                      <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      {clientNetSearchQuery && (
+                        <button onClick={()=>{ setClientNetSearchQuery(''); setClientNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      )}
+                      {clientNetShowSuggestions && getClientNetSuggestions().length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                          {getClientNetSuggestions().map((s,i)=>(
+                            <button key={i} onClick={()=>handleClientNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Pagination controls */}
                     <div className="flex items-center gap-2">
                         <button
                           onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
@@ -2703,7 +2730,7 @@ const PositionsPage = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                       </div>
-                    <span className="text-[11px] text-gray-500 ml-2">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
+                    <span className="text-[11px] text-gray-500">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
                   </div>
                   {/* Right: actions */}
                   <div className="flex items-center gap-3">
@@ -2766,31 +2793,6 @@ const PositionsPage = () => {
                                 k
                               }</span>
                             </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {/* Client NET search placed at the end next to Group Base Symbols */}
-                    <div className="relative" ref={clientNetSearchRef}>
-                      <input
-                        type="text"
-                        value={clientNetSearchQuery}
-                        onChange={(e)=>{ setClientNetSearchQuery(e.target.value); setClientNetShowSuggestions(true); setClientNetCurrentPage(1) }}
-                        onFocus={()=>setClientNetShowSuggestions(true)}
-                        onKeyDown={handleClientNetSearchKeyDown}
-                        placeholder="Search login, symbol or NET type..."
-                        className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-                      />
-                      <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                      {clientNetSearchQuery && (
-                        <button onClick={()=>{ setClientNetSearchQuery(''); setClientNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                      )}
-                      {clientNetShowSuggestions && getClientNetSuggestions().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                          {getClientNetSuggestions().map((s,i)=>(
-                            <button key={i} onClick={()=>handleClientNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
                           ))}
                         </div>
                       )}
