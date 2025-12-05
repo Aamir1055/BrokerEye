@@ -74,6 +74,9 @@ const PositionsPage = () => {
     totalNetPL: true,
     totalLogins: true
   })
+  // NET positions column selector
+  const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
+  const netColumnSelectorRef = useRef(null)
   // Client NET controls and visibility
   const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
   const clientNetColumnSelectorRef = useRef(null)

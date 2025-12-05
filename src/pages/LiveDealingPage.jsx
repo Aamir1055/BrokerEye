@@ -2169,7 +2169,7 @@ const LiveDealingPage = () => {
 
       {/* Custom Filter Modal */}
       {showCustomFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]" onClick={() => setShowCustomFilterModal(false)}>
           <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
