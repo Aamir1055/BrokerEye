@@ -2614,37 +2614,68 @@ const PositionsPage = () => {
           ) : showClientNet ? (
             <div className="space-y-4 flex flex-col flex-1 overflow-hidden">
               {/* Client NET Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-                <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
-                  <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Client NET Rows</p>
-                  <p className="text-sm font-bold text-gray-900">{clientNetFilteredPositions.length}</p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total NET Volume</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}
-                  </p>
-                </div>
-                <div className={`bg-white rounded shadow-sm border ${
-                  clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'border-green-200' : 'border-red-200'
-                } p-2`}>
-                  <p className={`text-[10px] font-semibold ${
-                    clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  } uppercase mb-0`}>Total NET P/L</p>
-                  <p className={`text-sm font-bold ${
-                    clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲ ' : '▼ '}
-                    {formatNumber(Math.abs(clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
-                  </p>
-                </div>
-                <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-                  <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Total Logins</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {new Set(clientNetFilteredPositions.map(r=>r.login)).size}
-                  </p>
-                </div>
-                {/* Removed grouping toggle card per new layout */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
+                {clientNetCardsVisible.clientNetRows && (
+                  <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-purple-600 uppercase">Client NET Rows</p>
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{clientNetFilteredPositions.length}</p>
+                  </div>
+                )}
+                {clientNetCardsVisible.totalNetVolume && (
+                  <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-blue-600 uppercase">Total NET Volume</p>
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}
+                    </p>
+                  </div>
+                )}
+                {clientNetCardsVisible.totalNetPL && (
+                  <div className={`bg-white rounded-xl shadow-sm border ${
+                    clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'border-green-100' : 'border-red-100'
+                  } p-3 hover:shadow-md transition-shadow`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className={`text-xs font-semibold ${
+                        clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                      } uppercase`}>Total NET P/L</p>
+                      <div className={`w-8 h-8 ${
+                        clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'bg-green-100' : 'bg-red-100'
+                      } rounded-lg flex items-center justify-center`}>
+                        <svg className={`w-4 h-4 ${
+                          clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      </div>
+                    </div>
+                    <p className={`text-2xl font-bold ${
+                      clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲ ' : '▼ '}
+                      {formatNumber(Math.abs(clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
+                    </p>
+                  </div>
+                )}
+                {clientNetCardsVisible.totalLogins && (
+                  <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-indigo-600 uppercase">Total Logins</p>
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                      </div>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {new Set(clientNetFilteredPositions.map(r=>r.login)).size}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Client NET Table */}
@@ -2688,31 +2719,6 @@ const PositionsPage = () => {
                       Export CSV
                     </button>
                     
-                    {/* Columns selector */}
-                    <div className="relative" ref={clientNetColumnSelectorRef}>
-                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
-                        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                        Columns
-                      </button>
-                      {clientNetShowColumnSelector && (
-                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
-                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Client NET Columns</p>
-                          {Object.keys(clientNetVisibleColumns).map(k => (
-                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                              <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={()=>toggleClientNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                              <span className="text-[11px] text-gray-700 capitalize">{
-                                k==='netType'?'NET Type':
-                                k==='netVolume'?'NET Volume':
-                                k==='avgPrice'?'Avg Price':
-                                k==='totalProfit'?'Total Profit':
-                                k==='totalPositions'?'Positions':
-                                k
-                              }</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     {/* Card Filter */}
                     <div className="relative" ref={clientNetCardFilterRef}>
                       <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
@@ -2744,6 +2750,31 @@ const PositionsPage = () => {
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                       Group Base Symbols
                     </button>
+                    {/* Columns selector */}
+                    <div className="relative" ref={clientNetColumnSelectorRef}>
+                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
+                        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        Columns
+                      </button>
+                      {clientNetShowColumnSelector && (
+                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
+                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Client NET Columns</p>
+                          {Object.keys(clientNetVisibleColumns).map(k => (
+                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                              <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={()=>toggleClientNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                              <span className="text-[11px] text-gray-700 capitalize">{
+                                k==='netType'?'NET Type':
+                                k==='netVolume'?'NET Volume':
+                                k==='avgPrice'?'Avg Price':
+                                k==='totalProfit'?'Total Profit':
+                                k==='totalPositions'?'Positions':
+                                k
+                              }</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     {/* Client NET search placed at the end next to Group Base Symbols */}
                     <div className="relative" ref={clientNetSearchRef}>
                       <input

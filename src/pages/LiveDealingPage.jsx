@@ -1015,11 +1015,15 @@ const LiveDealingPage = () => {
           setShowFilterDropdown(null)
         }
       }
+      // Close module filter dropdown when clicking outside
+      if (showModuleFilter && moduleFilterRef.current && !moduleFilterRef.current.contains(event.target)) {
+        setShowModuleFilter(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, showModuleFilter])
 
   // Helper function to render table header with filter
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
@@ -1640,7 +1644,7 @@ const LiveDealingPage = () => {
               </div>
               
               {/* Module Filter Button (Deal/Money/Both) */}
-              <div className="relative">
+              <div className="relative" ref={moduleFilterRef}>
                 <button
                   onClick={() => setShowModuleFilter(!showModuleFilter)}
                   className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
@@ -1652,7 +1656,6 @@ const LiveDealingPage = () => {
                 </button>
                 {showModuleFilter && (
                   <div
-                    ref={moduleFilterRef}
                     className="absolute right-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-48"
                   >
                     <div className="px-3 py-1.5 border-b border-gray-200">
