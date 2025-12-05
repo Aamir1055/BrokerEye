@@ -1037,8 +1037,11 @@ const Client2Page = () => {
 
             // Special-case: login filters should use mt5Accounts for proper OR semantics
             if (columnKey === 'login') {
-              checkboxLoginIds = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
-              console.log(`[Client2] 🔍 Using mt5Accounts for login checkbox: ${checkboxLoginIds.length} accounts`)
+              const vals = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
+              if (vals.length > 0) {
+                combinedFilters.push({ field: 'login', operator: 'in', value: vals })
+                console.log(`[Client2] 🔍 Checkbox login: using filters.in with ${vals.length} values`)
+              }
             } else {
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
 
@@ -1116,15 +1119,7 @@ const Client2Page = () => {
         }
       }
 
-      // Merge in login checkbox selections (OR) into mt5Accounts filter
-      if (checkboxLoginIds.length > 0) {
-        if (mt5AccountsFilter.length > 0) {
-          const set = new Set(checkboxLoginIds)
-          mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(Number(a))) // intersection with existing mt5 list
-        } else {
-          mt5AccountsFilter = [...new Set(checkboxLoginIds)]
-        }
-      }
+      // Login checkbox now uses filters.in('login'), not mt5Accounts
 
       // Assign final mt5Accounts if any
       if (mt5AccountsFilter.length > 0) {

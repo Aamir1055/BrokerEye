@@ -1144,10 +1144,6 @@ const PendingOrdersPage = () => {
           </div>
           )}
 
-          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
-            Showing {startIndex + 1} - {Math.min(endIndex, sortedOrders.length)} of {sortedOrders.length}
-          </div>
-
           {/* Orders Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
