@@ -233,6 +233,7 @@ const PositionsPage = () => {
   // NET positions toggle and grouping
   const [showNetPositions, setShowNetPositions] = useState(false)
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
+  const [expandedNetKeys, setExpandedNetKeys] = useState(new Set())
   
   // NET positions pagination
   const [netCurrentPage, setNetCurrentPage] = useState(1)
@@ -2730,9 +2731,8 @@ const PositionsPage = () => {
                         </div>
                       )}
                     </div>
-                  </div>
-                  {/* Right: actions and pagination */}
-                  <div className="flex items-center gap-3">
+                    
+                    {/* Export CSV button */}
                     <button onClick={handleExportClientNetPositions} className="p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all text-gray-700 shadow-sm" title="Export Client NET to CSV">
                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                     </button>
@@ -2746,45 +2746,6 @@ const PositionsPage = () => {
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                       Groups
                     </button>
-                    
-                    {/* Pagination controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                          onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
-                          disabled={clientNetCurrentPage===1}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                            clientNetCurrentPage === 1
-                              ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                              : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                          }`}
-                          aria-label="Previous page"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-
-                        <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
-                          <span className="text-[#1F2937] font-semibold">{clientNetCurrentPage}</span>
-                          <span className="text-[#9CA3AF] mx-1">/</span>
-                          <span className="text-[#6B7280]">{clientNetTotalPages}</span>
-                        </div>
-
-                        <button
-                          onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)}
-                          disabled={clientNetCurrentPage===clientNetTotalPages}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                            clientNetCurrentPage === clientNetTotalPages
-                              ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                              : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                          }`}
-                          aria-label="Next page"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                      </div>
                     
                     {/* Columns selector */}
                     <div className="relative" ref={clientNetColumnSelectorRef}>
@@ -2811,6 +2772,44 @@ const PositionsPage = () => {
                       )}
                     </div>
                   </div>
+                  {/* Right: pagination */}
+                  <div className="flex items-center gap-2">
+                      <button
+                        onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
+                        disabled={clientNetCurrentPage===1}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                          clientNetCurrentPage === 1
+                            ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                            : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                        }`}
+                        aria-label="Previous page"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+
+                      <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                        <span className="text-[#1F2937] font-semibold">{clientNetCurrentPage}</span>
+                        <span className="text-[#9CA3AF] mx-1">/</span>
+                        <span className="text-[#6B7280]">{clientNetTotalPages}</span>
+                      </div>
+
+                      <button
+                        onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)}
+                        disabled={clientNetCurrentPage===clientNetTotalPages}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                          clientNetCurrentPage === clientNetTotalPages
+                            ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                            : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                        }`}
+                        aria-label="Next page"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
                 </div>
                 <div className="overflow-y-auto flex-1">
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
