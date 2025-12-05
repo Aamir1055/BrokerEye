@@ -398,6 +398,12 @@ const ClientPercentagePage = () => {
     setShowSuggestions(false)
   }
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setShowSuggestions(false)
+    }
+  }
+
   // Sorting
   const handleSort = (column) => {
     if (sortColumn === column) {
