@@ -3404,7 +3404,7 @@ const Client2Page = () => {
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
             <div className="mb-6 w-full relative" ref={faceCardsRef}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 w-full select-none overflow-x-hidden" style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 w-full select-none overflow-x-hidden" style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}>
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3457,7 +3457,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none w-full relative"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[96px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
