@@ -2740,7 +2740,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2833,7 +2833,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2916,7 +2916,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                        className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                        className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
