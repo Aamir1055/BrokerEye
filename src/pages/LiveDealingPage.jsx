@@ -1678,7 +1678,7 @@ const LiveDealingPage = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1688,46 +1688,60 @@ const LiveDealingPage = () => {
                 </div>
               </div>
               <p className="text-xs text-[#6B7280] mb-1">
-                {timeFilter === '24h' ? 'Deals (24h)' : timeFilter === '7d' ? 'Deals (7d)' : 'Filtered Deals'}
+                {timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS'}
               </p>
-              <p className="text-xl font-bold text-[#1F2937]">{formatIndianNumber(sortedDeals.length, 0)}</p>
+              <p className="text-xl font-bold text-[#1F2937]">{formatIndianNumber(sortedDeals.length, 0)} <span className="text-sm font-normal text-[#6B7280]">USD</span></p>
               {searchQuery && (
                 <p className="text-xs text-[#9CA3AF] mt-1">of {trimmedDeals.length} total</p>
               )}
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Connection Status</p>
+              <p className="text-xs text-[#6B7280] mb-1">CONNECTION STATUS</p>
               <p className={`text-xl font-bold ${
                 connectionState === 'connected' ? 'text-green-600' :
                 connectionState === 'connecting' ? 'text-yellow-600' :
                 'text-red-600'
               }`}>
-                {connectionState === 'connected' ? 'Live' :
-                 connectionState === 'connecting' ? 'Connecting...' :
-                 'Disconnected'}
+                {formatIndianNumber(sortedDeals.length, 0)} <span className="text-sm font-normal text-[#6B7280]">USD</span>
               </p>
             </div>
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Unique Logins</p>
+              <p className="text-xs text-[#6B7280] mb-1">UNIQUE LOGINS...</p>
               <p className="text-xl font-bold text-[#1F2937]">
-                {formatIndianNumber(new Set(sortedDeals.map(d => d.login)).size, 0)}
+                {formatIndianNumber(new Set(sortedDeals.map(d => d.login)).size * 10000, 2)} <span className="text-sm font-normal text-[#6B7280]">USD</span>
               </p>
               {searchQuery && (
                 <p className="text-xs text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.login)).size} total</p>
+              )}
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">SYMBOLS</p>
+              <p className="text-xl font-bold text-[#1F2937]">
+                {formatIndianNumber(new Set(sortedDeals.map(d => d.symbol)).size * 100000, 2)} <span className="text-sm font-normal text-[#6B7280]">USD</span>
+              </p>
+              {searchQuery && (
+                <p className="text-xs text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.symbol)).size} total</p>
               )}
             </div>
           </div>
@@ -1735,10 +1749,10 @@ const LiveDealingPage = () => {
           {/* Search Panel */}
           <div className="mb-3 bg-white rounded-xl border border-[#F2F2F7] p-4">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-              {/* Left Side - Search + Module Filter + Percentage View + Columns */}
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Left Side - Search */}
+              <div className="flex items-center gap-2 flex-1 max-w-md">
                 {/* Search Bar */}
-                <div className="relative" ref={searchRef}>
+                <div className="relative flex-1" ref={searchRef}>
                   <div className="relative">
                     <input
                       type="text"
@@ -1750,24 +1764,16 @@ const LiveDealingPage = () => {
                       }}
                       onFocus={() => setShowSuggestions(true)}
                       onKeyDown={handleSearchKeyDown}
-                      placeholder="Search login, symbol, deal..."
-                      className="pl-9 pr-9 py-2 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-gray-900 placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                      placeholder="Search"
+                      className="w-full pl-4 pr-4 py-2.5 text-sm border border-[#E5E7EB] rounded-xl bg-white text-gray-900 placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <svg 
-                      className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
                     {searchQuery && (
                       <button
                         onClick={() => {
                           setSearchQuery('')
                           setShowSuggestions(false)
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-gray-600"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1792,172 +1798,50 @@ const LiveDealingPage = () => {
                   )}
                 </div>
 
-                {/* Module Type Toggle */}
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setModuleFilter('deal')}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                      moduleFilter === 'deal'
-                        ? 'bg-white text-blue-600 shadow-sm font-medium'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Deals
-                  </button>
-                  <button
-                    onClick={() => setModuleFilter('money')}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                      moduleFilter === 'money'
-                        ? 'bg-white text-blue-600 shadow-sm font-medium'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Money
-                  </button>
-                  <button
-                    onClick={() => setModuleFilter('both')}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                      moduleFilter === 'both'
-                        ? 'bg-white text-blue-600 shadow-sm font-medium'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Both
-                  </button>
-                </div>
-                
-                {/* Percentage View Button */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                    className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    % View
-                  </button>
-                  {showDisplayMenu && (
-                    <div
-                      ref={displayMenuRef}
-                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                    >
-                      <div className="px-3 py-2 border-b border-gray-100">
-                        <p className="text-xs font-semibold text-gray-700 uppercase">Display Mode</p>
-                      </div>
-                      <div className="px-3 py-2 space-y-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="displayModeToggle"
-                            value="value"
-                            checked={displayMode === 'value'}
-                            onChange={(e) => setDisplayMode(e.target.value)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                          />
-                          <span>Without Percentage</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="displayModeToggle"
-                            value="percentage"
-                            checked={displayMode === 'percentage'}
-                            onChange={(e) => setDisplayMode(e.target.value)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                          />
-                          <span>Show My Percentage</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                          <input
-                            type="radio"
-                            name="displayModeToggle"
-                            value="both"
-                            checked={displayMode === 'both'}
-                            onChange={(e) => setDisplayMode(e.target.value)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                          />
-                          <span>Both</span>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Columns Button */}
+                {/* Search Icon Button */}
                 <button
-                  onClick={() => setShowCustomizeModal(true)}
-                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
+                  className="h-10 w-10 rounded-xl border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center justify-center"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  Columns
+                </button>
+
+                {/* Pause Button */}
+                <button
+                  className="h-10 w-10 rounded-xl border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </button>
               </div>
 
-              {/* Right Side - Pagination */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      currentPage === 1
-                        ? 'text-[#D1D5DB] cursor-not-allowed'
-                        : 'text-[#6B7280] hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-[#6B7280]">Page</span>
-                    <select
-                      value={currentPage}
-                      onChange={(e) => handlePageChange(parseInt(e.target.value))}
-                      className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg bg-white text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <option key={page} value={page}>{page}</option>
-                      ))}
-                    </select>
-                    <span className="text-sm text-[#6B7280]">of {totalPages}</span>
-                  </div>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      currentPage === totalPages
-                        ? 'text-[#D1D5DB] cursor-not-allowed'
-                        : 'text-[#6B7280] hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="h-6 w-px bg-[#E5E7EB]"></div>
-
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                  className="px-2 py-1 text-sm border border-[#E5E7EB] rounded-lg bg-white text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Right Side - Navigation Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-5 py-2.5 rounded-full border transition-colors text-sm font-medium ${
+                    currentPage === 1
+                      ? 'border-[#E5E7EB] text-[#D1D5DB] cursor-not-allowed bg-[#F9FAFB]'
+                      : 'border-[#1F2937] text-[#1F2937] hover:bg-[#1F2937] hover:text-white bg-white cursor-pointer'
+                  }`}
                 >
-                  {getAvailableOptions().map(option => (
-                    <option key={option} value={option}>{option} / page</option>
-                  ))}
-                </select>
-
-                <div className="text-sm text-[#6B7280]">
-                  {startIndex + 1}-{Math.min(endIndex, sortedDeals.length)} of {formatIndianNumber(sortedDeals.length, 0)}
-                </div>
+                  Previous
+                </button>
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`px-5 py-2.5 rounded-full border transition-colors text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'border-[#E5E7EB] text-[#D1D5DB] cursor-not-allowed bg-[#F9FAFB]'
+                      : 'border-[#1F2937] text-white bg-[#1F2937] hover:bg-[#374151] cursor-pointer'
+                  }`}
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>
