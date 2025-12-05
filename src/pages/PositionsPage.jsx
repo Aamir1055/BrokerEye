@@ -2682,12 +2682,7 @@ const PositionsPage = () => {
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   {/* Left: pagination */}
                   <div className="flex items-center flex-wrap gap-2">
-                    <span className="text-xs text-gray-600">Show:</span>
-                    <select value={clientNetItemsPerPage} onChange={(e)=>handleClientNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      {generateClientNetPageSizeOptions().map(o=> <option key={o} value={o}>{o}</option>)}
-                    </select>
-                    <span className="text-xs text-gray-600">entries</span>
-                    <div className="flex items-center gap-2 ml-3">
+                    <div className="flex items-center gap-2">
                         <button
                           onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
                           disabled={clientNetCurrentPage===1}
@@ -2717,6 +2712,16 @@ const PositionsPage = () => {
                       Export CSV
                     </button>
                     
+                    {/* Compact Group Base Symbols */}
+                    <button
+                      onClick={() => setGroupByBaseSymbol(v => !v)}
+                      className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      title="Toggle grouping by base symbol"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                      Group Base Symbols
+                    </button>
+                    
                     {/* Card Filter */}
                     <div className="relative" ref={clientNetCardFilterRef}>
                       <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
@@ -2739,15 +2744,7 @@ const PositionsPage = () => {
                         </div>
                       )}
                     </div>
-                    {/* Compact Group Base Symbols */}
-                    <button
-                      onClick={() => setGroupByBaseSymbol(v => !v)}
-                      className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-                      title="Toggle grouping by base symbol"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
-                      Group Base Symbols
-                    </button>
+                    
                     {/* Columns selector */}
                     <div className="relative" ref={clientNetColumnSelectorRef}>
                       <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
