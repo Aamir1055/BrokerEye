@@ -3403,8 +3403,8 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-6" ref={faceCardsRef}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 select-none">
+            <div className="mb-6 overflow-hidden" ref={faceCardsRef}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 select-none touch-pan-y">
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3455,12 +3455,14 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 hover:shadow-md transition-all duration-200 md:cursor-move select-none touch-none"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none pointer-events-auto"
                       draggable={window.innerWidth >= 768}
-                      onDragStart={(e) => handleCardDragStart(e, cardKey)}
-                      onDragOver={handleCardDragOver}
-                      onDrop={(e) => handleCardDrop(e, cardKey)}
-                      onDragEnd={handleCardDragEnd}
+                      onDragStart={(e) => window.innerWidth >= 768 && handleCardDragStart(e, cardKey)}
+                      onDragOver={(e) => window.innerWidth >= 768 && handleCardDragOver(e)}
+                      onDrop={(e) => window.innerWidth >= 768 && handleCardDrop(e, cardKey)}
+                      onDragEnd={(e) => window.innerWidth >= 768 && handleCardDragEnd(e)}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
                       <div className="flex items-start justify-between mb-3 select-none">
