@@ -862,8 +862,6 @@ const MarginLevelPage = () => {
                   setShowGroupModal(true)
                 }}
               />
-              
-              <WebSocketIndicator />
             </div>
           </div>
 

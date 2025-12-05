@@ -253,6 +253,7 @@ const PositionsPage = () => {
   
   // Flash timeouts for row highlighting
   const flashTimeouts = useRef(new Map())
+  const [flashes, setFlashes] = useState({})
   
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
