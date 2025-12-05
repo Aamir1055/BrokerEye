@@ -238,6 +238,13 @@ const PositionsPage = () => {
   // Client NET toggle
   const [showClientNet, setShowClientNet] = useState(false)
   
+  // Group modal states
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
+  
+  // Client positions modal state
+  const [selectedLogin, setSelectedLogin] = useState(null)
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
