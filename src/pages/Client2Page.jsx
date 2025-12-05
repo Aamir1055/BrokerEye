@@ -3538,7 +3538,12 @@ const Client2Page = () => {
                         const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
                         const panelWidth = 300
                         const gap = 8
-                        let top = rect.top + scrollY - 20
+                        // Aim to open higher so more values are visible without scrolling
+                        const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+                        const lift = Math.min(400, Math.round(viewportH * 0.5))
+                        let top = rect.top + scrollY - lift + Math.round(rect.height / 2)
+                        // Keep within viewport vertically
+                        top = Math.max(scrollY + 10, Math.min(top, scrollY + viewportH - 10))
                         let left = rect.right + scrollX + gap
                         const viewportWidth = window.innerWidth || document.documentElement.clientWidth
                         // If overflow on the right, place to the left of the button
