@@ -2663,7 +2663,7 @@ const ClientsPage = () => {
               {/* Show Face Cards Toggle (moved before Columns button) */}
               <button
                 onClick={() => setShowFaceCards(!showFaceCards)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md transition-all shadow-sm text-sm font-semibold h-9 bg-white hover:bg-gray-50"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E5E7EB] transition-all shadow-sm text-sm font-semibold h-9 bg-white hover:bg-gray-50"
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
                 <span className="text-gray-700">Cards</span>
@@ -2681,7 +2681,7 @@ const ClientsPage = () => {
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className={`p-2 rounded-md hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`p-2 rounded-lg border border-[#E5E7EB] hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh clients data"
               >
                 <svg className={`w-4 h-4 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2693,7 +2693,7 @@ const ClientsPage = () => {
               <div className="relative" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="p-2 rounded-md hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                  className="p-2 rounded-lg border border-[#E5E7EB] hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
                   title="Download as Excel (CSV)"
                 >
                   <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3132,19 +3132,7 @@ const ClientsPage = () => {
           {(
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-blue-700">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                className="px-2.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm h-10"
-              >
-                {pageSizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    {size === filteredClients.length ? `All (${size})` : size}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs font-semibold text-blue-700">entries</span>
+              {/* Removed pagination dropdown */}
             </div>
             
             <div className="flex items-center gap-3">
@@ -3185,64 +3173,7 @@ const ClientsPage = () => {
                 </div>
               )}
               
-              {/* Percentage View Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="text-purple-700 hover:text-purple-800 px-3 py-2 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm h-10"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Percentage View
-                </button>
-                {showDisplayMenu && (
-                  <div
-                    ref={displayMenuRef}
-                    className="absolute right-0 bottom-full mb-2 bg-purple-50 rounded-lg shadow-xl border-2 border-purple-200 py-2 z-[100] w-52"
-                  >
-                    <div className="px-3 py-2 border-b border-purple-200">
-                      <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Display Mode</p>
-                    </div>
-                    <div className="px-2 py-2 space-y-1">
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="value"
-                          checked={displayMode === 'value'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
-                        />
-                        <span className="font-semibold">Without Percentage</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="percentage"
-                          checked={displayMode === 'percentage'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
-                        />
-                        <span className="font-semibold">Show My Percentage</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-xs text-gray-700 hover:bg-purple-100 p-2 rounded-md cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="both"
-                          checked={displayMode === 'both'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 focus:ring-purple-500"
-                        />
-                        <span className="font-semibold">Both</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Percentage View button removed */}
 
               {/* Zoom Controls (moved next to Columns button) */}
               <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
