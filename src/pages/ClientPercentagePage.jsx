@@ -1182,10 +1182,8 @@ const ClientPercentagePage = () => {
               </div>
             </div>
           )}
-
-          {/* Pagination - Bottom */}
-        </main>
-      </div>
+        </div>
+      </main>
 
       {/* Edit Modal */}
       {showEditModal && selectedClient && (
