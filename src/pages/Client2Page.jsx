@@ -1811,7 +1811,7 @@ const Client2Page = () => {
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
     // Only allow API calls for specific columns
-    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone']
+    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone', 'country', 'currency']
     if (!allowedColumns.includes(columnKey)) {
       console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
       // Initialize states to prevent undefined values
@@ -1902,7 +1902,7 @@ const Client2Page = () => {
   // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
     // Only allow API calls for specific columns
-    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone']
+    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone', 'country', 'currency']
     if (!allowedColumns.includes(columnKey)) {
       console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
       // Initialize states to prevent undefined values
@@ -3550,7 +3550,7 @@ const Client2Page = () => {
                         const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
                         const panelWidth = 300
                         const gap = 8
-                        let top = rect.top + scrollY
+                        let top = rect.top + scrollY - 12
                         let left = rect.right + scrollX + gap
                         const viewportWidth = window.innerWidth || document.documentElement.clientWidth
                         // If overflow on the right, place to the left of the button
