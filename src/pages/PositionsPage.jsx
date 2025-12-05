@@ -3157,10 +3157,8 @@ const PositionsPage = () => {
           </div>
           )}
 
-              <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                Showing {startIndex + 1} - {Math.min(endIndex, sortedPositions.length)} of {sortedPositions.length}
-              </div>
-            </div>
+          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
+            Showing {startIndex + 1} - {Math.min(endIndex, sortedPositions.length)} of {sortedPositions.length}
           </div>
 
           {/* Positions Table */}
