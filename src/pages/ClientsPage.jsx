@@ -2760,9 +2760,9 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[64px]"
                     >
-                      <div className="h-full flex flex-col justify-between">
+                      <div className="h-full flex flex-col justify-center">
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
                           <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
@@ -2772,7 +2772,7 @@ const ClientsPage = () => {
                             </svg>
                           </div>
                         </div>
-                        <div className="flex items-baseline gap-[4px]">
+                        <div className="flex items-baseline gap-[4px] mt-2">
                         {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                             <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
@@ -2869,9 +2869,9 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[64px]"
                     >
-                      <div className="h-full flex flex-col justify-between">
+                      <div className="h-full flex flex-col justify-center">
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
                           <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
@@ -2881,7 +2881,7 @@ const ClientsPage = () => {
                             </svg>
                           </div>
                         </div>
-                        <div className="flex items-baseline gap-[4px]">
+                        <div className="flex items-baseline gap-[4px] mt-2">
                         {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                             <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
@@ -2968,9 +2968,9 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                        className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
+                        className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[64px]"
                       >
-                        <div className="h-full flex flex-col justify-between">
+                        <div className="h-full flex flex-col justify-center">
                           <div className="flex items-start justify-between">
                             <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
                             <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
@@ -2980,7 +2980,7 @@ const ClientsPage = () => {
                               </svg>
                             </div>
                           </div>
-                          <div className="flex items-baseline gap-[4px]">
+                          <div className="flex items-baseline gap-[4px] mt-2">
                           {card.numericValue > 0 && (
                             <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                               <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
