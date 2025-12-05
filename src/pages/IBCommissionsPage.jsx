@@ -342,7 +342,8 @@ const IBCommissionsPage = () => {
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
+            {/* Title and Subtitle */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -352,79 +353,111 @@ const IBCommissionsPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">IB Commissions</h1>
-                <p className="text-xs text-gray-500 mt-0.5">Manage introducing broker commission percentages</p>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-[#1F2937]">IB Commissions</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Manage introducing broker commission percentages</p>
               </div>
+            </div>
+            
+            {/* Separator */}
+            <div className="border-b border-[#E5E7EB] my-3"></div>
+            
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleOpenBulkModal}
+                className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Bulk Update
+              </button>
             </div>
           </div>
 
-          {/* Face Cards - 4 Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
-            {/* Total Rebate Card */}
-            <div className="bg-white rounded shadow-sm border border-blue-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
-              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1">
-                Total Rebate
-              </p>
-              <p className="text-sm font-bold text-blue-700">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Total Rebate</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {totalsLoading ? (
-                  <span className="text-gray-400">Loading...</span>
+                  <span className="text-[#9CA3AF]">...</span>
                 ) : (
                   formatIndianNumber(totalCommission)
                 )}
               </p>
             </div>
-
-            {/* Total Available Rebate Card */}
-            <div className="bg-white rounded shadow-sm border border-green-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
-              <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">
-                Available Rebate
-              </p>
-              <p className="text-sm font-bold text-green-700">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Available Rebate</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {totalsLoading ? (
-                  <span className="text-gray-400">Loading...</span>
+                  <span className="text-[#9CA3AF]">...</span>
                 ) : (
                   formatIndianNumber(totalAvailableCommission)
                 )}
               </p>
             </div>
-
-            {/* Disbursed Rebate Card (Total - Available) */}
-            <div className="bg-white rounded shadow-sm border border-red-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
-              <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">
-                Disbursed Rebate
-              </p>
-              <p className="text-sm font-bold text-red-700">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Disbursed Rebate</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {totalsLoading ? (
-                  <span className="text-gray-400">Loading...</span>
+                  <span className="text-[#9CA3AF]">...</span>
                 ) : (
                   formatIndianNumber(totalCommission - totalAvailableCommission)
                 )}
               </p>
             </div>
-
-            {/* Total Rebate Percentage Card */}
-            <div className="bg-white rounded shadow-sm border border-purple-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
-              <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider mb-1">
-                Total Rebate %
-              </p>
-              <p className="text-sm font-bold text-purple-700">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Total Rebate %</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {totalsLoading ? (
-                  <span className="text-gray-400">Loading...</span>
+                  <span className="text-[#9CA3AF]">...</span>
                 ) : (
                   parseFloat(totalCommissionPercentage || 0).toFixed(2)
                 )}
               </p>
             </div>
-
-            {/* Total Available Rebate Percentage Card */}
-            <div className="bg-white rounded shadow-sm border border-orange-200 p-2 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95">
-              <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1">
-                Available Rebate %
-              </p>
-              <p className="text-sm font-bold text-orange-700">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Available Rebate %</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {totalsLoading ? (
-                  <span className="text-gray-400">Loading...</span>
+                  <span className="text-[#9CA3AF]">...</span>
                 ) : (
                   parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)
                 )}
@@ -432,101 +465,82 @@ const IBCommissionsPage = () => {
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 overflow-hidden">
-            <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            {/* Top Controls: match Clients style (search + pagination + per-page) */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-t-xl border-b border-blue-200 p-4">
-                {/* Left: per page + page nav */}
-                <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-blue-700">Show:</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-              className="px-2.5 py-1.5 text-xs font-medium border-2 border-blue-300 rounded-md bg-white text-blue-700 hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all shadow-sm"
-            >
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value="200">200</option>
-            </select>
-            <span className="text-xs font-semibold text-blue-700">entries</span>
-                  </div>
-                  {/* Page navigation */}
-                  <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className={`p-1.5 rounded-md transition-all shadow-sm ${
-                currentPage === 1
-                  ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                  : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-xs font-bold text-white px-3 py-1.5 bg-blue-600 rounded-md shadow-md border border-blue-700">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className={`p-1.5 rounded-md transition-all shadow-sm ${
-                currentPage === totalPages
-                  ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                  : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-                    </button>
-                  </div>
+          {/* Search and Controls Bar */}
+          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Left: Search */}
+              <div className="relative flex-1 max-w-md">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                    title="Clear search"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Right: Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === 1
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                  <span className="text-[#1F2937] font-semibold">{currentPage}</span>
+                  <span className="text-[#9CA3AF] mx-1">/</span>
+                  <span className="text-[#6B7280]">{totalPages}</span>
                 </div>
 
-              {/* Right: Bulk Update Button + Search */}
-              <div className="flex items-center gap-3">
                 <button
-                  onClick={handleOpenBulkModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === totalPages
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  Bulk Update
                 </button>
-                
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="pl-9 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
-                  />
-                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
+          </div>
 
+          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords}
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full bg-white rounded-lg shadow-sm border border-[#E5E7EB] flex flex-col">
+            
             {/* Error Message */}
             {error && (
               <div className="mx-4 mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -549,7 +563,7 @@ const IBCommissionsPage = () => {
                   )}
                 </div>
               ) : (
-                <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="border border-[#E5E7EB] rounded-lg overflow-hidden shadow-sm">
                   <table className="w-full border-collapse">
                     <thead className="bg-blue-600 sticky top-0 z-10">
                       <tr>
