@@ -840,8 +840,6 @@ const ClientPercentagePage = () => {
                   setShowGroupModal(true)
                 }}
               />
-              
-              <WebSocketIndicator />
             </div>
           </div>
           {error && (

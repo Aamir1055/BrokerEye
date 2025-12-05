@@ -2073,7 +2073,7 @@ const PositionsPage = () => {
           </div>
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Positions</span>
