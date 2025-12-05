@@ -2321,8 +2321,56 @@ const ClientsPage = () => {
         <div className="max-w-full mx-auto flex flex-col min-h-0">
 
           {/* Desktop header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title */}
+            <div className="mb-2.5 pb-2.5 border-b border-gray-200">
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts</p>
+              {/* Timestamp Info */}
+              <div className="mt-2 flex items-center gap-4 text-[10px] font-mono">
+                <div className="flex items-center gap-1" title="Current system time">
+                  <span className="text-gray-500 font-semibold">System:</span>
+                  <span className="text-blue-600 font-bold">{Math.floor(systemTime / 1000)}</span>
+                </div>
+                {appTime && (
+                  <>
+                    <div className="flex items-center gap-1" title="Latest WebSocket event timestamp from server">
+                      <span className="text-gray-500 font-semibold">Event:</span>
+                      <span className="text-purple-600 font-bold">{Math.floor(appTime / 1000)}</span>
+                    </div>
+                    <div className="flex items-center gap-1" title="Processing lag (difference between now and latest server event)">
+                      <span className="text-gray-500 font-semibold">Lag:</span>
+                      <span className={`font-bold ${
+                        latestMeasuredLagMs != null && latestMeasuredLagMs <= 2000
+                          ? 'text-green-600'
+                          : latestMeasuredLagMs != null && latestMeasuredLagMs <= 5000
+                            ? 'text-orange-500'
+                            : 'text-red-600'
+                      }`}>
+                        {latestMeasuredLagMs != null ? `${Math.round(latestMeasuredLagMs/1000)}s` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1" title="UI render latency since last WS message (median/max)">
+                      <span className="text-gray-500 font-semibold">UI:</span>
+                      <span className={`font-bold ${
+                        latencyStats.median != null && latencyStats.median <= 5000 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {latencyStats.median != null ? `${latencyStats.median}ms` : '-'}
+                      </span>
+                      <span className="text-gray-500">/</span>
+                      <span className={`font-bold ${
+                        latencyStats.max != null && latencyStats.max <= 5000 ? 'text-gray-700' : 'text-red-600'
+                      }`}>
+                        {latencyStats.max != null ? `${latencyStats.max}ms` : '-'}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden text-gray-700 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
@@ -2331,67 +2379,22 @@ const ClientsPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">Clients</h1>
-                <p className="text-xs font-medium text-gray-600 mt-1">Manage and view all client accounts</p>
-                {/* Timestamp Info */}
-                <div className="mt-2 flex items-center gap-4 text-[10px] font-mono">
-                  <div className="flex items-center gap-1" title="Current system time">
-                    <span className="text-gray-500 font-semibold">System:</span>
-                    <span className="text-blue-600 font-bold">{Math.floor(systemTime / 1000)}</span>
-                  </div>
-                  {appTime && (
-                    <>
-                      <div className="flex items-center gap-1" title="Latest WebSocket event timestamp from server">
-                        <span className="text-gray-500 font-semibold">Event:</span>
-                        <span className="text-purple-600 font-bold">{Math.floor(appTime / 1000)}</span>
-                      </div>
-                      <div className="flex items-center gap-1" title="Processing lag (difference between now and latest server event)">
-                        <span className="text-gray-500 font-semibold">Lag:</span>
-                        <span className={`font-bold ${
-                          latestMeasuredLagMs != null && latestMeasuredLagMs <= 2000
-                            ? 'text-green-600'
-                            : latestMeasuredLagMs != null && latestMeasuredLagMs <= 5000
-                              ? 'text-orange-500'
-                              : 'text-red-600'
-                        }`}>
-                          {latestMeasuredLagMs != null ? `${Math.round(latestMeasuredLagMs/1000)}s` : '—'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1" title="UI render latency since last WS message (median/max)">
-                        <span className="text-gray-500 font-semibold">UI:</span>
-                        <span className={`font-bold ${
-                          latencyStats.median != null && latencyStats.median <= 5000 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {latencyStats.median != null ? `${latencyStats.median}ms` : '-'}
-                        </span>
-                        <span className="text-gray-500">/</span>
-                        <span className={`font-bold ${
-                          latencyStats.max != null && latencyStats.max <= 5000 ? 'text-gray-700' : 'text-red-600'
-                        }`}>
-                          {latencyStats.max != null ? `${latencyStats.max}ms` : '-'}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+              
               <WebSocketIndicator />
               
-              {/* Filter Button (icon only) */}
+              {/* Filter Button */}
               <div className="relative">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="text-emerald-700 hover:text-emerald-800 p-2 rounded-md hover:bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-500 transition-all inline-flex items-center justify-center text-sm font-semibold bg-white shadow-sm h-9 w-9"
-                  title="Filter"
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="Filter Options"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 6H12M5.5 9H10.5M7 12H9" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
+                  <span className="text-xs font-medium text-[#374151]">Filter</span>
                   {(filterByPositions || filterByCredit || filterNoDeposit) && (
-                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    <span className="ml-1 inline-flex items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none">
                       {(filterByPositions ? 1 : 0) + (filterByCredit ? 1 : 0) + (filterNoDeposit ? 1 : 0)}
                     </span>
                   )}
@@ -2399,39 +2402,39 @@ const ClientsPage = () => {
                 {showFilterMenu && (
                   <div
                     ref={filterMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-emerald-50 rounded-lg shadow-xl border-2 border-emerald-200 py-2 z-50 w-52"
+                    className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50"
                   >
-                    <div className="px-3 py-2 border-b border-emerald-200">
-                      <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Filter Options</p>
-                    </div>
-                    <div className="py-2">
-                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
-                        <input
-                          type="checkbox"
-                          checked={filterByPositions}
-                          onChange={(e) => setFilterByPositions(e.target.checked)}
-                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-semibold text-gray-700">Has Floating</span>
-                      </label>
-                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
-                        <input
-                          type="checkbox"
-                          checked={filterByCredit}
-                          onChange={(e) => setFilterByCredit(e.target.checked)}
-                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-semibold text-gray-700">Has Credit</span>
-                      </label>
-                      <label className="flex items-center px-3 py-2 hover:bg-emerald-100 cursor-pointer transition-colors rounded-md mx-2">
-                        <input
-                          type="checkbox"
-                          checked={filterNoDeposit}
-                          onChange={(e) => setFilterNoDeposit(e.target.checked)}
-                          className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-semibold text-gray-700">No Deposit</span>
-                      </label>
+                    <div className="p-4">
+                      <div className="text-sm font-semibold text-[#1F2937] mb-3">Quick Filters</div>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                          <input
+                            type="checkbox"
+                            checked={filterByPositions}
+                            onChange={(e) => setFilterByPositions(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-[#374151]">Has Floating</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                          <input
+                            type="checkbox"
+                            checked={filterByCredit}
+                            onChange={(e) => setFilterByCredit(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-[#374151]">Has Credit</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-all">
+                          <input
+                            type="checkbox"
+                            checked={filterNoDeposit}
+                            onChange={(e) => setFilterNoDeposit(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-[#374151]">No Deposit</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2441,12 +2444,13 @@ const ClientsPage = () => {
               <div className="relative">
                 <button
                   onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
-                  className="text-pink-700 hover:text-pink-800 px-3 py-2 rounded-md hover:bg-pink-50 border-2 border-pink-300 hover:border-pink-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="5" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                    <rect x="9" y="3" width="5" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                   </svg>
-                  Card Filter
+                  <span className="text-xs font-medium text-[#374151]">Card Filter</span>
                 </button>
                 {showCardFilterMenu && (
                   <div
@@ -2577,69 +2581,67 @@ const ClientsPage = () => {
               </div>
 
               {/* Card Theme Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowThemeMenu(!showThemeMenu)}
-                  className="text-purple-700 hover:text-purple-800 px-3 py-2 rounded-md hover:bg-purple-50 border-2 border-purple-300 hover:border-purple-500 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-9"
+              <button
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2V8M8 8V14M8 8H14M8 8H2" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span className="text-xs font-medium text-[#374151]">Theme</span>
+              </button>
+              {showThemeMenu && (
+                <div
+                  ref={themeMenuRef}
+                  className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-48"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
-                  Card Theme
-                </button>
-                {showThemeMenu && (
-                  <div
-                    ref={themeMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-purple-50 rounded-lg shadow-xl border-2 border-purple-200 py-2 z-50 w-48"
-                  >
-                    <div className="px-3 py-2 border-b border-purple-200">
-                      <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Color Theme</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFaceCardTheme('default')
-                        setShowThemeMenu(false)
-                      }}
-                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
-                        faceCardTheme === 'default' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-blue-200 bg-white"></div>
-                        Default
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setFaceCardTheme('subtle')
-                        setShowThemeMenu(false)
-                      }}
-                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
-                        faceCardTheme === 'subtle' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-slate-300 bg-gray-50"></div>
-                        Subtle
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setFaceCardTheme('vibrant')
-                        setShowThemeMenu(false)
-                      }}
-                      className={`w-full text-left px-3 py-2 hover:bg-purple-100 transition-colors text-xs font-semibold ${
-                        faceCardTheme === 'vibrant' ? 'bg-purple-200 text-purple-900' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-50"></div>
-                        Vibrant
-                      </div>
-                    </button>
+                  <div className="px-3 py-2 border-b border-gray-200">
+                    <p className="text-xs font-semibold text-[#1F2937]">Color Theme</p>
                   </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => {
+                      setFaceCardTheme('default')
+                      setShowThemeMenu(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
+                      faceCardTheme === 'default' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-blue-200 bg-white"></div>
+                      Default
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFaceCardTheme('subtle')
+                      setShowThemeMenu(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
+                      faceCardTheme === 'subtle' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-300 bg-gray-50"></div>
+                      Subtle
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFaceCardTheme('vibrant')
+                      setShowThemeMenu(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
+                      faceCardTheme === 'vibrant' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-50"></div>
+                      Vibrant
+                    </div>
+                  </button>
+                </div>
+              )}
 
               {/* Groups Button */}
               <GroupSelector 
