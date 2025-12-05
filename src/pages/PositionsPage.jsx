@@ -2680,7 +2680,7 @@ const PositionsPage = () => {
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
                 {/* Controls: search and pagination left; actions right */}
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  {/* Left: search and pagination */}
+                  {/* Left: search */}
                   <div className="flex items-center flex-wrap gap-3">
                     {/* Client NET search at extreme left */}
                     <div className="relative" ref={clientNetSearchRef}>
@@ -2707,6 +2707,45 @@ const PositionsPage = () => {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Card Filter next to search */}
+                    <div className="relative" ref={clientNetCardFilterRef}>
+                      <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
+                        <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        Card Filter
+                      </button>
+                      {clientNetCardFilterOpen && (
+                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
+                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
+                          {Object.entries(clientNetCardsVisible).map(([k,v]) => (
+                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                              <input type="checkbox" checked={v} onChange={()=>setClientNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                              <span className="text-[11px] text-gray-700">{
+                                k==='clientNetRows'?'Client NET Rows':
+                                k==='totalNetVolume'?'Total NET Volume':
+                                k==='totalNetPL'?'Total NET P/L':'Total Logins'
+                              }</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {/* Right: actions and pagination */}
+                  <div className="flex items-center gap-3">
+                    <button onClick={handleExportClientNetPositions} className="p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all text-gray-700 shadow-sm" title="Export Client NET to CSV">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
+                    </button>
+                    
+                    {/* Groups button */}
+                    <button
+                      onClick={() => setGroupByBaseSymbol(v => !v)}
+                      className={`px-2 py-1.5 text-xs rounded-lg border inline-flex items-center gap-1.5 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} shadow-sm font-medium`}
+                      title="Toggle grouping by base symbol"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                      Groups
+                    </button>
                     
                     {/* Pagination controls */}
                     <div className="flex items-center gap-2">
@@ -2746,35 +2785,6 @@ const PositionsPage = () => {
                           </svg>
                         </button>
                       </div>
-                  </div>
-                  {/* Right: actions */}
-                  <div className="flex items-center gap-3">
-                    <button onClick={handleExportClientNetPositions} className="p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all text-gray-700 shadow-sm" title="Export Client NET to CSV">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                    </button>
-                    
-                    {/* Card Filter */}
-                    <div className="relative" ref={clientNetCardFilterRef}>
-                      <button onClick={()=>setClientNetCardFilterOpen(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Toggle summary cards">
-                        <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                        Card Filter
-                      </button>
-                      {clientNetCardFilterOpen && (
-                        <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
-                          <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
-                          {Object.entries(clientNetCardsVisible).map(([k,v]) => (
-                            <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                              <input type="checkbox" checked={v} onChange={()=>setClientNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                              <span className="text-[11px] text-gray-700">{
-                                k==='clientNetRows'?'Client NET Rows':
-                                k==='totalNetVolume'?'Total NET Volume':
-                                k==='totalNetPL'?'Total NET P/L':'Total Logins'
-                              }</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     
                     {/* Columns selector */}
                     <div className="relative" ref={clientNetColumnSelectorRef}>
