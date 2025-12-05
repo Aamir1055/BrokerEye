@@ -2974,15 +2974,14 @@ const Client2Page = () => {
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-4 mb-6">
-            <div className="flex items-center justify-between">
-              {/* Left: Title */}
-              <div>
-                <h1 className="text-2xl font-bold text-[#1A1A1A]">Clients</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
-              </div>
+            {/* Title */}
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-[#1A1A1A]">Clients</h1>
+              <p className="text-sm text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
+            </div>
 
-              {/* Right: Action Buttons */}
-              <div className="flex items-center gap-3">
+            {/* Action Buttons Row */}
+            <div className="flex items-center gap-3">
                 {/* Filter Button */}
                 <div className="relative flex items-center" ref={filterMenuRef}>
                   <button
@@ -4760,7 +4759,6 @@ const Client2Page = () => {
               </div>
             )}
           </div>
-        </div>
         </div>
       </main>
 
