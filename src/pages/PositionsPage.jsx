@@ -1916,11 +1916,12 @@ const PositionsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
 
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+      <main className={`flex-1 p-4 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="mb-4">
+            {/* Title and Subtitle */}
+            <div className="flex items-center gap-3 mb-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
@@ -1930,11 +1931,16 @@ const PositionsPage = () => {
                 </svg>
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Positions</h1>
-                <p className="text-xs text-gray-500 mt-0.5">Live open positions across accounts</p>
+                <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-[#E5E7EB]">
+              {/* IB Filter Button */}
+              <IBSelector />
+              
               {/* Groups Dropdown */}
               <GroupSelector 
                 moduleName="positions" 
@@ -1948,20 +1954,17 @@ const PositionsPage = () => {
                 }}
               />
               
-              {/* IB Filter Button */}
-              <IBSelector />
-              
               {/* NET Position Toggle */}
               <button
                 onClick={() => { setShowNetPositions((v)=>{const nv=!v; if (nv) setShowClientNet(false); return nv}); }}
-                className={`px-3 py-2 rounded-lg border transition-colors inline-flex items-center gap-2 text-sm font-medium ${
+                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showNetPositions 
                     ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
                 }`}
                 title="Toggle NET Position View"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 NET Position
@@ -1970,18 +1973,20 @@ const PositionsPage = () => {
               {/* Client NET Toggle */}
               <button
                 onClick={() => { setShowClientNet((v)=>{const nv=!v; if (nv) setShowNetPositions(false); return nv}); }}
-                className={`px-3 py-2 rounded-lg border transition-colors inline-flex items-center gap-2 text-sm font-medium ${
+                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showClientNet 
                     ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
                 }`}
                 title="Toggle Client NET View"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-5m0 5l-5-5M7 4h10a2 2 0 012 2v6H5V6a2 2 0 012-2zm0 0V2m0 2v2" />
                 </svg>
                 Client Net
               </button>
+              
+              <div className="flex-1"></div>
               
               <WebSocketIndicator />
               <button
@@ -1992,10 +1997,10 @@ const PositionsPage = () => {
                     action: 'snapshot'
                   })
                 }}
-                className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                 title="Refresh positions from WebSocket"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
