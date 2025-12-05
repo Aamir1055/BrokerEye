@@ -2767,7 +2767,7 @@ const ClientsPage = () => {
                             <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
                           </svg>
                         )}
-                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
                       </div>
@@ -2859,7 +2859,7 @@ const ClientsPage = () => {
                             <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
                           </svg>
                         )}
-                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
                       </div>
@@ -2941,7 +2941,7 @@ const ClientsPage = () => {
                               <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
                             </svg>
                           )}
-                          <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${(card.withArrow || card.withIcon) ? valueColor : 'text-[#000000]'}`}>
+                          <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
                             {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                           </span>
                         </div>
@@ -4092,6 +4092,7 @@ const ClientsPage = () => {
 }
 
 export default ClientsPage
+
 
 
 
