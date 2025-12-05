@@ -2663,14 +2663,10 @@ const ClientsPage = () => {
               {/* Show Face Cards Toggle (moved before Columns button) */}
               <button
                 onClick={() => setShowFaceCards(!showFaceCards)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md border-2 transition-all shadow-sm text-sm font-semibold h-9 ${
-                  showFaceCards 
-                    ? 'bg-blue-50 border-blue-500 text-blue-700' 
-                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'
-                }`}
+                className="flex items-center gap-2 px-3 py-2 rounded-md transition-all shadow-sm text-sm font-semibold h-9 bg-white hover:bg-gray-50"
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
-                <span>Cards</span>
+                <span className="text-gray-700">Cards</span>
                 <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors p-0.5 ${
                   showFaceCards ? 'bg-blue-600' : 'bg-gray-400'
                 }`}>
@@ -2685,10 +2681,10 @@ const ClientsPage = () => {
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className={`text-blue-600 hover:text-blue-700 p-2 rounded-md border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`p-2 rounded-md hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh clients data"
               >
-                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 text-gray-700 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
@@ -2697,11 +2693,12 @@ const ClientsPage = () => {
               <div className="relative" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="text-green-600 hover:text-green-700 p-2 rounded-md border-2 border-green-300 hover:border-green-500 hover:bg-green-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
+                  className="p-2 rounded-md hover:bg-gray-50 bg-white transition-all shadow-sm h-9 w-9 flex items-center justify-center"
                   title="Download as Excel (CSV)"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 18h16" />
                   </svg>
                 </button>
 
