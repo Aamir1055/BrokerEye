@@ -1634,44 +1634,6 @@ const LiveDealingPage = () => {
                   </div>
                 )}
               </div>
-
-              {/* Columns Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg border border-blue-700 hover:border-blue-800 transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  Columns
-                </button>
-                {showColumnSelector && (
-                  <div
-                    ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
-                    </div>
-                    {allColumns.map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
               
               <WebSocketIndicator />
             </div>
@@ -1807,12 +1769,13 @@ const LiveDealingPage = () => {
                   </svg>
                 </button>
 
-                {/* Pause Button */}
+                {/* Columns Button */}
                 <button
+                  onClick={() => setShowColumnSelector(!showColumnSelector)}
                   className="h-10 w-10 rounded-xl border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center justify-center"
                 >
                   <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                   </svg>
                 </button>
               </div>
@@ -1822,29 +1785,68 @@ const LiveDealingPage = () => {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`px-5 py-2.5 rounded-full border transition-colors text-sm font-medium ${
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                     currentPage === 1
-                      ? 'border-[#E5E7EB] text-[#D1D5DB] cursor-not-allowed bg-[#F9FAFB]'
-                      : 'border-[#1F2937] text-[#1F2937] hover:bg-[#1F2937] hover:text-white bg-white cursor-pointer'
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
                   }`}
                 >
-                  Previous
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
-                
+
+                <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                  <span className="text-[#1F2937] font-semibold">{currentPage}</span>
+                  <span className="text-[#9CA3AF] mx-1">/</span>
+                  <span className="text-[#6B7280]">{totalPages}</span>
+                </div>
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`px-5 py-2.5 rounded-full border transition-colors text-sm font-medium ${
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                     currentPage === totalPages
-                      ? 'border-[#E5E7EB] text-[#D1D5DB] cursor-not-allowed bg-[#F9FAFB]'
-                      : 'border-[#1F2937] text-white bg-[#1F2937] hover:bg-[#374151] cursor-pointer'
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
                   }`}
                 >
-                  Next
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Column Selector Modal */}
+          {showColumnSelector && (
+            <div
+              ref={columnSelectorRef}
+              className="mb-3 bg-white rounded-xl border border-[#F2F2F7] p-4 shadow-lg"
+            >
+              <div className="mb-3 pb-3 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">Show/Hide Columns</h3>
+                <p className="text-xs text-gray-500 mt-1">Select which columns to display in the table</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {allColumns.map(col => (
+                  <label
+                    key={col.key}
+                    className="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer transition-colors rounded-lg"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns[col.key]}
+                      onChange={() => toggleColumn(col.key)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{col.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
