@@ -3403,8 +3403,8 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-6 overflow-hidden" ref={faceCardsRef}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 select-none touch-pan-y">
+            <div className="mb-6 w-full" ref={faceCardsRef}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 w-full select-none" style={{ touchAction: 'pan-y' }}>
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3455,15 +3455,13 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none pointer-events-auto"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none w-full"
                       draggable={window.innerWidth >= 768}
                       onDragStart={(e) => window.innerWidth >= 768 && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => window.innerWidth >= 768 && handleCardDragOver(e)}
                       onDrop={(e) => window.innerWidth >= 768 && handleCardDrop(e, cardKey)}
                       onDragEnd={(e) => window.innerWidth >= 768 && handleCardDragEnd(e)}
-                      onTouchStart={(e) => e.stopPropagation()}
-                      onTouchMove={(e) => e.stopPropagation()}
-                      style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
+                      style={{ opacity: draggedCard === cardKey ? 0.5 : 1, touchAction: 'pan-y' }}
                     >
                       <div className="flex items-start justify-between mb-3 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none">
