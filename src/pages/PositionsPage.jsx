@@ -38,20 +38,10 @@ const PositionsPage = () => {
     try {
       const v = localStorage.getItem('sidebarOpen')
       return v ? JSON.parse(v) : false
-                  {/* Right: actions (streamlined per figma) */}
-                  <div className="flex items-center gap-3">
-                    <button onClick={handleExportClientNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export Client NET to CSV">
-                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                      Export CSV
-                    </button>
-                    {/* Removed: Card Filter and extra Columns dropdown if figma shows simplified toolbar */}
-                    <div className="hidden md:block">
-                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Columns">
-                        <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                        Columns
-                      </button>
-                    </div>
-  }) // numeric or 'All'
+    } catch {
+      return false
+    }
+  })
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
   // Include all position module columns + NET-specific aggregations (some will render '-')
   const [netVisibleColumns, setNetVisibleColumns] = useState({

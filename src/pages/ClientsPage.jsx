@@ -2278,6 +2278,12 @@ const ClientsPage = () => {
     return value
   }
 
+  // Track face card value trends to color values based on movement over time
+  const lastValuesRef = useRef({})
+  const lastTrendRef = useRef({}) // 'inc' | 'dec' | 'flat'
+  const lastChangeRef = useRef({})
+  const STABLE_THRESHOLD_MS = 60000 // 60s without change -> treat as stable/black
+
   // Removed full-page loading spinner to prevent page reload effect on refresh
   // Data updates will happen in place for better UX
 
@@ -2726,11 +2732,25 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Render compact Client2-style card
+                  // Render compact Client2-style card with trend-based value color
+                  const prev = lastValuesRef.current[card.id]
+                  let trend = lastTrendRef.current[card.id] || 'flat'
+                  let lastChange = lastChangeRef.current[card.id] || Date.now()
+                  if (prev === undefined || card.numericValue !== prev) {
+                    if (prev !== undefined) {
+                      trend = card.numericValue > prev ? 'inc' : card.numericValue < prev ? 'dec' : trend
+                    }
+                    lastValuesRef.current[card.id] = card.numericValue
+                    lastTrendRef.current[card.id] = trend
+                    lastChangeRef.current[card.id] = Date.now()
+                    lastChange = lastChangeRef.current[card.id]
+                  }
+                  const age = Date.now() - lastChange
+                  const isStable = prev !== undefined && card.numericValue === prev && age >= STABLE_THRESHOLD_MS
                   const isPositive = card.numericValue > 0
                   const isNegative = card.numericValue < 0
                   const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
-                  const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
+                  const valueColor = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
                   
                   return (
                     <div
@@ -2742,16 +2762,17 @@ const ClientsPage = () => {
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
                       className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                     >
-                      <div className="flex items-start justify-between">
-                        <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                        <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                            <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                          </svg>
+                      <div className="h-full flex flex-col justify-between">
+                        <div className="flex items-start justify-between">
+                          <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                            </svg>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-baseline gap-[4px]">
+                        <div className="flex items-baseline gap-[4px]">
                         {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                             <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
@@ -2771,6 +2792,7 @@ const ClientsPage = () => {
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
                         {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
+                        </div>
                       </div>
                     </div>
                   )
@@ -2819,11 +2841,25 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Render compact Client2-style card
+                  // Render compact Client2-style card with trend-based value color
+                  const prev = lastValuesRef.current[card.id]
+                  let trend = lastTrendRef.current[card.id] || 'flat'
+                  let lastChange = lastChangeRef.current[card.id] || Date.now()
+                  if (prev === undefined || card.numericValue !== prev) {
+                    if (prev !== undefined) {
+                      trend = card.numericValue > prev ? 'inc' : card.numericValue < prev ? 'dec' : trend
+                    }
+                    lastValuesRef.current[card.id] = card.numericValue
+                    lastTrendRef.current[card.id] = trend
+                    lastChangeRef.current[card.id] = Date.now()
+                    lastChange = lastChangeRef.current[card.id]
+                  }
+                  const age = Date.now() - lastChange
+                  const isStable = prev !== undefined && card.numericValue === prev && age >= STABLE_THRESHOLD_MS
                   const isPositive = card.numericValue > 0
                   const isNegative = card.numericValue < 0
                   const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
-                  const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
+                  const valueColor = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
                   
                   return (
                     <div
@@ -2835,16 +2871,17 @@ const ClientsPage = () => {
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
                       className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                     >
-                      <div className="flex items-start justify-between">
-                        <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                        <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                            <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                          </svg>
+                      <div className="h-full flex flex-col justify-between">
+                        <div className="flex items-start justify-between">
+                          <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                            </svg>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-baseline gap-[4px]">
+                        <div className="flex items-baseline gap-[4px]">
                         {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                             <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
@@ -2864,6 +2901,7 @@ const ClientsPage = () => {
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
                         {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
+                        </div>
                       </div>
                     </div>
                   )
@@ -2902,11 +2940,25 @@ const ClientsPage = () => {
                   }
                   
                   return cards.map(card => {
-                    // Render compact Client2-style card
+                    // Render compact Client2-style card with trend-based value color
+                    const prev = lastValuesRef.current[card.id]
+                    let trend = lastTrendRef.current[card.id] || 'flat'
+                    let lastChange = lastChangeRef.current[card.id] || Date.now()
+                    if (prev === undefined || card.numericValue !== prev) {
+                      if (prev !== undefined) {
+                        trend = card.numericValue > prev ? 'inc' : card.numericValue < prev ? 'dec' : trend
+                      }
+                      lastValuesRef.current[card.id] = card.numericValue
+                      lastTrendRef.current[card.id] = trend
+                      lastChangeRef.current[card.id] = Date.now()
+                      lastChange = lastChangeRef.current[card.id]
+                    }
+                    const age = Date.now() - lastChange
+                    const isStable = prev !== undefined && card.numericValue === prev && age >= STABLE_THRESHOLD_MS
                     const isPositive = card.numericValue > 0
                     const isNegative = card.numericValue < 0
                     const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
-                    const valueColor = isPositive ? 'text-[#16A34A]' : isNegative ? 'text-[#DC2626]' : 'text-[#000000]'
+                    const valueColor = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
                     
                     return (
                       <div
@@ -2918,16 +2970,17 @@ const ClientsPage = () => {
                         onDrop={(e) => handleFaceCardDrop(e, cardId)}
                         className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                       >
-                        <div className="flex items-start justify-between">
-                          <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                            </svg>
+                        <div className="h-full flex flex-col justify-between">
+                          <div className="flex items-start justify-between">
+                            <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
+                            <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                                <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                              </svg>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-baseline gap-[4px]">
+                          <div className="flex items-baseline gap-[4px]">
                           {card.numericValue > 0 && (
                             <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
                               <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
@@ -2947,6 +3000,7 @@ const ClientsPage = () => {
                             {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                           </span>
                           {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
+                          </div>
                         </div>
                       </div>
                     )
