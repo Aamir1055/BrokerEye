@@ -103,6 +103,7 @@ const Client2Page = () => {
 
   // UI state
   const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const [columnSelectorPos, setColumnSelectorPos] = useState({ top: 0, left: 0 })
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showAccountFilterModal, setShowAccountFilterModal] = useState(false)
   const [showClientDetailModal, setShowClientDetailModal] = useState(false)
@@ -3542,7 +3543,17 @@ const Client2Page = () => {
                   {/* Columns Button (icon only) */}
                   <div className="relative" ref={columnSelectorRef}>
                     <button
-                      onClick={() => setShowColumnSelector(!showColumnSelector)}
+                      onClick={(e) => {
+                        const btn = e.currentTarget
+                        const rect = btn.getBoundingClientRect()
+                        const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+                        const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
+                        setColumnSelectorPos({
+                          top: rect.top + scrollY + rect.height + 8,
+                          left: rect.left + scrollX
+                        })
+                        setShowColumnSelector(v => !v)
+                      }}
                       className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                       title="Show/Hide Columns"
                     >
@@ -3600,12 +3611,11 @@ const Client2Page = () => {
             {/* Column Selector Dropdown */}
             {showColumnSelector && (
               <div
-                ref={columnSelectorRef}
                 className="fixed bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-3 flex flex-col"
                 style={{
-                  top: '15%',
-                  right: '10px',
-                  width: '300px',
+                  top: columnSelectorPos.top,
+                  left: columnSelectorPos.left,
+                  width: 300,
                   maxHeight: '70vh',
                   zIndex: 20000000
                 }}
