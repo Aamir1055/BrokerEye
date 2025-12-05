@@ -3203,10 +3203,12 @@ const ClientsPage = () => {
                 </button>
                 <button
                   onClick={handleResetZoom}
-                  className="px-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded transition-colors min-w-[50px]"
-                  title="Reset Zoom to 100%"
+                  className="p-1 rounded hover:bg-gray-100 transition-colors"
+                  title={`Zoom: ${zoomLevel}% (Click to reset to 100%)`}
                 >
-                  {zoomLevel}%
+                  <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </button>
                 <button
                   onClick={handleZoomIn}
@@ -3320,6 +3322,11 @@ const ClientsPage = () => {
                   <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
+
+              {/* Page indicator */}
+              <span className="text-sm font-medium text-gray-700 px-2">
+                {currentPage} / {totalPages}
+              </span>
 
               {/* Next button */}
               <button 
