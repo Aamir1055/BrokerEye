@@ -3403,8 +3403,8 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-6 w-full" ref={faceCardsRef}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 w-full select-none" style={{ touchAction: 'pan-y' }}>
+            <div className="mb-6 w-full relative" ref={faceCardsRef}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 w-full select-none overflow-x-hidden" style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}>
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3452,16 +3452,24 @@ const Client2Page = () => {
                     textColorClass = 'text-[#1F2937]'
                   }
                   
+                  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+                  
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none w-full"
-                      draggable={window.innerWidth >= 768}
-                      onDragStart={(e) => window.innerWidth >= 768 && handleCardDragStart(e, cardKey)}
-                      onDragOver={(e) => window.innerWidth >= 768 && handleCardDragOver(e)}
-                      onDrop={(e) => window.innerWidth >= 768 && handleCardDrop(e, cardKey)}
-                      onDragEnd={(e) => window.innerWidth >= 768 && handleCardDragEnd(e)}
-                      style={{ opacity: draggedCard === cardKey ? 0.5 : 1, touchAction: 'pan-y' }}
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 transition-all duration-200 md:cursor-move md:hover:shadow-md select-none w-full relative"
+                      draggable={!isMobile}
+                      onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
+                      onDragOver={(e) => !isMobile && handleCardDragOver(e)}
+                      onDrop={(e) => !isMobile && handleCardDrop(e, cardKey)}
+                      onDragEnd={(e) => !isMobile && handleCardDragEnd(e)}
+                      style={{ 
+                        opacity: draggedCard === cardKey ? 0.5 : 1, 
+                        touchAction: 'pan-y',
+                        userDrag: 'none',
+                        WebkitUserDrag: 'none',
+                        pointerEvents: 'auto'
+                      }}
                     >
                       <div className="flex items-start justify-between mb-3 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none">
