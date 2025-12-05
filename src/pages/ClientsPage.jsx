@@ -2580,69 +2580,6 @@ const ClientsPage = () => {
                 )}
               </div>
 
-              {/* Card Theme Button */}
-              <button
-                onClick={() => setShowThemeMenu(!showThemeMenu)}
-                className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 2V8M8 8V14M8 8H14M8 8H2" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <span className="text-xs font-medium text-[#374151]">Theme</span>
-              </button>
-              {showThemeMenu && (
-                <div
-                  ref={themeMenuRef}
-                  className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-48"
-                >
-                  <div className="px-3 py-2 border-b border-gray-200">
-                    <p className="text-xs font-semibold text-[#1F2937]">Color Theme</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setFaceCardTheme('default')
-                      setShowThemeMenu(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
-                      faceCardTheme === 'default' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-blue-200 bg-white"></div>
-                      Default
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFaceCardTheme('subtle')
-                      setShowThemeMenu(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
-                      faceCardTheme === 'subtle' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-300 bg-gray-50"></div>
-                      Subtle
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFaceCardTheme('vibrant')
-                      setShowThemeMenu(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors text-sm ${
-                      faceCardTheme === 'vibrant' ? 'bg-blue-50 text-blue-900' : 'text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border-2 border-blue-400 bg-blue-50"></div>
-                      Vibrant
-                    </div>
-                  </button>
-                </div>
-              )}
-
               {/* Groups Button */}
               <GroupSelector 
                 moduleName="clients" 
@@ -3198,7 +3135,7 @@ const ClientsPage = () => {
                   title="Zoom Out (Min 50%)"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                   </svg>
                 </button>
                 <button
@@ -3207,7 +3144,7 @@ const ClientsPage = () => {
                   title={`Zoom: ${zoomLevel}% (Click to reset to 100%)`}
                 >
                   <svg className="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
                 <button
@@ -3217,7 +3154,7 @@ const ClientsPage = () => {
                   title="Zoom In (Max 200%)"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
