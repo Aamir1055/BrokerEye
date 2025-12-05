@@ -74,7 +74,7 @@ const IBSelector = () => {
       </button>
       
       {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-[100] w-80">
+        <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-[100] w-80">
           <div className="px-3 py-2 border-b border-slate-100">
             <p className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
               IB Filter

@@ -2975,7 +2975,7 @@ const Client2Page = () => {
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
             {/* Title */}
-            <div className="mb-2.5">
+            <div className="mb-2.5 pb-2.5 border-b border-gray-200">
               <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
               <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
             </div>
@@ -3001,7 +3001,7 @@ const Client2Page = () => {
                   </button>
 
                   {showFilterMenu && (
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50">
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50">
                       <div className="p-4">
                         <div className="text-sm font-semibold text-[#1F2937] mb-3">Quick Filters</div>
                         <div className="space-y-2">
@@ -3404,7 +3404,7 @@ const Client2Page = () => {
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
             <div className="mb-6" ref={faceCardsRef}>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 select-none">
                 {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
@@ -3455,26 +3455,26 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 hover:shadow-md transition-all duration-200 cursor-move"
-                      draggable
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4 hover:shadow-md transition-all duration-200 md:cursor-move select-none touch-none"
+                      draggable={window.innerWidth >= 768}
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragOver={handleCardDragOver}
                       onDrop={(e) => handleCardDrop(e, cardKey)}
                       onDragEnd={handleCardDragEnd}
                       style={{ opacity: draggedCard === cardKey ? 0.5 : 1 }}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                      <div className="flex items-start justify-between mb-3 select-none">
+                        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none">
                           {displayLabel}
                         </span>
-                        <div className="w-6 h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                        <div className="w-6 h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                             <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                           </svg>
                         </div>
                       </div>
-                      <div className={`text-lg font-bold ${textColorClass} flex items-center gap-2`}>
+                      <div className={`text-lg font-bold ${textColorClass} flex items-center gap-2 select-none`}>
                         {card.colorCheck && (
                           <svg width="10" height="10" viewBox="0 0 10 10" className={iconRotation}>
                             <polygon points="5,0 10,10 0,10" fill={iconColor}/>
