@@ -76,6 +76,7 @@ const PositionsPage = () => {
   })
   // Client NET controls and visibility
   const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
+  const clientNetColumnSelectorRef = useRef(null)
   const [clientNetVisibleColumns, setClientNetVisibleColumns] = useState({
     login: true,
     symbol: true,

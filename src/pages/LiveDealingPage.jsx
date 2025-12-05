@@ -59,6 +59,7 @@ const LiveDealingPage = () => {
   const [appliedToDate, setAppliedToDate] = useState('')
   const [customDateError, setCustomDateError] = useState('')
   const filterMenuRef = useRef(null)
+  const filterButtonRef = useRef(null)
   // Display mode: 'value' | 'percentage' | 'both'
   const [displayMode, setDisplayMode] = useState('value')
   const [showDisplayMenu, setShowDisplayMenu] = useState(false)
@@ -387,7 +388,8 @@ const LiveDealingPage = () => {
   // Close filter menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target) && 
+          filterButtonRef.current && !filterButtonRef.current.contains(event.target)) {
         setShowFilterMenu(false)
       }
       if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
@@ -1546,7 +1548,7 @@ const LiveDealingPage = () => {
               />
               
               {/* Time Filter Button */}
-              <div className="relative">
+              <div className="relative" ref={filterButtonRef}>
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
                   className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
