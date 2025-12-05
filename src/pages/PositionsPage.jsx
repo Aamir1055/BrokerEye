@@ -2713,40 +2713,44 @@ const PositionsPage = () => {
                         <button
                           onClick={()=>handleClientNetPageChange(clientNetCurrentPage-1)}
                           disabled={clientNetCurrentPage===1}
-                          className={`p-1.5 rounded-md transition-colors ${clientNetCurrentPage===1?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            clientNetCurrentPage === 1
+                              ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                              : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                          }`}
                           aria-label="Previous page"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </button>
-                        <span className="text-[12px] text-gray-700 font-medium px-1">
-                          Page {clientNetCurrentPage} of {clientNetTotalPages}
-                        </span>
+
+                        <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                          <span className="text-[#1F2937] font-semibold">{clientNetCurrentPage}</span>
+                          <span className="text-[#9CA3AF] mx-1">/</span>
+                          <span className="text-[#6B7280]">{clientNetTotalPages}</span>
+                        </div>
+
                         <button
                           onClick={()=>handleClientNetPageChange(clientNetCurrentPage+1)}
                           disabled={clientNetCurrentPage===clientNetTotalPages}
-                          className={`p-1.5 rounded-md transition-colors ${clientNetCurrentPage===clientNetTotalPages?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                            clientNetCurrentPage === clientNetTotalPages
+                              ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                              : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                          }`}
                           aria-label="Next page"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </button>
                       </div>
-                    <span className="text-[11px] text-gray-500">{clientNetStartIndex + 1}-{Math.min(clientNetEndIndex, clientNetPositionsData.length)} of {clientNetPositionsData.length}</span>
                   </div>
                   {/* Right: actions */}
                   <div className="flex items-center gap-3">
-                    <button onClick={handleExportClientNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export Client NET to CSV">
-                      <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                      Export CSV
-                    </button>
-                    
-                    {/* Groups button */}
-                    <button
-                      onClick={() => setGroupByBaseSymbol(v => !v)}
-                      className={`px-2 py-1.5 text-xs rounded-lg border inline-flex items-center gap-1.5 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} shadow-sm font-medium`}
-                      title="Toggle grouping by base symbol"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
-                      Groups
+                    <button onClick={handleExportClientNetPositions} className="p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all text-gray-700 shadow-sm" title="Export Client NET to CSV">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                     </button>
                     
                     {/* Card Filter */}
@@ -2774,9 +2778,8 @@ const PositionsPage = () => {
                     
                     {/* Columns selector */}
                     <div className="relative" ref={clientNetColumnSelectorRef}>
-                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide Client NET columns">
-                        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                        Columns
+                      <button onClick={()=>setClientNetShowColumnSelector(v=>!v)} className="p-2 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all text-gray-700 shadow-sm" title="Show/Hide Client NET columns">
+                        <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                       </button>
                       {clientNetShowColumnSelector && (
                         <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
