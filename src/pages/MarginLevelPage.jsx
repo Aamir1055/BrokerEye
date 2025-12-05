@@ -824,8 +824,9 @@ const MarginLevelPage = () => {
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header - Always visible */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Header */}
+          <div className="mb-4">
+            {/* Title and Subtitle */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -835,12 +836,20 @@ const MarginLevelPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Margin Level</h1>
-                <p className="text-xs text-gray-500 mt-0.5">Shows accounts with margin level &lt; 50% (excludes zero margin levels)</p>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-[#1F2937]">Margin Level</h1>
+                <p className="text-sm text-[#6B7280] mt-0.5">Shows accounts with margin level &lt; 50% (excludes zero margin levels)</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Separator */}
+            <div className="border-b border-[#E5E7EB] my-3"></div>
+            
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* IB Filter Button */}
+              <IBSelector />
+              
               {/* Groups Dropdown */}
               <GroupSelector 
                 moduleName="marginlevel" 
@@ -854,50 +863,75 @@ const MarginLevelPage = () => {
                 }}
               />
               
-              {/* IB Filter Button */}
-              <IBSelector />
-              
               <WebSocketIndicator />
             </div>
           </div>
 
-          {/* Stats Summary - Show skeleton while loading */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
-            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Under 50%</p>
-              <p className="text-sm font-bold text-gray-900">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Total Under 50%</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {isDataLoading ? (
-                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
                 ) : (
                   filtered.length
                 )}
               </p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-green-200 p-2">
-              <p className="text-[10px] font-semibold text-green-600 uppercase mb-0">Avg Margin Level</p>
-              <p className="text-sm font-bold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Avg Margin Level</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {isDataLoading ? (
-                  <span className="inline-block h-5 w-16 bg-gray-200 animate-pulse rounded"></span>
+                  <span className="inline-block h-6 w-16 bg-gray-200 animate-pulse rounded"></span>
                 ) : (
                   filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) + '%' : '-'
                 )}
               </p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
-              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
-              <p className="text-sm font-bold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Unique Logins</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {isDataLoading ? (
-                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
                 ) : (
                   new Set(filtered.map(o=>o.login)).size
                 )}
               </p>
             </div>
-            <div className="bg-white rounded shadow-sm border border-orange-200 p-2">
-              <p className="text-[10px] font-semibold text-orange-600 uppercase mb-0">Logins Under 50%</p>
-              <p className="text-sm font-bold text-gray-900">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-[#6B7280] mb-1">Logins Under 50%</p>
+              <p className="text-xl font-bold text-[#1F2937]">
                 {isDataLoading ? (
-                  <span className="inline-block h-5 w-12 bg-gray-200 animate-pulse rounded"></span>
+                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
                 ) : (
                   new Set(filtered.map(a=>a.login)).size
                 )}
@@ -905,102 +939,18 @@ const MarginLevelPage = () => {
             </div>
           </div>
 
-          {/* Pagination Controls - Only show when there is data */}
-          {displayedAccounts.length > 0 && (
-          <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-blue-100 p-3 relative z-50">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-              >
-                {pageSizeOptions.map((size) => (
-                  <option key={size} value={size} className="text-gray-900 bg-white">
-                    {size}
-                  </option>
-                ))}
-              </select>
-              <span className="text-sm text-gray-600">entries</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Page Navigation */}
-              <div className="flex items-center gap-2">
-                <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      currentPage === 1
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <span className="text-sm text-gray-700 font-medium px-2">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-1.5 rounded-md transition-colors ${
-                      currentPage === totalPages
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              
-              {/* Columns Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-white border border-gray-300 transition-colors inline-flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          {/* Search and Controls Bar */}
+          {sortedAccounts && sortedAccounts.length > 0 && (
+          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Left: Search and Columns */}
+              <div className="flex items-center gap-2 flex-1">
+                {/* Search Bar */}
+                <div className="relative flex-1 max-w-md" ref={searchRef}>
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                  Columns
-                </button>
-                {showColumnSelector && (
-                  <div
-                    ref={columnSelectorRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                    style={{ maxHeight: '400px', overflowY: 'auto' }}
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
-                    </div>
-                    {allColumns.map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Search Bar */}
-              <div className="relative" ref={searchRef}>
-                <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
@@ -1011,57 +961,126 @@ const MarginLevelPage = () => {
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleSearchKeyDown}
-                    placeholder="Search login, name, group..."
-                    className="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    placeholder="Search"
+                    className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
-                  <svg 
-                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
                   {searchQuery && (
                     <button
                       onClick={() => {
                         setSearchQuery('')
                         setShowSuggestions(false)
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                      title="Clear search"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
+                  
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && getSuggestions().length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
+                      {getSuggestions().map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
-                {/* Suggestions Dropdown */}
-                {showSuggestions && getSuggestions().length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                    {getSuggestions().map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Columns Button (icon only) */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColumnSelector(!showColumnSelector)}
+                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    title="Show/Hide Columns"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                      <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                    </svg>
+                  </button>
+                  {showColumnSelector && (
+                    <div
+                      ref={columnSelectorRef}
+                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                      style={{ maxHeight: '400px', overflowY: 'auto' }}
+                    >
+                      <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                        <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
+                      </div>
+                      {allColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns[col.key]}
+                            onChange={() => toggleColumn(col.key)}
+                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} - {Math.min(endIndex, sortedAccounts.length)} of {sortedAccounts.length}
+
+              {/* Right: Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === 1
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                  <span className="text-[#1F2937] font-semibold">{currentPage}</span>
+                  <span className="text-[#9CA3AF] mx-1">/</span>
+                  <span className="text-[#6B7280]">{totalPages}</span>
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    currentPage === totalPages
+                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
           )}
 
+          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
+            Showing {startIndex + 1} - {Math.min(endIndex, sortedAccounts.length)} of {sortedAccounts.length}
+          </div>
+
           {/* Table - Show skeleton while loading */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
               {isDataLoading ? (
                 <div className="p-8">
