@@ -964,15 +964,15 @@ const Client2Page = () => {
 
       // Map UI column keys to API field names (backend uses different naming for some fields)
       const columnKeyToAPIField = (colKey) => {
-        // Map UI camelCase keys to backend snake_case or exact field names per API spec
+        // Map UI keys to backend field names per API spec
+        // Text columns should be lowercase per backend requirement (e.g., 'name', not 'Name')
         const fieldMap = {
-          // Text columns (capitalize to match backend sample)
-          name: 'Name',
-          email: 'Email',
-          phone: 'Phone',
-          country: 'Country',
-          currency: 'Currency',
-          lifetimePnL: 'lifetimePnL',  // Backend uses exact camelCase per Postman
+          name: 'name',
+          email: 'email',
+          phone: 'phone',
+          country: 'country',
+          currency: 'currency',
+          lifetimePnL: 'lifetimePnL',
           thisMonthPnL: 'thisMonthPnL',
           thisWeekPnL: 'thisWeekPnL',
           dailyPnL: 'dailyPnL',
