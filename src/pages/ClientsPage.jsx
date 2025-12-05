@@ -1910,14 +1910,14 @@ const ClientsPage = () => {
     const netDW = (stats.dailyDeposit || 0) - (stats.dailyWithdrawal || 0)
     
     const configs = {
-      1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
-      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
-      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit.toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
-      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
-      5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
-      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
-      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
-      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      1: { id: 1, title: 'Total Clients', value: stats.totalClients, numericValue: stats.totalClients || 0, unit: '', simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
+      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), numericValue: stats.totalBalance || 0, unit: 'USD', simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
+      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit.toFixed(2)), numericValue: stats.totalCredit || 0, unit: 'USD', simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
+      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), numericValue: stats.totalEquity || 0, unit: 'USD', simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
+      5: { id: 5, title: 'PNL', value: stats.totalPnl, numericValue: stats.totalPnl || 0, unit: 'USD', withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
+      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, numericValue: stats.totalProfit || 0, unit: 'USD', withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
+      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), numericValue: stats.dailyDeposit || 0, unit: 'USD', simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), numericValue: stats.dailyWithdrawal || 0, unit: 'USD', simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
       10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
       11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
       12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
@@ -2740,7 +2740,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="w-[115px] h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                      className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2752,24 +2752,25 @@ const ClientsPage = () => {
                         </div>
                       </div>
                       <div className="flex items-baseline gap-[4px]">
-                        {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                        {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
                           </svg>
                         )}
-                        {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                        {card.numericValue < 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                            <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
                           </svg>
                         )}
-                        {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                        {card.numericValue === 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            <polygon points="4,0 8,8 0,8" fill="#000000"/>
                           </svg>
                         )}
-                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${valueColor}`}>
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
+                        {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
                       </div>
                     </div>
                   )
@@ -2832,7 +2833,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="w-[115px] h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                      className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2844,24 +2845,25 @@ const ClientsPage = () => {
                         </div>
                       </div>
                       <div className="flex items-baseline gap-[4px]">
-                        {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                        {card.numericValue > 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
                           </svg>
                         )}
-                        {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                        {card.numericValue < 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                            <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
                           </svg>
                         )}
-                        {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                        {card.numericValue === 0 && (
                           <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                            <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                            <polygon points="4,0 8,8 0,8" fill="#000000"/>
                           </svg>
                         )}
-                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
+                        <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${valueColor}`}>
                           {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                         </span>
+                        {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
                       </div>
                     </div>
                   )
@@ -2914,7 +2916,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                        className="w-[115px] h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
+                        className="w-full h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2926,24 +2928,25 @@ const ClientsPage = () => {
                           </div>
                         </div>
                         <div className="flex items-baseline gap-[4px]">
-                          {(card.withArrow || card.withIcon) && card.numericValue > 0 && (
+                          {card.numericValue > 0 && (
                             <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                              <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                              <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
                             </svg>
                           )}
-                          {(card.withArrow || card.withIcon) && card.numericValue < 0 && (
+                          {card.numericValue < 0 && (
                             <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                              <polygon points="4,8 0,0 8,0" fill={arrowColor}/>
+                              <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
                             </svg>
                           )}
-                          {(card.withArrow || card.withIcon) && card.numericValue === 0 && (
+                          {card.numericValue === 0 && (
                             <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                              <polygon points="4,0 8,8 0,8" fill={arrowColor}/>
+                              <polygon points="4,0 8,8 0,8" fill="#000000"/>
                             </svg>
                           )}
-                          <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] {valueColor}`}>
+                          <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${valueColor}`}>
                             {card.formattedValue != null ? card.formattedValue : (card.value === '' || card.value === undefined ? '0.00' : card.value)}
                           </span>
+                          {card.unit && <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>}
                         </div>
                       </div>
                     )
@@ -4092,6 +4095,7 @@ const ClientsPage = () => {
 }
 
 export default ClientsPage
+
 
 
 
