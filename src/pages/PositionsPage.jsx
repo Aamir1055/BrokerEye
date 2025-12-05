@@ -3022,7 +3022,7 @@ const PositionsPage = () => {
           ) : (
             <>
           {/* Search and Controls Bar */}
-          {filteredData && filteredData.length > 0 && (
+          {sortedPositions && sortedPositions.length > 0 && (
           <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               {/* Left: Search and Columns */}
