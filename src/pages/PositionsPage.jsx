@@ -105,6 +105,9 @@ const PositionsPage = () => {
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
+  const [showDisplayMenu, setShowDisplayMenu] = useState(false)
+  const displayMenuRef = useRef(null)
+  const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
   const [visibleColumns, setVisibleColumns] = useState({
     position: false,
     time: true,
