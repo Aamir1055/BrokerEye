@@ -2703,7 +2703,7 @@ const ClientsPage = () => {
             >
             {displayMode === 'value' && (
               <>
-                {faceCardOrder.map((cardId) => {
+                {faceCardOrder.slice(0, 6).map((cardId) => {
                   // Map percentage card IDs to their normal equivalents when in value mode
                   let effectiveCardId = cardId
                   const percentToNormalMap = {
@@ -2784,7 +2784,7 @@ const ClientsPage = () => {
             )}
             {displayMode === 'percentage' && (
               <>
-                {faceCardOrder.map((cardId) => {
+                {faceCardOrder.slice(0, 6).map((cardId) => {
                   // If the current card is a percentage variant and its normal counterpart
                   // also exists in the order, skip this entry to avoid duplicate rendering
                   const percentToNormalMapForSkip = {
@@ -2876,7 +2876,7 @@ const ClientsPage = () => {
             )}
             {displayMode === 'both' && (
               <>
-                {faceCardOrder.map((cardId) => {
+                {faceCardOrder.slice(0, 6).map((cardId) => {
                   // Skip percentage variant cards - they'll be shown with their normal counterparts
                   const percentCardIds = [56, 57, 58, 59, 60, 61, 62, 63, 65, 17, 18, 54, 55]
                   if (percentCardIds.includes(cardId)) {
