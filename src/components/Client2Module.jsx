@@ -842,7 +842,7 @@ export default function Client2Module() {
                   setDragStartLabel(null);
                 }}
                 onPointerCancel={() => setDragStartLabel(null)}
-                className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                className="min-w-[115px] w-[115px] h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
               >
                 <div className="flex items-start justify-between">
                   <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.label}</span>
