@@ -3457,7 +3457,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[96px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
@@ -3471,29 +3471,29 @@ const Client2Page = () => {
                         pointerEvents: 'auto'
                       }}
                     >
-                      <div className="flex items-start justify-between mb-3 select-none">
-                        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none">
+                      <div className="flex items-start justify-between mb-2 select-none min-h-[18px]">
+                        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">
                           {displayLabel}
                         </span>
-                        <div className="w-6 h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
+                        <div className="w-5 h-5 md:w-6 md:h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                             <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                           </svg>
                         </div>
                       </div>
-                      <div className={`text-lg font-bold ${textColorClass} flex items-center gap-2 select-none`}>
+                      <div className={`text-base md:text-lg font-bold ${textColorClass} flex items-center gap-2 select-none min-h-[26px] leading-none`}>
                         {card.colorCheck && (
                           <svg width="10" height="10" viewBox="0 0 10 10" className={iconRotation}>
                             <polygon points="5,0 10,10 0,10" fill={iconColor}/>
                           </svg>
                         )}
-                        <span>
+                        <span className="leading-none whitespace-nowrap">
                           {card.format === 'integer'
                             ? formatIndianNumber(String(Math.round(rawValue || 0)))
                             : formatIndianNumber((rawValue || 0).toFixed(2))}
                         </span>
-                        <span className="text-xs font-normal text-[#6B7280]">USD</span>
+                        <span className="text-[10px] md:text-xs font-normal text-[#6B7280] leading-none">USD</span>
                       </div>
                     </div>
                   )
