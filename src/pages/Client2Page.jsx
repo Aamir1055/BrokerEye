@@ -968,41 +968,29 @@ const Client2Page = () => {
               checkboxLoginIds = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
               console.log(`[Client2] 🔍 Using mt5Accounts for login checkbox: ${checkboxLoginIds.length} accounts`)
             } else {
-              const field = columnKeyToAPIField(columnKey)
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
 
-              // When there's a search active, only consider the visible (filtered) values for optimization logic
+              // When there's a search active, only consider visible (filtered) values
               const allValues = columnValues[columnKey] || []
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              // Optimization: skip if ALL visible values are selected (no filtering needed)
-              // Only apply this optimization when no search is active (to avoid skipping when user searched and selected)
+              // If everything visible is selected, skip sending filter
               if (!searchQ && visibleValues.length > 0 && selectedValues.length === visibleValues.length) {
                 console.log(`[Client2] 🔍 Checkbox ${columnKey}: all values selected, skipping filter`)
                 return
               }
 
-              // Smart optimization: use not_equal for unselected values if more efficient
-              // Use visibleValues for comparison when search is active
+              // Decide between in vs not_in based on which set is smaller
               const unselectedValues = visibleValues.filter(v => !selectedValues.includes(String(v).trim()))
-              const shouldUseNotEqual = unselectedValues.length > 0 &&
-                unselectedValues.length < selectedValues.length &&
-                (unselectedValues.length < 50 || unselectedValues.length < selectedValues.length * 0.1)
+              const useNotIn = unselectedValues.length > 0 && unselectedValues.length < selectedValues.length
 
-              if (shouldUseNotEqual) {
-                // For not_equal optimization, still use the standard format with operator
-                // This is a special case that may not work with the simplified API format
-                // So we'll skip this optimization and just send all selected values
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: skipping not_equal optimization, using positive filter`)
-              }
-              
-              {
-                // Multiple values (including single): send as comma-separated list
-                // Format for API: { "email": "value1,value2,value3" } (not { field: "email", value: "..." })
-                const commaSeparatedValues = selectedValues.join(',')
-                combinedFilters.push({ [field]: commaSeparatedValues })
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: multi-value filter (${selectedValues.length} values)`)
+              if (useNotIn) {
+                combinedFilters.push({ field, operator: 'not_in', value: unselectedValues })
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using not_in with ${unselectedValues.length} values`)
+              } else {
+                combinedFilters.push({ field, operator: 'in', value: selectedValues })
+                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
               }
             }
           }
@@ -3550,7 +3538,7 @@ const Client2Page = () => {
                         const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
                         const panelWidth = 300
                         const gap = 8
-                        let top = rect.top + scrollY - 12
+                        let top = rect.top + scrollY - 20
                         let left = rect.right + scrollX + gap
                         const viewportWidth = window.innerWidth || document.documentElement.clientWidth
                         // If overflow on the right, place to the left of the button
