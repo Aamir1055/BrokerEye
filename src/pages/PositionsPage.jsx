@@ -1985,6 +1985,76 @@ const PositionsPage = () => {
                 </svg>
                 Client Net
               </button>
+
+              {/* Percentage View Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowDisplayMenu(!showDisplayMenu)}
+                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium text-[#374151]"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  %
+                </button>
+                {showDisplayMenu && (
+                  <div
+                    ref={displayMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                  >
+                    <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                      <p className="text-xs font-semibold text-[#1F2937]">Display Mode</p>
+                    </div>
+                    <div className="px-3 py-2 space-y-2">
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="value"
+                          checked={displayMode === 'value'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Without Percentage</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="percentage"
+                          checked={displayMode === 'percentage'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Show My Percentage</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="radio"
+                          name="displayModeToggle"
+                          value="both"
+                          checked={displayMode === 'both'}
+                          onChange={(e) => setDisplayMode(e.target.value)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span>Both</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Export CSV */}
+              <button
+                onClick={handleExportPositions}
+                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                title="Export current positions to CSV"
+              >
+                <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/>
+                </svg>
+              </button>
               
               <div className="flex-1"></div>
               
@@ -2008,60 +2078,131 @@ const PositionsPage = () => {
           </div>
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
-            <div className="bg-white rounded shadow-sm border border-blue-200 p-2">
-              <p className="text-[10px] font-semibold text-blue-600 uppercase mb-0">Total Positions</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Positions</span>
+                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                  </svg>
+                </div>
+              </div>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <p className="text-sm font-bold text-gray-900">{summaryStats.totalPositions}</p>
+                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                  <span>{summaryStats.totalPositions}</span>
+                  <span className="text-xs font-normal text-[#6B7280]">POS</span>
+                </div>
               )}
             </div>
             
             {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
             {(displayMode === 'value' || displayMode === 'both') && (
-              <div className={`bg-white rounded shadow-sm border ${summaryStats.totalFloatingProfit >= 0 ? 'border-green-200' : 'border-red-200'} p-2`}>
-                <p className={`text-[10px] font-semibold ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'} uppercase mb-0`}>Total Floating Profit</p>
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Floating Profit</span>
+                  <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                      <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                    </svg>
+                  </div>
+                </div>
                 {isInitialPositionsLoading ? (
-                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mt-1" />
+                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <p className={`text-sm font-bold ${summaryStats.totalFloatingProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {summaryStats.totalFloatingProfit >= 0 ? '▲ ' : '▼ '}
-                    {formatNumber(Math.abs(summaryStats.totalFloatingProfit))}
-                  </p>
+                  <div className={`text-lg font-bold flex items-center gap-2 ${
+                    summaryStats.totalFloatingProfit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                  }`}>
+                    {summaryStats.totalFloatingProfit >= 0 && (
+                      <svg width="10" height="10" viewBox="0 0 10 10">
+                        <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
+                      </svg>
+                    )}
+                    {summaryStats.totalFloatingProfit < 0 && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}}>
+                        <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
+                      </svg>
+                    )}
+                    <span>{formatNumber(Math.abs(summaryStats.totalFloatingProfit))}</span>
+                    <span className="text-xs font-normal text-[#6B7280]">USD</span>
+                  </div>
                 )}
               </div>
             )}
             
             {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode */}
             {(displayMode === 'percentage' || displayMode === 'both') && (
-              <div className={`bg-white rounded shadow-sm border ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'border-teal-200' : 'border-orange-200'} p-2`}>
-                <p className={`text-[10px] font-semibold ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-teal-600' : 'text-orange-600'} uppercase mb-0`}>Floating Profit %</p>
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Floating Profit %</span>
+                  <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                      <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                    </svg>
+                  </div>
+                </div>
                 {isInitialPositionsLoading ? (
-                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mt-1" />
+                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <p className={`text-sm font-bold ${summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-teal-600' : 'text-orange-600'}`}>
-                    {summaryStats.totalFloatingProfitPercentage >= 0 ? '▲ ' : '▼ '}
-                    {Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%
-                  </p>
-                )}
-              </div>
+                  <div className={`text-lg font-bold flex items-center gap-2 ${
+                    summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                  }`}>
+                    {summaryStats.totalFloatingProfitPercentage >= 0 && (
+                      <svg width="10" height="10" viewBox="0 0 10 10">
+                        <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
+                      </svg>
+                    )}
+                    {summaryStats.totalFloatingProfitPercentage < 0 && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}}>
+                        <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
+                      </svg>
+                    )}
+                    <span>{Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%</span>
+                  </div>
+                )}\n              </div>
             )}
             
-            <div className="bg-white rounded shadow-sm border border-purple-200 p-2">
-              <p className="text-[10px] font-semibold text-purple-600 uppercase mb-0">Unique Logins</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Unique Logins</span>
+                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                  </svg>
+                </div>
+              </div>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-12 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <p className="text-sm font-bold text-gray-900">{summaryStats.uniqueLogins}</p>
+                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                  <span>{summaryStats.uniqueLogins}</span>
+                  <span className="text-xs font-normal text-[#6B7280]">ACCT</span>
+                </div>
               )}
             </div>
-            <div className="bg-white rounded shadow-sm border border-indigo-200 p-2">
-              <p className="text-[10px] font-semibold text-indigo-600 uppercase mb-0">Symbols</p>
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Symbols</span>
+                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
+                  </svg>
+                </div>
+              </div>
               {isInitialPositionsLoading ? (
-                <div className="h-5 w-10 bg-gray-200 rounded animate-pulse mt-1" />
+                <div className="h-6 w-10 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <p className="text-sm font-bold text-gray-900">{summaryStats.uniqueSymbols}</p>
+                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                  <span>{summaryStats.uniqueSymbols}</span>
+                  <span className="text-xs font-normal text-[#6B7280]">SYM</span>
+                </div>
               )}
             </div>
           </div>
