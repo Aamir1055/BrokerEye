@@ -1340,8 +1340,35 @@ const ClientsPage = () => {
     let canceled = false
     const t = setTimeout(async () => {
       try {
+        // If server-side filtering is needed (e.g., login IN or global search), fetch from API
+        let clientsSource = clients
+        try {
+          const payload = { page: 1, limit: itemsPerPage || 100 }
+          const q = (searchQuery || '').trim()
+          if (q) payload.search = q
+          // Map columnFilters for login IN to API payload
+          const loginCheckbox = columnFilters?.login_checkbox?.values || []
+          const loginText = columnFilters?.login_text?.value
+          const filters = []
+          if (Array.isArray(loginCheckbox) && loginCheckbox.length > 0) {
+            const vals = Array.from(new Set(loginCheckbox.map(v => Number(v)).filter(Number.isFinite)))
+            if (vals.length > 0) filters.push({ field: 'login', operator: 'in', value: vals })
+          }
+          if (loginText != null && String(loginText).trim().length > 0) {
+            filters.push({ field: 'login', operator: 'contains', value: String(loginText).trim() })
+          }
+          if (filters.length > 0) payload.filters = filters
+          if (payload.search || payload.filters) {
+            const resp = await brokerAPI.searchClients(payload)
+            const data = (resp?.data?.data) || (resp?.data) || {}
+            const list = Array.isArray(data?.clients) ? data.clients.filter(c => c && c.login != null) : []
+            if (list.length > 0) clientsSource = list
+          }
+        } catch (e) {
+          console.warn('[ClientsPage] Server-side search/filter failed, using cached clients:', e?.message || e)
+        }
         const result = await workerManager.execute('FILTER_SORT_DEDUP', {
-          clients,
+          clients: clientsSource,
           filters: {
             filterByPositions,
             filterByCredit,
