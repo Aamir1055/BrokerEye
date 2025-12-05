@@ -248,6 +248,9 @@ const PositionsPage = () => {
   // Search ref for ALL positions view
   const searchRef = useRef(null)
   
+  // Search suggestions state for ALL positions view
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
