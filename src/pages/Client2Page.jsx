@@ -29,12 +29,24 @@ const Client2Page = () => {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // DataContext (align with ClientsPage for positions cache usage)
-  const { positions: cachedPositions } = useData()
-  // Column value dropdown paging defaults and settings
-  // Expose batch size as a quick setting (persisted), while capping parallel page prefetch to be safe.
-  const COLUMN_VALUES_MAX_PAGES_PER_BATCH = 5   // safety cap to avoid excessive parallel requests
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      // Ensure page remains scrollable (fix accidental overflow hidden)
+      const body = document.body
+      if (body && body.style.overflow === 'hidden') {
+        body.style.overflow = ''
+      }
+      const html = document.documentElement
+      if (html && html.style.overflow === 'hidden') {
+        html.style.overflow = ''
+      }
+    }
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const getInitialColumnValuesBatchSize = () => {
     try {
@@ -208,6 +220,33 @@ const Client2Page = () => {
     }
     return null // Will use default order from allColumns
   }
+
+  // Keep the Show/Hide Columns panel open and anchored while scrolling
+  useEffect(() => {
+    if (!showColumnSelector) return
+    const handleScroll = () => {
+      const host = columnSelectorRef.current
+      if (!host) return
+      const btn = host.querySelector('button') || host
+      const rect = btn.getBoundingClientRect()
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+      const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
+      const panelWidth = 300
+      const gap = 8
+      const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+      const lift = Math.min(400, Math.round(viewportH * 0.5))
+      let top = rect.top + scrollY - lift + Math.round(rect.height / 2)
+      top = Math.max(scrollY + 10, Math.min(top, scrollY + viewportH - 10))
+      let left = rect.right + scrollX + gap
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+      if (left + panelWidth > scrollX + viewportWidth) {
+        left = rect.left + scrollX - panelWidth - gap
+      }
+      setColumnSelectorPos({ top, left })
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [showColumnSelector])
 
   const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
   const [draggedColumn, setDraggedColumn] = useState(null)
@@ -900,6 +939,12 @@ const Client2Page = () => {
       const columnKeyToAPIField = (colKey) => {
         // Map UI camelCase keys to backend snake_case or exact field names per API spec
         const fieldMap = {
+          // Text columns (capitalize to match backend sample)
+          name: 'Name',
+          email: 'Email',
+          phone: 'Phone',
+          country: 'Country',
+          currency: 'Currency',
           lifetimePnL: 'lifetimePnL',  // Backend uses exact camelCase per Postman
           thisMonthPnL: 'thisMonthPnL',
           thisWeekPnL: 'thisWeekPnL',
@@ -982,16 +1027,9 @@ const Client2Page = () => {
               }
 
               // Decide between in vs not_in based on which set is smaller
-              const unselectedValues = visibleValues.filter(v => !selectedValues.includes(String(v).trim()))
-              const useNotIn = unselectedValues.length > 0 && unselectedValues.length < selectedValues.length
-
-              if (useNotIn) {
-                combinedFilters.push({ field, operator: 'not_in', value: unselectedValues })
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using not_in with ${unselectedValues.length} values`)
-              } else {
-                combinedFilters.push({ field, operator: 'in', value: selectedValues })
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
-              }
+              // Always send 'in' with the selected list (full set), per requirement
+              combinedFilters.push({ field, operator: 'in', value: selectedValues })
+              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
             }
           }
         }
@@ -3619,6 +3657,7 @@ const Client2Page = () => {
                   zIndex: 20000000
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onWheel={(e) => e.stopPropagation()}
               >
                 <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
                   <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
