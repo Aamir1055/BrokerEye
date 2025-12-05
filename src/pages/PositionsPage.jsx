@@ -2739,14 +2739,14 @@ const PositionsPage = () => {
                       Export CSV
                     </button>
                     
-                    {/* Compact Group Base Symbols */}
+                    {/* Groups button */}
                     <button
                       onClick={() => setGroupByBaseSymbol(v => !v)}
-                      className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      className={`px-2 py-1.5 text-xs rounded-lg border inline-flex items-center gap-1.5 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'} shadow-sm font-medium`}
                       title="Toggle grouping by base symbol"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
-                      Group Base Symbols
+                      Groups
                     </button>
                     
                     {/* Card Filter */}
