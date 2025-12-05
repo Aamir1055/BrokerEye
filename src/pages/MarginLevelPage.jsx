@@ -868,7 +868,7 @@ const MarginLevelPage = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
