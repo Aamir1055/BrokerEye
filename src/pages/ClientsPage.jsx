@@ -2694,7 +2694,7 @@ const ClientsPage = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-6 gap-[8px] mb-4 md:mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[8px] mb-4 md:mb-6">
             {displayMode === 'value' && (
               <>
                 {faceCardOrder.map((cardId) => {
