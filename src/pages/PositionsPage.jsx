@@ -213,6 +213,28 @@ const PositionsPage = () => {
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
+  // Sorting states for ALL positions view
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  
+  // Search state for ALL positions view
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Pagination states for ALL positions view
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
+  
+  // NET positions toggle and grouping
+  const [showNetPositions, setShowNetPositions] = useState(false)
+  const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
+  
+  // NET positions pagination
+  const [netCurrentPage, setNetCurrentPage] = useState(1)
+  const [netItemsPerPage, setNetItemsPerPage] = useState(25)
+  
+  // Client NET toggle
+  const [showClientNet, setShowClientNet] = useState(false)
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
@@ -896,7 +918,7 @@ const PositionsPage = () => {
     const sorted = sortPositions(ibFiltered)
     
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
-  }, [cachedPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
+  }, [cachedPositions, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
