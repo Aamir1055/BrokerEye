@@ -2973,26 +2973,26 @@ const Client2Page = () => {
       <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
-          <div className="bg-white rounded-2xl shadow-sm px-6 py-4 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
             {/* Title */}
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold text-[#1A1A1A]">Clients</h1>
-              <p className="text-sm text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
+            <div className="mb-2.5">
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
             </div>
 
             {/* Action Buttons Row */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 {/* Filter Button */}
                 <div className="relative flex items-center" ref={filterMenuRef}>
                   <button
                     onClick={() => setShowFilterMenu(!showFilterMenu)}
-                    className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                    className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                     title="Filter Options"
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                       <path d="M4 6H12M5.5 9H10.5M7 12H9" stroke="#4B5563" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
-                    <span className="text-sm font-medium text-[#374151]">Filter</span>
+                    <span className="text-xs font-medium text-[#374151]">Filter</span>
                     {((quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)) > 0 && (
                       <span className="ml-1 inline-flex items-center justify-center rounded-full bg-blue-600 text-white text-[10px] font-bold h-4 min-w-4 px-1 leading-none">
                         {(quickFilters?.hasFloating ? 1 : 0) + (quickFilters?.hasCredit ? 1 : 0) + (quickFilters?.noDeposit ? 1 : 0)}
@@ -3069,12 +3069,12 @@ const Client2Page = () => {
                 {/* Percentage Toggle Button */}
                 <button
                   onClick={() => setCardFilterPercentMode(v => !v)}
-                  className={`h-10 w-10 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                  className={`h-8 w-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
                     cardFilterPercentMode ? 'bg-blue-50 border-blue-400' : 'bg-white hover:bg-gray-50'
                   }`}
                   title="Toggle percentage mode"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path d="M4 12L12 4M4.5 6.5C5.32843 6.5 6 5.82843 6 5C6 4.17157 5.32843 3.5 4.5 3.5C3.67157 3.5 3 4.17157 3 5C3 5.82843 3.67157 6.5 4.5 6.5ZM11.5 12.5C12.3284 12.5 13 11.8284 13 11C13 10.1716 12.3284 9.5 11.5 9.5C10.6716 9.5 10 10.1716 10 11C10 11.8284 10.6716 12.5 11.5 12.5Z" 
                       stroke={cardFilterPercentMode ? '#2563EB' : '#4B5563'} 
                       strokeWidth="1.5" 
@@ -3088,10 +3088,10 @@ const Client2Page = () => {
                 <div className="relative" ref={exportMenuRef}>
                   <button
                     onClick={() => setShowExportMenu(!showExportMenu)}
-                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                     title="Download as Excel (CSV)"
                   >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                       <path d="M10 3v10m0 0l-4-4m4 4l4-4" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <rect x="4" y="15" width="12" height="2" rx="1" fill="#4B5563"/>
                     </svg>
@@ -3132,16 +3132,16 @@ const Client2Page = () => {
                 <div className="relative flex items-center" ref={cardFilterMenuRef}>
                   <button
                     onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
-                    className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                    className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                     title="Toggle Card Visibility"
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                       <rect x="2" y="2" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                       <rect x="9" y="2" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                       <rect x="2" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                       <rect x="9" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                     </svg>
-                    <span className="text-sm font-medium text-[#374151]">Card Filter</span>
+                    <span className="text-xs font-medium text-[#374151]">Card Filter</span>
                   </button>
 
                 {showCardFilterMenu && (
@@ -3388,13 +3388,13 @@ const Client2Page = () => {
               {/* Cards Toggle Button with Switch */}
               <button
                 onClick={() => setShowFaceCards(v => !v)}
-                className="h-10 px-4 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                 title={showFaceCards ? "Hide cards" : "Show cards"}
               >
-                <span className="text-sm font-medium text-[#374151]">Cards</span>
-                <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                <span className="text-xs font-medium text-[#374151]">Cards</span>
+                <div className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${showFaceCards ? 'bg-blue-600' : 'bg-slate-300'}`}>
                   <span
-                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-4' : 'translate-x-0.5'}`}
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform ${showFaceCards ? 'translate-x-4' : 'translate-x-0.5'}`}
                   />
                 </div>
               </button>
