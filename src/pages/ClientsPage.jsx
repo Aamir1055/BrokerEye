@@ -2694,16 +2694,14 @@ const ClientsPage = () => {
               </button>
             </div>
             
-            <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory mb-4 md:mb-6 pb-2"
+            <div className="grid grid-cols-6 gap-[8px] mb-4 md:mb-6"
               style={{
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
+                gridTemplateColumns: 'repeat(6, 125px)'
               }}
             >
             {displayMode === 'value' && (
               <>
-                {faceCardOrder.slice(0, 6).map((cardId) => {
+                {faceCardOrder.map((cardId) => {
                   // Map percentage card IDs to their normal equivalents when in value mode
                   let effectiveCardId = cardId
                   const percentToNormalMap = {
@@ -2746,7 +2744,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                      className="w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2784,7 +2782,7 @@ const ClientsPage = () => {
             )}
             {displayMode === 'percentage' && (
               <>
-                {faceCardOrder.slice(0, 6).map((cardId) => {
+                {faceCardOrder.map((cardId) => {
                   // If the current card is a percentage variant and its normal counterpart
                   // also exists in the order, skip this entry to avoid duplicate rendering
                   const percentToNormalMapForSkip = {
@@ -2838,7 +2836,7 @@ const ClientsPage = () => {
                       onDragEnd={handleFaceCardDragEnd}
                       onDragOver={handleFaceCardDragOver}
                       onDrop={(e) => handleFaceCardDrop(e, card.id)}
-                      className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                      className="w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                     >
                       <div className="flex items-start justify-between">
                         <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -2876,7 +2874,7 @@ const ClientsPage = () => {
             )}
             {displayMode === 'both' && (
               <>
-                {faceCardOrder.slice(0, 6).map((cardId) => {
+                {faceCardOrder.map((cardId) => {
                   // Skip percentage variant cards - they'll be shown with their normal counterparts
                   const percentCardIds = [56, 57, 58, 59, 60, 61, 62, 63, 65, 17, 18, 54, 55]
                   if (percentCardIds.includes(cardId)) {
@@ -2920,7 +2918,7 @@ const ClientsPage = () => {
                         onDragEnd={handleFaceCardDragEnd}
                         onDragOver={handleFaceCardDragOver}
                         onDrop={(e) => handleFaceCardDrop(e, cardId)}
-                        className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                        className="w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between cursor-move"
                       >
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
@@ -4098,6 +4096,7 @@ const ClientsPage = () => {
 }
 
 export default ClientsPage
+
 
 
 
