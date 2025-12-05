@@ -55,14 +55,14 @@ const IBSelector = () => {
           setShowDropdown(willShow)
           // Data is now prefetched on login, refresh, and page entry; optional on-demand refresh left disabled here
         }}
-        className="text-blue-700 hover:text-blue-900 px-4 py-2.5 rounded-xl hover:bg-blue-50 border-2 border-blue-400 hover:border-blue-600 transition-all inline-flex items-center gap-2 text-sm font-semibold bg-white shadow-sm h-10"
+        className="px-4 py-2.5 rounded-xl bg-white border border-[#E5E7EB] hover:bg-gray-50 transition-colors inline-flex items-center gap-2 text-sm font-medium text-[#374151] shadow-sm h-10"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
         IB Filter
         {selectedIB && (
-          <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+          <span className="ml-0.5 px-1.5 py-0.5 bg-slate-600 text-white text-[10px] font-bold rounded-full shadow-sm">
             Active
           </span>
         )}

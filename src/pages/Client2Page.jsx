@@ -3129,7 +3129,7 @@ const Client2Page = () => {
                   )}
                 </div>
 
-                {/* Customize Button */}
+                {/* Card Filter Button */}
                 <div className="relative flex items-center" ref={cardFilterMenuRef}>
                   <button
                     onClick={() => setShowCardFilterMenu(!showCardFilterMenu)}
@@ -3142,7 +3142,7 @@ const Client2Page = () => {
                       <rect x="2" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                       <rect x="9" y="9" width="5" height="5" rx="1" stroke="#4B5563" strokeWidth="1.5"/>
                     </svg>
-                    <span className="text-sm font-medium text-[#374151]">Customize</span>
+                    <span className="text-sm font-medium text-[#374151]">Card Filter</span>
                   </button>
 
                 {showCardFilterMenu && (
@@ -3501,7 +3501,7 @@ const Client2Page = () => {
             {clients && clients.length > 0 && (
             <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                {/* Left: Search */}
+                {/* Left: Search and Columns */}
                 <div className="flex items-center gap-2 flex-1">
                   <div className="relative flex-1 max-w-md">
                     <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
@@ -3532,25 +3532,23 @@ const Client2Page = () => {
                       </button>
                     )}
                   </div>
-                </div>
-
-                {/* Right: Pagination and Controls */}
-                <div className="flex items-center gap-3">
-                  {/* Columns Button */}
+                  {/* Columns Button (icon only) */}
                   <div className="relative" ref={columnSelectorRef}>
                     <button
                       onClick={() => setShowColumnSelector(!showColumnSelector)}
-                      className="h-10 px-3 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                      className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                       title="Show/Hide Columns"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                         <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                       </svg>
-                      <span className="text-sm font-medium text-[#374151]">Columns</span>
                     </button>
                   </div>
+                </div>
 
+                {/* Right: Pagination and Controls */}
+                <div className="flex items-center gap-3">
                   {/* Pagination */}
                   <div className="flex items-center gap-2">
                     <button
