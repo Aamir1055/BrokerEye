@@ -251,6 +251,9 @@ const PositionsPage = () => {
   // Search suggestions state for ALL positions view
   const [showSuggestions, setShowSuggestions] = useState(false)
   
+  // Flash timeouts for row highlighting
+  const flashTimeouts = useRef(new Map())
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)

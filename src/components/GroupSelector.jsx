@@ -65,7 +65,7 @@ const GroupSelector = ({ onCreateClick, onEditClick, moduleName }) => {
       </button>
       
       {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 w-64">
+        <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 w-64">
           <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
             <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">Login Groups</p>
             <button
