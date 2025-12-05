@@ -1147,6 +1147,8 @@ const Client2Page = () => {
         console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(payload, null, 2))
       }
 
+      console.log('[Client2] 📡 Calling brokerAPI.searchClients with payload:', payload)
+
       // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
         // Fetch only percentage data
@@ -4023,9 +4025,10 @@ const Client2Page = () => {
                                       <div
                                         ref={filterPanelRef}
                                         tabIndex={0}
-                                        className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl flex flex-col text-[11px]"
+                                        className="filter-dropdown-panel fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl flex flex-col text-[11px]"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseDown={(e) => e.stopPropagation()}
+                                        onMouseUp={(e) => e.stopPropagation()}
                                         onWheel={(e) => e.stopPropagation()}
                                         onScroll={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => {
