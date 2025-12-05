@@ -248,32 +248,6 @@ const Client2Page = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [showColumnSelector])
 
-  // Keep filter dropdown anchored during scroll
-  useEffect(() => {
-    if (!showFilterDropdown || !filterRefs.current || !filterRefs.current[showFilterDropdown]) return
-    const handleScroll = () => {
-      const btn = filterRefs.current[showFilterDropdown]
-      if (!btn) return
-      const rect = btn.getBoundingClientRect()
-      const columnIndex = visibleColumnsList.findIndex(col => col.key === showFilterDropdown)
-      const totalColumns = visibleColumnsList.length
-      const dropdownWidth = 280
-      const spaceOnRight = window.innerWidth - rect.right
-      const spaceOnLeft = rect.left
-      const isLastThreeColumns = columnIndex >= totalColumns - 3
-      const shouldOpenLeft = isLastThreeColumns || (spaceOnRight < dropdownWidth + 20 && spaceOnLeft > dropdownWidth + 20)
-      setFilterPosition({
-        top: rect.top,
-        left: rect.left,
-        right: rect.right,
-        isLastColumn: columnIndex === totalColumns - 1,
-        shouldOpenLeft
-      })
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [showFilterDropdown, visibleColumnsList])
-
   const [columnOrder, setColumnOrder] = useState(getInitialColumnOrder)
   const [draggedColumn, setDraggedColumn] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
@@ -758,6 +732,33 @@ const Client2Page = () => {
 
     return visible
   }, [allColumns, visibleColumns, columnOrder])
+
+  // Keep filter dropdown anchored during scroll (must be after visibleColumnsList)
+  useEffect(() => {
+    if (!showFilterDropdown || !filterRefs.current || !filterRefs.current[showFilterDropdown]) return
+    const handleScroll = () => {
+      const btn = filterRefs.current[showFilterDropdown]
+      if (!btn) return
+      const rect = btn.getBoundingClientRect()
+      const columnIndex = visibleColumnsList.findIndex(col => col.key === showFilterDropdown)
+      const totalColumns = visibleColumnsList.length
+      const dropdownWidth = 280
+      const spaceOnRight = window.innerWidth - rect.right
+      const spaceOnLeft = rect.left
+      const isLastThreeColumns = columnIndex >= totalColumns - 3
+      const shouldOpenLeft = isLastThreeColumns || (spaceOnRight < dropdownWidth + 20 && spaceOnLeft > dropdownWidth + 20)
+      setFilterPosition({
+        top: rect.top,
+        left: rect.left,
+        right: rect.right,
+        isLastColumn: columnIndex === totalColumns - 1,
+        shouldOpenLeft
+      })
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [showFilterDropdown, visibleColumnsList])
+
 
   // Sync horizontal scrollbars (robust, loop-guarded)
   useEffect(() => {
