@@ -245,6 +245,9 @@ const PositionsPage = () => {
   // Client positions modal state
   const [selectedLogin, setSelectedLogin] = useState(null)
   
+  // Search ref for ALL positions view
+  const searchRef = useRef(null)
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)

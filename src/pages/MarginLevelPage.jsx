@@ -868,7 +868,7 @@ const MarginLevelPage = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-3 mb-4">
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1074,10 +1074,6 @@ const MarginLevelPage = () => {
             </div>
           </div>
           )}
-
-          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
-            Showing {startIndex + 1} - {Math.min(endIndex, sortedAccounts.length)} of {sortedAccounts.length}
-          </div>
 
           {/* Table - Show skeleton while loading */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
