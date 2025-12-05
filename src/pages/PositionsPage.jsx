@@ -1932,12 +1932,12 @@ const PositionsPage = () => {
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
+                <p className="text-sm text-[#6B7280] mt-0.5 pb-3 border-b border-[#E5E7EB]">Live open positions across all accounts</p>
               </div>
             </div>
             
             {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-[#E5E7EB]">
+            <div className="flex flex-wrap items-center gap-2">
               {/* IB Filter Button */}
               <IBSelector />
               
@@ -3072,73 +3072,6 @@ const PositionsPage = () => {
                   </button>
                 </div>
               
-              {/* Percentage View Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="px-3 py-2 rounded-lg border border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
-                >
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  Percentage View
-                </button>
-                {showDisplayMenu && (
-                  <div
-                    ref={displayMenuRef}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-56"
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-gray-700 uppercase">Display Mode</p>
-                    </div>
-                    <div className="px-3 py-2 space-y-2">
-                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="value"
-                          checked={displayMode === 'value'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span>Without Percentage</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="percentage"
-                          checked={displayMode === 'percentage'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span>Show My Percentage</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-gray-700 hover:bg-blue-50 p-2 rounded cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="displayModeToggle"
-                          value="both"
-                          checked={displayMode === 'both'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span>Both</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={handleExportPositions}
-                className="px-3 py-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all inline-flex items-center gap-2 text-sm font-medium text-gray-700 shadow-sm"
-                title="Export current positions to CSV"
-              >
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                Export CSV
-              </button>
-
               {/* Columns Button */}
               <div className="relative">
                 <button
