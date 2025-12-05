@@ -3131,92 +3131,74 @@ const ClientsPage = () => {
 
           {(
           <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-blue-50 rounded-lg shadow-md border border-blue-200 p-3">
+            {/* Left Side: Search Bar + Columns Button */}
             <div className="flex items-center gap-2">
-              {/* Removed pagination dropdown */}
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Page Navigation */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-2 rounded-md transition-all shadow-sm ${
-                      currentPage === 1
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-md shadow-md border border-blue-700">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-2 rounded-md transition-all shadow-sm ${
-                      currentPage === totalPages
-                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
-                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+              {/* Search Bar */}
+              <div className="relative" ref={searchRef}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setSearchInput(value)
+                      setSearchQuery(value)
+                      setShowSuggestions(true)
+                      setCurrentPage(1)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') setShowSuggestions(false) }}
+                    placeholder="Search login, name, email..."
+                    className="pl-10 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
+                  />
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchInput && (
+                    <button
+                      onClick={() => { setSearchInput(''); setSearchQuery(''); setShowSuggestions(false) }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
-              
-              {/* Percentage View button removed */}
-
-              {/* Zoom Controls (moved next to Columns button) */}
-              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
-                <button
-                  onClick={handleZoomOut}
-                  disabled={zoomLevel <= 50}
-                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel <= 50 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
-                  title="Zoom Out (Min 50%)"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleResetZoom}
-                  className="px-2 text-sm font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
-                  title="Reset Zoom to 100%"
-                >
-                  {zoomLevel}%
-                </button>
-                <button
-                  onClick={handleZoomIn}
-                  disabled={zoomLevel >= 200}
-                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel >= 200 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
-                  title="Zoom In (Max 200%)"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                </button>
+                {showSuggestions && getSuggestions(filteredClients).length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50 max-h-80 overflow-y-auto">
+                    <div className="px-3 py-2 border-b border-slate-100">
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Search Results</p>
+                    </div>
+                    <div className="py-1">
+                      {getSuggestions(filteredClients).map((client, idx) => (
+                        <button 
+                          key={idx}
+                          onClick={() => handleSuggestionClick(client)} 
+                          className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors border-l-2 border-transparent hover:border-slate-400"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800">{client.login}</span>
+                            <span className="text-slate-500">•</span>
+                            <span className="flex-1 ml-2 truncate">{client.name || 'N/A'}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Columns Selector Button (moved next to Percentage View) */}
+              {/* Columns Selector Button */}
               <div className="relative" ref={columnSelectorRef}>
                 <button
                   onClick={() => setShowColumnSelector(!showColumnSelector)}
-                  className="text-amber-700 hover:text-amber-800 px-2.5 py-1.5 rounded-md hover:bg-amber-50 border-2 border-amber-300 hover:border-amber-500 transition-all inline-flex items-center gap-1.5 text-xs font-semibold bg-white shadow-sm"
+                  className="p-2 rounded-lg border border-[#E5E7EB] bg-white hover:bg-gray-50 transition-all shadow-sm h-9 w-9"
                   title="Show/Hide Columns"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
                   </svg>
-                  Columns
                 </button>
                 {showColumnSelector && (
                   <div className="fixed bg-amber-50 rounded-lg shadow-xl border-2 border-amber-200 py-2 flex flex-col" style={{ 
@@ -3293,61 +3275,76 @@ const ClientsPage = () => {
                   </div>
                 )}
               </div>
-              
-              {/* Search Bar */}
-              <div className="relative" ref={searchRef}>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      setSearchInput(value)
-                      setSearchQuery(value)
-                      setShowSuggestions(true)
-                      setCurrentPage(1)
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') setShowSuggestions(false) }}
-                    placeholder="Search login, name, email..."
-                    className="pl-10 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
-                  />
-                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  {searchInput && (
-                    <button
-                      onClick={() => { setSearchInput(''); setSearchQuery(''); setShowSuggestions(false) }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
+            </div>
+            
+            {/* Right Side: Page Navigation + Zoom Controls */}
+            <div className="flex items-center gap-3">
+              {/* Page Navigation */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-md transition-all shadow-sm ${
+                      currentPage === 1
+                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <span className="text-xs font-bold text-white px-4 py-2 bg-blue-600 rounded-md shadow-md border border-blue-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 rounded-md transition-all shadow-sm ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 bg-gray-100 cursor-not-allowed border border-gray-200'
+                        : 'text-blue-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer border-2 border-blue-300 hover:border-blue-500 bg-white'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
-                {showSuggestions && getSuggestions(filteredClients).length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50 max-h-80 overflow-y-auto">
-                    <div className="px-3 py-2 border-b border-slate-100">
-                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Search Results</p>
-                    </div>
-                    <div className="py-1">
-                      {getSuggestions(filteredClients).map((client, idx) => (
-                        <button 
-                          key={idx}
-                          onClick={() => handleSuggestionClick(client)} 
-                          className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors border-l-2 border-transparent hover:border-slate-400"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-800">{client.login}</span>
-                            <span className="text-slate-500">•</span>
-                            <span className="flex-1 ml-2 truncate">{client.name || 'N/A'}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              )}
+
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-1 bg-white border-2 border-purple-300 rounded-md px-2 shadow-sm h-9">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 50}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel <= 50 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom Out (Min 50%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleResetZoom}
+                  className="px-2 text-sm font-bold text-purple-700 hover:bg-purple-100 rounded transition-colors min-w-[45px]"
+                  title="Reset Zoom to 100%"
+                >
+                  {zoomLevel}%
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 200}
+                  className={`p-1 rounded hover:bg-purple-100 transition-colors ${zoomLevel >= 200 ? 'opacity-40 cursor-not-allowed' : 'text-purple-600 hover:text-purple-700'}`}
+                  title="Zoom In (Max 200%)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
