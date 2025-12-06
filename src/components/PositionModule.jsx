@@ -70,6 +70,7 @@ export default function PositionModule() {
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
   const netColumnSelectorRef = useRef(null)
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
+  const [expandedNetSymbols, setExpandedNetSymbols] = useState(new Set())
   
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
@@ -1178,18 +1179,58 @@ export default function PositionModule() {
                     <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
                   ) : (
                     netPaginatedPositions.map((pos, idx) => (
-                      <div key={idx} className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
-                        {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>}
-                        {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
-                        {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
-                        {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
-                        {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
-                        {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
-                        {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
-                        {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>}
-                        {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
-                        {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.variantCount}</div>}
-                      </div>
+                      <React.Fragment key={idx}>
+                        <div className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                          {netVisibleColumns.symbol && (
+                            <div className="flex items-center justify-center px-1 h-[32px] font-semibold">
+                              {pos.symbol}
+                              {groupByBaseSymbol && pos.variantCount > 1 && (
+                                <button
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedNetSymbols)
+                                    if (newExpanded.has(pos.symbol)) {
+                                      newExpanded.delete(pos.symbol)
+                                    } else {
+                                      newExpanded.add(pos.symbol)
+                                    }
+                                    setExpandedNetSymbols(newExpanded)
+                                  }}
+                                  className="ml-1 text-[8px] text-blue-600 underline hover:text-blue-800"
+                                >
+                                  {expandedNetSymbols.has(pos.symbol) ? 'Hide' : 'Show'} variants
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
+                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
+                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
+                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
+                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
+                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>}
+                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
+                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.variantCount}</div>}
+                        </div>
+
+                        {/* Variant Rows */}
+                        {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
+                          pos.variants.map((variant, vIdx) => (
+                            <div key={`${idx}-v-${vIdx}`} className={`grid text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] pl-4 font-medium">{variant.exactSymbol}</div>}
+                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
+                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.netVolume)}</div>}
+                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.avgPrice)}</div>}
+                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
+                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.totalStorage || 0)}</div>}
+                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.totalCommission || 0)}</div>}
+                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
+                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
+                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
+                            </div>
+                          ))
+                        )}
+                      </React.Fragment>
                     ))
                   )}
 
