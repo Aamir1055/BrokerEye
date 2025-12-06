@@ -960,7 +960,7 @@ export default function PositionModule() {
                       {Object.entries(netCardsVisible).map(([k, v]) => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={v} onChange={() => setNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px]">{k === 'netSymbols' ? 'NET Symbols' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
+                          <span className="text-[10px] text-gray-700">{k === 'netSymbols' ? 'NET Symbols' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
                         </label>
                       ))}
                     </div>
@@ -987,7 +987,7 @@ export default function PositionModule() {
                       {Object.keys(netVisibleColumns).map(k => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={netVisibleColumns[k]} onChange={() => setNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'loginCount' ? 'Login Count' : k}</span>
+                          <span className="text-[10px] text-gray-700 capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'loginCount' ? 'Login Count' : k}</span>
                         </label>
                       ))}
                     </div>
@@ -1121,7 +1121,7 @@ export default function PositionModule() {
                       {Object.entries(clientNetCardsVisible).map(([k, v]) => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={v} onChange={() => setClientNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px]">{k === 'clientNetRows' ? 'NET Rows' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
+                          <span className="text-[10px] text-gray-700">{k === 'clientNetRows' ? 'NET Rows' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
                         </label>
                       ))}
                     </div>
@@ -1148,7 +1148,7 @@ export default function PositionModule() {
                       {Object.keys(clientNetVisibleColumns).map(k => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={() => setClientNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'totalPositions' ? 'Positions' : k}</span>
+                          <span className="text-[10px] text-gray-700 capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'totalPositions' ? 'Positions' : k}</span>
                         </label>
                       ))}
                     </div>
