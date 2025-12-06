@@ -2399,6 +2399,13 @@ const Client2Page = () => {
   const handleCardDragStart = (e, cardKey) => {
     setDraggedCard(cardKey)
     e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.target)
+    e.target.style.opacity = '0.5'
+  }
+
+  const handleCardDragEnd = (e) => {
+    e.target.style.opacity = '1'
+    setDraggedCard(null)
   }
 
   const handleCardDragOver = (e) => {
@@ -2423,10 +2430,6 @@ const Client2Page = () => {
         localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
       }
     }
-  }
-
-  const handleCardDragEnd = () => {
-    setDraggedCard(null)
   }
 
   // Ensure faceCardOrder always contains all known keys (in case defaults grow over time)
@@ -3592,46 +3595,12 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
-                      draggable={true}
-                      data-card-key={cardKey}
+                      draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
+                      onDragEnd={handleCardDragEnd}
                       onDragOver={handleCardDragOver}
                       onDrop={(e) => handleCardDrop(e, cardKey)}
-                      onDragEnd={handleCardDragEnd}
-                      onTouchStart={(e) => {
-                        try {
-                          handleCardDragStart(e, cardKey)
-                        } catch {}
-                      }}
-                      onTouchMove={(e) => {
-                        // Prevent native scroll when dragging
-                        if (draggedCard) {
-                          e.preventDefault()
-                        }
-                      }}
-                      onTouchEnd={(e) => {
-                        try {
-                          const touch = e.changedTouches && e.changedTouches[0]
-                          if (touch) {
-                            const el = document.elementFromPoint(touch.clientX, touch.clientY)
-                            const targetEl = el?.closest('[data-card-key]')
-                            const targetKey = targetEl?.getAttribute('data-card-key')
-                            if (targetKey) {
-                              // Simulate drop on touch
-                              handleCardDrop(e, targetKey)
-                            }
-                          }
-                        } catch {}
-                        handleCardDragEnd()
-                      }}
-                      style={{ 
-                        opacity: draggedCard === cardKey ? 0.5 : 1, 
-                        touchAction: 'pan-y',
-                        userDrag: 'none',
-                        WebkitUserDrag: 'none',
-                        pointerEvents: 'auto'
-                      }}
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
                     >
                       <div className="flex items-start justify-between mb-1.5 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">
