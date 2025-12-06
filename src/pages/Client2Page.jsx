@@ -2966,7 +2966,9 @@ const Client2Page = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
+      // Don't close column selector for wheel/mouse interactions inside panel
+      const isWheel = event.type === 'wheel'
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target) && !isWheel) {
         setShowColumnSelector(false)
       }
       if (filterMenuRef.current && !filterMenuRef.current.contains(event.target)) {
@@ -3028,14 +3030,14 @@ const Client2Page = () => {
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
-            {/* Title */}
-            <div className="mb-2.5 pb-2.5 border-b border-gray-200">
-              <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
-              <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
-            </div>
-
-            {/* Action Buttons Row */}
-            <div className="flex items-center gap-2">
+            {/* Title + Actions */}
+            <div className="mb-2.5 pb-2.5 border-b border-gray-200 flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
+                <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
+              </div>
+              {/* Action Buttons Row moved to right of title */}
+              <div className="flex items-center gap-2">
                 {/* Filter Button */}
                 <div className="relative flex items-center" ref={filterMenuRef}>
                   <button
@@ -3452,6 +3454,60 @@ const Client2Page = () => {
                   />
                 </div>
               </button>
+                {/* IB Filter */}
+                <button
+                  onClick={() => setShowAccountFilterModal(true)}
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="IB Filter"
+                >
+                  <span className="text-xs font-medium text-[#374151]">IB Filter</span>
+                </button>
+
+                {/* Groups */}
+                <button
+                  onClick={() => setShowGroupsModal(true)}
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="Groups"
+                >
+                  <span className="text-xs font-medium text-[#374151]">Groups</span>
+                </button>
+
+                {/* Percentage toggle */}
+                <button
+                  onClick={() => setShowPercent(v => !v)}
+                  className="h-8 px-2 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  title="Percentage Mode"
+                >
+                  %
+                </button>
+
+                {/* Download */}
+                <button
+                  onClick={() => setShowExportMenu(v => !v)}
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="Download"
+                >
+                  <span className="text-xs font-medium text-[#374151]">Download</span>
+                </button>
+
+                {/* Card filter */}
+                <button
+                  onClick={() => setShowCardFilterMenu(v => !v)}
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="Card Filter"
+                >
+                  <span className="text-xs font-medium text-[#374151]">Card Filter</span>
+                </button>
+
+                {/* Cards visibility */}
+                <button
+                  onClick={() => setShowFaceCards(v => !v)}
+                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+                  title="Toggle Cards"
+                >
+                  <span className="text-xs font-medium text-[#374151]">Cards</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -3487,31 +3543,15 @@ const Client2Page = () => {
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
                   
-                  // Color scheme matching Figma
-                  let textColorClass = 'text-[#16A34A]' // Green for positive
-                  let iconColor = '#16A34A'
-                  let iconRotation = ''
-                  
-                  if (card.colorCheck) {
-                    if (rawValue >= 0) {
-                      textColorClass = 'text-[#16A34A]'
-                      iconColor = '#16A34A'
-                      iconRotation = ''
-                    } else {
-                      textColorClass = 'text-[#DC2626]'
-                      iconColor = '#DC2626'
-                      iconRotation = 'rotate-180'
-                    }
-                  } else {
-                    textColorClass = 'text-[#1F2937]'
-                  }
+                  // Static color (no inc/dec color change)
+                  const textColorClass = 'text-[#000000]'
                   
                   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
                   
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-4 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[100px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[64px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
@@ -3537,11 +3577,6 @@ const Client2Page = () => {
                         </div>
                       </div>
                       <div className={`text-base md:text-lg font-bold ${textColorClass} flex items-center gap-2 select-none min-h-[26px] leading-none`}>
-                        {card.colorCheck && (
-                          <svg width="10" height="10" viewBox="0 0 10 10" className={iconRotation}>
-                            <polygon points="5,0 10,10 0,10" fill={iconColor}/>
-                          </svg>
-                        )}
                         <span className="leading-none whitespace-nowrap">
                           {card.format === 'integer'
                             ? formatIndianNumber(String(Math.round(rawValue || 0)))
@@ -3685,6 +3720,7 @@ const Client2Page = () => {
                 }}
                 onClick={(e) => e.stopPropagation()}
                 onWheel={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
               >
                 <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
                   <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
