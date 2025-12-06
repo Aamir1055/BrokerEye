@@ -48,6 +48,9 @@ export default function Client2Module() {
   const CARD_ORDER_KEY = 'client2-module-order'
   const [dragStartLabel, setDragStartLabel] = useState(null)
   const [hoverIndex, setHoverIndex] = useState(null)
+  const [touchDragIndex, setTouchDragIndex] = useState(null)
+  const [touchStartX, setTouchStartX] = useState(null)
+  const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
   // API data state (restored)
   const [clients, setClients] = useState([])
@@ -818,7 +821,10 @@ export default function Client2Module() {
 
         {/* Face Cards Carousel */}
         <div className="pb-2 pl-5">
-          <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+          <div 
+            ref={scrollContainerRef}
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+          >
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
@@ -876,10 +882,54 @@ export default function Client2Module() {
                   setHoverIndex(null)
                 }}
                 onTouchStart={(e) => {
+                  setTouchDragIndex(i)
+                  setTouchStartX(e.touches[0].clientX)
                   e.currentTarget.style.transform = 'scale(0.98)'
+                  if (scrollContainerRef.current) {
+                    scrollContainerRef.current.style.overflowX = 'hidden'
+                  }
+                }}
+                onTouchMove={(e) => {
+                  if (touchDragIndex === i && touchStartX !== null) {
+                    const touchX = e.touches[0].clientX
+                    const diffX = Math.abs(touchX - touchStartX)
+                    if (diffX > 20) {
+                      e.preventDefault()
+                      e.currentTarget.style.transform = 'scale(1.05)'
+                      e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
+                    }
+                  }
                 }}
                 onTouchEnd={(e) => {
+                  if (scrollContainerRef.current) {
+                    scrollContainerRef.current.style.overflowX = 'auto'
+                  }
                   e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
+                  
+                  if (touchDragIndex !== null && touchStartX !== null) {
+                    const touchEndX = e.changedTouches[0].clientX
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    const cardWidth = rect.width
+                    const gap = 8
+                    const movedCards = Math.round((touchEndX - touchStartX) / (cardWidth + gap))
+                    
+                    if (Math.abs(movedCards) > 0) {
+                      const fromIndex = touchDragIndex
+                      const toIndex = Math.max(0, Math.min(orderedCards.length - 1, fromIndex + movedCards))
+                      
+                      if (fromIndex !== toIndex) {
+                        const newOrder = [...cardOrder]
+                        const [moved] = newOrder.splice(fromIndex, 1)
+                        newOrder.splice(toIndex, 0, moved)
+                        setCardOrder(newOrder)
+                        try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+                      }
+                    }
+                  }
+                  
+                  setTouchDragIndex(null)
+                  setTouchStartX(null)
                 }}
                 style={{
                   boxSizing: 'border-box',
