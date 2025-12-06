@@ -8,6 +8,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Date filter states for deals
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [dealsLoading, setDealsLoading] = useState(false)
+  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
 
   // Summary stats
   const [stats, setStats] = useState({
@@ -24,23 +30,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   })
 
   useEffect(() => {
-    fetchData()
+    fetchPositionsAndInitDeals()
   }, [client.login])
 
-  const fetchData = async () => {
+  const fetchPositionsAndInitDeals = async () => {
     try {
       setLoading(true)
       
-      // Use cached positions (same as desktop modal)
+      // Use cached positions
       const positionsData = allPositionsCache ? allPositionsCache.filter(pos => pos.login === client.login) : []
       setPositions(positionsData)
-
-      // Fetch deals using correct API with timestamps (last 30 days)
-      const to = Math.floor(Date.now() / 1000)
-      const from = to - (30 * 24 * 60 * 60)
-      const dealsRes = await brokerAPI.getClientDeals(client.login, from, to, 1000)
-      const dealsData = dealsRes.data?.deals || dealsRes.deals || []
-      setDeals(dealsData)
 
       // Calculate net positions
       const netPosMap = {}
@@ -61,18 +60,47 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       })
       setNetPositions(Object.values(netPosMap))
 
-      // Calculate stats
-      const totalPnL = positionsData.reduce((sum, p) => sum + (p.profit || 0), 0)
+      // Set default date range to Today
+      const today = new Date()
+      const todayStr = today.toISOString().split('T')[0]
+      setFromDate(todayStr)
+      setToDate(todayStr)
+      
+      // Fetch deals for today by default
+      const startOfDay = new Date(today)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(today)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000))
+      
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching client details:', error)
+      setLoading(false)
+    }
+  }
+
+  const fetchDealsWithDateFilter = async (fromTimestamp, toTimestamp) => {
+    try {
+      setDealsLoading(true)
+      
+      const dealsRes = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, 1000)
+      const dealsData = dealsRes.data?.deals || dealsRes.deals || []
+      setDeals(dealsData)
+      setHasAppliedFilter(true)
+
+      // Calculate stats with positions and deals data
+      const totalPnL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
       const lifetimePnL = client.lifetimePnL || 0
       const bookPnL = lifetimePnL + totalPnL
       const totalVolume = dealsData.reduce((sum, d) => sum + (d.volume || 0), 0)
       
-      // Calculate win rate
       const profitableDeals = dealsData.filter(d => (d.profit || 0) > 0).length
       const winRate = dealsData.length > 0 ? (profitableDeals / dealsData.length) * 100 : 0
 
       setStats({
-        positionsCount: positionsData.length,
+        positionsCount: positions.length,
         totalPnL,
         lifetimePnL,
         bookPnL,
@@ -84,11 +112,38 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         winRate
       })
 
-      setLoading(false)
+      setDealsLoading(false)
     } catch (error) {
-      console.error('Error fetching client details:', error)
-      setLoading(false)
+      console.error('Error fetching deals:', error)
+      setDeals([])
+      setDealsLoading(false)
     }
+  }
+
+  const handleApplyDateFilter = async () => {
+    if (!fromDate && !toDate) return
+
+    const fromDateObj = fromDate ? new Date(fromDate) : null
+    const toDateObj = toDate ? new Date(toDate) : null
+
+    if (fromDateObj) {
+      fromDateObj.setHours(0, 0, 0, 0)
+    }
+    if (toDateObj) {
+      toDateObj.setHours(23, 59, 59, 999)
+    }
+
+    const fromTimestamp = fromDateObj ? Math.floor(fromDateObj.getTime() / 1000) : 0
+    const toTimestamp = toDateObj ? Math.floor(toDateObj.getTime() / 1000) : Math.floor(Date.now() / 1000)
+
+    await fetchDealsWithDateFilter(fromTimestamp, toTimestamp)
+  }
+
+  const handleClearDateFilter = () => {
+    setFromDate('')
+    setToDate('')
+    setDeals([])
+    setHasAppliedFilter(false)
   }
 
   const formatNum = (num, decimals = 2) => {
@@ -316,9 +371,51 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </p>
         </div>
 
+        {/* Date Filter for Deals Tab */}
+        {activeTab === 'deals' && (
+          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-700">Date:</span>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <span className="text-xs text-gray-500">to</span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleApplyDateFilter}
+                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                >
+                  Apply
+                </button>
+                <button
+                  onClick={handleClearDateFilter}
+                  className="flex-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded hover:bg-gray-50 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Table Content */}
         <div className="flex-1 overflow-y-auto bg-gray-50">
           {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : activeTab === 'deals' && dealsLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
