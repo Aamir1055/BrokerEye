@@ -164,8 +164,8 @@ export default function Client2Module() {
     if (!Array.isArray(clients)) return []
     let filtered = [...clients]
 
-    // Apply group filter first (if active) - use client_login like other modules
-    filtered = filterByActiveGroup(filtered, 'client_login', 'client2')
+    // Apply group filter first (if active) - use login field
+    filtered = filterByActiveGroup(filtered, 'login', 'client2')
 
     // Has Floating: show clients where profit field (Floating Profit column) has a value (not blank/null/0)
     if (filters.hasFloating) {
@@ -816,7 +816,7 @@ export default function Client2Module() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#4B4B4B', fontSize: '10px', fontWeight: 600, lineHeight: '13px', paddingRight: '4px' }}>{card.label}</span>
+                  <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
                   <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
@@ -826,9 +826,9 @@ export default function Client2Module() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
                   <span style={{
-                    fontSize: '15px',
+                    fontSize: '13px',
                     fontWeight: 700,
-                    lineHeight: '16px',
+                    lineHeight: '14px',
                     letterSpacing: '-0.01em',
                     color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
                   }}>
