@@ -803,6 +803,11 @@ export default function PositionModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
+              <span className="font-semibold">{currentPage}</span>
+              <span className="text-[#9CA3AF] mx-1">/</span>
+              <span>{Math.ceil(filteredPositions.length / itemsPerPage)}</span>
+            </div>
             <button 
               onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredPositions.length / itemsPerPage), prev + 1))}
               disabled={currentPage >= Math.ceil(filteredPositions.length / itemsPerPage)}
@@ -906,10 +911,10 @@ export default function PositionModule() {
 
         {/* NET Position View */}
         {showNetPositions && (
-          <div className="px-4 space-y-4">
+          <div className="px-4 space-y-4 bg-[#F5F7FA] min-h-screen pb-6">
             {/* Summary Cards */}
             {(netCardsVisible.netSymbols || netCardsVisible.totalNetVolume || netCardsVisible.totalNetPL || netCardsVisible.totalLogins) && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 pt-4">
               {netCardsVisible.netSymbols && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">NET SYMBOLS</div>
@@ -1065,10 +1070,10 @@ export default function PositionModule() {
 
         {/* Client NET View */}
         {showClientNet && (
-          <div className="px-4 space-y-4">
+          <div className="px-4 space-y-4 bg-[#F5F7FA] min-h-screen pb-6">
             {/* Summary Cards */}
             {(clientNetCardsVisible.clientNetRows || clientNetCardsVisible.totalNetVolume || clientNetCardsVisible.totalNetPL || clientNetCardsVisible.totalLogins) && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 pt-4">
               {clientNetCardsVisible.clientNetRows && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">CLIENT NET ROWS</div>
