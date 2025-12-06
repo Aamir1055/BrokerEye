@@ -400,12 +400,32 @@ export default function PositionModule() {
   // Filter positions based on search
   const filteredPositions = useMemo(() => {
     let filtered = ibFilteredPositions.filter(pos => {
-      if (!searchInput.trim()) return true
-      const query = searchInput.toLowerCase()
-      return (
-        String(pos.symbol || '').toLowerCase().includes(query) ||
-        String(pos.login || '').toLowerCase().includes(query)
-      )
+      // Apply search filter
+      if (searchInput.trim()) {
+        const query = searchInput.toLowerCase()
+        const matchesSearch = (
+          String(pos.symbol || '').toLowerCase().includes(query) ||
+          String(pos.login || '').toLowerCase().includes(query)
+        )
+        if (!matchesSearch) return false
+      }
+
+      // Apply hasFloating filter
+      if (filters.hasFloating && (!pos.profit || pos.profit === 0)) {
+        return false
+      }
+
+      // Apply hasCredit filter
+      if (filters.hasCredit && (!pos.credit || pos.credit === 0)) {
+        return false
+      }
+
+      // Apply noDeposit filter
+      if (filters.noDeposit && pos.deposit && pos.deposit > 0) {
+        return false
+      }
+
+      return true
     })
 
     // Apply sorting
@@ -432,7 +452,7 @@ export default function PositionModule() {
     }
 
     return filtered
-  }, [ibFilteredPositions, searchInput, sortColumn, sortDirection])
+  }, [ibFilteredPositions, searchInput, sortColumn, sortDirection, filters])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -780,7 +800,7 @@ export default function PositionModule() {
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-center gap-3">
             <button 
-              onClick={() => setIsCustomizeOpen(true)} 
+              onClick={() => setIsFilterOpen(true)} 
               className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
