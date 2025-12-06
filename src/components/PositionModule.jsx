@@ -951,7 +951,7 @@ export default function PositionModule() {
               <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={netCardFilterRef}>
-                  <button onClick={() => setNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                  <button onClick={() => setNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Cards
                   </button>
@@ -978,7 +978,7 @@ export default function PositionModule() {
 
                 {/* Columns */}
                 <div className="relative" ref={netColumnSelectorRef}>
-                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                     Cols
                   </button>
@@ -1107,12 +1107,76 @@ export default function PositionModule() {
             </div>
             )}
 
+            {/* Face Cards Carousel */}
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Rows</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{clientNetPositions.length}</span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
+                    <div className={`w-[16px] h-[16px] ${clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'bg-green-500' : 'bg-red-500'} rounded-[3px] flex items-center justify-center flex-shrink-0`}>
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+                    </span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Logins</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{new Set(clientNetPositions.map(r=>r.login)).size}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Controls */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={clientNetCardFilterRef}>
-                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Cards
                   </button>
@@ -1139,7 +1203,7 @@ export default function PositionModule() {
 
                 {/* Columns */}
                 <div className="relative" ref={clientNetColumnSelectorRef}>
-                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                     Cols
                   </button>
