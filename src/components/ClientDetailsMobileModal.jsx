@@ -14,6 +14,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [toDate, setToDate] = useState('')
   const [dealsLoading, setDealsLoading] = useState(false)
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
+  const [quickFilter, setQuickFilter] = useState('Today')
 
   // Summary stats
   const [stats, setStats] = useState({
@@ -118,6 +119,54 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       setDeals([])
       setDealsLoading(false)
     }
+  }
+
+  const handleQuickFilter = async (filterType) => {
+    setQuickFilter(filterType)
+    const today = new Date()
+    let fromDateObj, toDateObj
+
+    switch(filterType) {
+      case 'Today':
+        fromDateObj = new Date(today)
+        toDateObj = new Date(today)
+        break
+      case 'Last Week':
+        fromDateObj = new Date(today)
+        fromDateObj.setDate(today.getDate() - 7)
+        toDateObj = new Date(today)
+        break
+      case 'Last Month':
+        fromDateObj = new Date(today)
+        fromDateObj.setMonth(today.getMonth() - 1)
+        toDateObj = new Date(today)
+        break
+      case 'Last 3 Months':
+        fromDateObj = new Date(today)
+        fromDateObj.setMonth(today.getMonth() - 3)
+        toDateObj = new Date(today)
+        break
+      case 'Last 6 Months':
+        fromDateObj = new Date(today)
+        fromDateObj.setMonth(today.getMonth() - 6)
+        toDateObj = new Date(today)
+        break
+      case 'All History':
+        fromDateObj = new Date('2020-01-01')
+        toDateObj = new Date(today)
+        break
+      default:
+        return
+    }
+
+    // Update date inputs
+    setFromDate(fromDateObj.toISOString().split('T')[0])
+    setToDate(toDateObj.toISOString().split('T')[0])
+
+    // Fetch deals
+    fromDateObj.setHours(0, 0, 0, 0)
+    toDateObj.setHours(23, 59, 59, 999)
+    await fetchDealsWithDateFilter(Math.floor(fromDateObj.getTime() / 1000), Math.floor(toDateObj.getTime() / 1000))
   }
 
   const handleApplyDateFilter = async () => {
@@ -381,29 +430,43 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <span className="text-xs text-gray-500">to</span>
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleApplyDateFilter}
-                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
                 >
                   Apply
                 </button>
                 <button
                   onClick={handleClearDateFilter}
-                  className="flex-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded hover:bg-gray-50 transition-colors"
                 >
                   Clear
                 </button>
+                <div className="relative flex-1">
+                  <select
+                    value={quickFilter}
+                    onChange={(e) => handleQuickFilter(e.target.value)}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Today">Today</option>
+                    <option value="Last Week">Last Week</option>
+                    <option value="Last Month">Last Month</option>
+                    <option value="Last 3 Months">Last 3 Months</option>
+                    <option value="Last 6 Months">Last 6 Months</option>
+                    <option value="All History">All History</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
