@@ -43,6 +43,53 @@ export default function PositionModule() {
   const [sortDirection, setSortDirection] = useState('asc')
   const [showNetPositions, setShowNetPositions] = useState(false)
   const [showClientNet, setShowClientNet] = useState(false)
+  
+  // NET Position states
+  const [netCurrentPage, setNetCurrentPage] = useState(1)
+  const netItemsPerPage = 10
+  const [netCardsVisible, setNetCardsVisible] = useState({
+    netSymbols: true,
+    totalNetVolume: true,
+    totalNetPL: true,
+    totalLogins: true
+  })
+  const [netCardFilterOpen, setNetCardFilterOpen] = useState(false)
+  const netCardFilterRef = useRef(null)
+  const [netVisibleColumns, setNetVisibleColumns] = useState({
+    symbol: true,
+    netType: true,
+    netVolume: true,
+    avgPrice: true,
+    totalProfit: true,
+    loginCount: true
+  })
+  const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
+  const netColumnSelectorRef = useRef(null)
+  const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
+  
+  // Client NET states
+  const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
+  const clientNetItemsPerPage = 10
+  const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
+    clientNetRows: true,
+    totalNetVolume: true,
+    totalNetPL: true,
+    totalLogins: true
+  })
+  const [clientNetCardFilterOpen, setClientNetCardFilterOpen] = useState(false)
+  const clientNetCardFilterRef = useRef(null)
+  const [clientNetVisibleColumns, setClientNetVisibleColumns] = useState({
+    login: true,
+    symbol: true,
+    netType: true,
+    netVolume: true,
+    avgPrice: true,
+    totalProfit: true,
+    totalPositions: true
+  })
+  const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
+  const clientNetColumnSelectorRef = useRef(null)
+  
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     firstName: false,
@@ -103,21 +150,27 @@ export default function PositionModule() {
     if (!positions || positions.length === 0) return []
 
     const symbolMap = new Map()
+    const getBaseSymbol = (s) => {
+      if (!s || typeof s !== 'string') return s
+      const parts = s.split(/[\.\-]/)
+      return parts[0] || s
+    }
 
     positions.forEach(pos => {
       const symbol = pos.symbol
       if (!symbol) return
+      const key = groupByBaseSymbol ? getBaseSymbol(symbol) : symbol
 
-      if (!symbolMap.has(symbol)) {
-        symbolMap.set(symbol, {
-          symbol,
+      if (!symbolMap.has(key)) {
+        symbolMap.set(key, {
+          key,
           buyPositions: [],
           sellPositions: [],
           logins: new Set()
         })
       }
 
-      const group = symbolMap.get(symbol)
+      const group = symbolMap.get(key)
       group.logins.add(pos.login)
 
       const rawAction = pos.action
@@ -170,7 +223,7 @@ export default function PositionModule() {
       const totalPositions = group.buyPositions.length + group.sellPositions.length
 
       netPositionsData.push({
-        symbol: group.symbol,
+        symbol: group.key,
         netType,
         netVolume: Math.abs(netVolume),
         avgPrice,
@@ -183,7 +236,7 @@ export default function PositionModule() {
     return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
   }
 
-  const netPositions = useMemo(() => calculateGlobalNetPositions(ibFilteredPositions), [ibFilteredPositions])
+  const netPositions = useMemo(() => calculateGlobalNetPositions(ibFilteredPositions), [ibFilteredPositions, groupByBaseSymbol])
 
   // Calculate Client NET positions (group by login then symbol)
   const calculateClientNetPositions = (positions) => {
@@ -306,6 +359,39 @@ export default function PositionModule() {
 
   // Calculate totals
   const totalProfit = filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0)
+
+  // Pagination calculations for NET and Client NET
+  const netTotalPages = Math.ceil(netPositions.length / netItemsPerPage)
+  const netPaginatedPositions = netPositions.slice(
+    (netCurrentPage - 1) * netItemsPerPage,
+    netCurrentPage * netItemsPerPage
+  )
+  
+  const clientNetTotalPages = Math.ceil(clientNetPositions.length / clientNetItemsPerPage)
+  const clientNetPaginatedPositions = clientNetPositions.slice(
+    (clientNetCurrentPage - 1) * clientNetItemsPerPage,
+    clientNetCurrentPage * clientNetItemsPerPage
+  )
+
+  // Click outside handlers
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (netCardFilterRef.current && !netCardFilterRef.current.contains(e.target)) {
+        setNetCardFilterOpen(false)
+      }
+      if (netColumnSelectorRef.current && !netColumnSelectorRef.current.contains(e.target)) {
+        setNetShowColumnSelector(false)
+      }
+      if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(e.target)) {
+        setClientNetCardFilterOpen(false)
+      }
+      if (clientNetColumnSelectorRef.current && !clientNetColumnSelectorRef.current.contains(e.target)) {
+        setClientNetShowColumnSelector(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Get active columns for dynamic table rendering
   const activeColumns = useMemo(() => {
@@ -820,26 +906,113 @@ export default function PositionModule() {
 
         {/* NET Position View */}
         {showNetPositions && (
-          <div className="px-4">
+          <div className="px-4 space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            {(netCardsVisible.netSymbols || netCardsVisible.totalNetVolume || netCardsVisible.totalNetPL || netCardsVisible.totalLogins) && (
+            <div className="grid grid-cols-2 gap-3">
+              {netCardsVisible.netSymbols && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">NET SYMBOLS</div>
                 <div className="text-lg font-bold text-[#1F2937]">{netPositions.length}</div>
               </div>
+              )}
+              {netCardsVisible.totalNetVolume && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET VOL</div>
                 <div className="text-lg font-bold text-[#1F2937]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
               </div>
+              )}
+              {netCardsVisible.totalNetPL && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET P/L</div>
                 <div className={`text-lg font-bold ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
                   {formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
                 </div>
               </div>
+              )}
+              {netCardsVisible.totalLogins && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL LOGINS</div>
                 <div className="text-lg font-bold text-[#1F2937]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>
+              </div>
+              )}
+            </div>
+            )}
+
+            {/* Controls */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                {/* Card Filter */}
+                <div className="relative" ref={netCardFilterRef}>
+                  <button onClick={() => setNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                    <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Cards
+                  </button>
+                  {netCardFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-40">
+                      {Object.entries(netCardsVisible).map(([k, v]) => (
+                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
+                          <input type="checkbox" checked={v} onChange={() => setNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
+                          <span className="text-[10px]">{k === 'netSymbols' ? 'NET Symbols' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Group Base Symbols */}
+                <button
+                  onClick={() => setGroupByBaseSymbol(v => !v)}
+                  className={`h-[32px] px-2 rounded-lg border text-[10px] font-medium flex items-center gap-1 ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-indigo-200'}`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                  Base
+                </button>
+
+                {/* Columns */}
+                <div className="relative" ref={netColumnSelectorRef}>
+                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                    <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    Cols
+                  </button>
+                  {netShowColumnSelector && (
+                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44 max-h-60 overflow-y-auto">
+                      {Object.keys(netVisibleColumns).map(k => (
+                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
+                          <input type="checkbox" checked={netVisibleColumns[k]} onChange={() => setNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
+                          <span className="text-[10px] capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'loginCount' ? 'Login Count' : k}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setNetCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={netCurrentPage === 1}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${netCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <div className="text-[10px] font-medium text-gray-700">
+                  <span className="font-semibold">{netCurrentPage}</span>
+                  <span className="text-gray-400 mx-1">/</span>
+                  <span>{netTotalPages}</span>
+                </div>
+                <button
+                  onClick={() => setNetCurrentPage(p => Math.min(netTotalPages, p + 1))}
+                  disabled={netCurrentPage === netTotalPages}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${netCurrentPage === netTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -848,44 +1021,40 @@ export default function PositionModule() {
               <div className="overflow-x-auto">
                 <div className="min-w-full">
                   {/* Header */}
-                  <div className="grid grid-cols-6 bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    <div className="flex items-center justify-center px-1">Symbol</div>
-                    <div className="flex items-center justify-center px-1">Type</div>
-                    <div className="flex items-center justify-center px-1">NET Vol</div>
-                    <div className="flex items-center justify-center px-1">Avg Price</div>
-                    <div className="flex items-center justify-center px-1">P/L</div>
-                    <div className="flex items-center justify-center px-1">Logins</div>
+                  <div className={`grid bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1">Symbol</div>}
+                    {netVisibleColumns.netType && <div className="flex items-center justify-center px-1">Type</div>}
+                    {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">NET Vol</div>}
+                    {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">Avg Price</div>}
+                    {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">P/L</div>}
+                    {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1">Logins</div>}
                   </div>
 
                   {/* Body */}
-                  {netPositions.length === 0 ? (
+                  {netPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
                   ) : (
-                    netPositions.map((pos, idx) => (
-                      <div key={idx} className="grid grid-cols-6 text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
-                        <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>
-                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>
-                          {pos.netType}
-                        </div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>
-                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatNum(pos.totalProfit)}
-                        </div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>
+                    netPaginatedPositions.map((pos, idx) => (
+                      <div key={idx} className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                        {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>}
+                        {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
+                        {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
+                        {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
+                        {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                        {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>}
                       </div>
                     ))
                   )}
 
                   {/* Footer */}
-                  {netPositions.length > 0 && (
-                    <div className="grid grid-cols-6 bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      <div className="flex items-center justify-center px-1">Total</div>
-                      <div className="flex items-center justify-center px-1">-</div>
-                      <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
-                      <div className="flex items-center justify-center px-1">-</div>
-                      <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>
-                      <div className="flex items-center justify-center px-1">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>
+                  {netPaginatedPositions.length > 0 && (
+                    <div className={`grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1">Total</div>}
+                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1">-</div>}
+                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">-</div>}
+                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
                     </div>
                   )}
                 </div>
@@ -896,17 +1065,23 @@ export default function PositionModule() {
 
         {/* Client NET View */}
         {showClientNet && (
-          <div className="px-4">
+          <div className="px-4 space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            {(clientNetCardsVisible.clientNetRows || clientNetCardsVisible.totalNetVolume || clientNetCardsVisible.totalNetPL || clientNetCardsVisible.totalLogins) && (
+            <div className="grid grid-cols-2 gap-3">
+              {clientNetCardsVisible.clientNetRows && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">CLIENT NET ROWS</div>
                 <div className="text-lg font-bold text-[#1F2937]">{clientNetPositions.length}</div>
               </div>
+              )}
+              {clientNetCardsVisible.totalNetVolume && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET VOL</div>
                 <div className="text-lg font-bold text-[#1F2937]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
               </div>
+              )}
+              {clientNetCardsVisible.totalNetPL && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET P/L</div>
                 <div className={`text-lg font-bold ${
@@ -915,9 +1090,90 @@ export default function PositionModule() {
                   {formatNum(Math.abs(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0)))}
                 </div>
               </div>
+              )}
+              {clientNetCardsVisible.totalLogins && (
               <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
                 <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL LOGINS</div>
                 <div className="text-lg font-bold text-[#1F2937]">{new Set(clientNetPositions.map(r=>r.login)).size}</div>
+              </div>
+              )}
+            </div>
+            )}
+
+            {/* Controls */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                {/* Card Filter */}
+                <div className="relative" ref={clientNetCardFilterRef}>
+                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                    <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Cards
+                  </button>
+                  {clientNetCardFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-40">
+                      {Object.entries(clientNetCardsVisible).map(([k, v]) => (
+                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
+                          <input type="checkbox" checked={v} onChange={() => setClientNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
+                          <span className="text-[10px]">{k === 'clientNetRows' ? 'NET Rows' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Group Base Symbols */}
+                <button
+                  onClick={() => setGroupByBaseSymbol(v => !v)}
+                  className={`h-[32px] px-2 rounded-lg border text-[10px] font-medium flex items-center gap-1 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-blue-200'}`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                  Base
+                </button>
+
+                {/* Columns */}
+                <div className="relative" ref={clientNetColumnSelectorRef}>
+                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[32px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1">
+                    <svg className="w-3 h-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                    Cols
+                  </button>
+                  {clientNetShowColumnSelector && (
+                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44 max-h-60 overflow-y-auto">
+                      {Object.keys(clientNetVisibleColumns).map(k => (
+                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
+                          <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={() => setClientNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
+                          <span className="text-[10px] capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'totalPositions' ? 'Positions' : k}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={clientNetCurrentPage === 1}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <div className="text-[10px] font-medium text-gray-700">
+                  <span className="font-semibold">{clientNetCurrentPage}</span>
+                  <span className="text-gray-400 mx-1">/</span>
+                  <span>{clientNetTotalPages}</span>
+                </div>
+                <button
+                  onClick={() => setClientNetCurrentPage(p => Math.min(clientNetTotalPages, p + 1))}
+                  disabled={clientNetCurrentPage === clientNetTotalPages}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -926,51 +1182,47 @@ export default function PositionModule() {
               <div className="overflow-x-auto">
                 <div className="min-w-full">
                   {/* Header */}
-                  <div className="grid grid-cols-7 bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    <div className="flex items-center justify-center px-1">Login</div>
-                    <div className="flex items-center justify-center px-1">Symbol</div>
-                    <div className="flex items-center justify-center px-1">Type</div>
-                    <div className="flex items-center justify-center px-1">NET Vol</div>
-                    <div className="flex items-center justify-center px-1">Avg Price</div>
-                    <div className="flex items-center justify-center px-1">P/L</div>
-                    <div className="flex items-center justify-center px-1">Positions</div>
+                  <div className={`grid bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]`} style={{gridTemplateColumns: Object.values(clientNetVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1">Login</div>}
+                    {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1">Symbol</div>}
+                    {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1">Type</div>}
+                    {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">NET Vol</div>}
+                    {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">Avg Price</div>}
+                    {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">P/L</div>}
+                    {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">Positions</div>}
                   </div>
 
                   {/* Body */}
-                  {clientNetPositions.length === 0 ? (
+                  {clientNetPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No Client NET positions found</div>
                   ) : (
-                    clientNetPositions.map((pos, idx) => (
-                      <div key={idx} className="grid grid-cols-7 text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
-                        <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.login}</div>
-                        <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>
-                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
+                    clientNetPaginatedPositions.map((pos, idx) => (
+                      <div key={idx} className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(clientNetVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.login}</div>}
+                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>}
+                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {pos.netType}
-                        </div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>
-                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
+                        }`}>{pos.netType}</div>}
+                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
+                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
+                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
                           pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatNum(pos.totalProfit)}
-                        </div>
-                        <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>
+                        }`}>{formatNum(pos.totalProfit)}</div>}
+                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
                       </div>
                     ))
                   )}
 
                   {/* Footer */}
-                  {clientNetPositions.length > 0 && (
-                    <div className="grid grid-cols-7 bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      <div className="flex items-center justify-center px-1">Total</div>
-                      <div className="flex items-center justify-center px-1">-</div>
-                      <div className="flex items-center justify-center px-1">-</div>
-                      <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
-                      <div className="flex items-center justify-center px-1">-</div>
-                      <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>
-                      <div className="flex items-center justify-center px-1">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>
+                  {clientNetPaginatedPositions.length > 0 && (
+                    <div className={`grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]`} style={{gridTemplateColumns: Object.values(clientNetVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
+                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1">Total</div>}
+                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1">-</div>}
+                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1">-</div>}
+                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">-</div>}
+                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
                 </div>
