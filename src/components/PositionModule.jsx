@@ -71,6 +71,7 @@ export default function PositionModule() {
   const netColumnSelectorRef = useRef(null)
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
   const [expandedNetSymbols, setExpandedNetSymbols] = useState(new Set())
+  const [netSearchInput, setNetSearchInput] = useState('')
   
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
@@ -96,6 +97,7 @@ export default function PositionModule() {
   })
   const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
   const clientNetColumnSelectorRef = useRef(null)
+  const [clientNetSearchInput, setClientNetSearchInput] = useState('')
   
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -374,6 +376,27 @@ export default function PositionModule() {
 
   const clientNetPositions = useMemo(() => calculateClientNetPositions(ibFilteredPositions), [ibFilteredPositions, groupByBaseSymbol])
 
+  // Filter NET positions based on search
+  const filteredNetPositions = useMemo(() => {
+    if (!netSearchInput.trim()) return netPositions
+    const query = netSearchInput.toLowerCase()
+    return netPositions.filter(pos => 
+      String(pos.symbol || '').toLowerCase().includes(query) ||
+      String(pos.netType || '').toLowerCase().includes(query)
+    )
+  }, [netPositions, netSearchInput])
+
+  // Filter Client NET positions based on search
+  const filteredClientNetPositions = useMemo(() => {
+    if (!clientNetSearchInput.trim()) return clientNetPositions
+    const query = clientNetSearchInput.toLowerCase()
+    return clientNetPositions.filter(pos =>
+      String(pos.login || '').toLowerCase().includes(query) ||
+      String(pos.symbol || '').toLowerCase().includes(query) ||
+      String(pos.netType || '').toLowerCase().includes(query)
+    )
+  }, [clientNetPositions, clientNetSearchInput])
+
   // Filter positions based on search
   const filteredPositions = useMemo(() => {
     let filtered = ibFilteredPositions.filter(pos => {
@@ -427,14 +450,14 @@ export default function PositionModule() {
   const totalProfit = filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0)
 
   // Pagination calculations for NET and Client NET
-  const netTotalPages = Math.ceil(netPositions.length / netItemsPerPage)
-  const netPaginatedPositions = netPositions.slice(
+  const netTotalPages = Math.ceil(filteredNetPositions.length / netItemsPerPage)
+  const netPaginatedPositions = filteredNetPositions.slice(
     (netCurrentPage - 1) * netItemsPerPage,
     netCurrentPage * netItemsPerPage
   )
   
-  const clientNetTotalPages = Math.ceil(clientNetPositions.length / clientNetItemsPerPage)
-  const clientNetPaginatedPositions = clientNetPositions.slice(
+  const clientNetTotalPages = Math.ceil(filteredClientNetPositions.length / clientNetItemsPerPage)
+  const clientNetPaginatedPositions = filteredClientNetPositions.slice(
     (clientNetCurrentPage - 1) * clientNetItemsPerPage,
     clientNetCurrentPage * clientNetItemsPerPage
   )
@@ -1003,9 +1026,9 @@ export default function PositionModule() {
 
         {/* NET Position View */}
         {showNetPositions && (
-          <div className="px-4 bg-[#F5F7FA] min-h-screen">
+          <div className="bg-[#F5F7FA] min-h-screen">
             {/* Face Cards Carousel */}
-            <div className="pb-2">
+            <div className="pb-2 px-4">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
@@ -1068,8 +1091,26 @@ export default function PositionModule() {
               </div>
             </div>
 
+            {/* Search Bar */}
+            <div className="pb-3 px-4">
+              <div className="flex items-center gap-1">
+                <div className="flex-1 min-w-0 h-[32px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    value={netSearchInput}
+                    onChange={(e) => setNetSearchInput(e.target.value)}
+                    className="flex-1 text-[11px] outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Controls */}
-            <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center justify-between gap-2 flex-wrap px-4">
               <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={netCardFilterRef}>
@@ -1157,7 +1198,8 @@ export default function PositionModule() {
             </div>
 
             {/* NET Positions Table */}
-            <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+            <div className="pt-3 px-4">
+              <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto">
                 <div className="min-w-full">
                   {/* Header */}
@@ -1252,14 +1294,15 @@ export default function PositionModule() {
                 </div>
               </div>
             </div>
+            </div>
           </div>
         )}
 
         {/* Client NET View */}
         {showClientNet && (
-          <div className="px-4 bg-[#F5F7FA] min-h-screen">
+          <div className="bg-[#F5F7FA] min-h-screen">
             {/* Face Cards Carousel */}
-            <div className="pb-2">
+            <div className="pb-2 px-4">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
@@ -1322,8 +1365,26 @@ export default function PositionModule() {
               </div>
             </div>
 
+            {/* Search Bar */}
+            <div className="pb-3 px-4">
+              <div className="flex items-center gap-1">
+                <div className="flex-1 min-w-0 h-[32px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    value={clientNetSearchInput}
+                    onChange={(e) => setClientNetSearchInput(e.target.value)}
+                    className="flex-1 text-[11px] outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Controls */}
-            <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center justify-between gap-2 flex-wrap px-4">
               <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={clientNetCardFilterRef}>
@@ -1409,7 +1470,8 @@ export default function PositionModule() {
             </div>
 
             {/* Client NET Table */}
-            <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+            <div className="pt-3 px-4">
+              <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto">
                 <div className="min-w-full">
                   {/* Header */}
@@ -1464,6 +1526,7 @@ export default function PositionModule() {
                   )}
                 </div>
               </div>
+            </div>
             </div>
           </div>
         )}
