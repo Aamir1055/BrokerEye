@@ -499,7 +499,19 @@ export default function LiveDealingModule() {
         break
       case 'login':
         value = deal.login || '-'
-        break
+        return (
+          <div 
+            className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            style={{
+              border: 'none', 
+              outline: 'none', 
+              boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+            }}
+            onClick={() => setSelectedClient({ login: deal.login, email: deal.email || '' })}
+          >
+            <span className="truncate">{value}</span>
+          </div>
+        )
       case 'netType':
         const action = deal.rawData?.action || '-'
         return (
@@ -1210,6 +1222,15 @@ export default function LiveDealingModule() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Client Details Modal */}
+      {selectedClient && (
+        <ClientDetailsMobileModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          allPositionsCache={[]}
+        />
       )}
     </div>
   )
