@@ -2744,7 +2744,7 @@ const PositionsPage = () => {
                       title="Toggle grouping by base symbol"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
-                      Groups
+                      Groups base Symbols
                     </button>
                     
                     {/* Columns selector */}
