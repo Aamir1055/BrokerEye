@@ -176,8 +176,8 @@ export default function Client2Module() {
     if (!Array.isArray(clients)) return []
     let filtered = [...clients]
 
-    // Apply group filter first (if active) - ensure correct login field key
-    filtered = filterByActiveGroup(filtered, 'login', 'client2')
+    // Apply group filter first (if active) - use client_login like other modules
+    filtered = filterByActiveGroup(filtered, 'client_login', 'client2')
 
     // Has Floating: show clients where profit field (Floating Profit column) has a value (not blank/null/0)
     if (filters.hasFloating) {
@@ -836,15 +836,15 @@ export default function Client2Module() {
                     </svg>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
                   <span style={{
-                    fontSize: '15.5px',
+                    fontSize: '15px',
                     fontWeight: 700,
-                    lineHeight: '13px',
+                    lineHeight: '16px',
                     letterSpacing: '-0.01em',
                     color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
                   }}>
-                    {card.numericValue > 0 && '▲ '}{card.numericValue < 0 && '▼ '}{card.value === '' || card.value === undefined ? '0.00' : card.value}
+                    {card.value === '' || card.value === undefined ? '0.00' : card.value}
                   </span>
                 </div>
               </div>
