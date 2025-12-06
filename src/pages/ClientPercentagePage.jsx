@@ -15,7 +15,7 @@ const ClientPercentagePage = () => {
   // Detect mobile device
   const [isMobile, setIsMobile] = useState(false)
   
-  const { filterByActiveGroup, activeGroupFilters } = useGroups()
+  const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const { positions: cachedPositions } = useData()
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -417,10 +417,10 @@ const ClientPercentagePage = () => {
   const sortedClients = () => {
     const searched = searchClients(clients)
     
-    // Apply group filter if active
+    // Apply group filter if active (use 'client_login' as the login field and 'clientpercentage' as module name)
     let groupFiltered = filterByActiveGroup(searched, 'client_login', 'clientpercentage')
     
-    // Apply IB filter if active
+    // Apply IB filter if active (use 'client_login' as the login field)
     let ibFiltered = filterByActiveIB(groupFiltered, 'client_login')
     
     // Apply column filters
@@ -832,10 +832,14 @@ const ClientPercentagePage = () => {
               <GroupSelector 
                 moduleName="clientpercentage" 
                 onCreateClick={() => {
+                  console.log('[ClientPercentagePage] onCreateClick called')
+                  console.log('[ClientPercentagePage] Current showGroupModal:', showGroupModal)
                   setEditingGroup(null)
                   setShowGroupModal(true)
+                  console.log('[ClientPercentagePage] Set showGroupModal to true')
                 }}
                 onEditClick={(group) => {
+                  console.log('[ClientPercentagePage] onEditClick called for group:', group)
                   setEditingGroup(group)
                   setShowGroupModal(true)
                 }}
@@ -1031,10 +1035,6 @@ const ClientPercentagePage = () => {
             </div>
           </div>
           )}
-
-          <div className="text-sm text-gray-600 font-medium bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mb-4">
-            Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, sortedClients().length)} of {sortedClients().length}
-          </div>
 
           {/* Table */}
           {clients.length === 0 && !loading ? (

@@ -435,6 +435,18 @@ export const brokerAPI = {
     throw new Error('No working deals endpoint found')
   },
   
+  // Get positions by login
+  getPositionsByLogin: async (login) => {
+    const response = await api.get(`/api/broker/clients/${login}/positions`)
+    return response.data
+  },
+  
+  // Get deals by login
+  getDealsByLogin: async (login, limit = 1000) => {
+    const response = await api.get(`/api/broker/clients/${login}/deals?limit=${limit}`)
+    return response.data
+  },
+  
   // Deposit funds
   depositFunds: async (login, amount, comment) => {
     const response = await api.post(`/api/broker/clients/${login}/deposit`, {

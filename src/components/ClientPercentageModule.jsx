@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
+import CustomizeViewModal from './CustomizeViewModal'
 import FilterModal from './FilterModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
@@ -31,7 +32,7 @@ export default function ClientPercentageModule() {
   const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
-  const [filters, setFilters] = useState({})
+  const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -420,7 +421,9 @@ export default function ClientPercentageModule() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex gap-[8px]">
               <button 
-                onClick={() => setIsCustomizeOpen(true)} 
+                onClick={() => {
+                  setIsCustomizeOpen(true)
+                }} 
                 className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -617,70 +620,54 @@ export default function ClientPercentageModule() {
         </div>
       </div>
 
-      {/* Customize View Bottom Sheet */}
-      {isCustomizeOpen && (
-        <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/35" onClick={() => setIsCustomizeOpen(false)} />
-          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
-            <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mt-2" />
-            <div className="px-4 py-3 flex items-center justify-between border-t border-[#F0F0F0]">
-              <button onClick={() => setIsCustomizeOpen(false)} className="w-9 h-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
-              </button>
-              <div className="text-[16px] font-semibold text-[#111827]">Customize view</div>
-              <div className="w-9 h-9" />
-            </div>
-            <div className="px-4 pb-4">
-              <div className="divide-y divide-[#EFEFEF]">
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
-                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="3" y="13" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="13" width="8" height="6" rx="1" stroke="#1F2937"/></svg>
-                  </span>
-                  <span className="text-[14px] text-[#111827]">Groups</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* CustomizeView Modal */}
+      <CustomizeViewModal
+        isOpen={isCustomizeOpen}
+        onClose={() => setIsCustomizeOpen(false)}
+        onFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsFilterOpen(true)
+        }}
+        onIBFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsIBFilterOpen(true)
+        }}
+        onGroupsClick={() => {
+          setIsCustomizeOpen(false)
+          setIsLoginGroupsOpen(true)
+        }}
+        onReset={() => {
+          setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+          clearIBSelection()
+          setActiveGroupFilter('clientpercentage', null)
+        }}
+        onApply={() => {
+          setIsCustomizeOpen(false)
+        }}
+      />
 
       {/* Filter Modal */}
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
-        onApply={(newFilters) => handleModalApply('filter', newFilters)}
-        currentFilters={filters}
+        onApply={(newFilters) => {
+          setFilters(newFilters)
+          setIsFilterOpen(false)
+        }}
+        filters={filters}
       />
 
       {/* IB Filter Modal */}
       <IBFilterModal
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
-        onApply={(ibId) => handleModalApply('ibfilter', ibId)}
-        selectedIB={selectedIB}
-      />
-
-      {/* Group Modal */}
-      <GroupModal
-        isOpen={isGroupOpen}
-        onClose={() => setIsGroupOpen(false)}
-        onApply={handleGroupApply}
-        groups={groups}
-        activeGroupId={getActiveGroupFilter('clientpercentage')}
-        onCreateNew={() => {
-          setIsGroupOpen(false)
-          setEditingGroup(null)
-          setIsLoginGroupModalOpen(true)
+        onSelectIB={(ib) => {
+          selectIB(ib)
+          setIsIBFilterOpen(false)
         }}
-        onEdit={(group) => {
-          setIsGroupOpen(false)
-          setEditingGroup(group)
-          setIsLoginGroupModalOpen(true)
-        }}
-        onDelete={(groupId) => {
-          if (window.confirm('Are you sure you want to delete this group?')) {
-            deleteGroup(groupId)
-          }
+        onClearSelection={() => {
+          clearIBSelection()
+          setIsIBFilterOpen(false)
         }}
       />
 
@@ -688,15 +675,35 @@ export default function ClientPercentageModule() {
       <LoginGroupsModal
         isOpen={isLoginGroupsOpen}
         onClose={() => setIsLoginGroupsOpen(false)}
-        onCreateNew={() => {
+        groups={groups.map(g => ({
+          ...g,
+          loginCount: g.range 
+            ? (g.range.to - g.range.from + 1) 
+            : g.loginIds.length
+        }))}
+        activeGroupName={getActiveGroupFilter('clientpercentage')}
+        onSelectGroup={(group) => {
+          if (group === null) {
+            setActiveGroupFilter('clientpercentage', null)
+          } else {
+            setActiveGroupFilter('clientpercentage', group.name)
+          }
+          setIsLoginGroupsOpen(false)
+        }}
+        onCreateGroup={() => {
           setIsLoginGroupsOpen(false)
           setEditingGroup(null)
           setIsLoginGroupModalOpen(true)
         }}
-        onEdit={(group) => {
+        onEditGroup={(group) => {
           setIsLoginGroupsOpen(false)
           setEditingGroup(group)
           setIsLoginGroupModalOpen(true)
+        }}
+        onDeleteGroup={(group) => {
+          if (window.confirm(`Delete group "${group.name}"?`)) {
+            deleteGroup(group.name)
+          }
         }}
       />
 

@@ -16,6 +16,9 @@ import { useIB } from '../contexts/IBContext'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const Client2Page = () => {
+  // Get positions from DataContext for ClientPositionsModal
+  const { positions: cachedPositions } = useData()
+  
   // Mobile detection (initialize from window to avoid first-render desktop effects)
   const [isMobile, setIsMobile] = useState(() => {
     try { return typeof window !== 'undefined' ? window.innerWidth <= 768 : false } catch { return false }

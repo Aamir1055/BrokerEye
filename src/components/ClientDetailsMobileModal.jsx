@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
 
-const ClientDetailsMobileModal = ({ client, onClose }) => {
+const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [netPositions, setNetPositions] = useState([])
@@ -31,13 +31,14 @@ const ClientDetailsMobileModal = ({ client, onClose }) => {
     try {
       setLoading(true)
       
-      // Fetch positions
-      const positionsRes = await brokerAPI.getPositionsByLogin(client.login)
-      const positionsData = positionsRes.data?.positions || positionsRes.positions || []
+      // Use cached positions (same as desktop modal)
+      const positionsData = allPositionsCache ? allPositionsCache.filter(pos => pos.login === client.login) : []
       setPositions(positionsData)
 
-      // Fetch deals
-      const dealsRes = await brokerAPI.getDealsByLogin(client.login, 1000)
+      // Fetch deals using correct API with timestamps (last 30 days)
+      const to = Math.floor(Date.now() / 1000)
+      const from = to - (30 * 24 * 60 * 60)
+      const dealsRes = await brokerAPI.getClientDeals(client.login, from, to, 1000)
       const dealsData = dealsRes.data?.deals || dealsRes.deals || []
       setDeals(dealsData)
 
@@ -127,23 +128,31 @@ const ClientDetailsMobileModal = ({ client, onClose }) => {
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Login</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Balance</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Floating Profit</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Equity</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Name</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Position</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Symbol</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Volume</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Price</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Profit</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {filteredPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs text-blue-600">{client.login}</td>
-              <td className="px-3 py-2 text-xs">{formatNum(stats.balance)}</td>
-              <td className={`px-3 py-2 text-xs ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.totalPnL)}
+              <td className="px-3 py-2 text-xs text-blue-600">{pos.position || pos.ticket || '-'}</td>
+              <td className="px-3 py-2 text-xs font-medium">{pos.symbol || '-'}</td>
+              <td className="px-3 py-2 text-xs">
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                  pos.action === 'Buy' || pos.type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {pos.action || pos.type || '-'}
+                </span>
               </td>
-              <td className="px-3 py-2 text-xs">{formatNum(stats.equity)}</td>
-              <td className="px-3 py-2 text-xs">{client.name || client.fullName || '-'}</td>
+              <td className="px-3 py-2 text-xs">{formatNum(pos.volume || 0)}</td>
+              <td className="px-3 py-2 text-xs">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>
+              <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(pos.profit || 0)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -326,18 +335,18 @@ const ClientDetailsMobileModal = ({ client, onClose }) => {
         <div className="px-4 py-3 bg-white border-t border-gray-200">
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Positions</p>
-              <p className="text-lg font-bold">{stats.positionsCount}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Total P/L</p>
-              <p className={`text-lg font-bold ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
+              <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(stats.totalPnL)}
               </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Lifetime PNL</p>
-              <p className={`text-lg font-bold ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
+              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(stats.lifetimePnL)}
               </p>
             </div>
@@ -345,33 +354,33 @@ const ClientDetailsMobileModal = ({ client, onClose }) => {
 
           <div className="grid grid-cols-3 gap-2 mt-2">
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Book PNL</p>
-              <p className={`text-lg font-bold ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
+              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(stats.bookPnL)}
               </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Balance</p>
-              <p className="text-lg font-bold">{formatNum(stats.balance)}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Credit</p>
-              <p className="text-lg font-bold">{formatNum(stats.credit)}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 mt-2">
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Equity</p>
-              <p className="text-lg font-bold">{formatNum(stats.equity)}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Total Deals</p>
-              <p className="text-lg font-bold">{stats.totalDeals}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase">Win Rate</p>
-              <p className="text-lg font-bold text-green-600">{formatNum(stats.winRate)}%</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
+              <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
             </div>
           </div>
         </div>

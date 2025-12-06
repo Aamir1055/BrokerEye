@@ -8,6 +8,7 @@ import LoginGroupModal from './LoginGroupModal'
 import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { useData } from '../contexts/DataContext'
 import { brokerAPI } from '../services/api'
 
 const formatNum = (n) => {
@@ -18,6 +19,7 @@ const formatNum = (n) => {
 
 export default function Client2Module() {
   const navigate = useNavigate()
+  const { positions: cachedPositions } = useData()
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [activeCardIndex, setActiveCardIndex] = useState(0)
@@ -327,13 +329,13 @@ export default function Client2Module() {
       { label: addPercent('Margin'), value: formatNum(t.margin || 0), unit: 'USD', numericValue: t.margin || 0 },
       { label: addPercent('Margin Free'), value: formatNum(t.marginFree || 0), unit: 'USD', numericValue: t.marginFree || 0 },
       { label: addPercent('Margin Initial'), value: formatNum(t.marginInitial || 0), unit: 'USD', numericValue: t.marginInitial || 0 },
-      { label: 'Margin Level', value: formatNum(t.marginLevel || 0), unit: '%', numericValue: t.marginLevel || 0 },
+      { label: addPercent('Margin Level'), value: formatNum(t.marginLevel || 0), unit: showPercent ? 'USD' : '%', numericValue: t.marginLevel || 0 },
       { label: addPercent('Margin Maintenance'), value: formatNum(t.marginMaintenance || 0), unit: 'USD', numericValue: t.marginMaintenance || 0 },
       { label: addPercent('P&L'), value: formatNum(t.pnl || 0), unit: 'USD', numericValue: t.pnl || 0 },
       { label: addPercent('Previous Equity'), value: formatNum(t.previousEquity || 0), unit: 'USD', numericValue: t.previousEquity || 0 },
       { label: addPercent('Profit'), value: formatNum(t.profit || 0), unit: 'USD', numericValue: t.profit || 0 },
       { label: addPercent('SO Equity'), value: formatNum(t.soEquity || 0), unit: 'USD', numericValue: t.soEquity || 0 },
-      { label: 'SO Level', value: formatNum(t.soLevel || 0), unit: '%', numericValue: t.soLevel || 0 },
+      { label: addPercent('SO Level'), value: formatNum(t.soLevel || 0), unit: showPercent ? 'USD' : '%', numericValue: t.soLevel || 0 },
       { label: addPercent('SO Margin'), value: formatNum(t.soMargin || 0), unit: 'USD', numericValue: t.soMargin || 0 },
       { label: addPercent('Storage'), value: formatNum(t.storage || 0), unit: 'USD', numericValue: t.storage || 0 },
       { label: addPercent('This Month Bonus In'), value: formatNum(t.thisMonthBonusIn || 0), unit: 'USD', numericValue: t.thisMonthBonusIn || 0 },
@@ -821,7 +823,7 @@ export default function Client2Module() {
         <div className="pb-2 pl-5">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4 h-[48px]"
           >
             {orderedCards.map((card, i) => (
               <div 
@@ -1087,6 +1089,15 @@ export default function Client2Module() {
       <IBFilterModal
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
+        onSelectIB={(ib) => {
+          if (ib) {
+            selectIB(ib)
+          } else {
+            clearIBSelection()
+          }
+          setIsIBFilterOpen(false)
+        }}
+        currentSelectedIB={selectedIB}
       />
 
       {/* Group Modal */}
@@ -1467,6 +1478,7 @@ export default function Client2Module() {
         <ClientDetailsMobileModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
+          allPositionsCache={cachedPositions}
         />
       )}
     </div>

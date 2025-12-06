@@ -750,7 +750,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               }}>Login</span>
             </div>
             {/* Rows */}
-            {['301246', '300154', '301310', '302802', '301475', '300399', '301771', '300073', '300073', '300888', '300888'].map((login, idx) => (
+            {clients.map((client, idx) => (
               <div key={idx} style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -768,7 +768,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   fontSize: '12px',
                   lineHeight: '15px',
                   color: '#1A63BC'
-                }}>{login}</span>
+                }}>{client?.login || ''}</span>
               </div>
             ))}
           </div>
@@ -807,7 +807,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               }}>Balance</span>
             </div>
             {/* Rows */}
-            {['5.03', '0.00', '0.00', '0.00', '-0.72', '103.73', '20.05', '54.54', '0.00', '0.00', '0.00'].map((balance, idx) => (
+            {clients.map((client, idx) => (
               <div key={idx} style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -825,7 +825,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   fontSize: '12px',
                   lineHeight: '15px',
                   color: '#4B4B4B'
-                }}>{balance}</span>
+                }}>{(client?.balance || 0).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -865,7 +865,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               }}>Floating Profit</span>
             </div>
             {/* Rows */}
-            {['0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '-5.89', '0.00', '0.00', '0.00', '0.00'].map((profit, idx) => (
+            {clients.map((client, idx) => (
               <div key={idx} style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -883,7 +883,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   fontSize: '12px',
                   lineHeight: '15px',
                   color: '#4B4B4B'
-                }}>{profit}</span>
+                }}>{(client?.profit || 0).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -922,7 +922,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               }}>Equity</span>
             </div>
             {/* Rows */}
-            {['54.54', '103.73', '0.00', '0.00', '-0.72', '20.05', '0.00', '0.00', '5.03', '0.00', '0.00'].map((equity, idx) => (
+            {clients.map((client, idx) => (
               <div key={idx} style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -940,7 +940,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   fontSize: '12px',
                   lineHeight: '15px',
                   color: '#4B4B4B'
-                }}>{equity}</span>
+                }}>{(client?.equity || 0).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -980,7 +980,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
               }}>Name</span>
             </div>
             {/* Rows */}
-            {['Priyanka Bha...', 'Faruk', 'Khitindra Ka...', 'Teo Hwee Ch...', 'Yusaf Randil', 'Rahul S. Cha...', 'Moliya Hansa...', 'Ishwar Karid...', 'Ishwar Karid...', 'Tanmay', 'Madan'].map((name, idx) => (
+            {clients.map((client, idx) => (
               <div key={idx} style={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -1001,7 +1001,7 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
-                }}>{name}</span>
+                }}>{client?.name || ''}</span>
               </div>
             ))}
           </div>

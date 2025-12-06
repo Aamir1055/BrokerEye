@@ -1196,13 +1196,6 @@ const MarginLevelPage = () => {
               )}
             </div>
           </div>
-
-          {/* Connection status helper */}
-          <div className="mt-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
-            <p className="text-xs text-gray-600">
-              <strong>Status:</strong> {connectionState === 'connected' ? 'Live via WebSocket' : connectionState}
-            </p>
-          </div>
         </div>
       </main>
       
