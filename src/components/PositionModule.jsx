@@ -1163,10 +1163,8 @@ export default function PositionModule() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Pagination */}
-              <div className="flex items-center gap-2">
+                {/* Pagination */}
                 <button
                   onClick={() => setNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={netCurrentPage === 1}
@@ -1220,7 +1218,7 @@ export default function PositionModule() {
                       <React.Fragment key={idx}>
                         <div className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[32px] font-semibold">
+                            <div className="flex items-center justify-center px-1 h-[40px] font-semibold">
                               {pos.symbol}
                               {groupByBaseSymbol && pos.variantCount > 1 && (
                                 <button
@@ -1240,31 +1238,31 @@ export default function PositionModule() {
                               )}
                             </div>
                           )}
-                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
-                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
-                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
-                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
-                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
-                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
-                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>}
-                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
-                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.variantCount}</div>}
+                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
+                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.netVolume)}</div>}
+                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.avgPrice)}</div>}
+                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.totalStorage || 0)}</div>}
+                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.totalCommission || 0)}</div>}
+                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px]">{pos.loginCount}</div>}
+                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px]">{pos.totalPositions}</div>}
+                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px]">{pos.variantCount}</div>}
                         </div>
 
                         {/* Variant Rows */}
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className={`grid text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]`} style={{gridTemplateColumns: Object.values(netVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] pl-4 font-medium">{variant.exactSymbol}</div>}
-                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
-                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.netVolume)}</div>}
-                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.avgPrice)}</div>}
-                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
-                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.totalStorage || 0)}</div>}
-                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(variant.totalCommission || 0)}</div>}
-                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
-                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
-                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">-</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] pl-4 font-medium">{variant.exactSymbol}</div>}
+                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
+                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(variant.netVolume)}</div>}
+                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(variant.avgPrice)}</div>}
+                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
+                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(variant.totalStorage || 0)}</div>}
+                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(variant.totalCommission || 0)}</div>}
+                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px]">-</div>}
+                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px]">-</div>}
+                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px]">-</div>}
                             </div>
                           ))
                         )}
@@ -1431,10 +1429,8 @@ export default function PositionModule() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Pagination */}
-              <div className="flex items-center gap-2">
+                {/* Pagination */}
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={clientNetCurrentPage === 1}
@@ -1485,19 +1481,19 @@ export default function PositionModule() {
                   ) : (
                     clientNetPaginatedPositions.map((pos, idx) => (
                       <div key={idx} className={`grid text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]`} style={{gridTemplateColumns: Object.values(clientNetVisibleColumns).filter(Boolean).map(() => '1fr').join(' ')}}>
-                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.login}</div>}
-                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>}
-                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
+                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] font-semibold">{pos.login}</div>}
+                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] font-semibold">{pos.symbol}</div>}
+                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] font-semibold ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
                         }`}>{pos.netType}</div>}
-                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
-                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
-                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
+                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.netVolume)}</div>}
+                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.avgPrice)}</div>}
+                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] font-semibold ${
                           pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>{formatNum(pos.totalProfit)}</div>}
-                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
-                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
-                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
+                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.totalStorage || 0)}</div>}
+                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px]">{formatNum(pos.totalCommission || 0)}</div>}
+                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px]">{pos.totalPositions}</div>}
                       </div>
                     ))
                   )}
