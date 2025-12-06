@@ -771,6 +771,7 @@ export default function PositionModule() {
         </div>
 
         {/* Search and navigation */}
+        {!showNetPositions && !showClientNet && (
         <div className="pb-3 px-4">
           <div className="flex items-center gap-1">
             <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
@@ -819,6 +820,7 @@ export default function PositionModule() {
             </button>
           </div>
         </div>
+        )}
 
         {/* Table - full width, remove outer padding */}
         {!showNetPositions && !showClientNet && (
