@@ -4801,8 +4801,11 @@ const Client2Page = () => {
                           }}
                         >
                           {visibleColumnsList.map(col => {
-                            const cellValue = formatValue(col.key, client?.[col.key])
-                            const rawValue = client?.[col.key]
+                            let rawValue = client?.[col.key]
+                            if ((rawValue === undefined || rawValue === null || rawValue === '') && col.key === 'processorType') {
+                              rawValue = client?.processor_type ?? client?.PROCESSOR_TYPE ?? rawValue
+                            }
+                            const cellValue = formatValue(col.key, rawValue)
 
                             // Special handling for login column - make it blue
                             if (col.key === 'login') {
