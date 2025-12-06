@@ -2932,6 +2932,18 @@ const Client2Page = () => {
       return '-'
     }
 
+    // Processor Type: show friendly connection status labels
+    if (key === 'processorType' || key === 'processor_type' || key === 'PROCESSOR_TYPE') {
+      if (typeof value === 'boolean') {
+        return value ? 'Connected' : 'Not Connected'
+      }
+      // In case backend sends 1/0 or 'true'/'false'
+      const normalized = typeof value === 'string' ? value.trim().toLowerCase() : value
+      if (normalized === 1 || normalized === '1' || normalized === 'true') return 'Connected'
+      if (normalized === 0 || normalized === '0' || normalized === 'false') return 'Not Connected'
+      return String(value)
+    }
+
     // Ensure booleans render as text instead of disappearing
     if (typeof value === 'boolean') {
       return value ? 'true' : 'false'
