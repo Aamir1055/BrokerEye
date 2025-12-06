@@ -1146,15 +1146,7 @@ const PendingOrdersPage = () => {
           {/* Orders Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
-              {displayedOrders.length === 0 ? (
-                <div className="text-center py-12">
-                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
-                  </svg>
-                  <p className="text-gray-500 text-sm">No pending orders</p>
-                </div>
-              ) : (
-                <table className="w-full divide-y divide-gray-200">
+              <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
                       {visibleColumns.time && renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
@@ -1171,7 +1163,13 @@ const PendingOrdersPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {displayedOrders.map((o, index) => {
+                    {displayedOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
+                          No pending orders
+                        </td>
+                      </tr>
+                    ) : displayedOrders.map((o, index) => {
                       const id = getOrderId(o)
                       const flash = id ? flashes[id] : undefined
                       const priceDelta = flash?.priceDelta
@@ -1253,7 +1251,6 @@ const PendingOrdersPage = () => {
                     })}
                   </tbody>
                 </table>
-              )}
             </div>
           </div>
 
