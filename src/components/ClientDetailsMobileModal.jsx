@@ -436,7 +436,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search email"
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
