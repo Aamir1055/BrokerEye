@@ -176,7 +176,7 @@ export default function Client2Module() {
     if (!Array.isArray(clients)) return []
     let filtered = [...clients]
 
-    // Apply group filter first (if active)
+    // Apply group filter first (if active) - ensure correct login field key
     filtered = filterByActiveGroup(filtered, 'login', 'client2')
 
     // Has Floating: show clients where profit field (Floating Profit column) has a value (not blank/null/0)
@@ -807,7 +807,7 @@ export default function Client2Module() {
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
-                draggable="true"
+                draggable={false}
                 onDragStart={(e) => {
                   e.dataTransfer.setData('cardIndex', i)
                   e.dataTransfer.effectAllowed = 'move'
@@ -828,7 +828,7 @@ export default function Client2Module() {
                   boxSizing: 'border-box',
                   minWidth: '125px',
                   width: '125px',
-                  height: '55px',
+                  height: '50px',
                   background: '#FFFFFF',
                   border: '1px solid #F2F2F7',
                   boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
@@ -839,7 +839,7 @@ export default function Client2Module() {
                   justifyContent: 'space-between',
                   scrollSnapAlign: 'start',
                   flexShrink: 0,
-                  cursor: 'move',
+                  cursor: 'default',
                   flex: 'none'
                 }}
               >

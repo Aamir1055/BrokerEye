@@ -3459,14 +3459,7 @@ const Client2Page = () => {
                   />
                 </div>
               </button>
-                {/* Cards visibility only */}
-                <button
-                  onClick={() => setShowFaceCards(v => !v)}
-                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-                  title="Toggle Cards"
-                >
-                  <span className="text-xs font-medium text-[#374151]">Cards</span>
-                </button>
+                {/* Cards toggle removed as requested */}
               </div>
             </div>
           </div>
@@ -3525,7 +3518,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[55px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2.5 md:p-2.5 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[50px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
