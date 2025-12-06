@@ -2307,7 +2307,7 @@ const PositionsPage = () => {
                           onFocus={() => setNetShowSuggestions(true)}
                           onKeyDown={handleNetSearchKeyDown}
                           placeholder="Search symbol or NET type..."
-                          className="pl-9 pr-9 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64 shadow-sm transition-all"
+                          className="pl-9 pr-9 py-3.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-85 shadow-sm transition-all"
                         />
                         <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         {netSearchQuery && (
