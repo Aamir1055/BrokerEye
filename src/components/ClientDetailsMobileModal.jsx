@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
@@ -10,8 +12,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [searchQuery, setSearchQuery] = useState('')
   
   // Date filter states for deals
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
+  const [fromDate, setFromDate] = useState(null)
+  const [toDate, setToDate] = useState(null)
   const [dealsLoading, setDealsLoading] = useState(false)
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [quickFilter, setQuickFilter] = useState('Today')
@@ -170,8 +172,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     }
 
     // Update date inputs
-    setFromDate(fromDateObj.toISOString().split('T')[0])
-    setToDate(toDateObj.toISOString().split('T')[0])
+    setFromDate(fromDateObj)
+    setToDate(toDateObj)
 
     // Fetch deals
     fromDateObj.setHours(0, 0, 0, 0)
@@ -201,10 +203,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   }
 
   const handleClearDateFilter = () => {
-    setFromDate('')
-    setToDate('')
+    setFromDate(null)
+    setToDate(null)
     setDeals([])
     setHasAppliedFilter(false)
+    setQuickFilter('Today')
+    handleQuickFilter('Today')
   }
 
   const formatNum = (num, decimals = 2) => {
@@ -477,18 +481,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-gray-700">Date:</span>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                <DatePicker
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="From"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  calendarClassName="compact-calendar"
+                  maxDate={toDate || new Date()}
                 />
                 <span className="text-xs text-gray-500">to</span>
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                <DatePicker
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="To"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  calendarClassName="compact-calendar"
+                  minDate={fromDate}
+                  maxDate={new Date()}
                 />
               </div>
               <div className="flex gap-2">
