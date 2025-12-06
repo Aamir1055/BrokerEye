@@ -2296,15 +2296,41 @@ const PositionsPage = () => {
               {/* NET Position Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
                 {/* NET module controls */}
-                <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col gap-3">
+                <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200 mb-3">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center flex-wrap gap-2">
-                      <span className="text-xs text-gray-600">Show:</span>
-                      <select value={netItemsPerPage} onChange={(e)=>handleNetItemsPerPageChange(e.target.value)} className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        {generateNetPageSizeOptions().map(o=> <option key={o} value={o}>{o}</option>)}
-                      </select>
-                      <span className="text-xs text-gray-600">entries</span>
-                      <div className="flex items-center gap-2 ml-3">
+                    <div className="flex items-center flex-wrap gap-3">
+                      {/* NET search on the left */}
+                      <div className="relative" ref={netSearchRef}>
+                        <input
+                          type="text"
+                          value={netSearchQuery}
+                          onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
+                          onFocus={() => setNetShowSuggestions(true)}
+                          onKeyDown={handleNetSearchKeyDown}
+                          placeholder="Search symbol or NET type..."
+                          className="pl-9 pr-9 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64 shadow-sm transition-all"
+                        />
+                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        {netSearchQuery && (
+                          <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        )}
+                        {netShowSuggestions && getNetSuggestions().length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
+                            {getNetSuggestions().map((s,i)=>(
+                              <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Pagination info */}
+                      <span className="text-[11px] text-gray-500">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Pagination controls */}
+                      <div className="flex items-center gap-2">
                           <button
                             onClick={()=>handleNetPageChange(netCurrentPage-1)}
                             disabled={netCurrentPage===1}
@@ -2325,15 +2351,13 @@ const PositionsPage = () => {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                           </button>
                         </div>
-                      <span className="text-[11px] text-gray-500 ml-2">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {/* Export first */}
+                      
+                      {/* Export */}
                       <button onClick={handleExportNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export NET positions to CSV">
                         <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                         Export CSV
                       </button>
-                      {/* Columns selector next to Export */}
+                      {/* Columns selector */}
                       <div className="relative" ref={netColumnSelectorRef}>
                         <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide NET columns">
                           <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
@@ -2369,7 +2393,7 @@ const PositionsPage = () => {
                           </div>
                         )}
                       </div>
-                      {/* Compact Group Base Symbols toggle for NET */}
+                      {/* Compact Group Base Symbols toggle */}
                       <button
                         onClick={() => setGroupByBaseSymbol(v => !v)}
                         className={`px-2 py-1.5 text-xs rounded-lg border inline-flex items-center gap-1.5 font-medium shadow-sm transition-all ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' : 'bg-white text-gray-700 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300'}`}
@@ -2378,31 +2402,6 @@ const PositionsPage = () => {
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                         Group Base Symbols
                       </button>
-                      {/* NET search placed at the end next to Group Base Symbols */}
-                      <div className="relative" ref={netSearchRef}>
-                        <input
-                          type="text"
-                          value={netSearchQuery}
-                          onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
-                          onFocus={() => setNetShowSuggestions(true)}
-                          onKeyDown={handleNetSearchKeyDown}
-                          placeholder="Search symbol or NET type..."
-                          className="pl-9 pr-9 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-56 shadow-sm transition-all"
-                        />
-                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        {netSearchQuery && (
-                          <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                        )}
-                        {netShowSuggestions && getNetSuggestions().length > 0 && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                            {getNetSuggestions().map((s,i)=>(
-                              <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
