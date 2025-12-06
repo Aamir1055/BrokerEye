@@ -808,22 +808,6 @@ export default function Client2Module() {
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
                 draggable={false}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('cardIndex', i)
-                  e.dataTransfer.effectAllowed = 'move'
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  e.dataTransfer.dropEffect = 'move'
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'))
-                  if (fromIndex !== i && !isNaN(fromIndex)) {
-                    const fromLabel = orderedCards[fromIndex].label
-                    swapOrder(fromLabel, card.label)
-                  }
-                }}
                 style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',

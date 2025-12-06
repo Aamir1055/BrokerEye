@@ -3518,7 +3518,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2.5 md:p-2.5 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[50px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[30px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
