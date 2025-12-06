@@ -3567,7 +3567,7 @@ const Client2Page = () => {
                 {/* Left: Search and Columns */}
                 <div className="flex items-center gap-2 flex-1">
                   <div className="relative flex-1 max-w-md">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4B5563]" fill="none" viewBox="0 0 18 18">
                       <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
                       <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
@@ -3595,6 +3595,19 @@ const Client2Page = () => {
                       </button>
                     )}
                   </div>
+                  
+                  {/* Search Icon Button */}
+                  <button
+                    onClick={handleSearch}
+                    className="h-10 w-10 rounded-lg bg-[#2563EB] hover:bg-[#1d4ed8] text-white flex items-center justify-center shadow-sm transition-colors"
+                    title="Search"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                  
                   {/* Columns Button (icon only) */}
                   <div className="relative" ref={columnSelectorRef}>
                     <button
