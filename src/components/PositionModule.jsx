@@ -1194,11 +1194,11 @@ export default function PositionModule() {
             {/* NET Positions Table */}
             <div className="pt-3">
               <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scrollbar-hide">
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 sticky left-0 bg-[#1A63BC] z-10">Symbol</div>}
+                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
                     {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Avg Price</div>}
@@ -1253,7 +1253,7 @@ export default function PositionModule() {
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium sticky left-0 bg-[#F8FAFC] z-10">{variant.exactSymbol}</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC]">{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
                               {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
@@ -1273,7 +1273,7 @@ export default function PositionModule() {
                   {/* Footer */}
                   {netPaginatedPositions.length > 0 && (
                     <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 sticky left-0 bg-[#EFF4FB] z-10">Total</div>}
+                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">Total</div>}
                       {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
                       {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
                       {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
@@ -1460,11 +1460,11 @@ export default function PositionModule() {
             {/* Client NET Table */}
             <div className="pt-3">
               <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scrollbar-hide">
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 sticky left-0 bg-[#1A63BC] z-10">Login</div>}
+                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
                     {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
@@ -1481,7 +1481,7 @@ export default function PositionModule() {
                   ) : (
                     clientNetPaginatedPositions.map((pos, idx) => (
                       <div key={idx} className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
-                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold sticky left-0 bg-white z-10">{pos.login}</div>}
+                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white">{pos.login}</div>}
                         {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B]">{pos.symbol}</div>}
                         {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
@@ -1501,7 +1501,7 @@ export default function PositionModule() {
                   {/* Footer */}
                   {clientNetPaginatedPositions.length > 0 && (
                     <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 sticky left-0 bg-[#EFF4FB] z-10">Total</div>}
+                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB]">Total</div>}
                       {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
                       {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
                       {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
