@@ -1092,7 +1092,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center justify-between gap-2 flex-wrap px-4 pb-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-3">
               <div className="flex items-center gap-2">
                 {/* Search Bar */}
                 <div className="h-[32px] min-w-[120px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
@@ -1104,7 +1104,7 @@ export default function PositionModule() {
                     placeholder="Search"
                     value={netSearchInput}
                     onChange={(e) => setNetSearchInput(e.target.value)}
-                    className="w-[80px] text-[11px] outline-none bg-transparent"
+                    className="w-[80px] text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent"
                   />
                 </div>
 
@@ -1192,7 +1192,7 @@ export default function PositionModule() {
             </div>
 
             {/* NET Positions Table */}
-            <div className="pt-3 px-4">
+            <div className="pt-3">
               <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto">
                 <div className="min-w-full">
@@ -1360,7 +1360,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center justify-between gap-2 flex-wrap px-4 pb-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-3">
               <div className="flex items-center gap-2">
                 {/* Search Bar */}
                 <div className="h-[32px] min-w-[120px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
@@ -1372,7 +1372,7 @@ export default function PositionModule() {
                     placeholder="Search"
                     value={clientNetSearchInput}
                     onChange={(e) => setClientNetSearchInput(e.target.value)}
-                    className="w-[80px] text-[11px] outline-none bg-transparent"
+                    className="w-[80px] text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent"
                   />
                 </div>
 
@@ -1458,7 +1458,7 @@ export default function PositionModule() {
             </div>
 
             {/* Client NET Table */}
-            <div className="pt-3 px-4">
+            <div className="pt-3">
               <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto">
                 <div className="min-w-full">
