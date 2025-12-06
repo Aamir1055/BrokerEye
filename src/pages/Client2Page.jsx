@@ -3593,11 +3593,38 @@ const Client2Page = () => {
                     <div
                       key={cardKey}
                       className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
-                      draggable={!isMobile}
-                      onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
-                      onDragOver={(e) => !isMobile && handleCardDragOver(e)}
-                      onDrop={(e) => !isMobile && handleCardDrop(e, cardKey)}
-                      onDragEnd={(e) => !isMobile && handleCardDragEnd(e)}
+                      draggable={true}
+                      data-card-key={cardKey}
+                      onDragStart={(e) => handleCardDragStart(e, cardKey)}
+                      onDragOver={handleCardDragOver}
+                      onDrop={(e) => handleCardDrop(e, cardKey)}
+                      onDragEnd={handleCardDragEnd}
+                      onTouchStart={(e) => {
+                        try {
+                          handleCardDragStart(e, cardKey)
+                        } catch {}
+                      }}
+                      onTouchMove={(e) => {
+                        // Prevent native scroll when dragging
+                        if (draggedCard) {
+                          e.preventDefault()
+                        }
+                      }}
+                      onTouchEnd={(e) => {
+                        try {
+                          const touch = e.changedTouches && e.changedTouches[0]
+                          if (touch) {
+                            const el = document.elementFromPoint(touch.clientX, touch.clientY)
+                            const targetEl = el?.closest('[data-card-key]')
+                            const targetKey = targetEl?.getAttribute('data-card-key')
+                            if (targetKey) {
+                              // Simulate drop on touch
+                              handleCardDrop(e, targetKey)
+                            }
+                          }
+                        } catch {}
+                        handleCardDragEnd()
+                      }}
                       style={{ 
                         opacity: draggedCard === cardKey ? 0.5 : 1, 
                         touchAction: 'pan-y',
