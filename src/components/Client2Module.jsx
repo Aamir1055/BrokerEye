@@ -828,13 +828,28 @@ export default function Client2Module() {
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move'
                   e.dataTransfer.setData('text/plain', i.toString())
+                  e.currentTarget.style.opacity = '0.5'
+                }}
+                onDragEnd={(e) => {
+                  e.currentTarget.style.opacity = '1'
                 }}
                 onDragOver={(e) => {
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
                 }}
+                onDragEnter={(e) => {
+                  e.preventDefault()
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                  e.currentTarget.style.boxShadow = '0px 4px 20px rgba(37, 99, 235, 0.3)'
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
+                }}
                 onDrop={(e) => {
                   e.preventDefault()
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
                   const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
                   const toIndex = i
                   if (fromIndex !== toIndex && !isNaN(fromIndex)) {
@@ -844,6 +859,12 @@ export default function Client2Module() {
                     setCardOrder(newOrder)
                     try { localStorage.setItem('client2_card_order', JSON.stringify(newOrder)) } catch {}
                   }
+                }}
+                onTouchStart={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)'
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
                 }}
                 style={{
                   boxSizing: 'border-box',
@@ -861,12 +882,22 @@ export default function Client2Module() {
                   scrollSnapAlign: 'start',
                   flexShrink: 0,
                   cursor: 'grab',
-                  flex: 'none'
+                  flex: 'none',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  touchAction: 'none'
                 }}
-                onMouseDown={(e) => e.currentTarget.style.cursor = 'grabbing'}
-                onMouseUp={(e) => e.currentTarget.style.cursor = 'grab'}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.cursor = 'grabbing'
+                  e.currentTarget.style.transform = 'scale(0.98)'
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.cursor = 'grab'
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
                   <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -875,7 +906,7 @@ export default function Client2Module() {
                     </svg>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
                   <span style={{
                     fontSize: '13px',
                     fontWeight: 700,
