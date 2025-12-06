@@ -7,6 +7,7 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 
@@ -41,6 +42,7 @@ export default function MarginLevelModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -201,7 +203,19 @@ export default function MarginLevelModule() {
     switch (key) {
       case 'login':
         value = account.login || '-'
-        break
+        return (
+          <div 
+            className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            style={{
+              border: 'none', 
+              outline: 'none', 
+              boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+            }}
+            onClick={() => setSelectedClient({ login: account.login, email: account.email || '' })}
+          >
+            <span className="truncate">{value}</span>
+          </div>
+        )
       case 'name':
         value = account.name || '-'
         break
@@ -729,6 +743,15 @@ export default function MarginLevelModule() {
         }}
         editGroup={editingGroup}
       />
+
+      {/* Client Details Modal */}
+      {selectedClient && (
+        <ClientDetailsMobileModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          allPositionsCache={accounts}
+        />
+      )}
     </div>
   )
 }
