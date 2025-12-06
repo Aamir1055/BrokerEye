@@ -5,7 +5,7 @@ import IBFilterModal from '../IBFilterModal'
 import GroupModal from '../GroupModal'
 import LoginGroupsModal from '../LoginGroupsModal'
 import LoginGroupModal from '../LoginGroupModal'
-import LoginDetailsModal from '../LoginDetailsModal'
+import ClientDetailsMobileModal from '../ClientDetailsMobileModal'
 import { useData } from '../../contexts/DataContext'
 import { useIB } from '../../contexts/IBContext'
 import { useGroups } from '../../contexts/GroupContext'
@@ -161,8 +161,8 @@ export default function ClientDashboardDesignC() {
   // Sorting state
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
-  // Login details modal
-  const [selectedLogin, setSelectedLogin] = useState(null)
+  // Client details modal
+  const [selectedClient, setSelectedClient] = useState(null)
 
   const swapOrder = (fromLabel, toLabel) => {
     if (!fromLabel || !toLabel || fromLabel === toLabel) return
@@ -1009,7 +1009,7 @@ export default function ClientDashboardDesignC() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={(newFilters) => { setFilters(newFilters); }}
-        initialFilters={filters}
+        filters={filters}
       />
       <IBFilterModal
         isOpen={isIBFilterOpen}
@@ -1332,14 +1332,16 @@ export default function ClientDashboardDesignC() {
             ))}
           </div>
           {/* Rows */}
-          {rows.map((r, idx) => (
+          {rows.map((r, idx) => {
+            const client = paginatedClients[idx]
+            return (
             <div key={idx} className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
               {visibleColumnsList.map((col, colIdx) => (
                 <div 
                   key={col.key}
                   onClick={() => {
-                    if (col.key === 'login') {
-                      setSelectedLogin(r.login)
+                    if (col.key === 'login' && client) {
+                      setSelectedClient(client)
                     }
                   }}
                   className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
@@ -1351,7 +1353,8 @@ export default function ClientDashboardDesignC() {
                 </div>
               ))}
             </div>
-          ))}
+            )
+          })}
           {/* Footer row */}
           <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0', columnGap: '0', gridTemplateColumns}}>
             {visibleColumnsList.map((col, idx) => (
@@ -1771,11 +1774,12 @@ export default function ClientDashboardDesignC() {
         </div>
       )}
 
-      {/* Login Details Modal */}
-      {selectedLogin && (
-        <LoginDetailsModal
-          login={selectedLogin}
-          onClose={() => setSelectedLogin(null)}
+      {/* Client Details Mobile Modal */}
+      {selectedClient && (
+        <ClientDetailsMobileModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          allPositionsCache={[]}
         />
       )}
     </div>
