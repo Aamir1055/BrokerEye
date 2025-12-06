@@ -140,7 +140,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           {filteredPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="px-3 py-2 text-xs text-blue-600">{pos.position || pos.ticket || '-'}</td>
-              <td className="px-3 py-2 text-xs font-medium">{pos.symbol || '-'}</td>
+              <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>
               <td className="px-3 py-2 text-xs">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                   pos.action === 'Buy' || pos.type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -148,8 +148,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   {pos.action || pos.type || '-'}
                 </span>
               </td>
-              <td className="px-3 py-2 text-xs">{formatNum(pos.volume || 0)}</td>
-              <td className="px-3 py-2 text-xs">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.volume || 0)}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>
               <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(pos.profit || 0)}
               </td>
@@ -174,12 +174,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         <tbody className="divide-y divide-gray-200">
           {filteredNetPositions.map((netPos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs font-medium">{netPos.symbol}</td>
-              <td className="px-3 py-2 text-xs">{formatNum(netPos.volume)}</td>
+              <td className="px-3 py-2 text-xs font-medium text-gray-900">{netPos.symbol}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>
               <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(netPos.profit)}
               </td>
-              <td className="px-3 py-2 text-xs">{netPos.positions.length}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions.length}</td>
             </tr>
           ))}
         </tbody>
@@ -202,8 +202,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         <tbody className="divide-y divide-gray-200">
           {filteredDeals.map((deal, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs">{deal.deal}</td>
-              <td className="px-3 py-2 text-xs">{deal.symbol}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{deal.deal}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>
               <td className="px-3 py-2 text-xs">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                   deal.action === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -211,7 +211,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   {deal.action}
                 </span>
               </td>
-              <td className="px-3 py-2 text-xs">{formatNum(deal.volume)}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(deal.volume)}</td>
               <td className={`px-3 py-2 text-xs ${(deal.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatNum(deal.profit || 0)}
               </td>

@@ -22,7 +22,6 @@ export default function Client2Module() {
   const { positions: cachedPositions } = useData()
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
-  const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
@@ -40,7 +39,6 @@ export default function Client2Module() {
   const columnDropdownRef = useRef(null)
   const columnSelectorButtonRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
-  const carouselRef = useRef(null)
   const viewAllRef = useRef(null)
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
@@ -416,22 +414,6 @@ export default function Client2Module() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedClients = filteredClients.slice(startIndex, endIndex)
-
-  // Card carousel scroll tracking
-  useEffect(() => {
-    const carousel = carouselRef.current
-    if (!carousel) return
-
-    const handleScroll = () => {
-      const cardWidth = 125 + 8
-      const scrollLeft = carousel.scrollLeft
-      const index = Math.round(scrollLeft / cardWidth)
-      setActiveCardIndex(index)
-    }
-
-    carousel.addEventListener('scroll', handleScroll)
-    return () => carousel.removeEventListener('scroll', handleScroll)
-  }, [cards.length])
 
   // View All handler
   useEffect(() => {
@@ -821,60 +803,65 @@ export default function Client2Module() {
 
         {/* Face Cards Carousel */}
         <div className="pb-2 pl-5">
-          <div 
-            ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4 h-[48px]"
-          >
+          <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
                 draggable="true"
-                onDragStart={(e) => e.dataTransfer.setData('cardLabel', card.label)}
-                onDragOver={(e) => e.preventDefault()}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('cardIndex', i)
+                  e.dataTransfer.effectAllowed = 'move'
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                }}
                 onDrop={(e) => {
-                  e.preventDefault();
-                  const fromLabel = e.dataTransfer.getData('cardLabel');
-                  swapOrder(fromLabel, card.label);
-                }}
-                onPointerDown={() => setDragStartLabel(card.label)}
-                onPointerUp={(e) => {
-                  if (dragStartLabel && dragStartLabel !== card.label) {
-                    swapOrder(dragStartLabel, card.label);
+                  e.preventDefault()
+                  const fromIndex = parseInt(e.dataTransfer.getData('cardIndex'))
+                  if (fromIndex !== i && !isNaN(fromIndex)) {
+                    const fromLabel = orderedCards[fromIndex].label
+                    swapOrder(fromLabel, card.label)
                   }
-                  setDragStartLabel(null);
                 }}
-                onPointerCancel={() => setDragStartLabel(null)}
-                className="min-w-[115px] w-[115px] h-[40px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+                style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '55px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  cursor: 'move',
+                  flex: 'none'
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.label}</span>
-                  <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#4B4B4B', fontSize: '10px', fontWeight: 600, lineHeight: '13px', paddingRight: '4px' }}>{card.label}</span>
+                  <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
                       <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
                     </svg>
                   </div>
                 </div>
-                <div className="flex items-baseline gap-[4px]">
-                  {card.numericValue > 0 && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                      <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
-                    </svg>
-                  )}
-                  {card.numericValue < 0 && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                      <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
-                    </svg>
-                  )}
-                  {card.numericValue === 0 && (
-                    <svg width="8" height="8" viewBox="0 0 8 8" className="flex-shrink-0 mt-[2px]">
-                      <polygon points="4,0 8,8 0,8" fill="#000000"/>
-                    </svg>
-                  )}
-                  <span className={`text-[14px] font-bold leading-[13px] tracking-[-0.01em] ${card.numericValue > 0 ? 'text-[#16A34A]' : card.numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'}`}>
-                    {card.value === '' || card.value === undefined ? '0.00' : card.value}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{
+                    fontSize: '15.5px',
+                    fontWeight: 700,
+                    lineHeight: '13px',
+                    letterSpacing: '-0.01em',
+                    color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
+                  }}>
+                    {card.numericValue > 0 && '▲ '}{card.numericValue < 0 && '▼ '}{card.value === '' || card.value === undefined ? '0.00' : card.value}
                   </span>
-                  <span className="text-[#4B4B4B] text-[7px] font-normal leading-[9px] uppercase">{card.unit}</span>
                 </div>
               </div>
             ))}

@@ -3708,19 +3708,19 @@ const Client2Page = () => {
                   />
                 </div>
 
-                <div className="overflow-y-auto flex-1 px-2 py-2">
+                <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
                   {allColumns
                     .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
                     .map(col => (
                       <label
                         key={col.key}
-                        className="flex items-center gap-2 text-xs text-gray-700 hover:bg-amber-100 p-2 rounded-md cursor-pointer transition-colors"
+                        className="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={visibleColumns[col.key] || false}
                           onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 focus:ring-1"
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                         />
                         <span className="font-semibold">{col.label}</span>
                       </label>
