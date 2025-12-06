@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
+import * as XLSX from 'xlsx'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ClientPositionsModal from '../components/ClientPositionsModal'
@@ -2790,60 +2791,129 @@ const Client2Page = () => {
         console.log('[Client2Page] Export started, type:', type)
         setShowExportMenu(false)
 
-        console.log('[Client2Page] Gathering export dataset...')
-        const allRows = await gatherExportDataset()
-        console.log('[Client2Page] Export dataset gathered:', allRows?.length, 'rows')
+        // Fetch ALL data for export (not just current page)
+        setLoading(true)
+        const payload = {
+          page: 1,
+          limit: 100000 // Large limit to get all records
+        }
+
+        // Add search query if present
+        if (searchQuery && searchQuery.trim()) {
+          payload.search = searchQuery.trim()
+        }
+
+        // Add filters if present
+        const combinedFilters = []
+        
+        // Inject server-side quick filters
+        if (quickFilters?.hasFloating) {
+          combinedFilters.push({ field: 'floating', operator: 'not_equal', value: '0' })
+        }
+        if (quickFilters?.hasCredit) {
+          combinedFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+        }
+        if (quickFilters?.noDeposit) {
+          combinedFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+        }
+        if (filters && filters.length > 0) {
+          combinedFilters.push(...filters)
+        }
+
+        // Add column filters
+        Object.entries(columnFilters || {}).forEach(([key, cfg]) => {
+          if (cfg.text && cfg.text.trim()) {
+            const apiField = key
+            combinedFilters.push({ field: apiField, operator: 'contains', value: cfg.text.trim() })
+          }
+          if (cfg.number && Object.keys(cfg.number).length > 0) {
+            const apiField = key
+            const { min, max } = cfg.number
+            if (min !== undefined && min !== '') {
+              combinedFilters.push({ field: apiField, operator: 'greater_than_or_equal', value: String(min) })
+            }
+            if (max !== undefined && max !== '') {
+              combinedFilters.push({ field: apiField, operator: 'less_than_or_equal', value: String(max) })
+            }
+          }
+        })
+
+        if (combinedFilters.length > 0) {
+          payload.filters = combinedFilters
+        }
+
+        // Add IB filter
+        if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+          payload.mt5Accounts = ibMT5Accounts
+        }
+
+        // Add group filter
+        const activeGroupName = getActiveGroupFilter('client2')
+        if (activeGroupName && groups && groups.length > 0) {
+          const grp = groups.find(g => g.name === activeGroupName)
+          if (grp && grp.logins && grp.logins.length > 0) {
+            payload.mt5Accounts = grp.logins.map(l => String(l))
+          }
+        }
+
+        console.log('[Client2Page] Fetching all data with payload:', payload)
+        const response = await brokerAPI.searchClients(payload)
+        const allRows = response?.data?.data?.clients || response?.data?.clients || []
+        setLoading(false)
+
+        console.log('[Client2Page] Export dataset fetched:', allRows?.length, 'rows')
 
         if (!allRows || allRows.length === 0) {
           alert('No data to export. Please check your filters and try again.')
           return
         }
 
-        // For "all" export, only include columns that have data in the fetched rows
+        // For "all" export, use all columns; for "table" export, use only visible columns
         let columns = type === 'all' ? allColumns : visibleColumnsList
-
-        if (type === 'all' && allRows.length > 0) {
-          // Check which columns actually have data in the first row (sample)
-          const sampleRow = allRows[0]
-          const columnsWithData = columns.filter(col => {
-            // Keep column if it exists in the data (even if value is 0 or false)
-            return sampleRow.hasOwnProperty(col.key)
-          })
-          console.log('[Client2Page] Filtered columns with data:', columnsWithData.length, 'out of', columns.length)
-          columns = columnsWithData
-        }
 
         console.log('[Client2Page] Exporting', columns.length, 'columns for', allRows.length, 'rows')
 
-        const headers = columns.map(col => col.label).join(',')
-        // Guard: filter out null/undefined clients before mapping
-        const rows = (allRows || []).filter(client => client != null).map(client => {
-          return columns.map(col => {
-            let value = client[col.key]
-            if (value === null || value === undefined || value === '') return ''
-            if (typeof value === 'string') {
-              value = value.replace(/"/g, '""')
-              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                value = `"${value}"`
-              }
-            }
-            return value
-          }).join(',')
-        }).join('\n')
+        // Create worksheet data with headers and rows
+        const worksheetData = [
+          columns.map(col => col.label), // Header row
+          ...(allRows || []).filter(client => client != null).map(client => {
+            return columns.map(col => {
+              let value = client[col.key]
+              if (value === null || value === undefined || value === '') return ''
+              return value
+            })
+          })
+        ]
 
-        const csvContent = headers + '\n' + rows
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement('a')
-        const url = URL.createObjectURL(blob)
-        link.setAttribute('href', url)
-        const suffix = type === 'all' ? 'all' : 'table'
-        link.setAttribute('download', `client2_${suffix}_${new Date().toISOString().split('T')[0]}.csv`)
-        link.style.visibility = 'hidden'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        // Create workbook and worksheet
+        const workbook = XLSX.utils.book_new()
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+        
+        // Auto-size columns
+        const maxWidths = columns.map((col, colIndex) => {
+          const headerLength = col.label.length
+          const maxDataLength = Math.max(
+            ...worksheetData.slice(1).map(row => 
+              String(row[colIndex] || '').length
+            )
+          )
+          return Math.max(headerLength, maxDataLength, 10)
+        })
+        
+        worksheet['!cols'] = maxWidths.map(w => ({ wch: Math.min(w, 50) }))
+        
+        // Add worksheet to workbook
+        const sheetName = type === 'all' ? 'All Columns' : 'Table Columns'
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+        
+        // Generate and download Excel file
+        const suffix = type === 'all' ? 'all_columns' : 'table_columns'
+        const fileName = `clients_${suffix}_${new Date().toISOString().split('T')[0]}.xlsx`
+        XLSX.writeFile(workbook, fileName)
+        
         console.log('[Client2Page] Export completed successfully')
       } catch (err) {
+        setLoading(false)
         console.error('[Client2Page] Export error:', err)
         alert('Export failed: ' + (err.message || 'Please try again.'))
       }
@@ -3518,7 +3588,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[30px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
@@ -3532,18 +3602,18 @@ const Client2Page = () => {
                         pointerEvents: 'auto'
                       }}
                     >
-                      <div className="flex items-start justify-between mb-2 select-none min-h-[18px]">
+                      <div className="flex items-start justify-between mb-1.5 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">
                           {displayLabel}
                         </span>
-                        <div className="w-5 h-5 md:w-6 md:h-6 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                             <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                             <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                           </svg>
                         </div>
                       </div>
-                      <div className={`text-base md:text-lg font-bold ${textColorClass} flex items-center gap-2 select-none min-h-[26px] leading-none`}>
+                      <div className={`text-sm md:text-base font-bold ${textColorClass} flex items-center gap-1.5 select-none leading-none`}>
                         <span className="leading-none whitespace-nowrap">
                           {card.format === 'integer'
                             ? formatIndianNumber(String(Math.round(rawValue || 0)))
@@ -3599,7 +3669,7 @@ const Client2Page = () => {
                   {/* Search Icon Button */}
                   <button
                     onClick={handleSearch}
-                    className="h-10 w-10 rounded-lg bg-[#2563EB] hover:bg-[#1d4ed8] text-white flex items-center justify-center shadow-sm transition-colors"
+                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#2563EB] flex items-center justify-center shadow-sm transition-colors"
                     title="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
