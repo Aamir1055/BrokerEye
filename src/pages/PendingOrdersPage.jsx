@@ -1157,17 +1157,17 @@ const PendingOrdersPage = () => {
                 <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
-                      {renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
-                      {renderHeaderCell('login', 'Login')}
-                      {renderHeaderCell('order', 'Order')}
-                      {renderHeaderCell('symbol', 'Symbol')}
-                      {renderHeaderCell('type', 'Type')}
-                      {renderHeaderCell('state', 'State')}
-                      {renderHeaderCell('volume', 'Volume')}
-                      {renderHeaderCell('priceOrder', 'Price')}
-                      {renderHeaderCell('priceTrigger', 'Trigger')}
-                      {renderHeaderCell('priceSL', 'SL', 'sl')}
-                      {renderHeaderCell('priceTP', 'TP', 'tp')}
+                      {visibleColumns.time && renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
+                      {visibleColumns.login && renderHeaderCell('login', 'Login')}
+                      {visibleColumns.order && renderHeaderCell('order', 'Order')}
+                      {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
+                      {visibleColumns.type && renderHeaderCell('type', 'Type')}
+                      {visibleColumns.state && renderHeaderCell('state', 'State')}
+                      {visibleColumns.volume && renderHeaderCell('volume', 'Volume')}
+                      {visibleColumns.priceOrder && renderHeaderCell('priceOrder', 'Price')}
+                      {visibleColumns.priceCurrent && renderHeaderCell('priceTrigger', 'Trigger')}
+                      {visibleColumns.sl && renderHeaderCell('priceSL', 'SL', 'sl')}
+                      {visibleColumns.tp && renderHeaderCell('priceTP', 'TP', 'tp')}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
@@ -1179,53 +1179,75 @@ const PendingOrdersPage = () => {
                       const tpDelta = flash?.tpDelta
                       return (
                         <tr key={id ?? index} className={`hover:bg-blue-50 transition-colors`}>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
-                          <td 
-                            className="px-2 py-1.5 text-[13px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedLogin(o.login)
-                            }}
-                            title="Click to view login details"
-                          >
-                            {o.login}
-                          </td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{id}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
-                              {priceDelta !== undefined && priceDelta !== 0 ? (
-                                <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(3)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 3)}</td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
-                              {slDelta !== undefined && slDelta !== 0 ? (
-                                <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {slDelta > 0 ? '▲' : '▼'} {Math.abs(slDelta).toFixed(3)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
-                              {tpDelta !== undefined && tpDelta !== 0 ? (
-                                <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {tpDelta > 0 ? '▲' : '▼'} {Math.abs(tpDelta).toFixed(3)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
+                          {visibleColumns.time && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
+                          )}
+                          {visibleColumns.login && (
+                            <td 
+                              className="px-2 py-1.5 text-[13px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedLogin(o.login)
+                              }}
+                              title="Click to view login details"
+                            >
+                              {o.login}
+                            </td>
+                          )}
+                          {visibleColumns.order && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{id}</td>
+                          )}
+                          {visibleColumns.symbol && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
+                          )}
+                          {visibleColumns.type && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
+                          )}
+                          {visibleColumns.state && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
+                          )}
+                          {visibleColumns.volume && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>
+                          )}
+                          {visibleColumns.priceOrder && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
+                                {priceDelta !== undefined && priceDelta !== 0 ? (
+                                  <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(3)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.priceCurrent && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 3)}</td>
+                          )}
+                          {visibleColumns.sl && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
+                                {slDelta !== undefined && slDelta !== 0 ? (
+                                  <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {slDelta > 0 ? '▲' : '▼'} {Math.abs(slDelta).toFixed(3)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.tp && (
+                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
+                                {tpDelta !== undefined && tpDelta !== 0 ? (
+                                  <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {tpDelta > 0 ? '▲' : '▼'} {Math.abs(tpDelta).toFixed(3)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       )
                     })}
