@@ -144,6 +144,11 @@ export default function PendingOrdersModule() {
     }
   }
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [ibFilteredOrders.length, searchInput])
+
   // Face cards data - matching desktop layout with persistent state
   const [cards, setCards] = useState([])
   
