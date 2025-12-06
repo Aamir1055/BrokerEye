@@ -2932,6 +2932,11 @@ const Client2Page = () => {
       return '-'
     }
 
+    // Ensure booleans render as text instead of disappearing
+    if (typeof value === 'boolean') {
+      return value ? 'true' : 'false'
+    }
+
     // Format numbers with Indian style
     if (['balance', 'credit', 'equity', 'margin', 'marginFree', 'profit', 'floating',
       'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
