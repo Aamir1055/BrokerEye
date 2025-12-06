@@ -1229,7 +1229,7 @@ export default function LiveDealingModule() {
         <ClientDetailsMobileModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          allPositionsCache={[]}
+          allPositionsCache={cachedPositions}
         />
       )}
     </div>

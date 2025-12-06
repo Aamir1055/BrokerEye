@@ -21,6 +21,7 @@ const formatNum = (n, decimals = 2) => {
 
 export default function ClientPercentageModule() {
   const navigate = useNavigate()
+  const { positions: cachedPositions } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -906,7 +907,7 @@ export default function ClientPercentageModule() {
         <ClientDetailsMobileModal
           client={selectedClientForDetails}
           onClose={() => setSelectedClientForDetails(null)}
-          allPositionsCache={[]}
+          allPositionsCache={cachedPositions}
         />
       )}
     </div>
