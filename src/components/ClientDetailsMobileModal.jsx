@@ -15,6 +15,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [dealsLoading, setDealsLoading] = useState(false)
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [quickFilter, setQuickFilter] = useState('Today')
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(50)
 
   // Summary stats
   const [stats, setStats] = useState({
@@ -33,6 +37,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   useEffect(() => {
     fetchPositionsAndInitDeals()
   }, [client.login])
+
+  // Reset pagination when tab changes or search query changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab, searchQuery])
 
   const fetchPositionsAndInitDeals = async () => {
     try {
@@ -123,6 +132,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
   const handleQuickFilter = async (filterType) => {
     setQuickFilter(filterType)
+    setCurrentPage(1) // Reset to page 1
     const today = new Date()
     let fromDateObj, toDateObj
 
@@ -171,6 +181,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
   const handleApplyDateFilter = async () => {
     if (!fromDate && !toDate) return
+
+    setCurrentPage(1) // Reset to page 1
 
     const fromDateObj = fromDate ? new Date(fromDate) : null
     const toDateObj = toDate ? new Date(toDate) : null
@@ -227,6 +239,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     )
   }, [deals, searchQuery])
 
+  // Paginate data
+  const paginatedPositions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredPositions.slice(start, end)
+  }, [filteredPositions, currentPage, itemsPerPage])
+
+  const paginatedNetPositions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredNetPositions.slice(start, end)
+  }, [filteredNetPositions, currentPage, itemsPerPage])
+
+  const paginatedDeals = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredDeals.slice(start, end)
+  }, [filteredDeals, currentPage, itemsPerPage])
+
   const renderPositions = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -241,7 +272,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {filteredPositions.map((pos, idx) => (
+          {paginatedPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="px-3 py-2 text-xs text-blue-600">{pos.position || pos.ticket || '-'}</td>
               <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>
@@ -276,7 +307,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {filteredNetPositions.map((netPos, idx) => (
+          {paginatedNetPositions.map((netPos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="px-3 py-2 text-xs font-medium text-gray-900">{netPos.symbol}</td>
               <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>
@@ -304,7 +335,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {filteredDeals.map((deal, idx) => (
+          {paginatedDeals.map((deal, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               <td className="px-3 py-2 text-xs text-gray-900">{deal.deal}</td>
               <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>
@@ -394,29 +425,49 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
         {/* Search */}
         <div className="px-4 py-3 bg-white border-b border-gray-200">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search email"
-              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
+          <div className="flex items-center gap-2 mb-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search email"
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            {/* Pagination Buttons */}
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-              <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            {activeTab === 'positions' && `1 of ${filteredPositions.length} positions`}
-            {activeTab === 'netPositions' && `${filteredNetPositions.length} net positions`}
-            {activeTab === 'deals' && `${filteredDeals.length} deals`}
+          <p className="text-xs text-gray-500">
+            {activeTab === 'positions' && `${currentPage} / ${Math.ceil(filteredPositions.length / itemsPerPage)} - ${filteredPositions.length} positions`}
+            {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)} - ${filteredNetPositions.length} net positions`}
+            {activeTab === 'deals' && `${currentPage} / ${Math.ceil(filteredDeals.length / itemsPerPage)} - ${filteredDeals.length} deals`}
           </p>
         </div>
 
@@ -453,20 +504,18 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 >
                   Clear
                 </button>
-                <div className="relative flex-1">
-                  <select
-                    value={quickFilter}
-                    onChange={(e) => handleQuickFilter(e.target.value)}
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="Today">Today</option>
-                    <option value="Last Week">Last Week</option>
-                    <option value="Last Month">Last Month</option>
-                    <option value="Last 3 Months">Last 3 Months</option>
-                    <option value="Last 6 Months">Last 6 Months</option>
-                    <option value="All History">All History</option>
-                  </select>
-                </div>
+                <select
+                  value={quickFilter}
+                  onChange={(e) => handleQuickFilter(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Today">Today</option>
+                  <option value="Last Week">Last Week</option>
+                  <option value="Last Month">Last Month</option>
+                  <option value="Last 3 Months">Last 3 Months</option>
+                  <option value="Last 6 Months">Last 6 Months</option>
+                  <option value="All History">All History</option>
+                </select>
               </div>
             </div>
           </div>
