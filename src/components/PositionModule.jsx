@@ -1218,7 +1218,7 @@ export default function PositionModule() {
                       <React.Fragment key={idx}>
                         <div className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold sticky left-0 bg-white z-10">
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white">
                               {pos.symbol}
                               {groupByBaseSymbol && pos.variantCount > 1 && (
                                 <button
