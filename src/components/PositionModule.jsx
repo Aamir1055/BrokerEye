@@ -721,7 +721,8 @@ export default function PositionModule() {
           </div>
         </div>
 
-        {/* Face Cards Carousel */}
+        {/* Face Cards Carousel - Hidden in NET views */}
+        {!showNetPositions && !showClientNet && (
         <div className="pb-2 pl-5">
           <div 
             ref={carouselRef}
@@ -769,6 +770,7 @@ export default function PositionModule() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Search and navigation */}
         {!showNetPositions && !showClientNet && (
@@ -914,37 +916,69 @@ export default function PositionModule() {
         {/* NET Position View */}
         {showNetPositions && (
           <div className="px-4 space-y-4 bg-[#F5F7FA] min-h-screen pb-6">
-            {/* Summary Cards */}
-            {(netCardsVisible.netSymbols || netCardsVisible.totalNetVolume || netCardsVisible.totalNetPL || netCardsVisible.totalLogins) && (
-            <div className="grid grid-cols-2 gap-3 pt-4">
-              {netCardsVisible.netSymbols && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">NET SYMBOLS</div>
-                <div className="text-lg font-bold text-[#1F2937]">{netPositions.length}</div>
-              </div>
-              )}
-              {netCardsVisible.totalNetVolume && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET VOL</div>
-                <div className="text-lg font-bold text-[#1F2937]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
-              </div>
-              )}
-              {netCardsVisible.totalNetPL && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET P/L</div>
-                <div className={`text-lg font-bold ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
-                  {formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+            {/* Face Cards Carousel */}
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Symbols</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.length}</span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
+                    <div className={`w-[16px] h-[16px] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'bg-green-500' : 'bg-red-500'} rounded-[3px] flex items-center justify-center flex-shrink-0`}>
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+                    </span>
+                  </div>
+                </div>
+                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Total Logins</span>
+                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-[4px]">
+                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
+                  </div>
                 </div>
               </div>
-              )}
-              {netCardsVisible.totalLogins && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL LOGINS</div>
-                <div className="text-lg font-bold text-[#1F2937]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>
-              </div>
-              )}
             </div>
-            )}
 
             {/* Controls */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1073,40 +1107,6 @@ export default function PositionModule() {
         {/* Client NET View */}
         {showClientNet && (
           <div className="px-4 space-y-4 bg-[#F5F7FA] min-h-screen pb-6">
-            {/* Summary Cards */}
-            {(clientNetCardsVisible.clientNetRows || clientNetCardsVisible.totalNetVolume || clientNetCardsVisible.totalNetPL || clientNetCardsVisible.totalLogins) && (
-            <div className="grid grid-cols-2 gap-3 pt-4">
-              {clientNetCardsVisible.clientNetRows && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">CLIENT NET ROWS</div>
-                <div className="text-lg font-bold text-[#1F2937]">{clientNetPositions.length}</div>
-              </div>
-              )}
-              {clientNetCardsVisible.totalNetVolume && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET VOL</div>
-                <div className="text-lg font-bold text-[#1F2937]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
-              </div>
-              )}
-              {clientNetCardsVisible.totalNetPL && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET P/L</div>
-                <div className={`text-lg font-bold ${
-                  clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
-                }`}>
-                  {formatNum(Math.abs(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0)))}
-                </div>
-              </div>
-              )}
-              {clientNetCardsVisible.totalLogins && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
-                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL LOGINS</div>
-                <div className="text-lg font-bold text-[#1F2937]">{new Set(clientNetPositions.map(r=>r.login)).size}</div>
-              </div>
-              )}
-            </div>
-            )}
-
             {/* Face Cards Carousel */}
             <div className="pb-2">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
