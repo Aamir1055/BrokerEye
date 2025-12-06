@@ -162,6 +162,11 @@ const Client2Page = () => {
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
   const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
+  // Trend tracking for face card values (desktop)
+  const lastValuesRef = useRef({})
+  const lastTrendRef = useRef({})
+  const lastChangeRef = useRef({})
+  const STABLE_THRESHOLD_MS = 5000
 
   // Define default face card order for Client2 (matching all available cards in the actual rendering)
   const defaultClient2FaceCardOrder = [
@@ -3036,7 +3041,7 @@ const Client2Page = () => {
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
                 <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
               </div>
-              {/* Action Buttons Row moved to right of title */}
+              {/* Action Buttons Row moved to right of title - keep only Cards toggle */}
               <div className="flex items-center gap-2">
                 {/* Filter Button */}
                 <div className="relative flex items-center" ref={filterMenuRef}>
@@ -3454,52 +3459,7 @@ const Client2Page = () => {
                   />
                 </div>
               </button>
-                {/* IB Filter */}
-                <button
-                  onClick={() => setShowAccountFilterModal(true)}
-                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-                  title="IB Filter"
-                >
-                  <span className="text-xs font-medium text-[#374151]">IB Filter</span>
-                </button>
-
-                {/* Groups */}
-                <button
-                  onClick={() => setShowGroupsModal(true)}
-                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-                  title="Groups"
-                >
-                  <span className="text-xs font-medium text-[#374151]">Groups</span>
-                </button>
-
-                {/* Percentage toggle */}
-                <button
-                  onClick={() => setShowPercent(v => !v)}
-                  className="h-8 px-2 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  title="Percentage Mode"
-                >
-                  %
-                </button>
-
-                {/* Download */}
-                <button
-                  onClick={() => setShowExportMenu(v => !v)}
-                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-                  title="Download"
-                >
-                  <span className="text-xs font-medium text-[#374151]">Download</span>
-                </button>
-
-                {/* Card filter */}
-                <button
-                  onClick={() => setShowCardFilterMenu(v => !v)}
-                  className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
-                  title="Card Filter"
-                >
-                  <span className="text-xs font-medium text-[#374151]">Card Filter</span>
-                </button>
-
-                {/* Cards visibility */}
+                {/* Cards visibility only */}
                 <button
                   onClick={() => setShowFaceCards(v => !v)}
                   className="h-8 px-2.5 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
@@ -3542,16 +3502,30 @@ const Client2Page = () => {
 
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
-                  
-                  // Static color (no inc/dec color change)
-                  const textColorClass = 'text-[#000000]'
+
+                  // Determine trend color: green (increasing), red (decreasing), black (stable)
+                  const prev = lastValuesRef.current[cardKey]
+                  let trend = lastTrendRef.current[cardKey] || 'flat'
+                  let lastChange = lastChangeRef.current[cardKey] || Date.now()
+                  if (prev === undefined || rawValue !== prev) {
+                    if (prev !== undefined) {
+                      trend = rawValue > prev ? 'inc' : rawValue < prev ? 'dec' : trend
+                    }
+                    lastValuesRef.current[cardKey] = rawValue
+                    lastTrendRef.current[cardKey] = trend
+                    lastChangeRef.current[cardKey] = Date.now()
+                    lastChange = lastChangeRef.current[cardKey]
+                  }
+                  const age = Date.now() - lastChange
+                  const isStable = prev !== undefined && rawValue === prev && age >= STABLE_THRESHOLD_MS
+                  const textColorClass = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
                   
                   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
                   
                   return (
                     <div
                       key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[64px]"
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-3 md:p-3 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative min-h-[55px]"
                       draggable={!isMobile}
                       onDragStart={(e) => !isMobile && handleCardDragStart(e, cardKey)}
                       onDragOver={(e) => !isMobile && handleCardDragOver(e)}
