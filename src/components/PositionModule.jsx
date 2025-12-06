@@ -7,6 +7,7 @@ import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
+import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 
@@ -32,6 +33,7 @@ export default function PositionModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -243,7 +245,15 @@ export default function PositionModule() {
       case 'commission':
         return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
       case 'login':
-        return <div className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass}`} style={stickyStyle}>{pos.login || '-'}</div>
+        return (
+          <div 
+            className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
+            style={stickyStyle}
+            onClick={() => setSelectedClient({ login: pos.login, email: pos.email || '' })}
+          >
+            {pos.login || '-'}
+          </div>
+        )
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -885,6 +895,15 @@ export default function PositionModule() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Client Details Modal */}
+      {selectedClient && (
+        <ClientDetailsMobileModal
+          client={selectedClient}
+          onClose={() => setSelectedClient(null)}
+          allPositionsCache={positions}
+        />
       )}
     </div>
   )
