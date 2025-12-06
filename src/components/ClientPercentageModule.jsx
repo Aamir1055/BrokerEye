@@ -9,6 +9,7 @@ import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
 import LoginGroupModal from './LoginGroupModal'
 import SetCustomPercentageModal from './SetCustomPercentageModal'
+import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 
@@ -33,6 +34,7 @@ export default function ClientPercentageModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [selectedClientForDetails, setSelectedClientForDetails] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -232,7 +234,19 @@ export default function ClientPercentageModule() {
     switch (key) {
       case 'login':
         value = item.client_login || item.login || '-'
-        break
+        return (
+          <div 
+            className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            style={{
+              border: 'none', 
+              outline: 'none', 
+              boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+            }}
+            onClick={() => setSelectedClientForDetails({ login: value, email: '' })}
+          >
+            <span className="truncate">{value}</span>
+          </div>
+        )
       case 'percentage':
         value = item.percentage ? `${item.percentage}%` : '-'
         break
@@ -884,6 +898,15 @@ export default function ClientPercentageModule() {
             setSelectedClient(null)
           }}
           onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Client Details Modal */}
+      {selectedClientForDetails && (
+        <ClientDetailsMobileModal
+          client={selectedClientForDetails}
+          onClose={() => setSelectedClientForDetails(null)}
+          allPositionsCache={[]}
         />
       )}
     </div>
