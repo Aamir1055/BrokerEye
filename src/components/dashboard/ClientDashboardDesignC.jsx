@@ -420,7 +420,9 @@ export default function ClientDashboardDesignC() {
     if (!Array.isArray(filteredClients)) return []
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return filteredClients.slice(startIndex, endIndex).map(c => ({
+    const paginatedClients = filteredClients.slice(startIndex, endIndex)
+    return paginatedClients.map(c => ({
+      client: c, // Store original client object
       login: c.login,
       name: c.name || c.fullName || c.clientName || c.email || '-',
       lastName: c.lastName || c.last_name || '-',
@@ -1332,16 +1334,14 @@ export default function ClientDashboardDesignC() {
             ))}
           </div>
           {/* Rows */}
-          {rows.map((r, idx) => {
-            const client = paginatedClients[idx]
-            return (
+          {rows.map((r, idx) => (
             <div key={idx} className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
               {visibleColumnsList.map((col, colIdx) => (
                 <div 
                   key={col.key}
                   onClick={() => {
-                    if (col.key === 'login' && client) {
-                      setSelectedClient(client)
+                    if (col.key === 'login' && r.client) {
+                      setSelectedClient(r.client)
                     }
                   }}
                   className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
@@ -1353,8 +1353,7 @@ export default function ClientDashboardDesignC() {
                 </div>
               ))}
             </div>
-            )
-          })}
+          ))}
           {/* Footer row */}
           <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0', columnGap: '0', gridTemplateColumns}}>
             {visibleColumnsList.map((col, idx) => (
