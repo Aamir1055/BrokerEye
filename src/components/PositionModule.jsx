@@ -46,7 +46,7 @@ export default function PositionModule() {
   
   // NET Position states
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const netItemsPerPage = 10
+  const netItemsPerPage = 15
   const [netCardsVisible, setNetCardsVisible] = useState({
     netSymbols: true,
     totalNetVolume: true,
@@ -61,7 +61,11 @@ export default function PositionModule() {
     netVolume: true,
     avgPrice: true,
     totalProfit: true,
-    loginCount: true
+    totalStorage: false,
+    totalCommission: false,
+    loginCount: true,
+    totalPositions: true,
+    variantCount: false
   })
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
   const netColumnSelectorRef = useRef(null)
@@ -69,7 +73,7 @@ export default function PositionModule() {
   
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
-  const clientNetItemsPerPage = 10
+  const clientNetItemsPerPage = 15
   const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
     clientNetRows: true,
     totalNetVolume: true,
@@ -85,6 +89,8 @@ export default function PositionModule() {
     netVolume: true,
     avgPrice: true,
     totalProfit: true,
+    totalStorage: false,
+    totalCommission: false,
     totalPositions: true
   })
   const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
@@ -166,7 +172,8 @@ export default function PositionModule() {
           key,
           buyPositions: [],
           sellPositions: [],
-          logins: new Set()
+          logins: new Set(),
+          variantMap: new Map()
         })
       }
 
@@ -184,6 +191,17 @@ export default function PositionModule() {
       } else if (actionNorm === 'sell') {
         group.sellPositions.push(pos)
       }
+
+      // Track exact symbol variants when grouping by base
+      if (groupByBaseSymbol) {
+        const exact = symbol
+        if (!group.variantMap.has(exact)) {
+          group.variantMap.set(exact, { buyPositions: [], sellPositions: [] })
+        }
+        const v = group.variantMap.get(exact)
+        if (actionNorm === 'buy') v.buyPositions.push(pos)
+        else if (actionNorm === 'sell') v.sellPositions.push(pos)
+      }
     })
 
     const netPositionsData = []
@@ -198,6 +216,8 @@ export default function PositionModule() {
       let totalWeightedPrice = 0
       let totalVolume = 0
       let totalProfit = 0
+      let totalStorage = 0
+      let totalCommission = 0
 
       if (netVolume > 0) {
         group.buyPositions.forEach(p => {
@@ -206,6 +226,8 @@ export default function PositionModule() {
           totalWeightedPrice += price * vol
           totalVolume += vol
           totalProfit += p.profit || 0
+          totalStorage += p.storage || 0
+          totalCommission += p.commission || 0
         })
       } else {
         group.sellPositions.forEach(p => {
@@ -214,6 +236,8 @@ export default function PositionModule() {
           totalWeightedPrice += price * vol
           totalVolume += vol
           totalProfit += p.profit || 0
+          totalStorage += p.storage || 0
+          totalCommission += p.commission || 0
         })
       }
 
@@ -222,14 +246,44 @@ export default function PositionModule() {
       const loginCount = group.logins.size
       const totalPositions = group.buyPositions.length + group.sellPositions.length
 
+      // Build variant breakdown when grouping by base symbol
+      let variantCount = 1
+      let variants = []
+      if (groupByBaseSymbol) {
+        variantCount = group.variantMap.size
+        variants = Array.from(group.variantMap.entries()).map(([exact, data]) => {
+          const vBuyVol = data.buyPositions.reduce((s, p) => s + (p.volume || 0), 0)
+          const vSellVol = data.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
+          const vNet = vBuyVol - vSellVol
+          if (vNet === 0) return null
+          let tw = 0, tv = 0, tp = 0, ts = 0, tc = 0
+          const use = vNet > 0 ? data.buyPositions : data.sellPositions
+          use.forEach(p => { const vol = p.volume || 0; const price = p.priceOpen || 0; tw += price * vol; tv += vol; tp += p.profit || 0; ts += p.storage || 0; tc += p.commission || 0 })
+          const vAvg = tv > 0 ? tw / tv : 0
+          return {
+            exactSymbol: exact,
+            netType: vNet > 0 ? 'Sell' : 'Buy',
+            netVolume: Math.abs(vNet),
+            avgPrice: vAvg,
+            totalProfit: tp,
+            totalStorage: ts,
+            totalCommission: tc
+          }
+        }).filter(Boolean)
+      }
+
       netPositionsData.push({
         symbol: group.key,
         netType,
         netVolume: Math.abs(netVolume),
         avgPrice,
         totalProfit,
+        totalStorage,
+        totalCommission,
         loginCount,
-        totalPositions
+        totalPositions,
+        variantCount,
+        variants
       })
     })
 
@@ -242,6 +296,12 @@ export default function PositionModule() {
   const calculateClientNetPositions = (positions) => {
     if (!positions || positions.length === 0) return []
 
+    const getBaseSymbol = (s) => {
+      if (!s || typeof s !== 'string') return s
+      const parts = s.split(/[\.\-]/)
+      return parts[0] || s
+    }
+
     const loginMap = new Map()
 
     positions.forEach(pos => {
@@ -251,14 +311,15 @@ export default function PositionModule() {
       
       if (!loginMap.has(login)) loginMap.set(login, new Map())
       const symMap = loginMap.get(login)
+      const symbolKey = groupByBaseSymbol ? getBaseSymbol(symbol) : symbol
       
-      if (!symMap.has(symbol)) {
-        symMap.set(symbol, {
+      if (!symMap.has(symbolKey)) {
+        symMap.set(symbolKey, {
           buyPositions: [],
           sellPositions: []
         })
       }
-      const bucket = symMap.get(symbol)
+      const bucket = symMap.get(symbolKey)
 
       const rawAction = pos.action
       let actionNorm = null
@@ -278,7 +339,7 @@ export default function PositionModule() {
         const netVol = buyVol - sellVol
         if (netVol === 0) return
 
-        let tw = 0, tv = 0, tp = 0
+        let tw = 0, tv = 0, tp = 0, ts = 0, tc = 0
         const use = netVol > 0 ? bucket.buyPositions : bucket.sellPositions
         use.forEach(p => {
           const v = p.volume || 0
@@ -286,6 +347,8 @@ export default function PositionModule() {
           tw += pr * v
           tv += v
           tp += p.profit || 0
+          ts += p.storage || 0
+          tc += p.commission || 0
         })
         const avg = tv > 0 ? tw / tv : 0
         const netType = netVol > 0 ? 'Sell' : 'Buy'
@@ -298,6 +361,8 @@ export default function PositionModule() {
           netVolume: Math.abs(netVol),
           avgPrice: avg,
           totalProfit: tp,
+          totalStorage: ts,
+          totalCommission: tc,
           totalPositions
         })
       })
@@ -306,7 +371,7 @@ export default function PositionModule() {
     return rows.sort((a, b) => a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
   }
 
-  const clientNetPositions = useMemo(() => calculateClientNetPositions(ibFilteredPositions), [ibFilteredPositions])
+  const clientNetPositions = useMemo(() => calculateClientNetPositions(ibFilteredPositions), [ibFilteredPositions, groupByBaseSymbol])
 
   // Filter positions based on search
   const filteredPositions = useMemo(() => {
@@ -490,11 +555,16 @@ export default function PositionModule() {
       case 'commission':
         return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
       case 'login':
+        const handleLoginClick = () => setSelectedClient({ login: pos.login, email: pos.email || '' })
         return (
           <div 
             className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
             style={stickyStyle}
-            onClick={() => setSelectedClient({ login: pos.login, email: pos.email || '' })}
+            onClick={handleLoginClick}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              handleLoginClick()
+            }}
           >
             {pos.login || '-'}
           </div>
@@ -560,8 +630,25 @@ export default function PositionModule() {
     return () => carousel.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Fix mobile viewport height on actual devices
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+    }
+    
+    setVH()
+    window.addEventListener('resize', setVH)
+    window.addEventListener('orientationchange', setVH)
+    
+    return () => {
+      window.removeEventListener('resize', setVH)
+      window.removeEventListener('orientationchange', setVH)
+    }
+  }, [])
+
   return (
-    <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
         <button 
@@ -1021,7 +1108,18 @@ export default function PositionModule() {
                       {Object.keys(netVisibleColumns).map(k => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={netVisibleColumns[k]} onChange={() => setNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] text-gray-700 capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'loginCount' ? 'Login Count' : k}</span>
+                          <span className="text-[10px] text-gray-700 capitalize">{
+                            k === 'netType' ? 'NET Type' : 
+                            k === 'netVolume' ? 'NET Volume' : 
+                            k === 'avgPrice' ? 'Avg Price' : 
+                            k === 'totalProfit' ? 'Total Profit' : 
+                            k === 'totalStorage' ? 'Total Storage' :
+                            k === 'totalCommission' ? 'Total Commission' :
+                            k === 'loginCount' ? 'Login Count' : 
+                            k === 'totalPositions' ? 'Total Positions' :
+                            k === 'variantCount' ? 'Variant Count' :
+                            k
+                          }</span>
                         </label>
                       ))}
                     </div>
@@ -1068,7 +1166,11 @@ export default function PositionModule() {
                     {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">NET Vol</div>}
                     {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">Avg Price</div>}
                     {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">P/L</div>}
+                    {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1">Storage</div>}
+                    {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1">Comm</div>}
                     {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1">Logins</div>}
+                    {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">Positions</div>}
+                    {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1">Variants</div>}
                   </div>
 
                   {/* Body */}
@@ -1082,7 +1184,11 @@ export default function PositionModule() {
                         {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>}
                         {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>}
                         {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                        {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
+                        {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
                         {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>}
+                        {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
+                        {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[32px]">{pos.variantCount}</div>}
                       </div>
                     ))
                   )}
@@ -1095,7 +1201,11 @@ export default function PositionModule() {
                       {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
                       {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">-</div>}
                       {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
                       {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
+                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">{netPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
+                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1">-</div>}
                     </div>
                   )}
                 </div>
@@ -1212,7 +1322,16 @@ export default function PositionModule() {
                       {Object.keys(clientNetVisibleColumns).map(k => (
                         <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
                           <input type="checkbox" checked={clientNetVisibleColumns[k]} onChange={() => setClientNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] text-gray-700 capitalize">{k === 'netType' ? 'NET Type' : k === 'netVolume' ? 'NET Volume' : k === 'avgPrice' ? 'Avg Price' : k === 'totalProfit' ? 'Total Profit' : k === 'totalPositions' ? 'Positions' : k}</span>
+                          <span className="text-[10px] text-gray-700 capitalize">{
+                            k === 'netType' ? 'NET Type' : 
+                            k === 'netVolume' ? 'NET Volume' : 
+                            k === 'avgPrice' ? 'Avg Price' : 
+                            k === 'totalProfit' ? 'Total Profit' : 
+                            k === 'totalStorage' ? 'Total Storage' :
+                            k === 'totalCommission' ? 'Total Commission' :
+                            k === 'totalPositions' ? 'Positions' : 
+                            k
+                          }</span>
                         </label>
                       ))}
                     </div>
@@ -1260,6 +1379,8 @@ export default function PositionModule() {
                     {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">NET Vol</div>}
                     {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">Avg Price</div>}
                     {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">P/L</div>}
+                    {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1">Storage</div>}
+                    {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1">Comm</div>}
                     {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">Positions</div>}
                   </div>
 
@@ -1279,6 +1400,8 @@ export default function PositionModule() {
                         {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${
                           pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>{formatNum(pos.totalProfit)}</div>}
+                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalStorage || 0)}</div>}
+                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.totalCommission || 0)}</div>}
                         {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[32px]">{pos.totalPositions}</div>}
                       </div>
                     ))
@@ -1293,6 +1416,8 @@ export default function PositionModule() {
                       {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
                       {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1">-</div>}
                       {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
                       {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
