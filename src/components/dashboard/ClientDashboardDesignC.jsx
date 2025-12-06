@@ -19,7 +19,7 @@ const formatNum = (n) => {
 
 export default function ClientDashboardDesignC() {
   const navigate = useNavigate()
-  const { clients: normalizedClients, rawClients, clientStats, lastWsReceiveAt } = useData()
+  const { clients: normalizedClients, rawClients, clientStats, lastWsReceiveAt, positions: cachedPositions } = useData()
   // Use rawClients (unnormalized) to match desktop ClientsPage behavior
   // rawClients contains data without frontend USC normalization - backend handles USC
   const clients = rawClients.length > 0 ? rawClients : normalizedClients
@@ -1778,7 +1778,7 @@ export default function ClientDashboardDesignC() {
         <ClientDetailsMobileModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          allPositionsCache={[]}
+          allPositionsCache={cachedPositions}
         />
       )}
     </div>
