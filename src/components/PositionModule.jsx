@@ -41,6 +41,8 @@ export default function PositionModule() {
   const itemsPerPage = 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
+  const [showNetPositions, setShowNetPositions] = useState(false)
+  const [showClientNet, setShowClientNet] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     firstName: false,
@@ -95,6 +97,93 @@ export default function PositionModule() {
       uniqueSymbols
     }
   }, [ibFilteredPositions])
+
+  // Calculate NET positions
+  const calculateGlobalNetPositions = (positions) => {
+    if (!positions || positions.length === 0) return []
+
+    const symbolMap = new Map()
+
+    positions.forEach(pos => {
+      const symbol = pos.symbol
+      if (!symbol) return
+
+      if (!symbolMap.has(symbol)) {
+        symbolMap.set(symbol, {
+          symbol,
+          buyPositions: [],
+          sellPositions: [],
+          logins: new Set()
+        })
+      }
+
+      const group = symbolMap.get(symbol)
+      group.logins.add(pos.login)
+
+      const rawAction = pos.action
+      let actionNorm = null
+      if (rawAction === 0 || rawAction === '0') actionNorm = 'buy'
+      else if (rawAction === 1 || rawAction === '1') actionNorm = 'sell'
+      else if (typeof rawAction === 'string') actionNorm = rawAction.toLowerCase()
+
+      if (actionNorm === 'buy') {
+        group.buyPositions.push(pos)
+      } else if (actionNorm === 'sell') {
+        group.sellPositions.push(pos)
+      }
+    })
+
+    const netPositionsData = []
+
+    symbolMap.forEach(group => {
+      const buyVolume = group.buyPositions.reduce((sum, p) => sum + (p.volume || 0), 0)
+      const sellVolume = group.sellPositions.reduce((sum, p) => sum + (p.volume || 0), 0)
+      const netVolume = buyVolume - sellVolume
+
+      if (netVolume === 0) return
+
+      let totalWeightedPrice = 0
+      let totalVolume = 0
+      let totalProfit = 0
+
+      if (netVolume > 0) {
+        group.buyPositions.forEach(p => {
+          const vol = p.volume || 0
+          const price = p.priceOpen || 0
+          totalWeightedPrice += price * vol
+          totalVolume += vol
+          totalProfit += p.profit || 0
+        })
+      } else {
+        group.sellPositions.forEach(p => {
+          const vol = p.volume || 0
+          const price = p.priceOpen || 0
+          totalWeightedPrice += price * vol
+          totalVolume += vol
+          totalProfit += p.profit || 0
+        })
+      }
+
+      const avgPrice = totalVolume > 0 ? totalWeightedPrice / totalVolume : 0
+      const netType = netVolume > 0 ? 'Sell' : 'Buy'
+      const loginCount = group.logins.size
+      const totalPositions = group.buyPositions.length + group.sellPositions.length
+
+      netPositionsData.push({
+        symbol: group.symbol,
+        netType,
+        netVolume: Math.abs(netVolume),
+        avgPrice,
+        totalProfit,
+        loginCount,
+        totalPositions
+      })
+    })
+
+    return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
+  }
+
+  const netPositions = useMemo(() => calculateGlobalNetPositions(ibFilteredPositions), [ibFilteredPositions])
 
   // Filter positions based on search
   const filteredPositions = useMemo(() => {
@@ -432,20 +521,38 @@ export default function PositionModule() {
               </svg>
               <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
             </button>
-            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+            <button 
+              onClick={() => {
+                setShowNetPositions((v) => {
+                  const nv = !v
+                  if (nv) setShowClientNet(false)
+                  return nv
+                })
+              }}
+              className={`flex-1 h-[37px] rounded-[12px] ${showNetPositions ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all`}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="#666666" strokeWidth="2"/>
-                <path d="M12 8v8M8 12h8" stroke="#666666" strokeWidth="2"/>
+                <circle cx="12" cy="12" r="9" stroke={showNetPositions ? "#ffffff" : "#666666"} strokeWidth="2"/>
+                <path d="M12 8v8M8 12h8" stroke={showNetPositions ? "#ffffff" : "#666666"} strokeWidth="2"/>
               </svg>
-              <span className="text-[#666666] text-[10px] font-medium font-outfit">Net Positions</span>
+              <span className={`${showNetPositions ? 'text-white' : 'text-[#666666]'} text-[10px] font-medium font-outfit`}>Net Positions</span>
             </button>
-            <button className="flex-1 h-[37px] rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+            <button 
+              onClick={() => {
+                setShowClientNet((v) => {
+                  const nv = !v
+                  if (nv) setShowNetPositions(false)
+                  return nv
+                })
+              }}
+              className={`flex-1 h-[37px] rounded-[12px] ${showClientNet ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all`}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke="#666666" strokeWidth="2"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#666666" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={showClientNet ? "#ffffff" : "#666666"} strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke={showClientNet ? "#ffffff" : "#666666"} strokeWidth="2"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={showClientNet ? "#ffffff" : "#666666"} strokeLinecap="round"/>
               </svg>
-              <span className="text-[#666666] text-[10px] font-medium font-outfit">Client Net</span>
+              <span className={`${showClientNet ? 'text-white' : 'text-[#666666]'} text-[10px] font-medium font-outfit`}>Client Net</span>
             </button>
             <button 
               onClick={() => window.location.reload()}
@@ -553,6 +660,7 @@ export default function PositionModule() {
         </div>
 
         {/* Table - full width, remove outer padding */}
+        {!showNetPositions && !showClientNet && (
         <div>
           <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
@@ -638,6 +746,92 @@ export default function PositionModule() {
             </div>
           </div>
         </div>
+        )}
+
+        {/* NET Position View */}
+        {showNetPositions && (
+          <div className="px-4">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
+                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">NET SYMBOLS</div>
+                <div className="text-lg font-bold text-[#1F2937]">{netPositions.length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
+                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET VOL</div>
+                <div className="text-lg font-bold text-[#1F2937]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
+                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL NET P/L</div>
+                <div className={`text-lg font-bold ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                  {formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-3">
+                <div className="text-[10px] text-[#6B7280] font-semibold mb-1">TOTAL LOGINS</div>
+                <div className="text-lg font-bold text-[#1F2937]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>
+              </div>
+            </div>
+
+            {/* NET Positions Table */}
+            <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+              <div className="overflow-x-auto">
+                <div className="min-w-full">
+                  {/* Header */}
+                  <div className="grid grid-cols-6 bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
+                    <div className="flex items-center justify-center px-1">Symbol</div>
+                    <div className="flex items-center justify-center px-1">Type</div>
+                    <div className="flex items-center justify-center px-1">NET Vol</div>
+                    <div className="flex items-center justify-center px-1">Avg Price</div>
+                    <div className="flex items-center justify-center px-1">P/L</div>
+                    <div className="flex items-center justify-center px-1">Logins</div>
+                  </div>
+
+                  {/* Body */}
+                  {netPositions.length === 0 ? (
+                    <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
+                  ) : (
+                    netPositions.map((pos, idx) => (
+                      <div key={idx} className="grid grid-cols-6 text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
+                        <div className="flex items-center justify-center px-1 h-[32px] font-semibold">{pos.symbol}</div>
+                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>
+                          {pos.netType}
+                        </div>
+                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.netVolume)}</div>
+                        <div className="flex items-center justify-center px-1 h-[32px]">{formatNum(pos.avgPrice)}</div>
+                        <div className={`flex items-center justify-center px-1 h-[32px] font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatNum(pos.totalProfit)}
+                        </div>
+                        <div className="flex items-center justify-center px-1 h-[32px]">{pos.loginCount}</div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Footer */}
+                  {netPositions.length > 0 && (
+                    <div className="grid grid-cols-6 bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
+                      <div className="flex items-center justify-center px-1">Total</div>
+                      <div className="flex items-center justify-center px-1">-</div>
+                      <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>
+                      <div className="flex items-center justify-center px-1">-</div>
+                      <div className="flex items-center justify-center px-1">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>
+                      <div className="flex items-center justify-center px-1">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Client NET View (Placeholder for future implementation) */}
+        {showClientNet && (
+          <div className="px-4">
+            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-8 text-center">
+              <div className="text-[#6B7280] text-sm">Client NET view coming soon</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CustomizeView Modal */}
