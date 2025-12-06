@@ -3566,22 +3566,9 @@ const Client2Page = () => {
                   // Use the card's getValue directly (already handles percentage calculations)
                   const rawValue = card.getValue()
 
-                  // Determine trend color: green (increasing), red (decreasing), black (stable)
-                  const prev = lastValuesRef.current[cardKey]
-                  let trend = lastTrendRef.current[cardKey] || 'flat'
-                  let lastChange = lastChangeRef.current[cardKey] || Date.now()
-                  if (prev === undefined || rawValue !== prev) {
-                    if (prev !== undefined) {
-                      trend = rawValue > prev ? 'inc' : rawValue < prev ? 'dec' : trend
-                    }
-                    lastValuesRef.current[cardKey] = rawValue
-                    lastTrendRef.current[cardKey] = trend
-                    lastChangeRef.current[cardKey] = Date.now()
-                    lastChange = lastChangeRef.current[cardKey]
-                  }
-                  const age = Date.now() - lastChange
-                  const isStable = prev !== undefined && rawValue === prev && age >= STABLE_THRESHOLD_MS
-                  const textColorClass = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
+                  // Determine color based on value: green (>0), red (<0), black (=0)
+                  const numericValue = Number(rawValue) || 0
+                  const textColorClass = numericValue > 0 ? 'text-[#16A34A]' : numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'
                   
                   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
                   

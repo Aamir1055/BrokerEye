@@ -126,15 +126,44 @@ export default function Client2Module() {
       const usePercent = overridePercent !== null ? overridePercent : showPercent
       // Check if any filter is active to determine if we need all data
       const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
-                               selectedIB || getActiveGroupFilter()
+                               selectedIB || getActiveGroupFilter('client2')
       
-      // Use searchClients to get totals data with percentage parameter
-      // Fetch all records if filters are active, otherwise paginate
-      const response = await brokerAPI.searchClients({
+      // Build payload
+      const payload = {
         page: hasActiveFilters ? 1 : currentPage,
         limit: hasActiveFilters ? 10000 : 100,
         percentage: usePercent
-      })
+      }
+
+      // Add group filter to payload if active
+      const activeGroupName = getActiveGroupFilter('client2')
+      if (activeGroupName && groups && groups.length > 0) {
+        const activeGroup = groups.find(g => g.name === activeGroupName)
+        if (activeGroup) {
+          if (activeGroup.range) {
+            // Range-based group
+            payload.accountRangeMin = activeGroup.range.from
+            payload.accountRangeMax = activeGroup.range.to
+          } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+            // Manual selection group
+            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+          }
+        }
+      }
+
+      // Add IB filter to payload if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
+          // Intersect with group filter if both exist
+          const groupSet = new Set(payload.mt5Accounts)
+          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        } else {
+          payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+        }
+      }
+      
+      // Use searchClients to get totals data with percentage parameter
+      const response = await brokerAPI.searchClients(payload)
       
       // Extract data from response.data.data structure
       const responseData = response?.data || {}
@@ -150,7 +179,7 @@ export default function Client2Module() {
     } catch (error) {
       console.error('Failed to fetch clients:', error)
     }
-  }, [showPercent, filters, selectedIB, getActiveGroupFilter, currentPage])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage])
 
   // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
@@ -800,7 +829,7 @@ export default function Client2Module() {
                   boxSizing: 'border-box',
                   minWidth: '125px',
                   width: '125px',
-                  height: '50px',
+                  height: '60px',
                   background: '#FFFFFF',
                   border: '1px solid #F2F2F7',
                   boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',

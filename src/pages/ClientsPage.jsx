@@ -2759,25 +2759,9 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Render compact Client2-style card with trend-based value color
-                  const prev = lastValuesRef.current[card.id]
-                  let trend = lastTrendRef.current[card.id] || 'flat'
-                  let lastChange = lastChangeRef.current[card.id] || Date.now()
-                  if (prev === undefined || card.numericValue !== prev) {
-                    if (prev !== undefined) {
-                      trend = card.numericValue > prev ? 'inc' : card.numericValue < prev ? 'dec' : trend
-                    }
-                    lastValuesRef.current[card.id] = card.numericValue
-                    lastTrendRef.current[card.id] = trend
-                    lastChangeRef.current[card.id] = Date.now()
-                    lastChange = lastChangeRef.current[card.id]
-                  }
-                  const age = Date.now() - lastChange
-                  const isStable = prev !== undefined && card.numericValue === prev && age >= STABLE_THRESHOLD_MS
-                  const isPositive = card.numericValue > 0
-                  const isNegative = card.numericValue < 0
-                  const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
-                  const valueColor = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
+                  // Determine color based on value: green (>0), red (<0), black (=0)
+                  const numericValue = Number(card.numericValue) || 0
+                  const valueColor = numericValue > 0 ? 'text-[#16A34A]' : numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'
                   
                   return (
                     <div
@@ -2868,25 +2852,9 @@ const ClientsPage = () => {
                   
                   if (!card || cardVisibility[cardId] === false) return null
                   
-                  // Render compact Client2-style card with trend-based value color
-                  const prev = lastValuesRef.current[card.id]
-                  let trend = lastTrendRef.current[card.id] || 'flat'
-                  let lastChange = lastChangeRef.current[card.id] || Date.now()
-                  if (prev === undefined || card.numericValue !== prev) {
-                    if (prev !== undefined) {
-                      trend = card.numericValue > prev ? 'inc' : card.numericValue < prev ? 'dec' : trend
-                    }
-                    lastValuesRef.current[card.id] = card.numericValue
-                    lastTrendRef.current[card.id] = trend
-                    lastChangeRef.current[card.id] = Date.now()
-                    lastChange = lastChangeRef.current[card.id]
-                  }
-                  const age = Date.now() - lastChange
-                  const isStable = prev !== undefined && card.numericValue === prev && age >= STABLE_THRESHOLD_MS
-                  const isPositive = card.numericValue > 0
-                  const isNegative = card.numericValue < 0
-                  const arrowColor = isPositive ? '#16A34A' : isNegative ? '#DC2626' : '#000000'
-                  const valueColor = isStable ? 'text-[#000000]' : (trend === 'inc' ? 'text-[#16A34A]' : trend === 'dec' ? 'text-[#DC2626]' : 'text-[#000000]')
+                  // Determine color based on value: green (>0), red (<0), black (=0)
+                  const numericValue = Number(card.numericValue) || 0
+                  const valueColor = numericValue > 0 ? 'text-[#16A34A]' : numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'
                   
                   return (
                     <div
