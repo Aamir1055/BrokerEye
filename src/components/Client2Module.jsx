@@ -824,7 +824,27 @@ export default function Client2Module() {
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
-                draggable={false}
+                draggable={true}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', i.toString())
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
+                  const toIndex = i
+                  if (fromIndex !== toIndex && !isNaN(fromIndex)) {
+                    const newOrder = [...cardOrder]
+                    const [movedLabel] = newOrder.splice(fromIndex, 1)
+                    newOrder.splice(toIndex, 0, movedLabel)
+                    setCardOrder(newOrder)
+                    try { localStorage.setItem('client2_card_order', JSON.stringify(newOrder)) } catch {}
+                  }
+                }}
                 style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -840,9 +860,11 @@ export default function Client2Module() {
                   justifyContent: 'space-between',
                   scrollSnapAlign: 'start',
                   flexShrink: 0,
-                  cursor: 'default',
+                  cursor: 'grab',
                   flex: 'none'
                 }}
+                onMouseDown={(e) => e.currentTarget.style.cursor = 'grabbing'}
+                onMouseUp={(e) => e.currentTarget.style.cursor = 'grab'}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
