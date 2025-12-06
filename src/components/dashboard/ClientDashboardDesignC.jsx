@@ -5,6 +5,7 @@ import IBFilterModal from '../IBFilterModal'
 import GroupModal from '../GroupModal'
 import LoginGroupsModal from '../LoginGroupsModal'
 import LoginGroupModal from '../LoginGroupModal'
+import LoginDetailsModal from '../LoginDetailsModal'
 import { useData } from '../../contexts/DataContext'
 import { useIB } from '../../contexts/IBContext'
 import { useGroups } from '../../contexts/GroupContext'
@@ -157,6 +158,11 @@ export default function ClientDashboardDesignC() {
   const CARD_ORDER_KEY = 'client-dashboard-c-order'
   // Pointer-based drag support (works on touch and mouse)
   const [dragStartLabel, setDragStartLabel] = useState(null)
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
+  // Login details modal
+  const [selectedLogin, setSelectedLogin] = useState(null)
 
   const swapOrder = (fromLabel, toLabel) => {
     if (!fromLabel || !toLabel || fromLabel === toLabel) return
@@ -223,7 +229,35 @@ export default function ClientDashboardDesignC() {
     return filtered;
   }
 
-  const filteredClients = useMemo(() => getFilteredClients(), [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
+  const filteredClients = useMemo(() => {
+    let filtered = getFilteredClients()
+    
+    // Apply sorting if sortColumn is set
+    if (sortColumn) {
+      filtered = [...filtered].sort((a, b) => {
+        const aVal = a[sortColumn]
+        const bVal = b[sortColumn]
+        
+        if (aVal == null && bVal == null) return 0
+        if (aVal == null) return 1
+        if (bVal == null) return -1
+        
+        // Try numeric comparison first
+        const aNum = Number(aVal)
+        const bNum = Number(bVal)
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
+        }
+        
+        // Fall back to string comparison
+        const aStr = String(aVal).toLowerCase()
+        const bStr = String(bVal).toLowerCase()
+        return sortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
+      })
+    }
+    
+    return filtered
+  }, [clients, filters, lastWsReceiveAt, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters, sortColumn, sortDirection])
   const totalPages = Math.ceil((filteredClients?.length || 0) / itemsPerPage)
 
   // Export functions
@@ -1275,10 +1309,25 @@ export default function ClientDashboardDesignC() {
             {visibleColumnsList.map((col, idx) => (
               <div 
                 key={col.key}
-                className={`h-[28px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                onClick={() => {
+                  if (sortColumn === col.key) {
+                    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+                  } else {
+                    setSortColumn(col.key)
+                    setSortDirection('asc')
+                  }
+                }}
+                className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:bg-[#1557a8] active:bg-[#114a94] transition-colors ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
                 style={{border: 'none', outline: 'none', boxShadow: 'none'}}
               >
-                {col.label}
+                <div className="flex items-center gap-1">
+                  <span>{col.label}</span>
+                  {sortColumn === col.key && (
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className={`transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                      <path d="M6 3L9 7H3L6 3Z" fill="currentColor"/>
+                    </svg>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -1288,8 +1337,13 @@ export default function ClientDashboardDesignC() {
               {visibleColumnsList.map((col, colIdx) => (
                 <div 
                   key={col.key}
+                  onClick={() => {
+                    if (col.key === 'login') {
+                      setSelectedLogin(r.login)
+                    }
+                  }}
                   className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
-                    col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10' : ''
+                    col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
                   }`}
                   style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                 >
@@ -1715,6 +1769,14 @@ export default function ClientDashboardDesignC() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Login Details Modal */}
+      {selectedLogin && (
+        <LoginDetailsModal
+          login={selectedLogin}
+          onClose={() => setSelectedLogin(null)}
+        />
       )}
     </div>
   )
