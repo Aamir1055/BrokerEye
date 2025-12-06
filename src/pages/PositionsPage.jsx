@@ -2056,7 +2056,6 @@ const PositionsPage = () => {
               
               <div className="flex-1"></div>
               
-              <WebSocketIndicator />
               <button
                 onClick={() => {
                   console.log('[Positions] Requesting fresh position snapshot from WebSocket...')
@@ -2296,8 +2295,8 @@ const PositionsPage = () => {
               {/* NET Position Table */}
               <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
                 {/* NET module controls */}
-                <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200 mb-3">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="h-[70px] bg-white rounded-lg shadow-sm border border-gray-200 mb-3 flex items-center px-4">
+                  <div className="flex flex-row items-center justify-between gap-3 w-full">
                     <div className="flex items-center flex-wrap gap-3">
                       {/* NET search on the left */}
                       <div className="relative" ref={netSearchRef}>
@@ -2324,44 +2323,53 @@ const PositionsPage = () => {
                           </div>
                         )}
                       </div>
-                      
-                      {/* Pagination info */}
-                      <span className="text-[11px] text-gray-500">{netStartIndex + 1}-{Math.min(netEndIndex, netFilteredPositions.length)} of {netFilteredPositions.length}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {/* Pagination controls */}
+                      {/* Pagination controls with button styling */}
                       <div className="flex items-center gap-2">
                           <button
                             onClick={()=>handleNetPageChange(netCurrentPage-1)}
                             disabled={netCurrentPage===1}
-                            className={`p-1.5 rounded-md transition-colors ${netCurrentPage===1?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                              netCurrentPage === 1
+                                ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                                : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                            }`}
                             aria-label="Previous page"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </button>
-                          <span className="text-[12px] text-gray-700 font-medium px-1">
-                            Page {netCurrentPage} of {netTotalPages}
-                          </span>
+                          <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
+                            <span className="text-[#1F2937] font-semibold">{netCurrentPage}</span>
+                            <span className="text-[#9CA3AF] mx-1">/</span>
+                            <span className="text-[#6B7280]">{netTotalPages}</span>
+                          </div>
                           <button
                             onClick={()=>handleNetPageChange(netCurrentPage+1)}
                             disabled={netCurrentPage===netTotalPages}
-                            className={`p-1.5 rounded-md transition-colors ${netCurrentPage===netTotalPages?'text-gray-300 cursor-not-allowed':'text-gray-600 hover:bg-gray-100 cursor-pointer'}`}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                              netCurrentPage === netTotalPages
+                                ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                                : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                            }`}
                             aria-label="Next page"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </button>
                         </div>
                       
-                      {/* Export */}
-                      <button onClick={handleExportNetPositions} className="px-2 py-1.5 text-xs rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Export NET positions to CSV">
-                        <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
-                        Export CSV
+                      {/* Export - icon only */}
+                      <button onClick={handleExportNetPositions} className="p-2 rounded-lg border border-green-200 bg-white hover:bg-green-50 hover:border-green-300 transition-all text-gray-700 shadow-sm" title="Export NET positions to CSV">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/></svg>
                       </button>
-                      {/* Columns selector */}
+                      {/* Columns selector - icon only */}
                       <div className="relative" ref={netColumnSelectorRef}>
-                        <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="px-2 py-1.5 text-xs rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all flex items-center gap-1.5 text-gray-700 font-medium shadow-sm" title="Show/Hide NET columns">
-                          <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                          Columns
+                        <button onClick={()=>setNetShowColumnSelector(v=>!v)} className="p-2 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 hover:border-purple-300 transition-all text-gray-700 shadow-sm" title="Show/Hide NET columns">
+                          <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                         </button>
                         {netShowColumnSelector && (
                           <div className="absolute right-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
