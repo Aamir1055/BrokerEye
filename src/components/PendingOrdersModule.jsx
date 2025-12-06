@@ -365,8 +365,8 @@ export default function PendingOrdersModule() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
-        <div className="pt-5">
-          <div className="flex items-center justify-center gap-3">
+        <div className="pt-5 px-4">
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsCustomizeOpen(true)} 
               className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
