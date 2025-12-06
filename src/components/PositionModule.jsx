@@ -1091,10 +1091,11 @@ export default function PositionModule() {
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="pb-3 px-4">
-              <div className="flex items-center gap-1">
-                <div className="flex-1 min-w-0 h-[32px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+            {/* Controls with Search */}
+            <div className="flex items-center justify-between gap-2 flex-wrap px-4 pb-3">
+              <div className="flex items-center gap-2">
+                {/* Search Bar */}
+                <div className="h-[32px] min-w-[120px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
                   <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
@@ -1103,15 +1104,10 @@ export default function PositionModule() {
                     placeholder="Search"
                     value={netSearchInput}
                     onChange={(e) => setNetSearchInput(e.target.value)}
-                    className="flex-1 text-[11px] outline-none bg-transparent"
+                    className="w-[80px] text-[11px] outline-none bg-transparent"
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-between gap-2 flex-wrap px-4">
-              <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={netCardFilterRef}>
                   <button onClick={() => setNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
@@ -1365,10 +1361,11 @@ export default function PositionModule() {
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="pb-3 px-4">
-              <div className="flex items-center gap-1">
-                <div className="flex-1 min-w-0 h-[32px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+            {/* Controls with Search */}
+            <div className="flex items-center justify-between gap-2 flex-wrap px-4 pb-3">
+              <div className="flex items-center gap-2">
+                {/* Search Bar */}
+                <div className="h-[32px] min-w-[120px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
                   <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
@@ -1377,15 +1374,10 @@ export default function PositionModule() {
                     placeholder="Search"
                     value={clientNetSearchInput}
                     onChange={(e) => setClientNetSearchInput(e.target.value)}
-                    className="flex-1 text-[11px] outline-none bg-transparent"
+                    className="w-[80px] text-[11px] outline-none bg-transparent"
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-between gap-2 flex-wrap px-4">
-              <div className="flex items-center gap-2">
                 {/* Card Filter */}
                 <div className="relative" ref={clientNetCardFilterRef}>
                   <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[32px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
