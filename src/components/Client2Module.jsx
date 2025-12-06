@@ -46,28 +46,15 @@ export default function Client2Module() {
   // Persistent card order for mobile face cards
   const [cardOrder, setCardOrder] = useState([])
   const CARD_ORDER_KEY = 'client2-module-order'
-  // Pointer-based drag support (works on touch and mouse)
   const [dragStartLabel, setDragStartLabel] = useState(null)
-
-  const swapOrder = (fromLabel, toLabel) => {
-    if (!fromLabel || !toLabel || fromLabel === toLabel) return
-    const fromIdx = cardOrder.indexOf(fromLabel)
-    const toIdx = cardOrder.indexOf(toLabel)
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
-    const newOrder = [...cardOrder]
-    const [moved] = newOrder.splice(fromIdx, 1)
-    newOrder.splice(toIdx, 0, moved)
-    setCardOrder(newOrder)
-    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
-  }
-  
-  // API data state
+  const [hoverIndex, setHoverIndex] = useState(null)
+  const [columnSearchQuery, setColumnSearchQuery] = useState('')
+  // API data state (restored)
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
-
-  // Available columns for the table
+  // Visible columns state (restored)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     name: true,
@@ -79,30 +66,42 @@ export default function Client2Module() {
     country: false,
     city: false,
     state: false,
+    address: false,
     zipCode: false,
     clientID: false,
     balance: false,
     credit: true,
     equity: true,
     margin: false,
+    marginFree: true,
     marginLevel: false,
     marginInitial: false,
     marginMaintenance: false,
     marginLeverage: false,
+    leverage: false,
+    profit: true,
+    pnl: false,
+    currency: false,
     currencyDigits: false,
     applied_percentage: false,
     applied_percentage_is_custom: false,
     assets: false,
     liabilities: false,
     blockedCommission: false,
+    blockedProfit: false,
+    storage: false,
+    company: false,
     comment: false,
     color: false,
     agent: false,
     leadCampaign: false,
     leadSource: false,
     soActivation: false,
+    soEquity: false,
     soLevel: false,
+    soMargin: false,
     soTime: false,
+    status: false,
     mqid: false,
     language: false,
     registration: false,
@@ -118,7 +117,6 @@ export default function Client2Module() {
     thisMonthPnL: false,
     thisWeekPnL: false
   })
-  const [columnSearchQuery, setColumnSearchQuery] = useState('')
 
   // Fetch clients data via API
   const fetchClients = useCallback(async (overridePercent = null) => {
@@ -832,6 +830,16 @@ export default function Client2Module() {
                 }}
                 onDragEnd={(e) => {
                   e.currentTarget.style.opacity = '1'
+                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
+                  if (!isNaN(fromIndex) && hoverIndex != null && hoverIndex !== fromIndex) {
+                    const newOrder = [...cardOrder]
+                    const tmp = newOrder[fromIndex]
+                    newOrder[fromIndex] = newOrder[hoverIndex]
+                    newOrder[hoverIndex] = tmp
+                    setCardOrder(newOrder)
+                    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+                  }
+                  setHoverIndex(null)
                 }}
                 onDragOver={(e) => {
                   e.preventDefault()
@@ -839,26 +847,33 @@ export default function Client2Module() {
                 }}
                 onDragEnter={(e) => {
                   e.preventDefault()
-                  e.currentTarget.style.transform = 'scale(1.05)'
-                  e.currentTarget.style.boxShadow = '0px 4px 20px rgba(37, 99, 235, 0.3)'
+                  e.currentTarget.style.transform = 'perspective(600px) translateZ(8px) scale(1.06)'
+                  e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
+                  e.currentTarget.style.borderColor = '#93C5FD'
+                  setHoverIndex(i)
                 }}
                 onDragLeave={(e) => {
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
+                  e.currentTarget.style.borderColor = '#F2F2F7'
+                  if (hoverIndex === i) setHoverIndex(null)
                 }}
                 onDrop={(e) => {
                   e.preventDefault()
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
+                  e.currentTarget.style.borderColor = '#F2F2F7'
                   const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
                   const toIndex = i
                   if (fromIndex !== toIndex && !isNaN(fromIndex)) {
                     const newOrder = [...cardOrder]
-                    const [movedLabel] = newOrder.splice(fromIndex, 1)
-                    newOrder.splice(toIndex, 0, movedLabel)
+                    const tmp = newOrder[fromIndex]
+                    newOrder[fromIndex] = newOrder[toIndex]
+                    newOrder[toIndex] = tmp
                     setCardOrder(newOrder)
-                    try { localStorage.setItem('client2_card_order', JSON.stringify(newOrder)) } catch {}
+                    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
                   }
+                  setHoverIndex(null)
                 }}
                 onTouchStart={(e) => {
                   e.currentTarget.style.transform = 'scale(0.98)'

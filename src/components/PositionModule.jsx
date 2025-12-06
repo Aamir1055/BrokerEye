@@ -552,8 +552,8 @@ export default function PositionModule() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="px-4 pb-4">
+        {/* Table - full width, remove outer padding */}
+        <div>
           <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
