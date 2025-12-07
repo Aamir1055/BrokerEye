@@ -34,6 +34,7 @@ const GroupModal = ({
   // Initialize form when editing
   useEffect(() => {
     if (isOpen && editGroup) {
+      console.log('[GroupModal Desktop] Editing group:', editGroup);
       setIsEditMode(true)
       setOriginalGroupName(editGroup.name)
       setNewGroupName(editGroup.name)
@@ -44,7 +45,9 @@ const GroupModal = ({
         setRangeEnd(String(editGroup.range.to))
       } else {
         setActiveTab('manual')
-        setSelectedLogins(editGroup.loginIds.map(String))
+        const loginIdsAsStrings = editGroup.loginIds.map(String);
+        console.log('[GroupModal Desktop] Setting selected logins:', loginIdsAsStrings);
+        setSelectedLogins(loginIdsAsStrings)
       }
     } else if (isOpen) {
       setIsEditMode(false)
