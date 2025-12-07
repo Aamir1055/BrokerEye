@@ -1433,15 +1433,35 @@ export default function Client2Module() {
                 key={card.label}
                 draggable="true"
                 onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move'
                   e.dataTransfer.setData('cardLabel', card.label)
                   e.currentTarget.style.opacity = '0.5'
+                  setDragStartLabel(card.label)
                 }}
                 onDragEnd={(e) => {
                   e.currentTarget.style.opacity = '1'
+                  setDragStartLabel(null)
+                  // Reset all card styles
+                  document.querySelectorAll('[data-card-label]').forEach(el => {
+                    el.style.backgroundColor = '#FFFFFF'
+                    el.style.borderColor = '#F3F4F6'
+                  })
                 }}
                 onDragOver={(e) => {
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
+                  
+                  // Swap immediately when dragging over
+                  const fromLabel = dragStartLabel
+                  if (fromLabel && fromLabel !== card.label) {
+                    // Throttle swaps to avoid too many rapid changes
+                    const now = Date.now()
+                    if (!window._lastSwapTime || now - window._lastSwapTime > 100) {
+                      window._lastSwapTime = now
+                      swapOrder(fromLabel, card.label)
+                      setDragStartLabel(card.label) // Update drag source to new position
+                    }
+                  }
                 }}
                 onDragEnter={(e) => {
                   e.preventDefault()
@@ -1456,10 +1476,6 @@ export default function Client2Module() {
                   e.preventDefault()
                   e.currentTarget.style.backgroundColor = '#FFFFFF'
                   e.currentTarget.style.borderColor = '#F3F4F6'
-                  const fromLabel = e.dataTransfer.getData('cardLabel')
-                  if (fromLabel && fromLabel !== card.label) {
-                    swapOrder(fromLabel, card.label)
-                  }
                 }}
                 onTouchStart={(e) => {
                   setDragStartLabel(card.label)
@@ -1478,10 +1494,18 @@ export default function Client2Module() {
                     el.style.borderColor = '#F3F4F6'
                   })
                   
-                  // Highlight the card under the touch
+                  // Highlight and swap immediately when over a different card
                   if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
                     targetCard.style.backgroundColor = '#EFF6FF'
                     targetCard.style.borderColor = '#93C5FD'
+                    
+                    // Swap immediately during touch move
+                    const now = Date.now()
+                    if (!window._lastTouchSwapTime || now - window._lastTouchSwapTime > 150) {
+                      window._lastTouchSwapTime = now
+                      swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
+                      setDragStartLabel(targetCard.dataset.cardLabel) // Update to new position
+                    }
                   }
                 }}
                 onTouchEnd={(e) => {
@@ -1489,20 +1513,14 @@ export default function Client2Module() {
                   e.currentTarget.style.backgroundColor = '#FFFFFF'
                   e.currentTarget.style.borderColor = '#F3F4F6'
                   
-                  const touch = e.changedTouches[0]
-                  const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
-                  const targetCard = elementAtPoint?.closest('[data-card-label]')
-                  
                   // Reset all backgrounds
                   document.querySelectorAll('[data-card-label]').forEach(el => {
                     el.style.backgroundColor = '#FFFFFF'
                     el.style.borderColor = '#F3F4F6'
                   })
                   
-                  if (targetCard && dragStartLabel && targetCard.dataset.cardLabel !== dragStartLabel) {
-                    swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
-                  }
                   setDragStartLabel(null)
+                  window._lastTouchSwapTime = null
                 }}
                 onTouchCancel={(e) => {
                   e.currentTarget.style.transform = 'scale(1)'
