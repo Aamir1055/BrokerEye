@@ -622,10 +622,39 @@ export default function Client2Module() {
     { key: 'thisWeekPnL', label: 'This Week PnL', width: '110px' }
   ]
 
-  // Get visible columns based on state
+  // Define which columns should show percentage when showPercent is true
+  const percentageColumns = new Set([
+    'balance', 'credit', 'equity', 'profit', 'marginFree', 'margin',
+    'assets', 'storage', 'pnl', 'dailyDeposit', 'dailyWithdrawal',
+    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL'
+  ])
+
+  // Helper function to format value based on percentage mode
+  const formatCellValue = (key, value) => {
+    if (value === null || value === undefined) return '-'
+    
+    // If showPercent is true and this column supports percentage
+    if (showPercent && percentageColumns.has(key)) {
+      const num = Number(value)
+      if (isNaN(num)) return '-'
+      return `${num.toFixed(2)}%`
+    }
+    
+    // Otherwise format as number (for numeric columns)
+    if (percentageColumns.has(key)) {
+      return formatNum(value || 0)
+    }
+    
+    return value
+  }
+
+  // Get visible columns based on state with dynamic labels
   const visibleColumnsList = useMemo(() => {
-    return columnConfig.filter(col => visibleColumns[col.key])
-  }, [visibleColumns])
+    return columnConfig.filter(col => visibleColumns[col.key]).map(col => ({
+      ...col,
+      label: (showPercent && percentageColumns.has(col.key)) ? `${col.label} %` : col.label
+    }))
+  }, [visibleColumns, showPercent])
 
   // Generate grid template columns string
   const gridTemplateColumns = useMemo(() => {
@@ -988,9 +1017,7 @@ export default function Client2Module() {
                   {paginatedClients.map((client, idx) => {
                     const rowData = {};
                     visibleColumnsList.forEach(col => {
-                      if (col.key === 'balance' || col.key === 'credit' || col.key === 'equity' || col.key === 'profit' || col.key === 'marginFree' || col.key === 'margin') {
-                        rowData[col.key] = formatNum(client[col.key] || 0);
-                      } else if (col.key === 'name') {
+                      if (col.key === 'name') {
                         rowData[col.key] = client.name || client.fullName || client.clientName || client.email || '-';
                       } else if (col.key === 'lastName') {
                         rowData[col.key] = client.lastName || client.last_name || '-';
@@ -1002,6 +1029,9 @@ export default function Client2Module() {
                         rowData[col.key] = client.zipCode || client.zip_code || '-';
                       } else if (col.key === 'clientID') {
                         rowData[col.key] = client.clientID || client.client_id || '-';
+                      } else if (percentageColumns.has(col.key)) {
+                        // Use formatCellValue for percentage-capable columns
+                        rowData[col.key] = formatCellValue(col.key, client[col.key]);
                       } else {
                         rowData[col.key] = client[col.key] || '-';
                       }
@@ -1034,12 +1064,12 @@ export default function Client2Module() {
                         style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                       >
                         {col.key === 'login' ? 'Total' : 
-                         col.key === 'balance' ? formatNum(clientStats?.totalBalance || 0) :
-                         col.key === 'profit' ? formatNum(clientStats?.totalProfit || 0) :
-                         col.key === 'credit' ? formatNum(clientStats?.totalCredit || 0) :
-                         col.key === 'equity' ? formatNum(clientStats?.totalEquity || 0) :
-                         col.key === 'margin' ? formatNum(clientStats?.totalMargin || 0) :
-                         col.key === 'marginFree' ? formatNum(clientStats?.totalMarginFree || 0) :
+                         col.key === 'balance' ? formatCellValue('balance', clientStats?.totalBalance || 0) :
+                         col.key === 'profit' ? formatCellValue('profit', clientStats?.totalProfit || 0) :
+                         col.key === 'credit' ? formatCellValue('credit', clientStats?.totalCredit || 0) :
+                         col.key === 'equity' ? formatCellValue('equity', clientStats?.totalEquity || 0) :
+                         col.key === 'margin' ? formatCellValue('margin', clientStats?.totalMargin || 0) :
+                         col.key === 'marginFree' ? formatCellValue('marginFree', clientStats?.totalMarginFree || 0) :
                          ''}
                       </div>
                     ))}
