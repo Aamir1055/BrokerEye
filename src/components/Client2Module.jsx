@@ -52,6 +52,21 @@ export default function Client2Module() {
   const [touchStartX, setTouchStartX] = useState(null)
   const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
+
+  // Function to swap card order
+  const swapOrder = (fromLabel, toLabel) => {
+    const fromIndex = cardOrder.findIndex(label => label === fromLabel)
+    const toIndex = cardOrder.findIndex(label => label === toLabel)
+    
+    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+      const newOrder = [...cardOrder]
+      const [moved] = newOrder.splice(fromIndex, 1)
+      newOrder.splice(toIndex, 0, moved)
+      setCardOrder(newOrder)
+      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+    }
+  }
+
   // API data state (restored)
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
@@ -1527,25 +1542,89 @@ export default function Client2Module() {
           </div>
 
           <div className="p-3 space-y-2">
-            {orderedCards.map((card) => (
+            {orderedCards.map((card, index) => (
               <div
                 key={card.label}
                 draggable="true"
-                onDragStart={(e) => e.dataTransfer.setData('cardLabel', card.label)}
-                onDragOver={(e) => e.preventDefault()}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('cardLabel', card.label)
+                  e.currentTarget.style.opacity = '0.5'
+                }}
+                onDragEnd={(e) => {
+                  e.currentTarget.style.opacity = '1'
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault()
+                  e.currentTarget.style.backgroundColor = '#EFF6FF'
+                  e.currentTarget.style.borderColor = '#93C5FD'
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#FFFFFF'
+                  e.currentTarget.style.borderColor = '#F3F4F6'
+                }}
                 onDrop={(e) => {
-                  e.preventDefault();
-                  const fromLabel = e.dataTransfer.getData('cardLabel');
-                  swapOrder(fromLabel, card.label);
-                }}
-                onPointerDown={() => setDragStartLabel(card.label)}
-                onPointerUp={(e) => {
-                  if (dragStartLabel && dragStartLabel !== card.label) {
-                    swapOrder(dragStartLabel, card.label);
+                  e.preventDefault()
+                  e.currentTarget.style.backgroundColor = '#FFFFFF'
+                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  const fromLabel = e.dataTransfer.getData('cardLabel')
+                  if (fromLabel && fromLabel !== card.label) {
+                    swapOrder(fromLabel, card.label)
                   }
-                  setDragStartLabel(null);
                 }}
-                onPointerCancel={() => setDragStartLabel(null)}
+                onTouchStart={(e) => {
+                  setDragStartLabel(card.label)
+                  e.currentTarget.style.transform = 'scale(0.98)'
+                  e.currentTarget.style.backgroundColor = '#F9FAFB'
+                }}
+                onTouchMove={(e) => {
+                  e.preventDefault()
+                  const touch = e.touches[0]
+                  const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
+                  const targetCard = elementAtPoint?.closest('[data-card-label]')
+                  
+                  // Reset all card backgrounds
+                  document.querySelectorAll('[data-card-label]').forEach(el => {
+                    el.style.backgroundColor = '#FFFFFF'
+                    el.style.borderColor = '#F3F4F6'
+                  })
+                  
+                  // Highlight the card under the touch
+                  if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
+                    targetCard.style.backgroundColor = '#EFF6FF'
+                    targetCard.style.borderColor = '#93C5FD'
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.backgroundColor = '#FFFFFF'
+                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  
+                  const touch = e.changedTouches[0]
+                  const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
+                  const targetCard = elementAtPoint?.closest('[data-card-label]')
+                  
+                  // Reset all backgrounds
+                  document.querySelectorAll('[data-card-label]').forEach(el => {
+                    el.style.backgroundColor = '#FFFFFF'
+                    el.style.borderColor = '#F3F4F6'
+                  })
+                  
+                  if (targetCard && dragStartLabel && targetCard.dataset.cardLabel !== dragStartLabel) {
+                    swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
+                  }
+                  setDragStartLabel(null)
+                }}
+                onTouchCancel={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.backgroundColor = '#FFFFFF'
+                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  setDragStartLabel(null)
+                }}
+                data-card-label={card.label}
                 className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move active:scale-95 transition-transform"
               >
                 <div className="flex items-start justify-between">
