@@ -25,6 +25,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
   // Initialize form with edit data
   useEffect(() => {
     if (isOpen && editGroup) {
+      console.log('Editing group:', editGroup);
       setGroupName(editGroup.name);
       if (editGroup.range) {
         // Range-based group
@@ -35,7 +36,9 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
       } else if (editGroup.loginIds && editGroup.loginIds.length > 0) {
         // Manual selection group
         setActiveTab('myLogin');
-        setSelectedLogins(editGroup.loginIds.map(id => String(id)));
+        const loginIdsAsStrings = editGroup.loginIds.map(id => String(id));
+        console.log('Setting selected logins:', loginIdsAsStrings);
+        setSelectedLogins(loginIdsAsStrings);
         setRangeFrom('');
         setRangeTo('');
       }
