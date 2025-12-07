@@ -50,6 +50,8 @@ export default function Client2Module() {
   const [hoverIndex, setHoverIndex] = useState(null)
   const [touchDragIndex, setTouchDragIndex] = useState(null)
   const [touchStartX, setTouchStartX] = useState(null)
+  const [touchStartY, setTouchStartY] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
   const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
 
@@ -899,16 +901,28 @@ export default function Client2Module() {
                 onTouchStart={(e) => {
                   setTouchDragIndex(i)
                   setTouchStartX(e.touches[0].clientX)
+                  setTouchStartY(e.touches[0].clientY)
+                  setIsDragging(false)
                   e.currentTarget.style.transform = 'scale(0.98)'
-                  if (scrollContainerRef.current) {
-                    scrollContainerRef.current.style.overflowX = 'hidden'
-                  }
                 }}
                 onTouchMove={(e) => {
-                  if (touchDragIndex === i && touchStartX !== null) {
+                  if (touchDragIndex === i && touchStartX !== null && touchStartY !== null) {
                     const touchX = e.touches[0].clientX
+                    const touchY = e.touches[0].clientY
                     const diffX = Math.abs(touchX - touchStartX)
-                    if (diffX > 20) {
+                    const diffY = Math.abs(touchY - touchStartY)
+                    
+                    // Only enter drag mode if horizontal movement is greater than vertical
+                    // and exceeds threshold (this allows vertical scrolling)
+                    if (!isDragging && diffX > 30 && diffX > diffY * 2) {
+                      setIsDragging(true)
+                      if (scrollContainerRef.current) {
+                        scrollContainerRef.current.style.overflowX = 'hidden'
+                      }
+                    }
+                    
+                    // Only prevent default and show drag feedback if in drag mode
+                    if (isDragging) {
                       e.preventDefault()
                       e.currentTarget.style.transform = 'scale(1.05)'
                       e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
@@ -922,7 +936,8 @@ export default function Client2Module() {
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
                   
-                  if (touchDragIndex !== null && touchStartX !== null) {
+                  // Only reorder if we were in drag mode
+                  if (isDragging && touchDragIndex !== null && touchStartX !== null) {
                     const touchEndX = e.changedTouches[0].clientX
                     const touchEndY = e.changedTouches[0].clientY
                     
@@ -954,6 +969,8 @@ export default function Client2Module() {
                   
                   setTouchDragIndex(null)
                   setTouchStartX(null)
+                  setTouchStartY(null)
+                  setIsDragging(false)
                 }}
                 style={{
                   boxSizing: 'border-box',
