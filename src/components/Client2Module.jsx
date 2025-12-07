@@ -903,7 +903,6 @@ export default function Client2Module() {
                   setTouchStartX(e.touches[0].clientX)
                   setTouchStartY(e.touches[0].clientY)
                   setIsDragging(false)
-                  e.currentTarget.style.transform = 'scale(0.98)'
                 }}
                 onTouchMove={(e) => {
                   if (touchDragIndex === i && touchStartX !== null && touchStartY !== null) {
@@ -912,19 +911,15 @@ export default function Client2Module() {
                     const diffX = Math.abs(touchX - touchStartX)
                     const diffY = Math.abs(touchY - touchStartY)
                     
-                    // Only enter drag mode if horizontal movement is greater than vertical
-                    // and exceeds threshold (this allows vertical scrolling)
-                    if (!isDragging && diffX > 30 && diffX > diffY * 2) {
+                    // Only enter drag mode if vertical hold (minimal vertical movement) 
+                    // and significant horizontal movement (press and drag horizontally)
+                    if (!isDragging && diffX > 50 && diffY < 15) {
                       setIsDragging(true)
                       if (scrollContainerRef.current) {
                         scrollContainerRef.current.style.overflowX = 'hidden'
                         scrollContainerRef.current.style.touchAction = 'none'
                       }
                       e.currentTarget.style.touchAction = 'none'
-                    }
-                    
-                    // Show drag feedback if in drag mode (no preventDefault needed with touchAction)
-                    if (isDragging) {
                       e.currentTarget.style.transform = 'scale(1.05)'
                       e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
                     }
@@ -937,7 +932,7 @@ export default function Client2Module() {
                   }
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
-                  e.currentTarget.style.touchAction = 'auto'
+                  e.currentTarget.style.touchAction = 'pan-x'
                   
                   // Only reorder if we were in drag mode
                   if (isDragging && touchDragIndex !== null && touchStartX !== null) {
