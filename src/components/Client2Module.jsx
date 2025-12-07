@@ -726,7 +726,13 @@ export default function Client2Module() {
             </div>
 
             <div className="p-4 mt-auto border-t border-[#ECECEC]">
-              <button className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]">
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('authToken')
+                  navigate('/login')
+                }}
+                className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]"
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
                 <span>Logout</span>
               </button>
