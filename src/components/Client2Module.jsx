@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import FilterModal from './FilterModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
@@ -19,6 +20,7 @@ const formatNum = (n) => {
 
 export default function Client2Module() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const { positions: cachedPositions } = useData()
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
@@ -727,16 +729,7 @@ export default function Client2Module() {
 
             <div className="p-4 mt-auto border-t border-[#ECECEC]">
               <button 
-                onClick={() => {
-                  // Clear all auth data
-                  localStorage.removeItem('authToken')
-                  localStorage.removeItem('token')
-                  localStorage.removeItem('user')
-                  sessionStorage.clear()
-                  
-                  // Force redirect to login
-                  window.location.href = '/login'
-                }}
+                onClick={logout}
                 className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
