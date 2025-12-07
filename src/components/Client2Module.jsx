@@ -909,22 +909,31 @@ export default function Client2Module() {
                   
                   if (touchDragIndex !== null && touchStartX !== null) {
                     const touchEndX = e.changedTouches[0].clientX
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    const cardWidth = rect.width
-                    const gap = 8
-                    const movedCards = Math.round((touchEndX - touchStartX) / (cardWidth + gap))
+                    const touchEndY = e.changedTouches[0].clientY
                     
-                    if (Math.abs(movedCards) > 0) {
-                      const fromIndex = touchDragIndex
-                      const toIndex = Math.max(0, Math.min(orderedCards.length - 1, fromIndex + movedCards))
-                      
-                      if (fromIndex !== toIndex) {
-                        const newOrder = [...cardOrder]
-                        const [moved] = newOrder.splice(fromIndex, 1)
-                        newOrder.splice(toIndex, 0, moved)
-                        setCardOrder(newOrder)
-                        try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
+                    // Find which card is at the drop position
+                    let dropTargetIndex = null
+                    const allCards = scrollContainerRef.current?.children
+                    if (allCards) {
+                      for (let idx = 0; idx < allCards.length; idx++) {
+                        const cardRect = allCards[idx].getBoundingClientRect()
+                        if (touchEndX >= cardRect.left && touchEndX <= cardRect.right &&
+                            touchEndY >= cardRect.top && touchEndY <= cardRect.bottom) {
+                          dropTargetIndex = idx
+                          break
+                        }
                       }
+                    }
+                    
+                    if (dropTargetIndex !== null && dropTargetIndex !== touchDragIndex) {
+                      const fromIndex = touchDragIndex
+                      const toIndex = dropTargetIndex
+                      
+                      const newOrder = [...cardOrder]
+                      const [moved] = newOrder.splice(fromIndex, 1)
+                      newOrder.splice(toIndex, 0, moved)
+                      setCardOrder(newOrder)
+                      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
                     }
                   }
                   
