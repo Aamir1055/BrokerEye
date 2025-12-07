@@ -728,8 +728,14 @@ export default function Client2Module() {
             <div className="p-4 mt-auto border-t border-[#ECECEC]">
               <button 
                 onClick={() => {
+                  // Clear all auth data
                   localStorage.removeItem('authToken')
-                  navigate('/login')
+                  localStorage.removeItem('token')
+                  localStorage.removeItem('user')
+                  sessionStorage.clear()
+                  
+                  // Force redirect to login
+                  window.location.href = '/login'
                 }}
                 className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]"
               >
