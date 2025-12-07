@@ -995,7 +995,7 @@ export default function Client2Module() {
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
-                  touchAction: 'none'
+                  touchAction: 'pan-x'
                 }}
                 onMouseDown={(e) => {
                   e.currentTarget.style.cursor = 'grabbing'
