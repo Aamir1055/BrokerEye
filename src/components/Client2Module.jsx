@@ -850,131 +850,6 @@ export default function Client2Module() {
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
-                draggable={true}
-                onDragStart={(e) => {
-                  e.dataTransfer.effectAllowed = 'move'
-                  e.dataTransfer.setData('text/plain', i.toString())
-                  e.currentTarget.style.opacity = '0.5'
-                }}
-                onDragEnd={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
-                  if (!isNaN(fromIndex) && hoverIndex != null && hoverIndex !== fromIndex) {
-                    const newOrder = [...cardOrder]
-                    const tmp = newOrder[fromIndex]
-                    newOrder[fromIndex] = newOrder[hoverIndex]
-                    newOrder[hoverIndex] = tmp
-                    setCardOrder(newOrder)
-                    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
-                  }
-                  setHoverIndex(null)
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  e.dataTransfer.dropEffect = 'move'
-                }}
-                onDragEnter={(e) => {
-                  e.preventDefault()
-                  e.currentTarget.style.transform = 'perspective(600px) translateZ(8px) scale(1.06)'
-                  e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
-                  e.currentTarget.style.borderColor = '#93C5FD'
-                  setHoverIndex(i)
-                }}
-                onDragLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
-                  e.currentTarget.style.borderColor = '#F2F2F7'
-                  if (hoverIndex === i) setHoverIndex(null)
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
-                  e.currentTarget.style.borderColor = '#F2F2F7'
-                  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
-                  const toIndex = i
-                  if (fromIndex !== toIndex && !isNaN(fromIndex)) {
-                    const newOrder = [...cardOrder]
-                    const tmp = newOrder[fromIndex]
-                    newOrder[fromIndex] = newOrder[toIndex]
-                    newOrder[toIndex] = tmp
-                    setCardOrder(newOrder)
-                    try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
-                  }
-                  setHoverIndex(null)
-                }}
-                onTouchStart={(e) => {
-                  setTouchDragIndex(i)
-                  setTouchStartX(e.touches[0].clientX)
-                  setTouchStartY(e.touches[0].clientY)
-                  setIsDragging(false)
-                }}
-                onTouchMove={(e) => {
-                  if (touchDragIndex === i && touchStartX !== null && touchStartY !== null) {
-                    const touchX = e.touches[0].clientX
-                    const touchY = e.touches[0].clientY
-                    const diffX = Math.abs(touchX - touchStartX)
-                    const diffY = Math.abs(touchY - touchStartY)
-                    
-                    // Only enter drag mode if vertical hold (minimal vertical movement) 
-                    // and significant horizontal movement (press and drag horizontally)
-                    if (!isDragging && diffX > 50 && diffY < 15) {
-                      setIsDragging(true)
-                      if (scrollContainerRef.current) {
-                        scrollContainerRef.current.style.overflowX = 'hidden'
-                        scrollContainerRef.current.style.touchAction = 'none'
-                      }
-                      e.currentTarget.style.touchAction = 'none'
-                      e.currentTarget.style.transform = 'scale(1.05)'
-                      e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
-                    }
-                  }
-                }}
-                onTouchEnd={(e) => {
-                  if (scrollContainerRef.current) {
-                    scrollContainerRef.current.style.overflowX = 'auto'
-                    scrollContainerRef.current.style.touchAction = 'auto'
-                  }
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
-                  e.currentTarget.style.touchAction = 'pan-x'
-                  
-                  // Only reorder if we were in drag mode
-                  if (isDragging && touchDragIndex !== null && touchStartX !== null) {
-                    const touchEndX = e.changedTouches[0].clientX
-                    const touchEndY = e.changedTouches[0].clientY
-                    
-                    // Find which card is at the drop position
-                    let dropTargetIndex = null
-                    const allCards = scrollContainerRef.current?.children
-                    if (allCards) {
-                      for (let idx = 0; idx < allCards.length; idx++) {
-                        const cardRect = allCards[idx].getBoundingClientRect()
-                        if (touchEndX >= cardRect.left && touchEndX <= cardRect.right &&
-                            touchEndY >= cardRect.top && touchEndY <= cardRect.bottom) {
-                          dropTargetIndex = idx
-                          break
-                        }
-                      }
-                    }
-                    
-                    if (dropTargetIndex !== null && dropTargetIndex !== touchDragIndex) {
-                      const fromIndex = touchDragIndex
-                      const toIndex = dropTargetIndex
-                      
-                      const newOrder = [...cardOrder]
-                      const [moved] = newOrder.splice(fromIndex, 1)
-                      newOrder.splice(toIndex, 0, moved)
-                      setCardOrder(newOrder)
-                      try { localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) } catch {}
-                    }
-                  }
-                  
-                  setTouchDragIndex(null)
-                  setTouchStartX(null)
-                  setTouchStartY(null)
-                  setIsDragging(false)
-                }}
                 style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -990,20 +865,11 @@ export default function Client2Module() {
                   justifyContent: 'space-between',
                   scrollSnapAlign: 'start',
                   flexShrink: 0,
-                  cursor: 'grab',
                   flex: 'none',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
                   touchAction: 'pan-x'
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.cursor = 'grabbing'
-                  e.currentTarget.style.transform = 'scale(0.98)'
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.cursor = 'grab'
-                  e.currentTarget.style.transform = 'scale(1)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>

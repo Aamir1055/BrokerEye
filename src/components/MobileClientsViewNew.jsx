@@ -1,6 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
@@ -1008,6 +1012,97 @@ const MobileClientsViewNew = ({ clients = [], onClientClick }) => {
           </div>
         </div>
       </div>
+
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setIsSidebarOpen(false)}>
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-[#ECECEC]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">BE</span>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[#000000]">Broker Eyes</div>
+                  <div className="text-xs text-[#404040]">Trading Platform</div>
+                </div>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto py-2">
+              <nav className="flex flex-col">
+                {[
+                  {label:'Dashboard', path:'/dashboard', icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#404040"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#404040"/></svg>
+                  )},
+                  {label:'Clients', path:'/clients', active:true, icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#1A63BC"/><circle cx="16" cy="8" r="3" stroke="#1A63BC"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#1A63BC"/></svg>
+                  )},
+                  {label:'Client 2', path:'/client2', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Positions', path:'/positions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="11" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="16" width="18" height="3" rx="1" stroke="#404040"/></svg>
+                  )},
+                  {label:'Pending Orders', path:'/pending-orders', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
+                  )},
+                  {label:'Margin Level', path:'/margin-level', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
+                  )},
+                  {label:'Live Dealing', path:'/live-dealing', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#404040"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#404040"/></svg>
+                  )},
+                  {label:'Client Percentage', path:'/client-percentage', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
+                  )},
+                  {label:'Settings', path:'/settings', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
+                  )},
+                ].map((item, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => {
+                      navigate(item.path)
+                      setIsSidebarOpen(false)
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                      item.active 
+                        ? 'bg-[#EFF6FF] border-l-4 border-[#1A63BC]' 
+                        : 'hover:bg-[#F8F8F8]'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">{item.icon}</div>
+                    <span className={`text-sm ${
+                      item.active ? 'text-[#1A63BC] font-semibold' : 'text-[#404040]'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="p-4 mt-auto border-t border-[#ECECEC]">
+              <button onClick={logout} className="flex items-center gap-3 px-2 h-[37px] text-[10px] text-[#404040]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
