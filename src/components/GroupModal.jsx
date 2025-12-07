@@ -35,6 +35,8 @@ const GroupModal = ({
   useEffect(() => {
     if (isOpen && editGroup) {
       console.log('[GroupModal Desktop] Editing group:', editGroup);
+      console.log('[GroupModal Desktop] editGroup.loginIds:', editGroup.loginIds);
+      console.log('[GroupModal Desktop] editGroup.loginIds types:', editGroup.loginIds?.map(id => `${id} (${typeof id})`));
       setIsEditMode(true)
       setOriginalGroupName(editGroup.name)
       setNewGroupName(editGroup.name)
@@ -95,7 +97,13 @@ const GroupModal = ({
         const response = await api.get(`/api/broker/clients/fields?${queryString}`)
 
         if (response.data.status === 'success') {
-          setApiLogins(response.data.data.clients || [])
+          const clients = response.data.data.clients || []
+          console.log('[GroupModal Desktop API] Fetched logins:', clients.slice(0, 3).map(c => ({
+            login: c.login,
+            loginType: typeof c.login,
+            name: c.name
+          })))
+          setApiLogins(clients)
           setTotalPages(response.data.data.totalPages || 1)
           setTotalLogins(response.data.data.total || 0)
         }
@@ -329,12 +337,24 @@ const GroupModal = ({
                         const login = String(item.login || item[loginField])
                         const display = item.name || item[displayField]
                         const email = item.email
+                        const isChecked = selectedLogins.includes(login)
+                        
+                        // Debug logging for first 3 items
+                        if (filteredItems.indexOf(item) < 3) {
+                          console.log('[GroupModal Desktop Checkbox]', {
+                            login,
+                            loginType: typeof login,
+                            isChecked,
+                            selectedLogins: selectedLogins,
+                            selectedLoginsTypes: selectedLogins.map(l => typeof l)
+                          })
+                        }
                         
                         return (
                           <label key={login} className="flex items-center px-2.5 py-1.5 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0">
                             <input
                               type="checkbox"
-                              checked={selectedLogins.includes(login)}
+                              checked={isChecked}
                               onChange={() => toggleLoginSelection(login)}
                               className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />

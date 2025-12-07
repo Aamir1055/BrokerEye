@@ -1781,8 +1781,8 @@ const ClientsPage = () => {
     if (value === null || value === undefined || value === '') return '-'
     let num = Number(value)
     if (isNaN(num)) return '-'
-    // Backend handles USC scaling; show percentage as-is
-    return num.toFixed(2)
+    // Backend handles USC scaling; show percentage with % sign
+    return `${num.toFixed(2)}%`
   }
 
   // Format numbers in Indian currency style (lakhs/crores)
