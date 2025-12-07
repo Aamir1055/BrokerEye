@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
 import CustomizeViewModal from './CustomizeViewModal'
 import FilterModal from './FilterModal'
 import IBFilterModal from './IBFilterModal'
@@ -32,6 +33,7 @@ const formatTime = (timestamp) => {
 
 export default function LiveDealingModule() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const { positions: cachedPositions } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
@@ -729,8 +731,14 @@ export default function LiveDealingModule() {
                       {item.label}
                     </span>
                   </button>
-                ))}
-              </nav>
+                ))}              </nav>
+            </div>
+
+            <div className="p-4 mt-auto border-t border-[#ECECEC]">
+              <button onClick={logout} className="flex items-center gap-3 px-2 h-[37px] text-[10px] text-[#404040]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
