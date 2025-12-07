@@ -918,12 +918,13 @@ export default function Client2Module() {
                       setIsDragging(true)
                       if (scrollContainerRef.current) {
                         scrollContainerRef.current.style.overflowX = 'hidden'
+                        scrollContainerRef.current.style.touchAction = 'none'
                       }
+                      e.currentTarget.style.touchAction = 'none'
                     }
                     
-                    // Only prevent default and show drag feedback if in drag mode
+                    // Show drag feedback if in drag mode (no preventDefault needed with touchAction)
                     if (isDragging) {
-                      e.preventDefault()
                       e.currentTarget.style.transform = 'scale(1.05)'
                       e.currentTarget.style.boxShadow = '0px 8px 24px rgba(37, 99, 235, 0.35)'
                     }
@@ -932,9 +933,11 @@ export default function Client2Module() {
                 onTouchEnd={(e) => {
                   if (scrollContainerRef.current) {
                     scrollContainerRef.current.style.overflowX = 'auto'
+                    scrollContainerRef.current.style.touchAction = 'auto'
                   }
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0px 0px 12px rgba(75, 75, 75, 0.05)'
+                  e.currentTarget.style.touchAction = 'auto'
                   
                   // Only reorder if we were in drag mode
                   if (isDragging && touchDragIndex !== null && touchStartX !== null) {
