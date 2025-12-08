@@ -3682,7 +3682,7 @@ const Client2Page = () => {
                   {/* Search Icon (inside input) */}
                   <button
                     onClick={handleSearch}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 text-[#2563EB] hover:text-blue-700 transition-colors z-0"
+                    className="absolute right-9 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
                     title="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
