@@ -3660,7 +3660,7 @@ const Client2Page = () => {
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search"
-                      className="w-full h-10 pl-10 pr-14 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full h-10 pl-10 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                     {searchInput && (
                       <button
@@ -3669,7 +3669,7 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
                         title="Clear search"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3682,7 +3682,7 @@ const Client2Page = () => {
                   {/* Search Icon (inside input) */}
                   <button
                     onClick={handleSearch}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2563EB] hover:text-blue-700 transition-colors"
+                    className="absolute right-9 top-1/2 -translate-y-1/2 text-[#2563EB] hover:text-blue-700 transition-colors z-0"
                     title="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
