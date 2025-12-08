@@ -836,104 +836,112 @@ const MarginLevelPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">Margin Level</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Shows accounts with margin level &lt; 50% (excludes zero margin levels)</p>
-              </div>
-            </div>
-            
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* IB Filter Button */}
-              <IBSelector />
               
-              {/* Groups Dropdown */}
-              <GroupSelector 
-                moduleName="marginlevel" 
-                onCreateClick={() => {
-                  setEditingGroup(null)
-                  setShowGroupModal(true)
-                }}
-                onEditClick={(group) => {
-                  setEditingGroup(group)
-                  setShowGroupModal(true)
-                }}
-              />
+              {/* Single Line Header Layout */}
+              <div className="flex items-center justify-between flex-1">
+                {/* Title Section */}
+                <div>
+                  <h1 className="text-2xl font-bold text-[#1F2937]">Margin Level</h1>
+                  <p className="text-sm text-[#6B7280] mt-0.5">Shows accounts with margin level &lt; 50% (excludes zero margin levels)</p>
+                </div>
+                
+                {/* Action Buttons - All on right side */}
+                <div className="flex items-center gap-2">
+                  <IBSelector />
+                  
+                  <GroupSelector 
+                    moduleName="marginlevel" 
+                    onCreateClick={() => {
+                      setEditingGroup(null)
+                      setShowGroupModal(true)
+                    }}
+                    onEditClick={(group) => {
+                      setEditingGroup(group)
+                      setShowGroupModal(true)
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Under 50%</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Total Under 50%</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {isDataLoading ? (
-                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
-                ) : (
-                  filtered.length
-                )}
-              </p>
+              {isDataLoading ? (
+                <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                  <span>{filtered.length}</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+                </div>
+              )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Avg Margin Level</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Avg Margin Level</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {isDataLoading ? (
-                  <span className="inline-block h-6 w-16 bg-gray-200 animate-pulse rounded"></span>
-                ) : (
-                  filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) + '%' : '-'
-                )}
-              </p>
+              {isDataLoading ? (
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                  <span>{filtered.length ? formatNumber(filtered.reduce((s,o)=>s+(getMarginLevelPercent(o)||0),0)/filtered.length, 2) : '-'}</span>
+                  {filtered.length > 0 && <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">%</span>}
+                </div>
+              )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Unique Logins</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {isDataLoading ? (
-                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
-                ) : (
-                  new Set(filtered.map(o=>o.login)).size
-                )}
-              </p>
+              {isDataLoading ? (
+                <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                  <span>{new Set(filtered.map(o=>o.login)).size}</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+                </div>
+              )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Logins Under 50%</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Logins Under 50%</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {isDataLoading ? (
-                  <span className="inline-block h-6 w-12 bg-gray-200 animate-pulse rounded"></span>
-                ) : (
-                  new Set(filtered.map(a=>a.login)).size
-                )}
-              </p>
+              {isDataLoading ? (
+                <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                  <span>{new Set(filtered.map(a=>a.login)).size}</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+                </div>
+              )}
             </div>
           </div>
 

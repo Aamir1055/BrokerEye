@@ -1947,12 +1947,16 @@ const PositionsPage = () => {
                 <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
               </div>
             </div>
-            
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Header with title and buttons on same line */}
+          <div className="flex items-center justify-between mb-6">
+            {/* Title Section */}
+            <div>
+              <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
+              <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
+            </div>
+
+            {/* Action Buttons - All on right side */}
+            <div className="flex items-center gap-2">
               {/* IB Filter Button */}
               <IBSelector />
               
@@ -2072,8 +2076,6 @@ const PositionsPage = () => {
                 </svg>
               </button>
               
-              <div className="flex-1"></div>
-              
               <button
                 onClick={() => {
                   console.log('[Positions] Requesting fresh position snapshot from WebSocket...')
@@ -2092,13 +2094,13 @@ const PositionsPage = () => {
             </div>
           </div>
 
-          {/* Stats Summary */}
+          {/* Stats Summary - Client2 Face Card Design */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Positions</span>
-                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Positions</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                     <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                     <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
@@ -2107,20 +2109,20 @@ const PositionsPage = () => {
               {isInitialPositionsLoading ? (
                 <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                   <span>{summaryStats.totalPositions}</span>
-                  <span className="text-xs font-normal text-[#6B7280]">POS</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">POS</span>
                 </div>
               )}
             </div>
             
             {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
             {(displayMode === 'value' || displayMode === 'both') && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Floating Profit</span>
-                  <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-1.5">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Floating Profit</span>
+                  <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                       <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                       <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                     </svg>
@@ -2129,7 +2131,7 @@ const PositionsPage = () => {
                 {isInitialPositionsLoading ? (
                   <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <div className={`text-lg font-bold flex items-center gap-2 ${
+                  <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
                     {summaryStats.totalFloatingProfit >= 0 && (
@@ -2143,7 +2145,7 @@ const PositionsPage = () => {
                       </svg>
                     )}
                     <span>{formatNumber(Math.abs(summaryStats.totalFloatingProfit))}</span>
-                    <span className="text-xs font-normal text-[#6B7280]">USD</span>
+                    <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
                   </div>
                 )}
               </div>
@@ -2182,11 +2184,11 @@ const PositionsPage = () => {
                 )}\n              </div>
             )}
             
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Unique Logins</span>
-                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                     <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                     <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
@@ -2195,17 +2197,17 @@ const PositionsPage = () => {
               {isInitialPositionsLoading ? (
                 <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                   <span>{summaryStats.uniqueLogins}</span>
-                  <span className="text-xs font-normal text-[#6B7280]">ACCT</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
                 </div>
               )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Symbols</span>
-                <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Symbols</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                     <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
                     <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
@@ -2214,9 +2216,9 @@ const PositionsPage = () => {
               {isInitialPositionsLoading ? (
                 <div className="h-6 w-10 bg-gray-200 rounded animate-pulse" />
               ) : (
-                <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                   <span>{summaryStats.uniqueSymbols}</span>
-                  <span className="text-xs font-normal text-[#6B7280]">SYM</span>
+                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
                 </div>
               )}
             </div>
@@ -3516,7 +3518,6 @@ const PositionsPage = () => {
                 </table>
             </div>
           </div>
-            </>
           )}
 
           {/* Connection status helper removed per request */}

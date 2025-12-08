@@ -929,81 +929,91 @@ const PendingOrdersPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">Pending Orders</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Live pending orders (ignoring market BUY/SELL)</p>
-              </div>
-            </div>
-            
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2 justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* IB Filter Button */}
-                <IBSelector />
+              
+              {/* Single Line Header Layout */}
+              <div className="flex items-center justify-between flex-1">
+                {/* Title Section */}
+                <div>
+                  <h1 className="text-2xl font-bold text-[#1F2937]">Pending Orders</h1>
+                  <p className="text-sm text-[#6B7280] mt-0.5">Live pending orders (ignoring market BUY/SELL)</p>
+                </div>
                 
-                {/* Groups Dropdown */}
-                <GroupSelector 
-                  moduleName="pendingorders" 
-                  onCreateClick={() => {
-                    setEditingGroup(null)
-                    setShowGroupModal(true)
-                  }}
-                  onEditClick={(group) => {
-                    setEditingGroup(group)
-                    setShowGroupModal(true)
-                  }}
-                />
-                
-                <button
-                  onClick={fetchOrders}
-                  className="h-8 w-8 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center justify-center shadow-sm"
-                  title="Refresh orders"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
+                {/* Action Buttons - All on right side */}
+                <div className="flex items-center gap-2">
+                  <IBSelector />
+                  
+                  <GroupSelector 
+                    moduleName="pendingorders" 
+                    onCreateClick={() => {
+                      setEditingGroup(null)
+                      setShowGroupModal(true)
+                    }}
+                    onEditClick={(group) => {
+                      setEditingGroup(group)
+                      setShowGroupModal(true)
+                    }}
+                  />
+                  
+                  <button
+                    onClick={fetchOrders}
+                    className="h-8 w-8 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center justify-center shadow-sm"
+                    title="Refresh orders"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Orders</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Total Orders</p>
-              <p className="text-xl font-bold text-[#1F2937]">{sortedOrders.length}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{sortedOrders.length}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ORD</span>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Unique Logins</p>
-              <p className="text-xl font-bold text-[#1F2937]">{new Set(sortedOrders.map(o=>o.login)).size}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{new Set(sortedOrders.map(o=>o.login)).size}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Symbols</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Symbols</p>
-              <p className="text-xl font-bold text-[#1F2937]">{new Set(sortedOrders.map(o=>o.symbol)).size}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{new Set(sortedOrders.map(o=>o.symbol)).size}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
+              </div>
             </div>
           </div>
 

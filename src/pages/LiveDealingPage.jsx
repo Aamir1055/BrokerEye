@@ -1514,7 +1514,7 @@ const LiveDealingPage = () => {
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-4">
-            {/* Title and Subtitle */}
+            {/* Single Line Header Layout */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -1524,251 +1524,260 @@ const LiveDealingPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">Live Dealing</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Real-time trading activity monitor</p>
-              </div>
-            </div>
-            
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* IB Filter Button */}
-              <IBSelector />
               
-              {/* Groups Dropdown */}
-              <GroupSelector 
-                moduleName="livedealing" 
-                onCreateClick={() => {
-                  setEditingGroup(null)
-                  setShowGroupModal(true)
-                }}
-                onEditClick={(group) => {
-                  setEditingGroup(group)
-                  setShowGroupModal(true)
-                }}
-              />
-              
-              {/* Time Filter Button */}
-              <div className="relative" ref={filterButtonRef}>
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  {timeFilter === '24h' ? '24h' : timeFilter === '7d' ? '7d' : 'Custom'}
-                </button>
-                {showFilterMenu && (
-                  <div
-                    ref={filterMenuRef}
-                    className="absolute left-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-72"
-                  >
-                    <div className="px-3 py-1.5 border-b border-gray-200">
-                      <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Time Period</p>
-                    </div>
-                    
-                    {/* Time Filter Options */}
-                    <div className="py-1">
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="timeFilter"
-                          checked={timeFilter === '24h'}
-                          onChange={() => setTimeFilter('24h')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Last 24 Hours</span>
-                      </label>
-                      
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="timeFilter"
-                          checked={timeFilter === '7d'}
-                          onChange={() => setTimeFilter('7d')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Last 7 Days</span>
-                      </label>
-                      
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="timeFilter"
-                          checked={timeFilter === 'custom'}
-                          onChange={() => setTimeFilter('custom')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Custom Range</span>
-                      </label>
-                    </div>
-                    
-                    {/* Custom Date Range */}
-                    {timeFilter === 'custom' && (
-                      <div className="px-3 py-2 border-t border-gray-100 space-y-2">
-                        <div>
-                          <label className="text-xs text-gray-600 mb-1 block">From Date</label>
-                          <input
-                            type="date"
-                            value={customFromDate}
-                            onChange={(e) => setCustomFromDate(e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+              {/* Flex container for title and buttons */}
+              <div className="flex items-center justify-between flex-1">
+                {/* Title Section */}
+                <div>
+                  <h1 className="text-2xl font-bold text-[#1F2937]">Live Dealing</h1>
+                  <p className="text-sm text-[#6B7280] mt-0.5">Real-time trading activity monitor</p>
+                </div>
+                
+                {/* Action Buttons - All on right side */}
+                <div className="flex items-center gap-2">
+                  <IBSelector />
+                  
+                  <GroupSelector 
+                    moduleName="livedealing" 
+                    onCreateClick={() => {
+                      setEditingGroup(null)
+                      setShowGroupModal(true)
+                    }}
+                    onEditClick={(group) => {
+                      setEditingGroup(group)
+                      setShowGroupModal(true)
+                    }}
+                  />
+                  
+                  {/* Time Filter Button */}
+                  <div className="relative" ref={filterButtonRef}>
+                    <button
+                      onClick={() => setShowFilterMenu(!showFilterMenu)}
+                      className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      {timeFilter === '24h' ? '24h' : timeFilter === '7d' ? '7d' : 'Custom'}
+                    </button>
+                    {showFilterMenu && (
+                      <div
+                        ref={filterMenuRef}
+                        className="absolute left-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-72"
+                      >
+                        <div className="px-3 py-1.5 border-b border-gray-200">
+                          <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Time Period</p>
                         </div>
-                        <div>
-                          <label className="text-xs text-gray-600 mb-1 block">To Date</label>
-                          <input
-                            type="date"
-                            value={customToDate}
-                            onChange={(e) => setCustomToDate(e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+                        
+                        {/* Time Filter Options */}
+                        <div className="py-1">
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="timeFilter"
+                              checked={timeFilter === '24h'}
+                              onChange={() => setTimeFilter('24h')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Last 24 Hours</span>
+                          </label>
+                          
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="timeFilter"
+                              checked={timeFilter === '7d'}
+                              onChange={() => setTimeFilter('7d')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Last 7 Days</span>
+                          </label>
+                          
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="timeFilter"
+                              checked={timeFilter === 'custom'}
+                              onChange={() => setTimeFilter('custom')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Custom Range</span>
+                          </label>
                         </div>
-                        {customDateError && (
-                          <p className="text-xs text-red-600 mt-1">{customDateError}</p>
+                        
+                        {/* Custom Date Range */}
+                        {timeFilter === 'custom' && (
+                          <div className="px-3 py-2 border-t border-gray-100 space-y-2">
+                            <div>
+                              <label className="text-xs text-gray-600 mb-1 block">From Date</label>
+                              <input
+                                type="date"
+                                value={customFromDate}
+                                onChange={(e) => setCustomFromDate(e.target.value)}
+                                className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-600 mb-1 block">To Date</label>
+                              <input
+                                type="date"
+                                value={customToDate}
+                                onChange={(e) => setCustomToDate(e.target.value)}
+                                className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            {customDateError && (
+                              <p className="text-xs text-red-600 mt-1">{customDateError}</p>
+                            )}
+                            <button
+                              onClick={handleApplyCustomDates}
+                              className="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              Apply
+                            </button>
+                          </div>
                         )}
-                        <button
-                          onClick={handleApplyCustomDates}
-                          className="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                          Apply
-                        </button>
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-              
-              {/* Module Filter Button (Deal/Money/Both) */}
-              <div className="relative" ref={moduleFilterRef}>
-                <button
-                  onClick={() => setShowModuleFilter(!showModuleFilter)}
-                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  Filter
-                </button>
-                {showModuleFilter && (
-                  <div
-                    className="absolute right-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-48"
-                  >
-                    <div className="px-3 py-1.5 border-b border-gray-200">
-                      <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Module Type</p>
-                    </div>
-                    
-                    <div className="py-1">
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="moduleFilter"
-                          checked={moduleFilter === 'deal'}
-                          onChange={() => setModuleFilter('deal')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Deal</span>
-                      </label>
-                      
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="moduleFilter"
-                          checked={moduleFilter === 'money'}
-                          onChange={() => setModuleFilter('money')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Money</span>
-                      </label>
-                      
-                      <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
-                        <input
-                          type="radio"
-                          name="moduleFilter"
-                          checked={moduleFilter === 'both'}
-                          onChange={() => setModuleFilter('both')}
-                          className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="ml-2 text-xs font-medium text-gray-700">Both</span>
-                      </label>
-                    </div>
+                  
+                  {/* Module Filter Button (Deal/Money/Both) */}
+                  <div className="relative" ref={moduleFilterRef}>
+                    <button
+                      onClick={() => setShowModuleFilter(!showModuleFilter)}
+                      className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      Filter
+                    </button>
+                    {showModuleFilter && (
+                      <div
+                        className="absolute right-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-48"
+                      >
+                        <div className="px-3 py-1.5 border-b border-gray-200">
+                          <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Module Type</p>
+                        </div>
+                        
+                        <div className="py-1">
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="moduleFilter"
+                              checked={moduleFilter === 'deal'}
+                              onChange={() => setModuleFilter('deal')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Deal</span>
+                          </label>
+                          
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="moduleFilter"
+                              checked={moduleFilter === 'money'}
+                              onChange={() => setModuleFilter('money')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Money</span>
+                          </label>
+                          
+                          <label className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="radio"
+                              name="moduleFilter"
+                              checked={moduleFilter === 'both'}
+                              onChange={() => setModuleFilter('both')}
+                              className="w-3 h-3 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-xs font-medium text-gray-700">Both</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">
+                  {timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS'}
+                </span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">
-                {timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS'}
-              </p>
-              <p className="text-xl font-bold text-[#1F2937]">{formatIndianNumber(sortedDeals.length, 0)}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{formatIndianNumber(sortedDeals.length, 0)}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">DEAL</span>
+              </div>
               {searchQuery && (
-                <p className="text-xs text-[#9CA3AF] mt-1">of {trimmedDeals.length} total</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1">of {trimmedDeals.length} total</p>
               )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">CONNECTION STATUS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">CONNECTION STATUS</p>
-              <p className={`text-xl font-bold ${
-                connectionState === 'connected' ? 'text-green-600' :
-                connectionState === 'connecting' ? 'text-yellow-600' :
-                'text-red-600'
+              <div className={`text-sm md:text-base font-bold leading-none ${
+                connectionState === 'connected' ? 'text-[#16A34A]' :
+                connectionState === 'connecting' ? 'text-[#F59E0B]' :
+                'text-[#DC2626]'
               }`}>
                 {connectionState === 'connected' ? 'Live' :
                  connectionState === 'connecting' ? 'Connecting...' :
                  'Disconnected'}
-              </p>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">UNIQUE LOGINS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">UNIQUE LOGINS</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {formatIndianNumber(new Set(sortedDeals.map(d => d.login)).size, 0)}
-              </p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{formatIndianNumber(new Set(sortedDeals.map(d => d.login)).size, 0)}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+              </div>
               {searchQuery && (
-                <p className="text-xs text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.login)).size} total</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.login)).size} total</p>
               )}
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">SYMBOLS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">SYMBOLS</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {formatIndianNumber(new Set(sortedDeals.map(d => d.symbol)).size, 0)}
-              </p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{formatIndianNumber(new Set(sortedDeals.map(d => d.symbol)).size, 0)}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
+              </div>
               {searchQuery && (
-                <p className="text-xs text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.symbol)).size} total</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1">of {new Set(trimmedDeals.map(d => d.symbol)).size} total</p>
               )}
             </div>
           </div>
