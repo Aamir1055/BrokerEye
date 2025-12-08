@@ -3228,7 +3228,11 @@ const Client2Page = () => {
 
                 {/* Percentage Toggle Button */}
                 <button
-                  onClick={() => setCardFilterPercentMode(v => !v)}
+                  onClick={() => {
+                    setCardFilterPercentMode(v => !v)
+                    // Immediately refetch clients so table reflects percentage mode
+                    fetchClients(false)
+                  }}
                   className={`h-8 w-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
                     cardFilterPercentMode ? 'bg-blue-50 border-blue-400' : 'bg-white hover:bg-gray-50'
                   }`}
@@ -3675,10 +3679,10 @@ const Client2Page = () => {
                     )}
                   </div>
                   
-                  {/* Search Icon Button */}
+                  {/* Search Icon (inside input) */}
                   <button
                     onClick={handleSearch}
-                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] hover:bg-gray-50 text-[#2563EB] flex items-center justify-center shadow-sm transition-colors"
+                    className="absolute right-10 top-1/2 -translate-y-1/2 text-[#2563EB] hover:text-blue-700 transition-colors"
                     title="Search"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
