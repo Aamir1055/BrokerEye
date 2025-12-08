@@ -341,116 +341,123 @@ const IBCommissionsPage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
-          <div className="mb-4">
-            {/* Title and Subtitle */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">IB Commissions</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Manage introducing broker commission percentages</p>
-              </div>
+          {/* Header with title and buttons on same line */}
+          <div className="flex items-center justify-between mb-6">
+            {/* Title Section */}
+            <div>
+              <h1 className="text-2xl font-bold text-[#1F2937]">IB Commissions</h1>
+              <p className="text-sm text-[#6B7280] mt-0.5">Manage introducing broker commission percentages</p>
             </div>
             
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row - Removed as Bulk Update moved to header */}
+            {/* Action Buttons - All on right side */}
+            <div className="flex items-center gap-2">
+              {/* Note: Bulk Update button is in the search controls section below */}
+            </div>
           </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start gap-1.5 mb-1.5">
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="10" height="10" rx="5" stroke="white" strokeWidth="1.5" fill="none"/>
+                    <path d="M6 3v6M3 6h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate</p>
+                  <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
+                    {totalsLoading ? (
+                      <span className="text-[#9CA3AF]">...</span>
+                    ) : (
+                      formatIndianNumber(totalCommission)
+                    )}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Total Rebate</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {totalsLoading ? (
-                  <span className="text-[#9CA3AF]">...</span>
-                ) : (
-                  formatIndianNumber(totalCommission)
-                )}
-              </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start gap-1.5 mb-1.5">
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="10" height="10" rx="5" stroke="white" strokeWidth="1.5" fill="none"/>
+                    <path d="M3.5 6l2 2 3-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate</p>
+                  <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
+                    {totalsLoading ? (
+                      <span className="text-[#9CA3AF]">...</span>
+                    ) : (
+                      formatIndianNumber(totalAvailableCommission)
+                    )}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Available Rebate</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {totalsLoading ? (
-                  <span className="text-[#9CA3AF]">...</span>
-                ) : (
-                  formatIndianNumber(totalAvailableCommission)
-                )}
-              </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start gap-1.5 mb-1.5">
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="3" width="8" height="6" rx="1" stroke="white" strokeWidth="1.5" fill="none"/>
+                    <path d="M6 6.5v1" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Disbursed Rebate</p>
+                  <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
+                    {totalsLoading ? (
+                      <span className="text-[#9CA3AF]">...</span>
+                    ) : (
+                      formatIndianNumber(totalCommission - totalAvailableCommission)
+                    )}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Disbursed Rebate</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {totalsLoading ? (
-                  <span className="text-[#9CA3AF]">...</span>
-                ) : (
-                  formatIndianNumber(totalCommission - totalAvailableCommission)
-                )}
-              </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start gap-1.5 mb-1.5">
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 9L5 6L7 8L10 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="5" cy="6" r="0.75" fill="white"/>
+                    <circle cx="7" cy="8" r="0.75" fill="white"/>
                   </svg>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate %</p>
+                  <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
+                    {totalsLoading ? (
+                      <span className="text-[#9CA3AF]">...</span>
+                    ) : (
+                      parseFloat(totalCommissionPercentage || 0).toFixed(2)
+                    )}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Total Rebate %</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {totalsLoading ? (
-                  <span className="text-[#9CA3AF]">...</span>
-                ) : (
-                  parseFloat(totalCommissionPercentage || 0).toFixed(2)
-                )}
-              </p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start gap-1.5 mb-1.5">
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="7" width="2" height="3" rx="0.5" fill="white"/>
+                    <rect x="5" y="5" width="2" height="5" rx="0.5" fill="white"/>
+                    <rect x="8" y="3" width="2" height="7" rx="0.5" fill="white"/>
                   </svg>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate %</p>
+                  <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
+                    {totalsLoading ? (
+                      <span className="text-[#9CA3AF]">...</span>
+                    ) : (
+                      parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)
+                    )}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Available Rebate %</p>
-              <p className="text-xl font-bold text-[#1F2937]">
-                {totalsLoading ? (
-                  <span className="text-[#9CA3AF]">...</span>
-                ) : (
-                  parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)
-                )}
-              </p>
             </div>
           </div>
 

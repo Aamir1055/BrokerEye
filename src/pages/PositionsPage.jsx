@@ -1932,21 +1932,6 @@ const PositionsPage = () => {
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-4">
-            {/* Title and Subtitle */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
-              </div>
-            </div>
           {/* Header with title and buttons on same line */}
           <div className="flex items-center justify-between mb-6">
             {/* Title Section */}
