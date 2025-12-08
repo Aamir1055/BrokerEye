@@ -3662,6 +3662,18 @@ const Client2Page = () => {
                       placeholder="Search"
                       className="w-full h-10 pl-10 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
+                    {/* Search Icon (inside input) */}
+                    <button
+                      onClick={handleSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
+                      title="Search"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                    
                     {searchInput && (
                       <button
                         onClick={() => {
@@ -3669,7 +3681,7 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
+                        className="absolute right-12 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
                         title="Clear search"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3678,18 +3690,6 @@ const Client2Page = () => {
                       </button>
                     )}
                   </div>
-                  
-                  {/* Search Icon (inside input) */}
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
-                    title="Search"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </button>
                   
                   {/* Columns Button (icon only) */}
                   <div className="relative" ref={columnSelectorRef}>
