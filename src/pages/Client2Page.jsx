@@ -2931,7 +2931,7 @@ const Client2Page = () => {
   }
 
   // Format value for display
-  const formatValue = (key, value) => {
+  const formatValue = (key, value, percentageMode = false) => {
     if (value === null || value === undefined || value === '') {
       return '-'
     }
@@ -2958,7 +2958,9 @@ const Client2Page = () => {
       'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value)
       if (isNaN(num)) return '-'
-      return formatIndianNumber(num.toFixed(2))
+      const formatted = formatIndianNumber(num.toFixed(2))
+      // In percentage mode, append % sign
+      return percentageMode ? `${formatted} %` : formatted
     }
 
     // Format margin level as percentage
@@ -4825,7 +4827,8 @@ const Client2Page = () => {
                             if ((rawValue === undefined || rawValue === null || rawValue === '') && col.key === 'processorType') {
                               rawValue = client?.processor_type ?? client?.PROCESSOR_TYPE ?? rawValue
                             }
-                            const cellValue = formatValue(col.key, rawValue)
+                            // Pass percentage mode to formatValue for proper formatting
+                            const cellValue = formatValue(col.key, rawValue, cardFilterPercentMode)
 
                             // Special handling for login column - make it blue
                             if (col.key === 'login') {
