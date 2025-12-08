@@ -48,6 +48,9 @@ export default function Client2Module() {
   // Persistent card order for mobile face cards
   const [cardOrder, setCardOrder] = useState([])
   const CARD_ORDER_KEY = 'client2-module-order'
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
   const [dragStartLabel, setDragStartLabel] = useState(null)
   const [hoverIndex, setHoverIndex] = useState(null)
   const [touchDragIndex, setTouchDragIndex] = useState(null)
@@ -459,11 +462,43 @@ export default function Client2Module() {
     totalMarginFree: filteredClients.reduce((sum, c) => sum + (Number(c.marginFree) || 0), 0)
   }
 
+  // Apply sorting
+  const sortedClients = useMemo(() => {
+    if (!sortColumn) return filteredClients
+    
+    return [...filteredClients].sort((a, b) => {
+      let aVal = getCellValue(sortColumn, a)
+      let bVal = getCellValue(sortColumn, b)
+      
+      // Handle null/undefined values
+      if (aVal == null) aVal = ''
+      if (bVal == null) bVal = ''
+      
+      // Try to compare as numbers if both are numeric
+      const aNum = Number(aVal)
+      const bNum = Number(bVal)
+      
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
+      }
+      
+      // Otherwise compare as strings
+      const aStr = String(aVal).toLowerCase()
+      const bStr = String(bVal).toLowerCase()
+      
+      if (sortDirection === 'asc') {
+        return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
+      } else {
+        return bStr < aStr ? -1 : bStr > aStr ? 1 : 0
+      }
+    })
+  }, [filteredClients, sortColumn, sortDirection, showPercent])
+
   // Pagination
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
+  const totalPages = Math.ceil(sortedClients.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const paginatedClients = filteredClients.slice(startIndex, endIndex)
+  const paginatedClients = sortedClients.slice(startIndex, endIndex)
 
   // View All handler
   useEffect(() => {
@@ -697,6 +732,18 @@ export default function Client2Module() {
       label: (showPercent && percentageColumns.has(col.key)) ? `${col.label} %` : col.label
     }))
   }, [visibleColumns, showPercent])
+
+  // Handle column sorting
+  const handleSort = (columnKey) => {
+    if (sortColumn === columnKey) {
+      // Toggle direction if same column
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setSortColumn(columnKey)
+      setSortDirection('asc')
+    }
+  }
 
   // Generate grid template columns string
   const gridTemplateColumns = useMemo(() => {
@@ -1043,10 +1090,16 @@ export default function Client2Module() {
                 {visibleColumnsList.map((col, idx) => (
                   <div 
                     key={col.key}
-                    className={`h-[28px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                    onClick={() => handleSort(col.key)}
+                    className={`h-[28px] flex items-center justify-center px-1 gap-1 cursor-pointer hover:bg-[#1557A8] active:bg-[#0F4A91] transition-colors ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
                     style={{border: 'none', outline: 'none', boxShadow: 'none'}}
                   >
-                    {col.label}
+                    <span>{col.label}</span>
+                    {sortColumn === col.key && (
+                      <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    )}
                   </div>
                 ))}
               </div>
