@@ -97,7 +97,13 @@ const LoginGroupsModal = ({
           }}
         >
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const ev = new CustomEvent('openCustomizeView')
+                window.dispatchEvent(ev)
+              }
+              onClose()
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -379,65 +385,63 @@ const LoginGroupsModal = ({
           )}
         </div>
 
-        {/* Action buttons - Reset and Apply */}
+        {/* Action buttons - Reset and Apply (match FilterModal styles) */}
         {hasGroups && (
           <div
             style={{
-              padding: '16px 20px',
+              padding: '0 20px 20px',
               borderTop: '1px solid #F2F2F7',
               display: 'flex',
-              gap: '10px',
+              gap: '16px',
             }}
           >
+            {/* Reset */}
             <button
               onClick={handleClear}
               style={{
                 flex: 1,
-                padding: '12px',
-                background: '#FFFFFF',
-                border: '1px solid #E6EEF8',
-                borderRadius: '12px',
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 500,
-                fontSize: '14px',
-                color: '#2563EB',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: '#E5E7EB',
+                border: '1px solid #D1D5DB',
+                borderRadius: '20px',
+                boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#F8FAFC'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#FFFFFF'
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '12px',
+                lineHeight: '20px',
+                letterSpacing: '0.06em',
+                textTransform: 'capitalize',
+                color: '#6B7280',
               }}
             >
               Reset
             </button>
+            {/* Apply */}
             <button
               onClick={handleApply}
               disabled={!tempSelectedGroup}
               style={{
                 flex: 1,
-                padding: '12px',
-                background: tempSelectedGroup ? '#2563EB' : '#E6EEF8',
-                border: 'none',
-                borderRadius: '12px',
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 500,
-                fontSize: '14px',
-                color: tempSelectedGroup ? '#FFFFFF' : '#999999',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '10px 27px',
+                background: tempSelectedGroup ? '#2563EB' : '#E5E7EB',
+                border: '1px solid ' + (tempSelectedGroup ? '#2563EB' : '#D1D5DB'),
+                borderRadius: '20px',
+                boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
                 cursor: tempSelectedGroup ? 'pointer' : 'not-allowed',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (tempSelectedGroup) {
-                  e.target.style.background = '#1D4ED8'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (tempSelectedGroup) {
-                  e.target.style.background = '#2563EB'
-                }
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: 400,
+                fontSize: '12px',
+                lineHeight: '20px',
+                letterSpacing: '0.06em',
+                textTransform: 'capitalize',
+                color: tempSelectedGroup ? '#FFFFFF' : '#6B7280',
               }}
             >
               Apply

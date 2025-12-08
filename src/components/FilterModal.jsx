@@ -97,7 +97,13 @@ const FilterModal = ({
           }}
         >
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const ev = new CustomEvent('openCustomizeView')
+                window.dispatchEvent(ev)
+              }
+              onClose()
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -301,24 +307,25 @@ const FilterModal = ({
           {/* Apply button */}
           <button
             onClick={handleApply}
+            disabled={!hasFloating && !hasCredit && !noDeposit}
             style={{
               flex: 1,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               padding: '10px 27px',
-              background: '#2563EB',
-              border: '1px solid #2563EB',
+              background: (hasFloating || hasCredit || noDeposit) ? '#2563EB' : '#E5E7EB',
+              border: '1px solid ' + ((hasFloating || hasCredit || noDeposit) ? '#2563EB' : '#D1D5DB'),
               borderRadius: '20px',
               boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-              cursor: 'pointer',
+              cursor: (hasFloating || hasCredit || noDeposit) ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
               fontWeight: 400,
               fontSize: '12px',
               lineHeight: '20px',
               letterSpacing: '0.06em',
               textTransform: 'capitalize',
-              color: '#FFFFFF',
+              color: (hasFloating || hasCredit || noDeposit) ? '#FFFFFF' : '#6B7280',
             }}
           >
             Apply

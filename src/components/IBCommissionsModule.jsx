@@ -74,6 +74,25 @@ export default function IBCommissionsModule() {
     available_rebate: 0
   })
 
+  // Listen for global request to open Customize View from child modals
+  useEffect(() => {
+    const handler = () => {
+      setIsFilterOpen(false)
+      setIsIBFilterOpen(false)
+      setIsLoginGroupsOpen(false)
+      setIsLoginGroupModalOpen(false)
+      setIsCustomizeOpen(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openCustomizeView', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('openCustomizeView', handler)
+      }
+    }
+  }, [])
+
   // Fetch data on mount
   useEffect(() => {
     fetchAllIBCommissions()

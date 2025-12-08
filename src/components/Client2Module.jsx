@@ -74,6 +74,27 @@ export default function Client2Module() {
     }
   }
 
+  // Listen for global request to open Customize View from child modals
+  useEffect(() => {
+    const handler = () => {
+      // Close any open child modals first
+      setIsFilterOpen(false)
+      setIsIBFilterOpen(false)
+      setIsLoginGroupsOpen(false)
+      setIsLoginGroupModalOpen(false)
+      // Open Customize menu
+      setIsCustomizeOpen(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openCustomizeView', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('openCustomizeView', handler)
+      }
+    }
+  }, [])
+
   // API data state (restored)
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})

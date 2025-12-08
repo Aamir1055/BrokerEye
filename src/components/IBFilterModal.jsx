@@ -150,7 +150,14 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           }}
         >
           <button
-            onClick={onClose}
+            onClick={() => {
+              // Instead of closing completely, return to CustomizeView menu
+              if (typeof window !== 'undefined') {
+                const ev = new CustomEvent('openCustomizeView')
+                window.dispatchEvent(ev)
+              }
+              onClose()
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -378,64 +385,62 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           )}
         </div>
 
-        {/* Reset and Apply buttons */}
+        {/* Reset and Apply buttons (match FilterModal styles) */}
         <div
           style={{
             display: 'flex',
-            gap: '12px',
-            padding: '20px',
+            gap: '16px',
+            padding: '0 20px 20px',
             borderTop: '1px solid #F2F2F7',
           }}
         >
+          {/* Reset button */}
           <button
             onClick={handleReset}
             style={{
               flex: 1,
-              padding: '14px',
-              background: '#FFFFFF',
-              border: '1px solid #E6EEF8',
-              borderRadius: '12px',
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '16px',
-              color: '#2563EB',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 16px',
+              background: '#E5E7EB',
+              border: '1px solid #D1D5DB',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#F8FAFC'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#FFFFFF'
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#6B7280',
             }}
           >
             Reset
           </button>
+          {/* Apply button */}
           <button
             onClick={handleApply}
             disabled={!tempSelectedIB || loading}
             style={{
               flex: 1,
-              padding: '14px',
-              background: tempSelectedIB && !loading ? '#2563EB' : '#E6EEF8',
-              border: 'none',
-              borderRadius: '12px',
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '16px',
-              color: tempSelectedIB && !loading ? '#FFFFFF' : '#999999',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 27px',
+              background: tempSelectedIB && !loading ? '#2563EB' : '#E5E7EB',
+              border: '1px solid ' + (tempSelectedIB && !loading ? '#2563EB' : '#D1D5DB'),
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: tempSelectedIB && !loading ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (tempSelectedIB && !loading) {
-                e.target.style.background = '#1D4ED8'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (tempSelectedIB && !loading) {
-                e.target.style.background = '#2563EB'
-              }
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: tempSelectedIB && !loading ? '#FFFFFF' : '#6B7280',
             }}
           >
             Apply

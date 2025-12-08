@@ -3191,7 +3191,7 @@ const PositionsPage = () => {
               </div>
             </div>
           ) : (
-            <>
+          <div>
           {/* Search and Controls Bar */}
           {sortedPositions && sortedPositions.length > 0 && (
           <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
@@ -3325,6 +3325,7 @@ const PositionsPage = () => {
                 </button>
               </div>
             </div>
+          </div>
           )}
 
           {/* Positions Table */}
@@ -3500,10 +3501,12 @@ const PositionsPage = () => {
                     })}
                   </tbody>
                 </table>
-          </>
-          )}
-
-          {/* Connection status helper removed per request */}
+            </div>
+          </div>
+          </div>
+          )
+          }
+        </div>
         </div>
       </main>
       

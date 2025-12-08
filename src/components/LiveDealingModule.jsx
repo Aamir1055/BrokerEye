@@ -87,6 +87,27 @@ export default function LiveDealingModule() {
     entry: false
   })
 
+  // Listen for global request to open Customize View from child modals
+  useEffect(() => {
+    const handler = () => {
+      setIsFilterOpen(false)
+      setIsTimeFilterOpen(false)
+      setIsDealsFilterOpen(false)
+      setIsIBFilterOpen(false)
+      setIsLoginGroupsOpen(false)
+      setIsLoginGroupModalOpen(false)
+      setIsCustomizeOpen(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openCustomizeView', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('openCustomizeView', handler)
+      }
+    }
+  }, [])
+
   // Format request text from deal data
   const formatRequestFromDeal = (deal) => {
     const action = deal.action || '-'
@@ -349,14 +370,14 @@ export default function LiveDealingModule() {
   const summaryStats = useMemo(() => {
     const totalDeals = sortedDeals.length
     const uniqueLogins = new Set(sortedDeals.map(d => d.login)).size
-    const totalPositions = cachedPositions.length
+    const uniqueSymbols = new Set(sortedDeals.map(d => d.rawData?.symbol)).size
     
     return {
       totalDeals,
       uniqueLogins,
-      totalPositions
+      uniqueSymbols,
     }
-  }, [sortedDeals, cachedPositions])
+  }, [sortedDeals])
 
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
@@ -373,7 +394,7 @@ export default function LiveDealingModule() {
     return [
       { label: timeLabel, value: String(summaryStats.totalDeals) },
       { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
-      { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) }
+      { label: 'SYMBOLS', value: String(summaryStats.uniqueSymbols) }
     ]
   }, [summaryStats, timeFilter])
 

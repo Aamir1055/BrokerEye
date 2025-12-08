@@ -72,6 +72,25 @@ export default function PendingOrdersModule() {
     state: false
   })
 
+  // Listen for global request to open Customize View from child modals
+  useEffect(() => {
+    const handler = () => {
+      setIsFilterOpen(false)
+      setIsIBFilterOpen(false)
+      setIsLoginGroupsOpen(false)
+      setIsLoginGroupModalOpen(false)
+      setIsCustomizeOpen(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openCustomizeView', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('openCustomizeView', handler)
+      }
+    }
+  }, [])
+
   // Apply group and IB filters to orders (same as desktop)
   const groupFilteredOrders = useMemo(() => {
     return filterByActiveGroup(orders, 'pendingorders')

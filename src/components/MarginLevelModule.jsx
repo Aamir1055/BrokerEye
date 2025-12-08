@@ -67,6 +67,25 @@ export default function MarginLevelModule() {
     currency: false
   })
 
+  // Listen for global request to open Customize View from child modals
+  useEffect(() => {
+    const handler = () => {
+      setIsFilterOpen(false)
+      setIsIBFilterOpen(false)
+      setIsLoginGroupsOpen(false)
+      setIsLoginGroupModalOpen(false)
+      setIsCustomizeOpen(true)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('openCustomizeView', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('openCustomizeView', handler)
+      }
+    }
+  }, [])
+
   // First filter: margin level < 50% and exclude zero margin levels (same as desktop)
   const filteredByMarginLevel = useMemo(() => {
     return accounts.filter((a) => {
