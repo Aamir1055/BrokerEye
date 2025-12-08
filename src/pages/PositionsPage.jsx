@@ -3325,7 +3325,6 @@ const PositionsPage = () => {
                 </button>
               </div>
             </div>
-          </div>
           )}
 
           {/* Positions Table */}

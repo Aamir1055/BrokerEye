@@ -59,8 +59,7 @@ const PendingOrdersPage = () => {
     priceOrder: true,
     priceCurrent: true,
     sl: false,
-    tp: false,
-    state: true
+    tp: false
   })
 
   const allColumns = [
@@ -73,8 +72,7 @@ const PendingOrdersPage = () => {
     { key: 'priceOrder', label: 'Price Order' },
     { key: 'priceCurrent', label: 'Price Current' },
     { key: 'sl', label: 'S/L' },
-    { key: 'tp', label: 'T/P' },
-    { key: 'state', label: 'State' }
+    { key: 'tp', label: 'T/P' }
   ]
 
   const toggleColumn = (columnKey) => {

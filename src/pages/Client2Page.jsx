@@ -2360,6 +2360,26 @@ const Client2Page = () => {
   const handleCardDragOver = (e) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    
+    // Get the target card key from the closest card element
+    const cardElement = e.currentTarget
+    const targetCardKey = cardElement.getAttribute('data-card-key')
+    
+    // Swap positions when dragging over (smoother reordering)
+    if (draggedCard && targetCardKey && draggedCard !== targetCardKey) {
+      const newOrder = [...faceCardOrder]
+      const draggedIndex = newOrder.indexOf(draggedCard)
+      const targetIndex = newOrder.indexOf(targetCardKey)
+
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        // Swap the positions
+        newOrder[draggedIndex] = targetCardKey
+        newOrder[targetIndex] = draggedCard
+
+        setFaceCardOrder(newOrder)
+        localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
+      }
+    }
   }
 
   const handleCardDrop = (e, targetCardKey) => {
@@ -3555,6 +3575,7 @@ const Client2Page = () => {
                   return (
                     <div
                       key={cardKey}
+                      data-card-key={cardKey}
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragEnd={handleCardDragEnd}

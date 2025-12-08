@@ -281,8 +281,8 @@ const FilterModal = ({
               justifyContent: 'center',
               alignItems: 'center',
               padding: '10px 16px',
-              background: '#F4F8FC',
-              border: '1px solid #F2F2F7',
+              background: '#E5E7EB',
+              border: '1px solid #D1D5DB',
               borderRadius: '20px',
               boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
@@ -292,7 +292,7 @@ const FilterModal = ({
               lineHeight: '20px',
               letterSpacing: '0.06em',
               textTransform: 'capitalize',
-              color: '#2563EB',
+              color: '#6B7280',
             }}
           >
             Reset
@@ -307,8 +307,8 @@ const FilterModal = ({
               justifyContent: 'center',
               alignItems: 'center',
               padding: '10px 27px',
-              background: '#FFFFFF',
-              border: '1px solid #F2F2F7',
+              background: '#2563EB',
+              border: '1px solid #2563EB',
               borderRadius: '20px',
               boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
@@ -318,7 +318,7 @@ const FilterModal = ({
               lineHeight: '20px',
               letterSpacing: '0.06em',
               textTransform: 'capitalize',
-              color: '#4B4B4B',
+              color: '#FFFFFF',
             }}
           >
             Apply
