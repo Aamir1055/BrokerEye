@@ -573,7 +573,7 @@ export default function PositionModule() {
     
     switch(columnKey) {
       case 'symbol':
-        return <div className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap text-[#1A63BC] font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap text-black font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
       case 'netType':
       case 'action':
         return (
@@ -1250,7 +1250,7 @@ export default function PositionModule() {
                       <React.Fragment key={idx}>
                         <div className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white">
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">
                               {pos.symbol}
                               {groupByBaseSymbol && pos.variantCount > 1 && (
                                 <button
@@ -1285,7 +1285,7 @@ export default function PositionModule() {
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC]">{variant.exactSymbol}</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black">{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
                               {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
@@ -1514,7 +1514,7 @@ export default function PositionModule() {
                     clientNetPaginatedPositions.map((pos, idx) => (
                       <div key={idx} className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
                         {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white">{pos.login}</div>}
-                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B]">{pos.symbol}</div>}
+                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">{pos.symbol}</div>}
                         {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
                         }`}>{pos.netType}</div>}
