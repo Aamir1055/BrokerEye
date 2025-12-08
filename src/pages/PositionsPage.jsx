@@ -3518,6 +3518,7 @@ const PositionsPage = () => {
                 </table>
             </div>
           </div>
+          </>
           )}
 
           {/* Connection status helper removed per request */}

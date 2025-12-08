@@ -807,7 +807,7 @@ const ClientPercentagePage = () => {
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header */}
           <div className="mb-4">
-            {/* Title and Subtitle */}
+            {/* Single Line Header Layout */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -817,33 +817,34 @@ const ClientPercentagePage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1F2937]">Client Percentage</h1>
-                <p className="text-sm text-[#6B7280] mt-0.5">Manage custom profit-sharing percentages</p>
+              
+              {/* Flex container for title and buttons */}
+              <div className="flex items-center justify-between flex-1">
+                {/* Title Section */}
+                <div>
+                  <h1 className="text-2xl font-bold text-[#1F2937]">Client Percentage</h1>
+                  <p className="text-sm text-[#6B7280] mt-0.5">Manage custom profit-sharing percentages</p>
+                </div>
+                
+                {/* Action Buttons - Groups on right side */}
+                <div className="flex items-center gap-2">
+                  <GroupSelector 
+                    moduleName="clientpercentage" 
+                    onCreateClick={() => {
+                      console.log('[ClientPercentagePage] onCreateClick called')
+                      console.log('[ClientPercentagePage] Current showGroupModal:', showGroupModal)
+                      setEditingGroup(null)
+                      setShowGroupModal(true)
+                      console.log('[ClientPercentagePage] Set showGroupModal to true')
+                    }}
+                    onEditClick={(group) => {
+                      console.log('[ClientPercentagePage] onEditClick called for group:', group)
+                      setEditingGroup(group)
+                      setShowGroupModal(true)
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-            
-            {/* Separator */}
-            <div className="border-b border-[#E5E7EB] my-3"></div>
-            
-            {/* Action Buttons Row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Groups Dropdown */}
-              <GroupSelector 
-                moduleName="clientpercentage" 
-                onCreateClick={() => {
-                  console.log('[ClientPercentagePage] onCreateClick called')
-                  console.log('[ClientPercentagePage] Current showGroupModal:', showGroupModal)
-                  setEditingGroup(null)
-                  setShowGroupModal(true)
-                  console.log('[ClientPercentagePage] Set showGroupModal to true')
-                }}
-                onEditClick={(group) => {
-                  console.log('[ClientPercentagePage] onEditClick called for group:', group)
-                  setEditingGroup(group)
-                  setShowGroupModal(true)
-                }}
-              />
             </div>
           </div>
           {error && (
@@ -852,51 +853,67 @@ const ClientPercentagePage = () => {
             </div>
           )}
 
-          {/* Summary Cards */}
+          {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Clients</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Total Clients</p>
-              <p className="text-xl font-bold text-[#1F2937]">{stats.total}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{stats.total}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">CLI</span>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Custom Percentages</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Custom Percentages</p>
-              <p className="text-xl font-bold text-[#1F2937]">{stats.total_custom}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{stats.total_custom}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">CUST</span>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Using Default</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Using Default</p>
-              <p className="text-xl font-bold text-[#1F2937]">{stats.total_default}</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{stats.total_default}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">DEF</span>
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Default Percentage</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
+                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
                   </svg>
                 </div>
               </div>
-              <p className="text-xs text-[#6B7280] mb-1">Default Percentage</p>
-              <p className="text-xl font-bold text-[#1F2937]">{stats.default_percentage}%</p>
+              <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
+                <span>{stats.default_percentage}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">%</span>
+              </div>
             </div>
           </div>
 
