@@ -2958,9 +2958,9 @@ const Client2Page = () => {
       'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value)
       if (isNaN(num)) return '-'
-      const formatted = formatIndianNumber(num.toFixed(2))
-      // In percentage mode, append % sign
-      return percentageMode ? `${formatted} %` : formatted
+      // Always show numeric values as numbers; do not append %
+      // In percentage toggle, API already returns mode-adjusted values in base fields
+      return formatIndianNumber(num.toFixed(2))
     }
 
     // Format margin level as percentage
@@ -4823,32 +4823,12 @@ const Client2Page = () => {
                           }}
                         >
                           {visibleColumnsList.map(col => {
-                            // Map to percentage field when in percentage mode
-                            const percentageFieldMap = {
-                              balance: 'balance_percentage',
-                              credit: 'credit_percentage',
-                              equity: 'equity_percentage',
-                              margin: 'margin_percentage',
-                              marginFree: 'marginFree_percentage',
-                              profit: 'profit_percentage',
-                              floating: 'floating_percentage',
-                              dailyPnL: 'dailyPnL_percentage',
-                              thisWeekPnL: 'thisWeekPnL_percentage',
-                              thisMonthPnL: 'thisMonthPnL_percentage',
-                              lifetimePnL: 'lifetimePnL_percentage'
-                            }
-                            
-                            // Get the correct field based on percentage mode
-                            const fieldKey = cardFilterPercentMode && percentageFieldMap[col.key] 
-                              ? percentageFieldMap[col.key] 
-                              : col.key
-                            
-                            let rawValue = client?.[fieldKey]
+                            // Always use base field keys; API returns mode-adjusted values
+                            let rawValue = client?.[col.key]
                             if ((rawValue === undefined || rawValue === null || rawValue === '') && col.key === 'processorType') {
                               rawValue = client?.processor_type ?? client?.PROCESSOR_TYPE ?? rawValue
                             }
-                            // Pass percentage mode to formatValue for proper formatting
-                            const cellValue = formatValue(col.key, rawValue, cardFilterPercentMode)
+                            const cellValue = formatValue(col.key, rawValue)
 
                             // Special handling for login column - make it blue
                             if (col.key === 'login') {
