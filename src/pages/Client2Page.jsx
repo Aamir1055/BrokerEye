@@ -165,7 +165,6 @@ const Client2Page = () => {
   const isFetchingRef = useRef(false)
   const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
   const [dragOverCard, setDragOverCard] = useState(null) // Track which card is being dragged over
-  const dragCounterRef = useRef({}) // Prevent flickering during drag
   // Trend tracking for face card values (desktop)
   const lastValuesRef = useRef({})
   const lastTrendRef = useRef({})
@@ -2346,11 +2345,10 @@ const Client2Page = () => {
     }
   }
 
-  // Face card drag and drop handlers - Smooth implementation
+  // Face card drag and drop handlers - Fixed flickering
   const handleCardDragStart = (e, cardKey) => {
     setDraggedCard(cardKey)
     setDragOverCard(null)
-    dragCounterRef.current = {}
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', e.target)
     e.target.style.opacity = '0.5'
@@ -2360,64 +2358,36 @@ const Client2Page = () => {
     e.target.style.opacity = '1'
     setDraggedCard(null)
     setDragOverCard(null)
-    dragCounterRef.current = {}
   }
 
-  const handleCardDragOver = (e) => {
+  const handleCardDragOver = (e, targetCardKey) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-  }
+    
+    if (!draggedCard || draggedCard === targetCardKey || dragOverCard === targetCardKey) return
+    
+    // Update visual indicator
+    setDragOverCard(targetCardKey)
+    
+    // Perform the reorder
+    const newOrder = [...faceCardOrder]
+    const draggedIndex = newOrder.indexOf(draggedCard)
+    const targetIndex = newOrder.indexOf(targetCardKey)
 
-  const handleCardDragEnter = (e, targetCardKey) => {
-    e.preventDefault()
-    
-    if (!draggedCard || draggedCard === targetCardKey) return
-    
-    // Initialize counter for this target if not exists
-    if (!dragCounterRef.current[targetCardKey]) {
-      dragCounterRef.current[targetCardKey] = 0
-    }
-    
-    dragCounterRef.current[targetCardKey]++
-    
-    // Only swap if this is a new target (prevents flickering)
-    if (dragOverCard !== targetCardKey) {
-      setDragOverCard(targetCardKey)
-      
-      const newOrder = [...faceCardOrder]
-      const draggedIndex = newOrder.indexOf(draggedCard)
-      const targetIndex = newOrder.indexOf(targetCardKey)
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      // Remove dragged item and insert at target position
+      const [removed] = newOrder.splice(draggedIndex, 1)
+      newOrder.splice(targetIndex, 0, removed)
 
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        // Remove dragged item and insert at target position
-        const [removed] = newOrder.splice(draggedIndex, 1)
-        newOrder.splice(targetIndex, 0, removed)
-
-        setFaceCardOrder(newOrder)
-        localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
-      }
+      setFaceCardOrder(newOrder)
+      localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
     }
   }
 
-  const handleCardDragLeave = (e, targetCardKey) => {
-    e.preventDefault()
-    
-    if (dragCounterRef.current[targetCardKey]) {
-      dragCounterRef.current[targetCardKey]--
-      
-      if (dragCounterRef.current[targetCardKey] === 0) {
-        delete dragCounterRef.current[targetCardKey]
-      }
-    }
-  }
-
-  const handleCardDrop = (e, targetCardKey) => {
+  const handleCardDrop = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    
-    // Cleanup
     setDragOverCard(null)
-    dragCounterRef.current = {}
   }
 
   // Ensure faceCardOrder always contains all known keys (in case defaults grow over time)
@@ -3598,10 +3568,8 @@ const Client2Page = () => {
                       draggable
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragEnd={handleCardDragEnd}
-                      onDragOver={handleCardDragOver}
-                      onDragEnter={(e) => handleCardDragEnter(e, cardKey)}
-                      onDragLeave={(e) => handleCardDragLeave(e, cardKey)}
-                      onDrop={(e) => handleCardDrop(e, cardKey)}
+                      onDragOver={(e) => handleCardDragOver(e, cardKey)}
+                      onDrop={handleCardDrop}
                       className={`bg-white rounded-xl shadow-sm border p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative ${
                         dragOverCard === cardKey ? 'border-blue-400 border-2' : 'border-[#F2F2F7]'
                       }`}
