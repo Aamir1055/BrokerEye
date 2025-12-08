@@ -1134,6 +1134,18 @@ export default function Client2Module() {
                         // Use getCellValue to get the correct field, then format it
                         const value = getCellValue(col.key, client);
                         rowData[col.key] = formatCellValue(col.key, value);
+                        // Debug first non-zero balance
+                        if (col.key === 'balance' && value !== 0 && !window._loggedBalance) {
+                          window._loggedBalance = true;
+                          console.log('[Table Cell] balance column:', {
+                            showPercent,
+                            clientLogin: client.login,
+                            balance: client.balance,
+                            balance_percentage: client.balance_percentage,
+                            valueFromGetCellValue: value,
+                            formatted: rowData[col.key]
+                          });
+                        }
                       } else {
                         rowData[col.key] = client[col.key] || '-';
                       }
