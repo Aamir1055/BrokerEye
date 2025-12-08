@@ -14,8 +14,13 @@ import IBSelector from '../components/IBSelector'
 import PositionModule from '../components/PositionModule'
 
 const PositionsPage = () => {
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(false)
+  // Mobile detection - initialize with actual window width to prevent flash
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768
+    }
+    return false
+  })
 
   useEffect(() => {
     const checkMobile = () => {
