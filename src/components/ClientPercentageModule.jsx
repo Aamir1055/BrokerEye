@@ -509,28 +509,47 @@ export default function ClientPercentageModule() {
                     setCards(newCards)
                   }
                 }}
-                className="flex-shrink-0 w-[156px] h-[60px] snap-start bg-white rounded-[12px] border border-[#E1E1E1] shadow-sm p-3 flex flex-col justify-between hover:shadow-md transition-shadow cursor-move"
+                style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  touchAction: 'pan-x'
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <p className="text-[7px] font-medium text-[#6B7280] leading-tight uppercase tracking-wide">{card.label}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="flex-shrink-0">
-                    {card.numericValue > 0 && (
-                      <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
-                        <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
-                      </svg>
-                    )}
-                    {card.numericValue < 0 && (
-                      <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
-                        <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
-                      </svg>
-                    )}
-                    {card.numericValue === 0 && (
-                      <div className="w-[10px] h-[10px]" />
-                    )}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                  <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
+                  <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
+                      <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
+                    </svg>
                   </div>
-                  <p className="text-[#000000] text-base font-bold leading-none">{card.value}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    lineHeight: '14px',
+                    letterSpacing: '-0.01em',
+                    color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
+                  }}>
+                    {card.value === '' || card.value === undefined ? '0.00' : card.value}
+                  </span>
                 </div>
               </div>
             ))}

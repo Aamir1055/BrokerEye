@@ -893,20 +893,46 @@ export default function PositionModule() {
                     setCards(newCards)
                   }
                 }}
-                className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move active:opacity-50 transition-opacity"
+                style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  touchAction: 'pan-x'
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>
-                  <div className={`w-[16px] h-[16px] ${card.isProfit ? (card.profitValue >= 0 ? 'bg-green-500' : 'bg-red-500') : 'bg-[#2563EB]'} rounded-[3px] flex items-center justify-center flex-shrink-0`}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                  <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
+                  <div style={{ width: '16px', height: '16px', background: card.isProfit ? (card.profitValue >= 0 ? '#10B981' : '#DC2626') : '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
                       <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
                     </svg>
                   </div>
                 </div>
-                <div className="flex items-baseline gap-[4px]">
-                  <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${card.isProfit ? (card.profitValue >= 0 ? 'text-green-600' : 'text-red-600') : 'text-[#000000]'}`}>
-                    {card.isProfit && (card.profitValue >= 0 ? '▲ ' : '▼ ')}{card.value}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    lineHeight: '14px',
+                    letterSpacing: '-0.01em',
+                    color: card.isProfit ? (card.profitValue >= 0 ? '#16A34A' : '#DC2626') : '#000000'
+                  }}>
+                    {card.value === '' || card.value === undefined ? '0.00' : card.value}
                   </span>
                 </div>
               </div>
