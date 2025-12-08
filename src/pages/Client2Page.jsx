@@ -124,6 +124,7 @@ const Client2Page = () => {
   const [showAccountFilterModal, setShowAccountFilterModal] = useState(false)
   const [showClientDetailModal, setShowClientDetailModal] = useState(false)
   const [showGroupModal, setShowGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
@@ -3212,8 +3213,14 @@ const Client2Page = () => {
 
                 {/* Groups Button */}
                 <GroupSelector
-                  onCreateClick={() => setShowGroupModal(true)}
-                  onEditClick={() => setShowGroupModal(true)}
+                  onCreateClick={() => {
+                    setEditingGroup(null)
+                    setShowGroupModal(true)
+                  }}
+                  onEditClick={(group) => {
+                    setEditingGroup(group)
+                    setShowGroupModal(true)
+                  }}
                   moduleName="client2"
                 />
 
@@ -5107,11 +5114,15 @@ const Client2Page = () => {
       {/* Group Modal */}
       <GroupModal
         isOpen={showGroupModal}
-        onClose={() => setShowGroupModal(false)}
+        onClose={() => {
+          setShowGroupModal(false)
+          setEditingGroup(null)
+        }}
         availableItems={clients}
         loginField="login"
         displayField="name"
         secondaryField="group"
+        editGroup={editingGroup}
       />
     </div>
   )
