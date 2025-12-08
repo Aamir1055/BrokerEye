@@ -1260,7 +1260,7 @@ export default function PositionModule() {
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
+                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC] sticky left-0 z-10">Login</div>}
                     {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
@@ -1281,7 +1281,7 @@ export default function PositionModule() {
                       <React.Fragment key={idx}>
                         <div className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
                           {netVisibleColumns.login && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B]">
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B] sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
                               {pos.loginCount > 0 ? `${pos.loginCount} logins` : '-'}
                             </div>
                           )}
@@ -1321,7 +1321,7 @@ export default function PositionModule() {
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
-                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280] sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>-</div>}
                               {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black">{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
@@ -1533,7 +1533,7 @@ export default function PositionModule() {
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
+                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC] sticky left-0 z-10">Login</div>}
                     {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
@@ -1552,7 +1552,8 @@ export default function PositionModule() {
                       <div key={idx} className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
                         {clientNetVisibleColumns.login && (
                           <div 
-                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline"
+                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10"
+                            style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}
                             onClick={() => setSelectedClient({ login: pos.login, email: pos.email || '' })}
                             onTouchEnd={(e) => {
                               e.preventDefault()
