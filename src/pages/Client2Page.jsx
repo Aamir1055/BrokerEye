@@ -4823,7 +4823,27 @@ const Client2Page = () => {
                           }}
                         >
                           {visibleColumnsList.map(col => {
-                            let rawValue = client?.[col.key]
+                            // Map to percentage field when in percentage mode
+                            const percentageFieldMap = {
+                              balance: 'balance_percentage',
+                              credit: 'credit_percentage',
+                              equity: 'equity_percentage',
+                              margin: 'margin_percentage',
+                              marginFree: 'marginFree_percentage',
+                              profit: 'profit_percentage',
+                              floating: 'floating_percentage',
+                              dailyPnL: 'dailyPnL_percentage',
+                              thisWeekPnL: 'thisWeekPnL_percentage',
+                              thisMonthPnL: 'thisMonthPnL_percentage',
+                              lifetimePnL: 'lifetimePnL_percentage'
+                            }
+                            
+                            // Get the correct field based on percentage mode
+                            const fieldKey = cardFilterPercentMode && percentageFieldMap[col.key] 
+                              ? percentageFieldMap[col.key] 
+                              : col.key
+                            
+                            let rawValue = client?.[fieldKey]
                             if ((rawValue === undefined || rawValue === null || rawValue === '') && col.key === 'processorType') {
                               rawValue = client?.processor_type ?? client?.PROCESSOR_TYPE ?? rawValue
                             }
