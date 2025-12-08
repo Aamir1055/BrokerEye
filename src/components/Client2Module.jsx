@@ -492,7 +492,12 @@ export default function Client2Module() {
     // If showPercent is true and this column supports percentage, use the percentage field
     if (showPercent && percentageColumns.has(key)) {
       const percentField = percentageFieldMap[key]
-      return client[percentField]
+      const value = client[percentField]
+      // Debug log for first few items
+      if (client.login === clients[0]?.login && key === 'balance') {
+        console.log('[getCellValue] showPercent:', showPercent, 'key:', key, 'percentField:', percentField, 'value:', value)
+      }
+      return value
     }
     // Otherwise use the regular field
     return client[key]
