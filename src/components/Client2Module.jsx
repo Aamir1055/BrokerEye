@@ -710,12 +710,12 @@ export default function Client2Module() {
   const formatCellValue = (key, value) => {
     if (value === null || value === undefined) return '-'
     
-    // If showPercent is true and this column supports percentage, just show the value (API already returns %)
+    // If showPercent is true and this column supports percentage
     if (showPercent && percentageColumns.has(key)) {
-      // The API returns the percentage value directly, just format it
+      // The API returns the percentage value directly, format it as a number
       const num = Number(value)
       if (isNaN(num)) return '-'
-      return formatNum(num)  // Display as formatted number without adding %
+      return formatNum(num)  // Display the raw percentage value from API
     }
     
     // Otherwise format as number (for numeric columns)
@@ -732,7 +732,7 @@ export default function Client2Module() {
       ...col,
       label: (showPercent && percentageColumns.has(col.key)) ? `${col.label} %` : col.label
     }))
-  }, [visibleColumns, showPercent])
+  }, [visibleColumns, showPercent, percentageColumns])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
