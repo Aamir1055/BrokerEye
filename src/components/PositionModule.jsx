@@ -127,7 +127,8 @@ export default function PositionModule() {
     appliedPercentage: false,
     reason: false,
     comment: false,
-    commission: false
+    commission: false,
+    updated: false
   })
 
   // Listen for global request to open Customize View from child modals
@@ -552,6 +553,7 @@ export default function PositionModule() {
       { key: 'reason', label: 'Reason', width: '100px' },
       { key: 'comment', label: 'Comment', width: '100px' },
       { key: 'commission', label: 'Commission', width: '90px' },
+      { key: 'updated', label: 'Updated', width: '120px' },
     ]
     const filtered = columnDefs.filter(col => visibleColumns[col.key])
     // Make first column sticky if it's not already login
@@ -634,6 +636,8 @@ export default function PositionModule() {
             {pos.login || '-'}
           </div>
         )
+      case 'updated':
+        return <div className={`h-[38px] flex items-center justify-center px-1 text-[10px] ${stickyClass}`} style={stickyStyle}>{pos.updated || pos.time || '-'}</div>
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -654,9 +658,9 @@ export default function PositionModule() {
   // Update cards when summary stats change
   useEffect(() => {
     const newCards = [
-      { label: 'TOTAL POSITIONS', value: String(summaryStats.totalPositions) },
+      { label: 'POSITIONS', value: String(summaryStats.totalPositions) },
       { 
-        label: 'TOTAL FLOATING', 
+        label: 'FLOATING', 
         value: formatNum(Math.abs(summaryStats.totalFloatingProfit)),
         isProfit: true,
         profitValue: summaryStats.totalFloatingProfit
@@ -996,7 +1000,7 @@ export default function PositionModule() {
         {/* Table - full width, remove outer padding */}
         {!showNetPositions && !showClientNet && (
         <div>
-          <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
@@ -1251,7 +1255,7 @@ export default function PositionModule() {
 
             {/* NET Positions Table */}
             <div className="pt-3">
-              <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+              <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto scrollbar-hide">
                 <div className="min-w-full">
                   {/* Header */}
@@ -1517,7 +1521,7 @@ export default function PositionModule() {
 
             {/* Client NET Table */}
             <div className="pt-3">
-              <div className="bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+              <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
               <div className="overflow-x-auto scrollbar-hide">
                 <div className="min-w-full">
                   {/* Header */}
@@ -1756,6 +1760,7 @@ export default function PositionModule() {
                 'Reason': 'reason',
                 'Comment': 'comment',
                 'Commission': 'commission',
+                'Updated': 'updated',
               }).filter(([label]) => 
                 !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
               ).map(([label, key]) => (
