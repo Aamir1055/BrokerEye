@@ -190,6 +190,19 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const t = data.totals || {}
       
+      // Debug: Log first client to verify percentage fields
+      if (data.clients && data.clients.length > 0 && usePercent) {
+        console.log('[Client2] First client with percentage mode:', {
+          login: data.clients[0].login,
+          balance: data.clients[0].balance,
+          balance_percentage: data.clients[0].balance_percentage,
+          credit: data.clients[0].credit,
+          credit_percentage: data.clients[0].credit_percentage,
+          equity: data.clients[0].equity,
+          equity_percentage: data.clients[0].equity_percentage
+        })
+      }
+      
       setClients(data.clients || [])
       setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
