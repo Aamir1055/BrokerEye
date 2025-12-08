@@ -58,6 +58,7 @@ export default function PositionModule() {
   const [netCardFilterOpen, setNetCardFilterOpen] = useState(false)
   const netCardFilterRef = useRef(null)
   const [netVisibleColumns, setNetVisibleColumns] = useState({
+    login: false,
     symbol: true,
     netType: true,
     netVolume: true,
@@ -128,7 +129,7 @@ export default function PositionModule() {
     reason: false,
     comment: false,
     commission: false,
-    updated: false
+    updated: true
   })
 
   // Listen for global request to open Customize View from child modals
@@ -553,7 +554,6 @@ export default function PositionModule() {
       { key: 'reason', label: 'Reason', width: '100px' },
       { key: 'comment', label: 'Comment', width: '100px' },
       { key: 'commission', label: 'Commission', width: '90px' },
-      { key: 'updated', label: 'Updated', width: '120px' },
     ]
     const filtered = columnDefs.filter(col => visibleColumns[col.key])
     // Make first column sticky if it's not already login
@@ -1260,6 +1260,7 @@ export default function PositionModule() {
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
+                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
                     {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
@@ -1279,6 +1280,11 @@ export default function PositionModule() {
                     netPaginatedPositions.map((pos, idx) => (
                       <React.Fragment key={idx}>
                         <div className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
+                          {netVisibleColumns.login && (
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B]">
+                              {pos.loginCount > 0 ? `${pos.loginCount} logins` : '-'}
+                            </div>
+                          )}
                           {netVisibleColumns.symbol && (
                             <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">
                               {pos.symbol}
@@ -1315,6 +1321,7 @@ export default function PositionModule() {
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
+                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
                               {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black">{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
@@ -1543,7 +1550,18 @@ export default function PositionModule() {
                   ) : (
                     clientNetPaginatedPositions.map((pos, idx) => (
                       <div key={idx} className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
-                        {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white">{pos.login}</div>}
+                        {clientNetVisibleColumns.login && (
+                          <div 
+                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline"
+                            onClick={() => setSelectedClient({ login: pos.login, email: pos.email || '' })}
+                            onTouchEnd={(e) => {
+                              e.preventDefault()
+                              setSelectedClient({ login: pos.login, email: pos.email || '' })
+                            }}
+                          >
+                            {pos.login}
+                          </div>
+                        )}
                         {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">{pos.symbol}</div>}
                         {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
@@ -1735,6 +1753,7 @@ export default function PositionModule() {
             <div className="flex-1 overflow-y-auto px-6">
               {Object.entries({
                 'Login': 'login',
+                'Updated': 'updated',
                 'First Name': 'firstName',
                 'Middle Name': 'middleName',
                 'Last Name': 'lastName',
@@ -1760,7 +1779,6 @@ export default function PositionModule() {
                 'Reason': 'reason',
                 'Comment': 'comment',
                 'Commission': 'commission',
-                'Updated': 'updated',
               }).filter(([label]) => 
                 !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
               ).map(([label, key]) => (
@@ -1794,6 +1812,7 @@ export default function PositionModule() {
                 onClick={() => {
                   setVisibleColumns({
                     login: true,
+                    updated: true,
                     firstName: false,
                     middleName: false,
                     lastName: false,
