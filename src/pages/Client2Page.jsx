@@ -164,6 +164,8 @@ const Client2Page = () => {
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
   const [draggedCard, setDraggedCard] = useState(null) // For face card drag and drop
+  const [dragOverCard, setDragOverCard] = useState(null) // Track which card is being dragged over
+  const dragCounterRef = useRef({}) // Prevent flickering during drag
   // Trend tracking for face card values (desktop)
   const lastValuesRef = useRef({})
   const lastTrendRef = useRef({})
@@ -2344,9 +2346,11 @@ const Client2Page = () => {
     }
   }
 
-  // Face card drag and drop handlers
+  // Face card drag and drop handlers - Smooth implementation
   const handleCardDragStart = (e, cardKey) => {
     setDraggedCard(cardKey)
+    setDragOverCard(null)
+    dragCounterRef.current = {}
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', e.target)
     e.target.style.opacity = '0.5'
@@ -2355,50 +2359,65 @@ const Client2Page = () => {
   const handleCardDragEnd = (e) => {
     e.target.style.opacity = '1'
     setDraggedCard(null)
+    setDragOverCard(null)
+    dragCounterRef.current = {}
   }
 
   const handleCardDragOver = (e) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleCardDragEnter = (e, targetCardKey) => {
+    e.preventDefault()
     
-    // Get the target card key from the closest card element
-    const cardElement = e.currentTarget
-    const targetCardKey = cardElement.getAttribute('data-card-key')
+    if (!draggedCard || draggedCard === targetCardKey) return
     
-    // Swap positions when dragging over (smoother reordering)
-    if (draggedCard && targetCardKey && draggedCard !== targetCardKey) {
+    // Initialize counter for this target if not exists
+    if (!dragCounterRef.current[targetCardKey]) {
+      dragCounterRef.current[targetCardKey] = 0
+    }
+    
+    dragCounterRef.current[targetCardKey]++
+    
+    // Only swap if this is a new target (prevents flickering)
+    if (dragOverCard !== targetCardKey) {
+      setDragOverCard(targetCardKey)
+      
       const newOrder = [...faceCardOrder]
       const draggedIndex = newOrder.indexOf(draggedCard)
       const targetIndex = newOrder.indexOf(targetCardKey)
 
       if (draggedIndex !== -1 && targetIndex !== -1) {
-        // Swap the positions
-        newOrder[draggedIndex] = targetCardKey
-        newOrder[targetIndex] = draggedCard
+        // Remove dragged item and insert at target position
+        const [removed] = newOrder.splice(draggedIndex, 1)
+        newOrder.splice(targetIndex, 0, removed)
 
         setFaceCardOrder(newOrder)
         localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
+      }
+    }
+  }
+
+  const handleCardDragLeave = (e, targetCardKey) => {
+    e.preventDefault()
+    
+    if (dragCounterRef.current[targetCardKey]) {
+      dragCounterRef.current[targetCardKey]--
+      
+      if (dragCounterRef.current[targetCardKey] === 0) {
+        delete dragCounterRef.current[targetCardKey]
       }
     }
   }
 
   const handleCardDrop = (e, targetCardKey) => {
     e.preventDefault()
-
-    if (draggedCard && draggedCard !== targetCardKey) {
-      const newOrder = [...faceCardOrder]
-      const draggedIndex = newOrder.indexOf(draggedCard)
-      const targetIndex = newOrder.indexOf(targetCardKey)
-
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        // Swap the positions - matching ClientsPage approach
-        newOrder[draggedIndex] = targetCardKey
-        newOrder[targetIndex] = draggedCard
-
-        setFaceCardOrder(newOrder)
-        localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
-      }
-    }
+    e.stopPropagation()
+    
+    // Cleanup
+    setDragOverCard(null)
+    dragCounterRef.current = {}
   }
 
   // Ensure faceCardOrder always contains all known keys (in case defaults grow over time)
@@ -3580,8 +3599,12 @@ const Client2Page = () => {
                       onDragStart={(e) => handleCardDragStart(e, cardKey)}
                       onDragEnd={handleCardDragEnd}
                       onDragOver={handleCardDragOver}
+                      onDragEnter={(e) => handleCardDragEnter(e, cardKey)}
+                      onDragLeave={(e) => handleCardDragLeave(e, cardKey)}
                       onDrop={(e) => handleCardDrop(e, cardKey)}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
+                      className={`bg-white rounded-xl shadow-sm border p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative ${
+                        dragOverCard === cardKey ? 'border-blue-400 border-2' : 'border-[#F2F2F7]'
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-1.5 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">
