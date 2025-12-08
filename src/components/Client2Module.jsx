@@ -462,6 +462,42 @@ export default function Client2Module() {
     totalMarginFree: filteredClients.reduce((sum, c) => sum + (Number(c.marginFree) || 0), 0)
   }
 
+  // Define percentage columns
+  const percentageColumns = new Set([
+    'balance', 'credit', 'equity', 'profit', 'marginFree', 'margin',
+    'assets', 'storage', 'pnl', 'dailyDeposit', 'dailyWithdrawal',
+    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL'
+  ])
+
+  // Map base column keys to their percentage field names from API
+  const percentageFieldMap = {
+    'balance': 'balance_percentage',
+    'credit': 'credit_percentage',
+    'equity': 'equity_percentage',
+    'profit': 'profit_percentage',
+    'marginFree': 'marginFree_percentage',
+    'margin': 'margin_percentage',
+    'assets': 'assets_percentage',
+    'storage': 'storage_percentage',
+    'pnl': 'pnl_percentage',
+    'dailyDeposit': 'dailyDeposit_percentage',
+    'dailyWithdrawal': 'dailyWithdrawal_percentage',
+    'lifetimePnL': 'lifetimePnL_percentage',
+    'thisMonthPnL': 'thisMonthPnL_percentage',
+    'thisWeekPnL': 'thisWeekPnL_percentage'
+  }
+
+  // Helper function to get the value from client object based on percentage mode
+  const getCellValue = (key, client) => {
+    // If showPercent is true and this column supports percentage, use the percentage field
+    if (showPercent && percentageColumns.has(key)) {
+      const percentField = percentageFieldMap[key]
+      return client[percentField]
+    }
+    // Otherwise use the regular field
+    return client[key]
+  }
+
   // Apply sorting
   const sortedClients = useMemo(() => {
     if (!sortColumn) return filteredClients
@@ -670,51 +706,16 @@ export default function Client2Module() {
     { key: 'thisWeekPnL', label: 'This Week PnL', width: '110px' }
   ]
 
-  // Define which columns should show percentage when showPercent is true
-  const percentageColumns = new Set([
-    'balance', 'credit', 'equity', 'profit', 'marginFree', 'margin',
-    'assets', 'storage', 'pnl', 'dailyDeposit', 'dailyWithdrawal',
-    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL'
-  ])
-
-  // Map base column keys to their percentage field names from API
-  const percentageFieldMap = {
-    'balance': 'balance_percentage',
-    'credit': 'credit_percentage',
-    'equity': 'equity_percentage',
-    'profit': 'profit_percentage',
-    'marginFree': 'marginFree_percentage',
-    'margin': 'margin_percentage',
-    'assets': 'assets_percentage',
-    'storage': 'storage_percentage',
-    'pnl': 'pnl_percentage',
-    'dailyDeposit': 'dailyDeposit_percentage',
-    'dailyWithdrawal': 'dailyWithdrawal_percentage',
-    'lifetimePnL': 'lifetimePnL_percentage',
-    'thisMonthPnL': 'thisMonthPnL_percentage',
-    'thisWeekPnL': 'thisWeekPnL_percentage'
-  }
-
-  // Helper function to get the value from client object based on percentage mode
-  const getCellValue = (key, client) => {
-    // If showPercent is true and this column supports percentage, use the percentage field
-    if (showPercent && percentageColumns.has(key)) {
-      const percentField = percentageFieldMap[key]
-      return client[percentField]
-    }
-    // Otherwise use the regular field
-    return client[key]
-  }
-
-  // Helper function to format value based on percentage mode
+  // Helper function to format value based on percentage mode  
   const formatCellValue = (key, value) => {
     if (value === null || value === undefined) return '-'
     
-    // If showPercent is true and this column supports percentage
+    // If showPercent is true and this column supports percentage, just show the value (API already returns %)
     if (showPercent && percentageColumns.has(key)) {
+      // The API returns the percentage value directly, just format it
       const num = Number(value)
       if (isNaN(num)) return '-'
-      return `${num.toFixed(2)}%`
+      return formatNum(num)  // Display as formatted number without adding %
     }
     
     // Otherwise format as number (for numeric columns)
