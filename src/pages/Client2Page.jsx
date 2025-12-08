@@ -2931,7 +2931,7 @@ const Client2Page = () => {
   }
 
   // Format value for display
-  const formatValue = (key, value, percentageMode = false) => {
+  const formatValue = (key, value, isPercentageField = false) => {
     if (value === null || value === undefined || value === '') {
       return '-'
     }
@@ -2958,8 +2958,7 @@ const Client2Page = () => {
       'dailyPnL', 'thisWeekPnL', 'thisMonthPnL', 'lifetimePnL'].includes(key)) {
       const num = parseFloat(value)
       if (isNaN(num)) return '-'
-      // Always show numeric values as numbers; do not append %
-      // In percentage toggle, API already returns mode-adjusted values in base fields
+      // Don't append % to values, it's shown in header
       return formatIndianNumber(num.toFixed(2))
     }
 
@@ -3665,7 +3664,7 @@ const Client2Page = () => {
                     {/* Search Icon (inside input) */}
                     <button
                       onClick={handleSearch}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
                       title="Search"
                     >
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -3681,7 +3680,7 @@ const Client2Page = () => {
                           setSearchQuery('')
                           setCurrentPage(1)
                         }}
-                        className="absolute right-12 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
+                        className="absolute right-10 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
                         title="Clear search"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4032,7 +4031,7 @@ const Client2Page = () => {
                                     className="truncate"
                                     title={col.label}
                                   >
-                                    {col.label}
+                                    {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'].includes(col.key) ? ' %' : ''}
                                   </span>
                                   {sortBy === col.key && (
                                     <span className="text-white">
@@ -4827,12 +4826,30 @@ const Client2Page = () => {
                           }}
                         >
                           {visibleColumnsList.map(col => {
-                            // Always use base field keys; API returns mode-adjusted values
-                            let rawValue = client?.[col.key]
+                            // In percentage mode, use _percentage fields
+                            const fieldsWithPercentage = [
+                              'balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance',
+                              'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage',
+                              'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn',
+                              'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut',
+                              'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut',
+                              'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut',
+                              'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut',
+                              'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut',
+                              'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut',
+                              'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'
+                            ]
+                            
+                            const fieldKey = percentModeActive && fieldsWithPercentage.includes(col.key) 
+                              ? `${col.key}_percentage` 
+                              : col.key
+                            
+                            let rawValue = client?.[fieldKey]
                             if ((rawValue === undefined || rawValue === null || rawValue === '') && col.key === 'processorType') {
                               rawValue = client?.processor_type ?? client?.PROCESSOR_TYPE ?? rawValue
                             }
-                            const cellValue = formatValue(col.key, rawValue)
+                            const isPercentageField = percentModeActive && fieldsWithPercentage.includes(col.key)
+                            const cellValue = formatValue(col.key, rawValue, isPercentageField)
 
                             // Special handling for login column - make it blue
                             if (col.key === 'login') {

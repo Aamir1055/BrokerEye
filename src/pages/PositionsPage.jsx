@@ -3502,7 +3502,6 @@ const PositionsPage = () => {
                   </tbody>
                 </table>
             </div>
-          </div>
           </>
           )}
 
