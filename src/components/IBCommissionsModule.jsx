@@ -239,8 +239,8 @@ export default function IBCommissionsModule() {
 
   // Get visible columns
   const allColumns = [
-    { key: 'checkbox', label: 'Select', width: '60px', sticky: true },
-    { key: 'id', label: 'ID', width: '80px', sticky: false },
+    { key: 'checkbox', label: 'Select', width: '60px', sticky: true, stickyLeft: '0px', zIndex: 20 },
+    { key: 'id', label: 'ID', width: '80px', sticky: true, stickyLeft: '60px', zIndex: 10 },
     { key: 'name', label: 'Name', width: '150px' },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
@@ -253,13 +253,19 @@ export default function IBCommissionsModule() {
   const activeColumns = allColumns.filter(col => visibleColumns[col.key])
   const gridTemplateColumns = activeColumns.map(col => col.width).join(' ')
 
-  const renderCellValue = (item, key, isSticky = false) => {
+  const renderCellValue = (item, key, isSticky = false, stickyLeft = '0px', zIndex = 10) => {
     let value = '-'
     
     switch (key) {
       case 'checkbox':
         return (
-          <div className="h-[28px] flex items-center justify-center px-1">
+          <div 
+            className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky bg-white z-20' : ''}`}
+            style={{
+              left: isSticky ? stickyLeft : 'auto',
+              boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+            }}
+          >
             <input
               type="checkbox"
               checked={selectedIBs.includes(item.id)}
@@ -309,10 +315,12 @@ export default function IBCommissionsModule() {
 
     return (
       <div 
-        className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+        className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky bg-white' : ''}`}
         style={{
           border: 'none', 
           outline: 'none', 
+          left: isSticky ? stickyLeft : 'auto',
+          zIndex: isSticky ? zIndex : 'auto',
           boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
         }}
       >
@@ -724,12 +732,14 @@ export default function IBCommissionsModule() {
                       className={`h-[36px] flex items-center justify-center px-1 ${
                         col.key !== 'checkbox' ? 'cursor-pointer hover:bg-[#1E3A8A]' : ''
                       } transition-colors ${
-                        col.sticky ? 'sticky left-0 z-30' : ''
+                        col.sticky ? 'sticky' : ''
                       }`}
                       style={{
                         border: 'none',
                         outline: 'none',
-                        backgroundColor: '#1E40AF',
+                        backgroundColor: col.sticky ? '#1E40AF' : '#1E40AF',
+                        left: col.sticky ? col.stickyLeft : 'auto',
+                        zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
                         boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
@@ -766,7 +776,7 @@ export default function IBCommissionsModule() {
                   >
                     {activeColumns.map(col => (
                       <React.Fragment key={col.key}>
-                        {renderCellValue(item, col.key, col.sticky)}
+                        {renderCellValue(item, col.key, col.sticky, col.stickyLeft, col.zIndex)}
                       </React.Fragment>
                     ))}
                   </div>

@@ -129,6 +129,19 @@ api.interceptors.response.use(
               return newAccess
             })
             .catch(async (err) => {
+              // If refresh token itself is expired (401), logout immediately
+              if (err?.response?.status === 401) {
+                console.error('[API] ❌ Refresh token expired (401). Logging out immediately.')
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('refresh_token')
+                localStorage.removeItem('user_data')
+                if (typeof window !== 'undefined') {
+                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                  window.location.href = '/login'
+                }
+                throw new Error('Refresh token expired')
+              }
+              
               console.error('[API] ❌ Primary refresh attempt failed:', err?.message)
               // Fallback attempt using api instance (with possibly expired Authorization header)
               try {
@@ -145,6 +158,18 @@ api.interceptors.response.use(
                 console.log('[API] ✅ Token refreshed (fallback)')
                 return newAccess2
               } catch (fallbackErr) {
+                // If fallback also gets 401, logout immediately
+                if (fallbackErr?.response?.status === 401) {
+                  console.error('[API] ❌ Fallback refresh token expired (401). Logging out immediately.')
+                  localStorage.removeItem('access_token')
+                  localStorage.removeItem('refresh_token')
+                  localStorage.removeItem('user_data')
+                  if (typeof window !== 'undefined') {
+                    try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                    window.location.href = '/login'
+                  }
+                  throw new Error('Refresh token expired')
+                }
                 console.error('[API] ❌ Fallback refresh failed:', fallbackErr?.message)
                 throw fallbackErr
               }
@@ -228,6 +253,19 @@ ibApi.interceptors.response.use(
               return newAccess
             })
             .catch((err) => {
+              // If refresh token itself is expired (401), logout immediately
+              if (err?.response?.status === 401) {
+                console.error('[IB API] ❌ Refresh token expired (401). Logging out immediately.')
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('refresh_token')
+                localStorage.removeItem('user_data')
+                if (typeof window !== 'undefined') {
+                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                  window.location.href = '/login'
+                }
+                requestQueue = []
+                throw new Error('Refresh token expired')
+              }
               console.error('[IB API] ❌ Token refresh failed:', err.message)
               requestQueue = []
               throw err
