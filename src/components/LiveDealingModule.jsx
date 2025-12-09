@@ -1055,59 +1055,71 @@ export default function LiveDealingModule() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
-              <h3 className="text-base font-semibold text-[#000000]">Select Columns</h3>
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
               <button onClick={() => setIsColumnSelectorOpen(false)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
                 </svg>
               </button>
             </div>
-            
+
             <div className="px-5 py-3 border-b border-[#E5E7EB] flex-shrink-0">
-              <div className="relative">
-                <input 
+              <div className="relative h-12">
+                <input
                   type="text"
+                  placeholder="Search Columns"
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
-                  placeholder="Search columns..."
-                  className="w-full h-10 px-4 pr-10 bg-[#F8F8F8] border border-[#ECECEC] rounded-lg text-sm outline-none focus:border-[#1A63BC] transition-colors"
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[10px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8" strokeWidth="2"/>
-                  <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
+                <svg 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M13 13L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </div>
             </div>
-            
-            <div className="flex-1 overflow-y-auto px-5 py-2">
-              {filteredColumnOptions.map(col => (
-                <label 
-                  key={col.key}
-                  className="flex items-center gap-3 py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer hover:bg-[#F8F8F8] px-2 rounded transition-colors"
-                >
-                  <input 
-                    type="checkbox"
-                    checked={visibleColumns[col.key]}
-                    onChange={() => setVisibleColumns(prev => ({ ...prev, [col.key]: !prev[col.key] }))}
-                    className="w-5 h-5 rounded border-2 border-[#CCCCCC] text-[#1A63BC] focus:ring-0 focus:ring-offset-0"
-                  />
-                  <span className="text-sm text-[#000000] font-medium">{col.label}</span>
-                </label>
-              ))}
+
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
+              <div className="px-5 py-3">
+                {filteredColumnOptions.length > 0 ? (
+                  filteredColumnOptions.map(col => (
+                  <label 
+                    key={col.key} 
+                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                  >
+                    <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
+                    <div className="relative inline-block w-12 h-6">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[col.key]}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, [col.key]: !prev[col.key] }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                    </div>
+                  </label>
+                ))
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    No columns match your search
+                  </div>
+                )}
+              </div>
             </div>
-            
-            <div className="px-5 py-4 border-t border-[#E5E7EB] flex gap-3 flex-shrink-0">
+
+            <div className="px-5 py-4 border-t border-[#E5E7EB] flex-shrink-0">
               <button 
                 onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 h-12 rounded-xl bg-[#F8F8F8] text-[#000000] font-semibold text-sm hover:bg-[#ECECEC] transition-colors"
+                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-[12px] hover:bg-blue-700 transition-colors"
               >
-                Cancel
-              </button>
-              <button 
-                onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 h-12 rounded-xl bg-[#1A63BC] text-white font-semibold text-sm hover:bg-[#1557A8] transition-colors"
-              >
-                Apply
+                Done
               </button>
             </div>
           </div>

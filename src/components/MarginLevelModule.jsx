@@ -622,7 +622,7 @@ export default function MarginLevelModule() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
-              <h3 className="text-base font-semibold text-[#000000]">Select Columns</h3>
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
               <button onClick={() => setIsColumnSelectorOpen(false)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
@@ -654,7 +654,8 @@ export default function MarginLevelModule() {
 
             <div className="flex-1 overflow-y-auto min-h-[240px]">
               <div className="px-5 py-3">
-                {filteredColumnOptions.map(col => (
+                {filteredColumnOptions.length > 0 ? (
+                  filteredColumnOptions.map(col => (
                   <label 
                     key={col.key} 
                     className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
@@ -671,7 +672,12 @@ export default function MarginLevelModule() {
                       <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
                     </div>
                   </label>
-                ))}
+                ))
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    No columns match your search
+                  </div>
+                )}
               </div>
             </div>
 
