@@ -21,8 +21,8 @@ export default function SetCustomPercentageModal({ client, onClose, onSuccess })
     }
 
     const percentageNum = parseFloat(percentage)
-    if (isNaN(percentageNum) || percentageNum < 0 || percentageNum > 100) {
-      setError('Percentage must be between 0 and 100')
+    if (isNaN(percentageNum) || percentageNum < -100 || percentageNum > 100) {
+      setError('Percentage must be between -100 and 100')
       return
     }
 
