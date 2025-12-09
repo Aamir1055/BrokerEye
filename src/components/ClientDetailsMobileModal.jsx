@@ -265,7 +265,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderPositions = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead style={{ backgroundColor: '#4682b4' }}>
+        <thead className="bg-blue-500">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Position</th>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
@@ -302,7 +302,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderNetPositions = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead style={{ backgroundColor: '#4682b4' }}>
+        <thead className="bg-blue-500">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Net Volume</th>
@@ -329,7 +329,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderDeals = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead style={{ backgroundColor: '#4682b4' }}>
+        <thead className="bg-blue-500">
           <tr>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Deal</th>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
