@@ -1157,9 +1157,9 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 flex-wrap pb-3 px-4">
+            <div className="flex items-center gap-2 pb-3 px-4">
                 {/* Search Bar */}
-                <div className="h-[36px] min-w-[140px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+                <div className="h-[36px] min-w-[120px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
@@ -1170,24 +1170,6 @@ export default function PositionModule() {
                     onChange={(e) => setNetSearchInput(e.target.value)}
                     className="flex-1 text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent"
                   />
-                </div>
-
-                {/* Card Filter */}
-                <div className="relative" ref={netCardFilterRef}>
-                  <button onClick={() => setNetCardFilterOpen(v => !v)} className="h-[36px] px-3 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700 min-w-[70px]">
-                    <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    Cards
-                  </button>
-                  {netCardFilterOpen && (
-                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-40">
-                      {Object.entries(netCardsVisible).map(([k, v]) => (
-                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
-                          <input type="checkbox" checked={v} onChange={() => setNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] text-gray-700">{k === 'netSymbols' ? 'NET Symbols' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Group Base Symbols */}
@@ -1232,7 +1214,7 @@ export default function PositionModule() {
                 <button
                   onClick={() => setNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={netCurrentPage === 1}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${netCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${netCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1246,7 +1228,7 @@ export default function PositionModule() {
                 <button
                   onClick={() => setNetCurrentPage(p => Math.min(netTotalPages, p + 1))}
                   disabled={netCurrentPage === netTotalPages}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${netCurrentPage === netTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${netCurrentPage === netTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1445,24 +1427,6 @@ export default function PositionModule() {
                   />
                 </div>
 
-                {/* Card Filter */}
-                <div className="relative flex-shrink-0" ref={clientNetCardFilterRef}>
-                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[36px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
-                    <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    Cards
-                  </button>
-                  {clientNetCardFilterOpen && (
-                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-40">
-                      {Object.entries(clientNetCardsVisible).map(([k, v]) => (
-                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
-                          <input type="checkbox" checked={v} onChange={() => setClientNetCardsVisible(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] text-gray-700">{k === 'clientNetRows' ? 'NET Rows' : k === 'totalNetVolume' ? 'Total Volume' : k === 'totalNetPL' ? 'Total P/L' : 'Total Logins'}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
                 {/* Group Base Symbols */}
                 <button
                   onClick={() => setGroupByBaseSymbol(v => !v)}
@@ -1474,9 +1438,8 @@ export default function PositionModule() {
 
                 {/* Columns */}
                 <div className="relative flex-shrink-0" ref={clientNetColumnSelectorRef}>
-                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[36px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
-                    <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    Cols
+                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
+                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                   </button>
                   {clientNetShowColumnSelector && (
                     <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44 max-h-60 overflow-y-auto">
@@ -1750,8 +1713,9 @@ export default function PositionModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6">
-              {Object.entries({
+            <div className="flex-1 overflow-y-auto px-6 min-h-[240px]">
+              {(() => {
+                const entries = Object.entries({
                 'Login': 'login',
                 'Updated': 'updated',
                 'First Name': 'firstName',
@@ -1779,32 +1743,39 @@ export default function PositionModule() {
                 'Reason': 'reason',
                 'Comment': 'comment',
                 'Commission': 'commission',
-              }).filter(([label]) => 
-                !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
-              ).map(([label, key]) => (
-                <div
-                  key={key}
-                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
-                  onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                >
-                  <span className="text-base text-gray-800 font-outfit">{label}</span>
-                  <button
-                    onClick={e => { e.stopPropagation(); setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}}
-                    className="w-6 h-6 flex items-center justify-center"
+                }).filter(([label]) => 
+                  !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
+                )
+                if (entries.length === 0) {
+                  return (
+                    <div className="py-6 text-center text-sm text-gray-500">No columns found</div>
+                  )
+                }
+                return entries.map(([label, key]) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
+                    onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
                   >
-                    {visibleColumns[key] ? (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="3" width="18" height="18" rx="4" fill="#3B82F6"/>
-                        <path d="M7 12L10 15L17 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    ) : (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="3" width="18" height="18" rx="4" stroke="#D1D5DB" strokeWidth="2" fill="white"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              ))}
+                    <span className="text-base text-gray-800 font-outfit">{label}</span>
+                    <button
+                      onClick={e => { e.stopPropagation(); setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}}
+                      className="w-6 h-6 flex items-center justify-center"
+                    >
+                      {visibleColumns[key] ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <rect x="3" y="3" width="18" height="18" rx="4" fill="#3B82F6"/>
+                          <path d="M7 12L10 15L17 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <rect x="3" y="3" width="18" height="18" rx="4" stroke="#D1D5DB" strokeWidth="2" fill="white"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                ))
+              })()}
             </div>
 
             <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
