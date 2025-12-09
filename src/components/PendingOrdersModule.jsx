@@ -176,7 +176,7 @@ export default function PendingOrdersModule() {
   // Update cards when summary stats change
   useEffect(() => {
     const newCards = [
-      { label: 'TOTAL PENDING ORDERS', value: String(summaryStats.totalOrders) },
+      { label: 'PENDING ORDERS', value: String(summaryStats.totalOrders) },
       { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
       { label: 'SYMBOLS', value: String(summaryStats.uniqueSymbols) },
       { label: 'TOTAL VOLUME', value: formatNum(summaryStats.totalVolume, 2) }
@@ -624,7 +624,7 @@ export default function PendingOrdersModule() {
             </div>
 
             <div className="px-5 py-3 border-b border-[#E5E7EB] flex-shrink-0">
-              <div className="relative">
+              <div className="relative h-12">
                 <input
                   type="text"
                   placeholder="Search Columns"
@@ -645,7 +645,7 @@ export default function PendingOrdersModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
               <div className="px-5 py-3">
                 {filteredColumnOptions.map(col => (
                   <label 
