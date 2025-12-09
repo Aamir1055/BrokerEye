@@ -1159,7 +1159,7 @@ export default function PositionModule() {
             {/* Controls with Search */}
             <div className="flex items-center gap-2 pb-3 px-4">
                 {/* Search Bar */}
-                <div className="h-[36px] min-w-[120px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+                <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
@@ -1183,9 +1183,8 @@ export default function PositionModule() {
 
                 {/* Columns */}
                 <div className="relative" ref={netColumnSelectorRef}>
-                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[36px] px-3 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700 min-w-[60px]">
-                    <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    Cols
+                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
+                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                   </button>
                   {netShowColumnSelector && (
                     <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44 max-h-60 overflow-y-auto">
@@ -1303,18 +1302,18 @@ export default function PositionModule() {
                         {/* Variant Rows */}
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
-                            <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
-                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>{variant.exactSymbol}</div>}
-                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
-                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
-                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
-                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
-                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.totalStorage || 0)}</div>}
-                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.totalCommission || 0)}</div>}
-                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
+                            <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#EEF2FF] border-b border-[#C7D2FE] border-l-4 border-l-blue-400">
+                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center gap-1 px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-2 font-medium bg-[#EEF2FF] text-indigo-900 sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}><svg className="w-3 h-3 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>{variant.exactSymbol}</div>}
+                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#EEF2FF] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
+                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
+                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
+                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
+                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalStorage || 0)}</div>}
+                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalCommission || 0)}</div>}
+                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
                             </div>
                           ))
                         )}
@@ -1414,7 +1413,7 @@ export default function PositionModule() {
             {/* Controls with Search */}
             <div className="flex items-center gap-2 pb-3 px-4">
                 {/* Search Bar */}
-                <div className="h-[36px] w-[150px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
+                <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
