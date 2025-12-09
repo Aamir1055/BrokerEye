@@ -465,7 +465,7 @@ export default function ClientPercentageModule() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Customize</span>
+                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filters</span>
               </button>
               <button 
                 onClick={handleExportToCSV}

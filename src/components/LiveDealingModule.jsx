@@ -25,10 +25,13 @@ const formatNum = (n, decimals = 2) => {
 const formatTime = (timestamp) => {
   if (!timestamp) return '-'
   const date = new Date(timestamp * 1000)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${hours}:${minutes}:${seconds}`
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
 }
 
 export default function LiveDealingModule() {
@@ -213,10 +216,10 @@ export default function LiveDealingModule() {
     const handleDealAdded = (data) => {
       const dealData = data.data || data
       const dealEntry = {
-        id: dealData.deal || Date.now() + Math.random(),
+        id: dealData.deal || dealData.id || Date.now() + Math.random(),
         timestamp: dealData.time || dealData.timestamp || Math.floor(Date.now() / 1000),
         login: dealData.login,
-        rawData: dealData
+        rawData: dealData // Preserve all fields: symbol, action, volume, price, profit, commission, etc.
       }
 
       setDeals(prevDeals => {
