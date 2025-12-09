@@ -826,7 +826,34 @@ export default function PositionModule() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsCustomizeOpen(true)}
+              className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('positions'))
+                  ? 'bg-blue-50 border-blue-200' 
+                  : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
+              {(() => {
+                const filterCount = [
+                  filters.hasFloating,
+                  filters.hasCredit,
+                  filters.noDeposit,
+                  selectedIB,
+                  getActiveGroupFilter('positions')
+                ].filter(Boolean).length;
+                return filterCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                    {filterCount}
+                  </span>
+                ) : null;
+              })()}
+            </button>
             <button 
               onClick={() => {
                 setShowNetPositions((v) => {
@@ -835,9 +862,9 @@ export default function PositionModule() {
                   return nv
                 })
               }}
-              className={`flex-1 h-[37px] rounded-[12px] ${showNetPositions ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all`}
+              className={`flex-1 h-[37px] rounded-[12px] ${showNetPositions ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-all`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="9" stroke={showNetPositions ? "#ffffff" : "#666666"} strokeWidth="2"/>
                 <path d="M12 8v8M8 12h8" stroke={showNetPositions ? "#ffffff" : "#666666"} strokeWidth="2"/>
               </svg>
@@ -851,9 +878,9 @@ export default function PositionModule() {
                   return nv
                 })
               }}
-              className={`flex-1 h-[37px] rounded-[12px] ${showClientNet ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all`}
+              className={`flex-1 h-[37px] rounded-[12px] ${showClientNet ? 'bg-blue-600 border-blue-600' : 'bg-white border-[#E5E7EB]'} border shadow-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-all`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={showClientNet ? "#ffffff" : "#666666"} strokeWidth="2" strokeLinecap="round"/>
                 <circle cx="9" cy="7" r="4" stroke={showClientNet ? "#ffffff" : "#666666"} strokeWidth="2"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={showClientNet ? "#ffffff" : "#666666"} strokeLinecap="round"/>
@@ -862,7 +889,7 @@ export default function PositionModule() {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
+              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1569,6 +1596,10 @@ export default function PositionModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
+        onFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsFilterOpen(true)
+        }}
         onIBFilterClick={() => {
           setIsCustomizeOpen(false)
           setIsIBFilterOpen(true)
