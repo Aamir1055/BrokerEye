@@ -1269,23 +1269,26 @@ export default function PositionModule() {
                           )}
                           {netVisibleColumns.symbol && (
                             <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
-                              {pos.symbol}
-                              {groupByBaseSymbol && pos.variantCount > 1 && (
-                                <button
-                                  onClick={() => {
-                                    const newExpanded = new Set(expandedNetSymbols)
-                                    if (newExpanded.has(pos.symbol)) {
-                                      newExpanded.delete(pos.symbol)
-                                    } else {
-                                      newExpanded.add(pos.symbol)
-                                    }
-                                    setExpandedNetSymbols(newExpanded)
-                                  }}
-                                  className="ml-1 text-[8px] text-blue-600 underline hover:text-blue-800"
-                                >
-                                  {expandedNetSymbols.has(pos.symbol) ? 'Hide' : 'Show'} variants
-                                </button>
-                              )}
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span>{pos.symbol}</span>
+                                {groupByBaseSymbol && pos.variantCount > 1 && (
+                                  <button
+                                    onClick={() => {
+                                      const newExpanded = new Set(expandedNetSymbols)
+                                      if (newExpanded.has(pos.symbol)) {
+                                        newExpanded.delete(pos.symbol)
+                                      } else {
+                                        newExpanded.add(pos.symbol)
+                                      }
+                                      setExpandedNetSymbols(newExpanded)
+                                    }}
+                                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-semibold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
+                                  >
+                                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d={expandedNetSymbols.has(pos.symbol) ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}/></svg>
+                                    {pos.variantCount} variant{pos.variantCount > 1 ? 's' : ''}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
                           {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
@@ -1302,9 +1305,9 @@ export default function PositionModule() {
                         {/* Variant Rows */}
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
-                            <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#EEF2FF] border-b border-[#C7D2FE] border-l-4 border-l-blue-400">
+                            <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#EEF2FF] border-b border-[#C7D2FE] border-l-4 border-l-indigo-400">
                               {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.symbol && <div className="flex items-center gap-1 px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-2 font-medium bg-[#EEF2FF] text-indigo-900 sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}><svg className="w-3 h-3 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>{variant.exactSymbol}</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-3 font-medium bg-[#EEF2FF] text-indigo-900 sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#EEF2FF] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
                               {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}

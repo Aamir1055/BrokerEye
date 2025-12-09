@@ -369,6 +369,8 @@ export default function Client2Module() {
     
     return [
       { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
+      { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
+      { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
       { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
       { label: addPercent('Blocked Commission'), value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
@@ -394,7 +396,6 @@ export default function Client2Module() {
       { label: addPercent('Lifetime Credit In'), value: formatNum(t.lifetimeCreditIn || 0), unit: 'USD', numericValue: t.lifetimeCreditIn || 0 },
       { label: addPercent('Lifetime Credit Out'), value: formatNum(t.lifetimeCreditOut || 0), unit: 'USD', numericValue: t.lifetimeCreditOut || 0 },
       { label: addPercent('Lifetime Deposit'), value: formatNum(t.lifetimeDeposit || 0), unit: 'USD', numericValue: t.lifetimeDeposit || 0 },
-      { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('Lifetime SO Compensation In'), value: formatNum(t.lifetimeSOCompensationIn || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationIn || 0 },
       { label: addPercent('Lifetime SO Compensation Out'), value: formatNum(t.lifetimeSOCompensationOut || 0), unit: 'USD', numericValue: t.lifetimeSOCompensationOut || 0 },
       { label: addPercent('Lifetime Withdrawal'), value: formatNum(t.lifetimeWithdrawal || 0), unit: 'USD', numericValue: t.lifetimeWithdrawal || 0 },
@@ -433,7 +434,6 @@ export default function Client2Module() {
       { label: addPercent('NET Monthly Bonus'), value: formatNum((t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0)), unit: 'USD', numericValue: (t.thisMonthBonusIn || 0) - (t.thisMonthBonusOut || 0) },
       { label: addPercent('NET Monthly DW'), value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)), unit: 'USD', numericValue: (t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0) },
       { label: addPercent('NET Lifetime Bonus'), value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)), unit: 'USD', numericValue: (t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0) },
-      { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
       { label: addPercent('NET Credit'), value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
       { label: addPercent('Book PnL'), value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
     ]
@@ -1362,13 +1362,13 @@ export default function Client2Module() {
 
             {/* Search Columns Input */}
             <div className="px-6 py-4">
-              <div className="relative">
+              <div className="relative h-12">
                 <input
                   type="text"
                   placeholder="Search Columns"
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[13px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[10px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <svg 
                   width="20" 
@@ -1383,7 +1383,7 @@ export default function Client2Module() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6">
+            <div className="flex-1 overflow-y-auto px-6 min-h-[240px]">
               {Object.entries({
                 'Login': 'login',
                 'Name': 'name',
