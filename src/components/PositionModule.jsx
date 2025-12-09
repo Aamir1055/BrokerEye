@@ -1675,25 +1675,21 @@ export default function PositionModule() {
 
       {/* Column Selector Modal */}
       {isColumnSelectorOpen && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
-          <div
-            className="w-full bg-white rounded-t-[24px] max-h-[80vh] overflow-hidden flex flex-col animate-slide-up"
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
+          <div 
+            className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative px-6 pt-6 pb-4 border-b border-gray-200">
-              <button 
-                onClick={() => setIsColumnSelectorOpen(false)}
-                className="absolute left-4 top-6 w-8 h-8 flex items-center justify-center"
-              >
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
+              <button onClick={() => setIsColumnSelectorOpen(false)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M15 18L9 12L15 6" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
                 </svg>
               </button>
-              <h2 className="text-center text-xl font-semibold font-outfit text-black">Show/Hide Columns</h2>
             </div>
 
-            {/* Search Columns Input */}
-            <div className="px-6 py-4">
+            <div className="px-5 py-3 border-b border-[#E5E7EB] flex-shrink-0">
               <div className="relative h-12">
                 <input
                   type="text"
@@ -1709,119 +1705,81 @@ export default function PositionModule() {
                   fill="none" 
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >
-                  <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M14 14L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M13 13L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 min-h-[240px]">
-              {(() => {
-                const entries = Object.entries({
-                'Login': 'login',
-                'Updated': 'updated',
-                'First Name': 'firstName',
-                'Middle Name': 'middleName',
-                'Last Name': 'lastName',
-                'Email': 'email',
-                'Phone': 'phone',
-                'Position': 'position',
-                'Symbol': 'symbol',
-                'Action': 'action',
-                'Net Type': 'netType',
-                'Volume': 'volume',
-                'Volume %': 'volumePercentage',
-                'Price Open': 'priceOpen',
-                'Price Current': 'priceCurrent',
-                'Net Volume': 'netVolume',
-                'S/L': 'sl',
-                'T/P': 'tp',
-                'Profit': 'profit',
-                'Total Profit': 'totalProfit',
-                'Profit %': 'profitPercentage',
-                'Storage': 'storage',
-                'Storage %': 'storagePercentage',
-                'Applied %': 'appliedPercentage',
-                'Reason': 'reason',
-                'Comment': 'comment',
-                'Commission': 'commission',
-                }).filter(([label]) => 
-                  !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
-                )
-                if (entries.length === 0) {
-                  return (
-                    <div className="py-6 text-center text-sm text-gray-500">No columns found</div>
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
+              <div className="px-5 py-3">
+                {(() => {
+                  const allColumns = [
+                    { label: 'Login', key: 'login' },
+                    { label: 'Updated', key: 'updated' },
+                    { label: 'First Name', key: 'firstName' },
+                    { label: 'Middle Name', key: 'middleName' },
+                    { label: 'Last Name', key: 'lastName' },
+                    { label: 'Email', key: 'email' },
+                    { label: 'Phone', key: 'phone' },
+                    { label: 'Position', key: 'position' },
+                    { label: 'Symbol', key: 'symbol' },
+                    { label: 'Action', key: 'action' },
+                    { label: 'Net Type', key: 'netType' },
+                    { label: 'Volume', key: 'volume' },
+                    { label: 'Volume %', key: 'volumePercentage' },
+                    { label: 'Price Open', key: 'priceOpen' },
+                    { label: 'Price Current', key: 'priceCurrent' },
+                    { label: 'Net Volume', key: 'netVolume' },
+                    { label: 'S/L', key: 'sl' },
+                    { label: 'T/P', key: 'tp' },
+                    { label: 'Profit', key: 'profit' },
+                    { label: 'Total Profit', key: 'totalProfit' },
+                    { label: 'Profit %', key: 'profitPercentage' },
+                    { label: 'Storage', key: 'storage' },
+                    { label: 'Storage %', key: 'storagePercentage' },
+                    { label: 'Applied %', key: 'appliedPercentage' },
+                    { label: 'Reason', key: 'reason' },
+                    { label: 'Comment', key: 'comment' },
+                    { label: 'Commission', key: 'commission' }
+                  ]
+                  const filtered = allColumns.filter(col => 
+                    col.label.toLowerCase().includes(columnSearch.toLowerCase())
                   )
-                }
-                return entries.map(([label, key]) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 cursor-pointer"
-                    onClick={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                  >
-                    <span className="text-base text-gray-800 font-outfit">{label}</span>
-                    <button
-                      onClick={e => { e.stopPropagation(); setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}}
-                      className="w-6 h-6 flex items-center justify-center"
-                    >
-                      {visibleColumns[key] ? (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                          <rect x="3" y="3" width="18" height="18" rx="4" fill="#3B82F6"/>
-                          <path d="M7 12L10 15L17 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      ) : (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                          <rect x="3" y="3" width="18" height="18" rx="4" stroke="#D1D5DB" strokeWidth="2" fill="white"/>
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                ))
-              })()}
+                  return filtered.length > 0 ? (
+                    filtered.map(col => (
+                      <label 
+                        key={col.key} 
+                        className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                      >
+                        <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
+                        <div className="relative inline-block w-12 h-6">
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns[col.key]}
+                            onChange={() => setVisibleColumns(prev => ({ ...prev, [col.key]: !prev[col.key] }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                      No columns match your search
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
 
-            <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setVisibleColumns({
-                    login: true,
-                    updated: true,
-                    firstName: false,
-                    middleName: false,
-                    lastName: false,
-                    email: false,
-                    phone: false,
-                    position: false,
-                    symbol: true,
-                    action: false,
-                    netType: true,
-                    volume: false,
-                    volumePercentage: false,
-                    priceOpen: true,
-                    priceCurrent: false,
-                    netVolume: true,
-                    sl: false,
-                    tp: false,
-                    profit: false,
-                    totalProfit: true,
-                    profitPercentage: false,
-                    storage: false,
-                    storagePercentage: false,
-                    appliedPercentage: false,
-                    reason: false,
-                    comment: false,
-                    commission: false,
-                  })
-                }}
-                className="flex-1 h-14 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 text-base font-medium hover:bg-gray-50 transition-colors"
-              >
-                Reset
-              </button>
-              <button
+            <div className="px-5 py-4 border-t border-[#E5E7EB] flex-shrink-0">
+              <button 
                 onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 h-14 rounded-2xl bg-blue-600 text-white text-base font-medium hover:bg-blue-700 transition-colors"
+                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-[12px] hover:bg-blue-700 transition-colors"
               >
-                Apply
+                Done
               </button>
             </div>
           </div>
