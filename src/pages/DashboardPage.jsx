@@ -7,6 +7,7 @@ import Sidebar from '../components/Sidebar'
 import QuickActionCard from '../components/dashboard/QuickActionCard'
 import MiniDataTable from '../components/dashboard/MiniDataTable'
 import WebSocketIndicator from '../components/WebSocketIndicator'
+import DashboardMobileView from '../components/DashboardMobileView'
 
 const DashboardPage = () => {
   // Initialize sidebar state from localStorage
@@ -20,6 +21,10 @@ const DashboardPage = () => {
     }
   }
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth <= 768
+  })
   const { user } = useAuth()
   const { clients, positions, orders, clientStats, loading, connectionState } = useData()
   const navigate = useNavigate()
@@ -174,6 +179,16 @@ const DashboardPage = () => {
     const interval = setInterval(fetchTopIBCommissions, 3600000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  // Mobile detection effect
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   // Format Indian number (with commas)
@@ -431,6 +446,19 @@ const DashboardPage = () => {
       </span>
     ])
   }, [topIBCommissions])
+
+  // Render mobile view
+  if (isMobile) {
+    return (
+      <DashboardMobileView
+        faceCardTotals={faceCardTotals}
+        getFaceCardConfig={getFaceCardConfig}
+        faceCardOrder={faceCardOrder}
+        topIBCommissions={topIBCommissions}
+        ibCommissionsLoading={ibCommissionsLoading}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50">
