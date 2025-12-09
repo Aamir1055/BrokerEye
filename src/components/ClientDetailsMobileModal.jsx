@@ -20,7 +20,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(50)
+  const [itemsPerPage] = useState(12)
 
   // Summary stats
   const [stats, setStats] = useState({
@@ -459,9 +459,26 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 <path d="M15 18l-6-6 6-6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
+            <span className="text-xs font-semibold text-gray-700">
+              {activeTab === 'positions' && `${currentPage} / ${Math.ceil(filteredPositions.length / itemsPerPage)}`}
+              {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)}`}
+              {activeTab === 'deals' && `${currentPage} / ${Math.ceil(filteredDeals.length / itemsPerPage)}`}
+            </span>
             <button
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="w-8 h-8 rounded-md border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50"
+              onClick={() => setCurrentPage(prev => {
+                const maxPage = activeTab === 'positions' 
+                  ? Math.ceil(filteredPositions.length / itemsPerPage)
+                  : activeTab === 'netPositions'
+                  ? Math.ceil(filteredNetPositions.length / itemsPerPage)
+                  : Math.ceil(filteredDeals.length / itemsPerPage)
+                return prev < maxPage ? prev + 1 : prev
+              })}
+              disabled={
+                (activeTab === 'positions' && currentPage >= Math.ceil(filteredPositions.length / itemsPerPage)) ||
+                (activeTab === 'netPositions' && currentPage >= Math.ceil(filteredNetPositions.length / itemsPerPage)) ||
+                (activeTab === 'deals' && currentPage >= Math.ceil(filteredDeals.length / itemsPerPage))
+              }
+              className="w-8 h-8 rounded-md border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18l6-6-6-6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/>
@@ -480,23 +497,23 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-700">Date:</span>
+                <span className="text-[10px] font-semibold text-gray-700">Date:</span>
                 <DatePicker
                   selected={fromDate}
                   onChange={(date) => setFromDate(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="From"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[10px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
                   calendarClassName="compact-calendar"
                   maxDate={toDate || new Date()}
                 />
-                <span className="text-xs text-gray-500">to</span>
+                <span className="text-[10px] text-gray-500">to</span>
                 <DatePicker
                   selected={toDate}
                   onChange={(date) => setToDate(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="To"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[10px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
                   calendarClassName="compact-calendar"
                   minDate={fromDate}
                   maxDate={new Date()}
