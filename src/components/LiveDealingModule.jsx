@@ -230,8 +230,53 @@ export default function LiveDealingModule() {
       })
     }
 
-    const unsubscribeDeals = websocketService.subscribe('deal_added', handleDealAdded)
+    // Handle deal updates
+    const handleDealUpdated = (data) => {
+      const dealData = data.data || data
+      const dealId = dealData.deal || dealData.id
+      
+      if (!dealId) return
+
+      setDeals(prevDeals => {
+        const index = prevDeals.findIndex(d => d.id === dealId)
+        if (index === -1) return prevDeals
+
+        const updatedDeals = [...prevDeals]
+        updatedDeals[index] = {
+          ...updatedDeals[index],
+          timestamp: dealData.time || updatedDeals[index].timestamp,
+          login: dealData.login || updatedDeals[index].login,
+          rawData: { ...updatedDeals[index].rawData, ...dealData }
+        }
+        return updatedDeals
+      })
+    }
+
+    // Handle deal deletions
+    const handleDealDeleted = (data) => {
+      const dealData = data.data || data
+      const dealId = dealData.deal || dealData.id
+      
+      if (!dealId) return
+
+      setDeals(prevDeals => prevDeals.filter(d => d.id !== dealId))
+    }
+
+    // Subscribe to all deal event types matching desktop implementation
+    const unsubscribeDealAdded = websocketService.subscribe('DEAL_ADDED', handleDealAdded)
     const unsubscribeDealCreated = websocketService.subscribe('DEAL_CREATED', handleDealAdded)
+    const unsubscribeNewDeal = websocketService.subscribe('NEW_DEAL', handleDealAdded)
+    const unsubscribeDeal = websocketService.subscribe('deal', handleDealAdded)
+    const unsubscribeLegacyDealAdded = websocketService.subscribe('deal_added', handleDealAdded)
+    
+    const unsubscribeDealUpdated = websocketService.subscribe('DEAL_UPDATED', handleDealUpdated)
+    const unsubscribeDealUpdate = websocketService.subscribe('DEAL_UPDATE', handleDealUpdated)
+    
+    const unsubscribeDealDeleted = websocketService.subscribe('DEAL_DELETED', handleDealDeleted)
+    const unsubscribeDealDelete = websocketService.subscribe('DEAL_DELETE', handleDealDeleted)
+
+    const unsubscribeDealDeleted = websocketService.subscribe('DEAL_DELETED', handleDealDeleted)
+    const unsubscribeDealDelete = websocketService.subscribe('DEAL_DELETE', handleDealDeleted)
 
     // Get connection state
     const service = websocketService
@@ -245,8 +290,15 @@ export default function LiveDealingModule() {
     const unsubscribeConnectionState = websocketService.subscribe('connectionState', handleConnectionState)
 
     return () => {
-      unsubscribeDeals()
+      unsubscribeDealAdded()
       unsubscribeDealCreated()
+      unsubscribeNewDeal()
+      unsubscribeDeal()
+      unsubscribeLegacyDealAdded()
+      unsubscribeDealUpdated()
+      unsubscribeDealUpdate()
+      unsubscribeDealDeleted()
+      unsubscribeDealDelete()
       unsubscribeConnectionState()
     }
   }, [])
@@ -549,12 +601,12 @@ export default function LiveDealingModule() {
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
           >
-            <span className={`px-2 py-0.5 rounded text-[9px] font-medium ${
-              action === 'Buy' ? 'bg-green-100 text-green-700' : 
-              action === 'Sell' ? 'bg-red-100 text-red-700' : 
-              'bg-gray-100 text-gray-700'
+            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+              action === 'Buy' ? 'text-green-600' : 
+              action === 'Sell' ? 'text-red-600' : 
+              'text-gray-700'
             }`}>
-              {action}
+              {action.toUpperCase()}
             </span>
           </div>
         )
