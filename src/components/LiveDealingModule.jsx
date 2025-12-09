@@ -275,9 +275,6 @@ export default function LiveDealingModule() {
     const unsubscribeDealDeleted = websocketService.subscribe('DEAL_DELETED', handleDealDeleted)
     const unsubscribeDealDelete = websocketService.subscribe('DEAL_DELETE', handleDealDeleted)
 
-    const unsubscribeDealDeleted = websocketService.subscribe('DEAL_DELETED', handleDealDeleted)
-    const unsubscribeDealDelete = websocketService.subscribe('DEAL_DELETE', handleDealDeleted)
-
     // Get connection state
     const service = websocketService
     if (service.socket?.readyState === WebSocket.OPEN) {
