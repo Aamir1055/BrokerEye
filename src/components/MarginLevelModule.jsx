@@ -181,10 +181,9 @@ export default function MarginLevelModule() {
   
   useEffect(() => {
     const newCards = [
-      { label: 'TOTAL UNDER 50%', value: String(summaryStats.totalUnder50) },
+      { label: 'BELOW 50%', value: String(summaryStats.totalUnder50) },
       { label: 'AVG MARGIN LEVEL', value: formatNum(summaryStats.avgMarginLevel, 2) + '%' },
-      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
-      { label: 'LOGINS UNDER 50%', value: String(summaryStats.loginsUnder50) }
+      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) }
     ]
     
     if (cards.length === 0) {
@@ -232,7 +231,7 @@ export default function MarginLevelModule() {
               outline: 'none', 
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
-            onClick={() => setSelectedClient({ login: account.login, email: account.email || '' })}
+            onClick={() => setSelectedClient({ login: account.login, email: account.email || '', name: account.name || '' })}
           >
             <span className="truncate">{value}</span>
           </div>
