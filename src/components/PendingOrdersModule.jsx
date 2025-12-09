@@ -521,6 +521,11 @@ export default function PendingOrdersModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
+              <span className="font-semibold">{currentPage}</span>
+              <span className="text-[#9CA3AF] mx-1">/</span>
+              <span>{Math.ceil(filteredOrders.length / itemsPerPage)}</span>
+            </div>
             <button 
               onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredOrders.length / itemsPerPage), prev + 1))}
               disabled={currentPage >= Math.ceil(filteredOrders.length / itemsPerPage)}
