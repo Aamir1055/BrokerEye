@@ -529,7 +529,7 @@ export default function PositionModule() {
   const activeColumns = useMemo(() => {
     const columnDefs = [
       { key: 'login', label: 'Login', width: '80px', sticky: true },
-      { key: 'updated', label: 'Updated', width: '120px' },
+      { key: 'updated', label: 'Time', width: '120px' },
       { key: 'firstName', label: 'First Name', width: '100px' },
       { key: 'middleName', label: 'Middle Name', width: '100px' },
       { key: 'lastName', label: 'Last Name', width: '100px' },
@@ -1754,7 +1754,7 @@ export default function PositionModule() {
                 {(() => {
                   const allColumns = [
                     { label: 'Login', key: 'login' },
-                    { label: 'Updated', key: 'updated' },
+                    { label: 'Time', key: 'updated' },
                     { label: 'First Name', key: 'firstName' },
                     { label: 'Middle Name', key: 'middleName' },
                     { label: 'Last Name', key: 'lastName' },
