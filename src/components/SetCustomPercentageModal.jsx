@@ -83,39 +83,20 @@ export default function SetCustomPercentageModal({ client, onClose, onSuccess })
             </p>
           </div>
 
-          {/* Percentage Input with Dropdown */}
+          {/* Percentage Input */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Set Custom Percentage
             </label>
-            <select
+            <input
+              type="number"
+              step="any"
               value={percentage}
               onChange={(e) => setPercentage(e.target.value)}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+              placeholder="Enter percentage (e.g., 70 or -50)"
               disabled={saving}
-            >
-              <option value="">Select Percentage</option>
-              <option value="100">100</option>
-              <option value="90">90</option>
-              <option value="80">80</option>
-              <option value="70">70</option>
-              <option value="60">60</option>
-              <option value="50">50</option>
-              <option value="40">40</option>
-              <option value="30">30</option>
-              <option value="20">20</option>
-              <option value="10">10</option>
-              <option value="-10">-10</option>
-              <option value="-20">-20</option>
-              <option value="-30">-30</option>
-              <option value="-40">-40</option>
-              <option value="-50">-50</option>
-              <option value="-60">-60</option>
-              <option value="-70">-70</option>
-              <option value="-80">-80</option>
-              <option value="-90">-90</option>
-              <option value="-100">-100</option>
-            </select>
+            />
           </div>
 
           {/* Comment Field */}
