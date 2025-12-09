@@ -529,7 +529,7 @@ export default function PositionModule() {
   const activeColumns = useMemo(() => {
     const columnDefs = [
       { key: 'login', label: 'Login', width: '80px', sticky: true },
-      { key: 'updated', label: 'Updated', width: '120px', sticky: true },
+      { key: 'updated', label: 'Updated', width: '120px' },
       { key: 'firstName', label: 'First Name', width: '100px' },
       { key: 'middleName', label: 'Middle Name', width: '100px' },
       { key: 'lastName', label: 'Last Name', width: '100px' },
@@ -638,7 +638,9 @@ export default function PositionModule() {
           </div>
         )
       case 'updated':
-        return <div className={`h-[38px] flex items-center justify-center px-1 text-[10px] ${stickyClass}`} style={{...stickyStyle, position: isSticky ? 'sticky' : 'static', left: isSticky ? '80px' : 'auto', zIndex: isSticky ? 10 : 'auto'}}>{pos.updated || pos.time || '-'}</div>
+        const timeValue = pos.timeUpdate || pos.timeCreate
+        const formattedTime = timeValue ? new Date(timeValue * 1000).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '-'
+        return <div className={`h-[38px] flex items-center justify-center px-1 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -1155,8 +1157,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center justify-between gap-2 flex-wrap pb-3 px-4">
-              <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-wrap pb-3 px-4">
                 {/* Search Bar */}
                 <div className="h-[36px] min-w-[140px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1226,10 +1227,8 @@ export default function PositionModule() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Pagination - moved to right */}
-              <div className="flex items-center gap-2">
+                {/* Pagination */}
                 <button
                   onClick={() => setNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={netCurrentPage === 1}
@@ -1253,7 +1252,6 @@ export default function PositionModule() {
                     <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-              </div>
             </div>
 
             {/* NET Positions Table */}
@@ -1264,7 +1262,7 @@ export default function PositionModule() {
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
                     {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
-                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
+                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC] sticky left-0 z-10">Symbol</div>}
                     {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
                     {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
                     {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Avg Price</div>}
@@ -1289,7 +1287,7 @@ export default function PositionModule() {
                             </div>
                           )}
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
                               {pos.symbol}
                               {groupByBaseSymbol && pos.variantCount > 1 && (
                                 <button
@@ -1325,7 +1323,7 @@ export default function PositionModule() {
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#F8FAFC] border-b border-[#E1E1E1]">
                               {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black">{variant.exactSymbol}</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-4 font-medium bg-[#F8FAFC] text-black sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>{variant.exactSymbol}</div>}
                               {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#F8FAFC] ${variant.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{variant.netType}</div>}
                               {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
                               {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#F8FAFC] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
