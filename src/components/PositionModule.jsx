@@ -1042,7 +1042,7 @@ export default function PositionModule() {
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
                 <div 
-                  className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+                  className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
                   style={{
                     gap: '0px', 
                     gridGap: '0px', 
@@ -1054,8 +1054,15 @@ export default function PositionModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:bg-[#1450A0] transition-colors ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
-                      style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      style={{
+                        border: 'none', 
+                        outline: 'none', 
+                        boxShadow: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        userSelect: 'none',
+                        touchAction: 'manipulation'
+                      }}
                     >
                       <span>{col.label}</span>
                       {sortColumn === col.key && (

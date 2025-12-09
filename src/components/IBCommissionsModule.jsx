@@ -748,7 +748,7 @@ export default function IBCommissionsModule() {
               <div className="min-w-full">
                 {/* Table Header */}
                 <div 
-                  className="grid bg-[#1E40AF] text-white text-[10px] font-bold uppercase tracking-wide sticky top-0 z-20"
+                  className="grid bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wide sticky top-0 z-20"
                   style={{
                     gap: '0px', 
                     gridGap: '0px', 
@@ -761,13 +761,17 @@ export default function IBCommissionsModule() {
                       key={col.key}
                       onClick={() => col.key !== 'actions' && col.key !== 'checkbox' && handleSort(col.key)}
                       className={`h-[36px] flex items-center justify-center px-1 ${
-                        col.key !== 'checkbox' ? 'cursor-pointer hover:bg-[#1E3A8A]' : ''
-                      } transition-colors ${
-                        col.sticky ? 'sticky' : ''
+                        col.key !== 'checkbox' ? 'cursor-pointer' : ''
+                      } ${
+                        col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''
                       }`}
                       style={{
                         border: 'none',
                         outline: 'none',
+                        boxShadow: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        userSelect: 'none',
+                        touchAction: 'manipulation'
                         backgroundColor: col.sticky ? '#1E40AF' : '#1E40AF',
                         left: col.sticky ? col.stickyLeft : 'auto',
                         zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
