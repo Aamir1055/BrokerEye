@@ -602,6 +602,7 @@ export default function LiveDealingModule() {
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
               actionLower === 'buy' ? 'text-green-600' : 
               actionLower === 'sell' ? 'text-red-600' : 
+              actionLower === 'balance' ? 'text-orange-600' :
               'text-gray-700'
             }`}>
               {action.toUpperCase()}
