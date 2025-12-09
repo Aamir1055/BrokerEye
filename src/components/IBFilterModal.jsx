@@ -71,12 +71,14 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
       const mt5Data = response.data?.data?.mt5_accounts || response.data?.mt5_accounts || []
       
       // Pass both IB info and MT5 accounts to parent
-      onSelectIB({
-        email: tempSelectedIB.email,
-        name: tempSelectedIB.name,
-        percentage: tempSelectedIB.percentage,
-        mt5Accounts: mt5Data
-      })
+      if (typeof onSelectIB === 'function') {
+        onSelectIB({
+          email: tempSelectedIB.email,
+          name: tempSelectedIB.name,
+          percentage: tempSelectedIB.percentage,
+          mt5Accounts: mt5Data
+        })
+      }
       onClose()
     } catch (err) {
       console.error('Error fetching MT5 accounts:', err)
@@ -88,7 +90,9 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
 
   const handleReset = () => {
     setTempSelectedIB(null)
-    onSelectIB(null) // Clear the filter
+    if (typeof onSelectIB === 'function') {
+      onSelectIB(null) // Clear the filter
+    }
     onClose()
   }
 

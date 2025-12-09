@@ -910,9 +910,20 @@ export default function Client2Module() {
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
-                {(filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2')) && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></span>
-                )}
+                {(() => {
+                  const filterCount = [
+                    filters.hasFloating,
+                    filters.hasCredit,
+                    filters.noDeposit,
+                    selectedIB,
+                    getActiveGroupFilter('client2')
+                  ].filter(Boolean).length;
+                  return filterCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                      {filterCount}
+                    </span>
+                  ) : null;
+                })()}
               </button>
               <button
                 onClick={() => {
