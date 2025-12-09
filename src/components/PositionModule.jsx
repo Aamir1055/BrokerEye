@@ -1430,9 +1430,9 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 flex-wrap pb-3 px-4">
+            <div className="flex items-center gap-2 pb-3 px-4">
                 {/* Search Bar */}
-                <div className="h-[36px] min-w-[140px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
+                <div className="h-[36px] w-[100px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
@@ -1441,13 +1441,13 @@ export default function PositionModule() {
                     placeholder="Search"
                     value={clientNetSearchInput}
                     onChange={(e) => setClientNetSearchInput(e.target.value)}
-                    className="flex-1 text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent"
+                    className="flex-1 text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent w-full"
                   />
                 </div>
 
                 {/* Card Filter */}
-                <div className="relative" ref={clientNetCardFilterRef}>
-                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[36px] px-3 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700 min-w-[70px]">
+                <div className="relative flex-shrink-0" ref={clientNetCardFilterRef}>
+                  <button onClick={() => setClientNetCardFilterOpen(v => !v)} className="h-[36px] px-2 rounded-lg border border-blue-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Cards
                   </button>
@@ -1466,15 +1466,15 @@ export default function PositionModule() {
                 {/* Group Base Symbols */}
                 <button
                   onClick={() => setGroupByBaseSymbol(v => !v)}
-                  className={`h-[36px] px-3 rounded-lg border text-[10px] font-medium flex items-center gap-1 min-w-[60px] ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-blue-200'}`}
+                  className={`h-[36px] px-2 rounded-lg border text-[10px] font-medium flex items-center gap-1 flex-shrink-0 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-blue-200'}`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                   Base
                 </button>
 
                 {/* Columns */}
-                <div className="relative" ref={clientNetColumnSelectorRef}>
-                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[36px] px-3 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700 min-w-[60px]">
+                <div className="relative flex-shrink-0" ref={clientNetColumnSelectorRef}>
+                  <button onClick={() => setClientNetShowColumnSelector(v => !v)} className="h-[36px] px-2 rounded-lg border border-purple-200 bg-white text-[10px] font-medium flex items-center gap-1 text-gray-700">
                     <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                     Cols
                   </button>
@@ -1503,13 +1503,13 @@ export default function PositionModule() {
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={clientNetCurrentPage === 1}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700">
+                <div className="text-[10px] font-medium text-gray-700 flex-shrink-0">
                   <span className="font-semibold">{clientNetCurrentPage}</span>
                   <span className="text-gray-400 mx-1">/</span>
                   <span>{clientNetTotalPages}</span>
@@ -1517,9 +1517,9 @@ export default function PositionModule() {
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.min(clientNetTotalPages, p + 1))}
                   disabled={clientNetCurrentPage === clientNetTotalPages}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
@@ -1729,7 +1729,7 @@ export default function PositionModule() {
 
             {/* Search Columns Input */}
             <div className="px-6 py-4">
-              <div className="relative">
+              <div className="relative h-12">
                 <input
                   type="text"
                   placeholder="Search Columns"
