@@ -125,7 +125,9 @@ export default function IBCommissionsModule() {
           total_commission: data.total_commission || 0,
           total_available_commission: data.total_available_commission || 0,
           disbursed_commission: (data.total_commission || 0) - (data.total_available_commission || 0),
-          available_rebate: data.total_available_commission || 0
+          available_rebate: data.total_available_commission || 0,
+          total_commission_percentage: data.total_commission_percentage || 0,
+          total_available_commission_percentage: data.total_available_commission_percentage || 0
         })
       }
     } catch (err) {
@@ -150,11 +152,15 @@ export default function IBCommissionsModule() {
     const totalRebate = totals.total_commission
     const disbursedRebate = totals.disbursed_commission
     const availableRebate = totals.total_available_commission
+    const totalRebatePercentage = totals.total_commission_percentage
+    const availableRebatePercentage = totals.total_available_commission_percentage
     
     return {
       totalRebate,
       disbursedRebate,
-      availableRebate
+      availableRebate,
+      totalRebatePercentage,
+      availableRebatePercentage
     }
   }, [totals])
 
@@ -215,8 +221,10 @@ export default function IBCommissionsModule() {
   useEffect(() => {
     const newCards = [
       { label: 'TOTAL REBATE', value: formatNum(summaryStats.totalRebate, 2) },
+      { label: 'AVAILABLE REBATE', value: formatNum(summaryStats.availableRebate, 2) },
       { label: 'DISBURSED REBATE', value: formatNum(summaryStats.disbursedRebate, 2) },
-      { label: 'AVAILABLE REBATE', value: formatNum(summaryStats.availableRebate, 2) }
+      { label: 'TOTAL REBATE %', value: parseFloat(summaryStats.totalRebatePercentage || 0).toFixed(2) },
+      { label: 'AVAILABLE REBATE %', value: parseFloat(summaryStats.availableRebatePercentage || 0).toFixed(2) }
     ]
     
     if (cards.length === 0) {
