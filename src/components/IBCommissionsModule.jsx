@@ -268,7 +268,7 @@ export default function IBCommissionsModule() {
       case 'checkbox':
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky bg-white z-20' : ''}`}
+            className={`h-[28px] flex items-center justify-start px-2 ${isSticky ? 'sticky bg-white z-20' : ''}`}
             style={{
               left: isSticky ? stickyLeft : 'auto',
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
@@ -305,7 +305,7 @@ export default function IBCommissionsModule() {
         break
       case 'actions':
         return (
-          <div className="h-[28px] flex items-center justify-center px-1">
+          <div className="h-[28px] flex items-center justify-start px-2">
             <button 
               onClick={() => {
                 setEditingIB(item)
@@ -323,7 +323,7 @@ export default function IBCommissionsModule() {
 
     return (
       <div 
-        className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky bg-white' : ''}`}
+        className={`h-[28px] flex items-center justify-start px-2 ${isSticky ? 'sticky bg-white' : ''}`}
         style={{
           border: 'none', 
           outline: 'none', 

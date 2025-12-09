@@ -1022,46 +1022,6 @@ export default function Client2Module() {
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
-                draggable
-                onDragStart={(e) => {
-                  setDragStartLabel(card.label)
-                  e.dataTransfer.effectAllowed = 'move'
-                  e.currentTarget.style.opacity = '0.5'
-                }}
-                onDragEnd={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                  setDragStartLabel(null)
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  e.dataTransfer.dropEffect = 'move'
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  if (dragStartLabel && dragStartLabel !== card.label) {
-                    swapOrder(dragStartLabel, card.label)
-                  }
-                }}
-                onTouchStart={(e) => {
-                  setDragStartLabel(card.label)
-                  e.currentTarget.style.opacity = '0.5'
-                }}
-                onTouchMove={(e) => {
-                  e.preventDefault()
-                  const touch = e.touches[0]
-                  const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
-                  if (elementBelow && elementBelow.closest('[data-card-label]')) {
-                    const targetLabel = elementBelow.closest('[data-card-label]').getAttribute('data-card-label')
-                    if (targetLabel && targetLabel !== card.label && dragStartLabel) {
-                      swapOrder(dragStartLabel, targetLabel)
-                    }
-                  }
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                  setDragStartLabel(null)
-                }}
-                data-card-label={card.label}
                 style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1081,8 +1041,7 @@ export default function Client2Module() {
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
-                  touchAction: 'none',
-                  cursor: 'grab'
+                  touchAction: 'pan-x'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
@@ -1253,7 +1212,7 @@ export default function Client2Module() {
                           <div 
                             key={col.key}
                             onClick={() => col.key === 'login' && setSelectedClient(client)}
-                            className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap ${
+                            className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap ${
                               col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
                             }`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
@@ -1270,7 +1229,7 @@ export default function Client2Module() {
                     {visibleColumnsList.map((col, idx) => (
                       <div 
                         key={col.key}
-                        className={`h-[38px] flex items-center justify-center px-1 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                        className={`h-[38px] flex items-center justify-start px-2 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
                         style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                       >
                         {col.key === 'login' ? 'Total' : 

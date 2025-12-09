@@ -576,11 +576,11 @@ export default function PositionModule() {
     
     switch(columnKey) {
       case 'symbol':
-        return <div className={`h-[38px] flex items-center justify-center px-1 overflow-hidden text-ellipsis whitespace-nowrap text-black font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap text-black font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
       case 'netType':
       case 'action':
         return (
-          <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
               pos.type === 0 || pos.type === 'Buy' 
                 ? 'bg-green-100 text-green-700' 
@@ -593,35 +593,35 @@ export default function PositionModule() {
       case 'totalProfit':
       case 'profit':
         return (
-          <div className={`h-[38px] flex items-center justify-center px-1 font-medium ${
+          <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${
             (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
           } ${stickyClass}`} style={stickyStyle}>
             {formatNum(pos.profit || 0)}
           </div>
         )
       case 'priceOpen':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
       case 'priceCurrent':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceCurrent || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceCurrent || 0)}</div>
       case 'volume':
       case 'netVolume':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
       case 'volumePercentage':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
       case 'profitPercentage':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
       case 'storage':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
       case 'storagePercentage':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
       case 'appliedPercentage':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.appliedPercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.appliedPercentage || 0)}%</div>
       case 'sl':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
       case 'tp':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
       case 'commission':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
       case 'login':
         const handleLoginClick = () => {
           const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -629,7 +629,7 @@ export default function PositionModule() {
         }
         return (
           <div 
-            className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
+            className={`h-[38px] flex items-center justify-start px-2 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
             style={stickyStyle}
             onClick={handleLoginClick}
             onTouchEnd={(e) => {
@@ -643,7 +643,7 @@ export default function PositionModule() {
       case 'updated':
         const timeValue = pos.timeUpdate || pos.timeCreate
         const formattedTime = timeValue ? new Date(timeValue * 1000).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '-'
-        return <div className={`h-[38px] flex items-center justify-center px-1 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -652,9 +652,9 @@ export default function PositionModule() {
       case 'position':
       case 'reason':
       case 'comment':
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
       default:
-        return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>-</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>-</div>
     }
   }
 

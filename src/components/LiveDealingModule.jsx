@@ -576,7 +576,7 @@ export default function LiveDealingModule() {
         value = deal.login || '-'
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            className={`h-[28px] flex items-center justify-start px-2 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
             style={{
               border: 'none', 
               outline: 'none', 

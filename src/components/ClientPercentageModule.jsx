@@ -258,7 +258,7 @@ export default function ClientPercentageModule() {
         value = item.client_login || item.login || '-'
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-1 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            className={`h-[28px] flex items-center justify-start px-2 cursor-pointer hover:underline text-blue-600 font-semibold ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
             style={{
               border: 'none', 
               outline: 'none', 
@@ -286,7 +286,7 @@ export default function ClientPercentageModule() {
         break
       case 'actions':
         return (
-          <div className="h-[28px] flex items-center justify-center px-1">
+          <div className="h-[28px] flex items-center justify-start px-2">
             <button 
               onClick={() => handleEditClick(item)}
               className="text-blue-600 hover:text-blue-800 text-xs font-medium"
@@ -301,7 +301,7 @@ export default function ClientPercentageModule() {
 
     return (
       <div 
-        className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+        className={`h-[28px] flex items-center justify-start px-2 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
         style={{
           border: 'none', 
           outline: 'none', 
