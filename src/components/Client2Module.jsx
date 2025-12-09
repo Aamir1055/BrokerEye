@@ -1567,7 +1567,10 @@ export default function Client2Module() {
           </div>
 
           <div className="p-3 space-y-2">
-            {orderedCards.map((card, index) => (
+            {orderedCards.map((card, index) => {
+              const isDragging = dragStartLabel === card.label
+              
+              return (
               <div
                 key={card.label}
                 draggable="true"
@@ -1590,6 +1593,12 @@ export default function Client2Module() {
                 onDragOver={(e) => {
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
+                  
+                  if (dragStartLabel && dragStartLabel !== card.label) {
+                    // Show where it will drop
+                    e.currentTarget.style.borderColor = '#3B82F6'
+                    e.currentTarget.style.backgroundColor = '#EFF6FF'
+                  }
                 }}
                 onDragEnter={(e) => {
                   e.preventDefault()
@@ -1617,15 +1626,15 @@ export default function Client2Module() {
                 }}
                 onTouchStart={(e) => {
                   setDragStartLabel(card.label)
-                  e.currentTarget.style.transform = 'scale(0.98)'
                   e.currentTarget.style.opacity = '0.8'
+                  e.currentTarget.style.transform = 'scale(0.98)'
                 }}
                 onTouchMove={(e) => {
                   const touch = e.touches[0]
                   const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
                   const targetCard = elementAtPoint?.closest('[data-card-label]')
                   
-                  // Reset all card backgrounds
+                  // Reset all card backgrounds except dragging one
                   document.querySelectorAll('[data-card-label]').forEach(el => {
                     if (el.dataset.cardLabel !== dragStartLabel) {
                       el.style.backgroundColor = ''
@@ -1650,7 +1659,7 @@ export default function Client2Module() {
                   const targetCard = elementAtPoint?.closest('[data-card-label]')
                   
                   // Perform swap only on drop
-                  if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
+                  if (targetCard && targetCard.dataset.cardLabel && targetCard.dataset.cardLabel !== dragStartLabel) {
                     swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
                   }
                   
@@ -1677,8 +1686,12 @@ export default function Client2Module() {
                   setDragStartLabel(null)
                 }}
                 data-card-label={card.label}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move touch-none transition-all duration-150"
-                style={{ userSelect: 'none' }}
+                className="bg-white rounded-xl p-3 shadow-sm border-2 border-gray-100 cursor-move touch-none transition-all duration-100"
+                style={{ 
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none'
+                }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -1715,7 +1728,7 @@ export default function Client2Module() {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
