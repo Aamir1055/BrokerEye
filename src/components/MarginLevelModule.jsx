@@ -30,7 +30,7 @@ const getMarginLevelPercent = (obj) => {
 export default function MarginLevelModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { accounts } = useData()
+  const { accounts, clients } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -231,7 +231,10 @@ export default function MarginLevelModule() {
               outline: 'none', 
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
-            onClick={() => setSelectedClient({ login: account.login, email: account.email || '', name: account.name || '' })}
+            onClick={() => {
+              const fullClient = clients.find(c => String(c.login) === String(account.login))
+              setSelectedClient(fullClient || { login: account.login, email: account.email || '', name: account.name || '' })
+            }}
           >
             <span className="truncate">{value}</span>
           </div>

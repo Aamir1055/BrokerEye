@@ -37,7 +37,7 @@ const formatTime = (timestamp) => {
 export default function LiveDealingModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions: cachedPositions } = useData()
+  const { positions: cachedPositions, clients } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -582,7 +582,10 @@ export default function LiveDealingModule() {
               outline: 'none', 
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
-            onClick={() => setSelectedClient({ login: deal.login, email: deal.email || '' })}
+            onClick={() => {
+              const fullClient = clients.find(c => String(c.login) === String(deal.login))
+              setSelectedClient(fullClient || { login: deal.login, email: deal.email || '', name: '' })
+            }}
           >
             <span className="truncate">{value}</span>
           </div>
@@ -981,6 +984,14 @@ export default function LiveDealingModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+
+            {/* Page indicator */}
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
+              <span className="font-semibold">{currentPage}</span>
+              <span className="text-[#9CA3AF] mx-1">/</span>
+              <span>{Math.ceil(sortedDeals.length / itemsPerPage)}</span>
+            </div>
+
             <button 
               onClick={() => setCurrentPage(prev => Math.min(Math.ceil(sortedDeals.length / itemsPerPage), prev + 1))}
               disabled={currentPage >= Math.ceil(sortedDeals.length / itemsPerPage)}

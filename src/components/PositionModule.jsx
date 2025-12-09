@@ -21,7 +21,7 @@ const formatNum = (n) => {
 export default function PositionModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions } = useData()
+  const { positions, clients } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -153,7 +153,7 @@ export default function PositionModule() {
 
   // Apply group and IB filters to positions (same as desktop)
   const groupFilteredPositions = useMemo(() => {
-    return filterByActiveGroup(positions, 'positions')
+    return filterByActiveGroup(positions, 'login', 'positions')
   }, [positions, filterByActiveGroup, activeGroupFilters])
 
   const ibFilteredPositions = useMemo(() => {
@@ -623,7 +623,10 @@ export default function PositionModule() {
       case 'commission':
         return <div className={`h-[38px] flex items-center justify-center px-1 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
       case 'login':
-        const handleLoginClick = () => setSelectedClient({ login: pos.login, email: pos.email || '' })
+        const handleLoginClick = () => {
+          const fullClient = clients.find(c => String(c.login) === String(pos.login))
+          setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
+        }
         return (
           <div 
             className={`h-[38px] flex items-center justify-center px-1 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
@@ -1545,10 +1548,14 @@ export default function PositionModule() {
                           <div 
                             className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10"
                             style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}
-                            onClick={() => setSelectedClient({ login: pos.login, email: pos.email || '' })}
+                            onClick={() => {
+                              const fullClient = clients.find(c => String(c.login) === String(pos.login))
+                              setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
+                            }}
                             onTouchEnd={(e) => {
                               e.preventDefault()
-                              setSelectedClient({ login: pos.login, email: pos.email || '' })
+                              const fullClient = clients.find(c => String(c.login) === String(pos.login))
+                              setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
                             }}
                           >
                             {pos.login}

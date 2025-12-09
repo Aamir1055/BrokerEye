@@ -36,7 +36,7 @@ const formatTime = (ts) => {
 export default function PendingOrdersModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { orders } = useData()
+  const { orders, clients } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -228,7 +228,10 @@ export default function PendingOrdersModule() {
               outline: 'none', 
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
-            onClick={() => setSelectedClient({ login: order.login, email: order.email || '' })}
+            onClick={() => {
+              const fullClient = clients.find(c => String(c.login) === String(order.login))
+              setSelectedClient(fullClient || { login: order.login, email: order.email || '', name: '' })
+            }}
           >
             <span className="truncate">{value}</span>
           </div>
