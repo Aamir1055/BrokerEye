@@ -81,7 +81,13 @@ const DealsFilterModal = ({
           }}
         >
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                const ev = new CustomEvent('openCustomizeView')
+                window.dispatchEvent(ev)
+              }
+              onClose()
+            }}
             style={{
               background: 'transparent',
               border: 'none',
