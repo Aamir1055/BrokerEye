@@ -589,6 +589,7 @@ export default function LiveDealingModule() {
         )
       case 'netType':
         const action = deal.rawData?.action || '-'
+        const actionLower = action.toLowerCase()
         return (
           <div 
             className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
@@ -599,8 +600,8 @@ export default function LiveDealingModule() {
             }}
           >
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-              action === 'Buy' ? 'text-green-600' : 
-              action === 'Sell' ? 'text-red-600' : 
+              actionLower === 'buy' ? 'text-green-600' : 
+              actionLower === 'sell' ? 'text-red-600' : 
               'text-gray-700'
             }`}>
               {action.toUpperCase()}
