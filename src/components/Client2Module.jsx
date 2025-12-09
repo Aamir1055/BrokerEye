@@ -451,7 +451,13 @@ export default function Client2Module() {
 
     let order = Array.isArray(saved) && saved.length > 0
       ? saved.filter(l => labels.includes(l))
-      : [...labels]
+      : (() => {
+          // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW first
+          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW']
+          const priorityOrder = priority.filter(l => labels.includes(l))
+          const remaining = labels.filter(l => !priority.includes(l))
+          return [...priorityOrder, ...remaining]
+        })()
 
     // Append any new labels not in saved order
     labels.forEach(l => { if (!order.includes(l)) order.push(l) })
@@ -1088,6 +1094,13 @@ export default function Client2Module() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+
+            {/* Page indicator */}
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
+              <span className="font-semibold">{currentPage}</span>
+              <span className="text-[#9CA3AF] mx-1">/</span>
+              <span>{totalPages}</span>
+            </div>
 
             {/* Next button */}
             <button 
