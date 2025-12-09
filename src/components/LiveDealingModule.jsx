@@ -404,7 +404,7 @@ export default function LiveDealingModule() {
   // Get visible columns
   const allColumns = [
     { key: 'login', label: 'Login', width: '80px', sticky: true },
-    { key: 'time', label: 'Time', width: '80px' },
+    { key: 'time', label: 'Time', width: '155px' },
     { key: 'netType', label: 'Net Type', width: '80px' },
     { key: 'netVolume', label: displayMode === 'percentage' ? 'Net Volume (%)' : displayMode === 'both' ? 'Net Volume (Both)' : 'Net Volume', width: '100px' },
     { key: 'averagePrice', label: 'Average Price', width: '110px' },
