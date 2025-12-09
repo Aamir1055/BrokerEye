@@ -814,7 +814,7 @@ export default function ClientPercentageModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-3">
+            <div className="flex-1 overflow-y-auto px-5 py-3" style={{ minHeight: '300px' }}>
               <div className="mb-3">
                 <input 
                   type="text"
@@ -822,24 +822,31 @@ export default function ClientPercentageModule() {
                   onChange={(e) => setColumnSearch(e.target.value)}
                   placeholder="Search Columns"
                   className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{ color: '#000000' }}
                 />
               </div>
-              {allColumns
-                .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
-                .map(col => (
-                <label 
-                  key={col.key} 
-                  className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer hover:bg-gray-50 px-2 rounded"
-                >
-                  <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={visibleColumns[col.key]}
-                    onChange={() => toggleColumn(col.key)}
-                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-              ))}
+              {allColumns.filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase())).length > 0 ? (
+                allColumns
+                  .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
+                  .map(col => (
+                  <label 
+                    key={col.key} 
+                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer hover:bg-gray-50 px-2 rounded"
+                  >
+                    <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns[col.key]}
+                      onChange={() => toggleColumn(col.key)}
+                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </label>
+                ))
+              ) : (
+                <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                  No columns match your search
+                </div>
+              )}
             </div>
             <div className="flex-shrink-0 px-5 py-3 border-t border-[#F2F2F7] flex gap-2">
               <button
