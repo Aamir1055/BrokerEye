@@ -278,7 +278,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         <tbody className="divide-y divide-gray-200">
           {paginatedPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs text-blue-600">{pos.position || pos.ticket || '-'}</td>
+              <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.ticket || '-'}</td>
               <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>
               <td className="px-3 py-2 text-xs">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
