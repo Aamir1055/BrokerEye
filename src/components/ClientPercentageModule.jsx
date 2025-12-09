@@ -402,8 +402,25 @@ export default function ClientPercentageModule() {
     setIsGroupOpen(false)
   }
 
+  // Fix mobile viewport height on actual devices
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+    }
+    
+    setVH()
+    window.addEventListener('resize', setVH)
+    window.addEventListener('orientationchange', setVH)
+    
+    return () => {
+      window.removeEventListener('resize', setVH)
+      window.removeEventListener('orientationchange', setVH)
+    }
+  }, [])
+
   return (
-    <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
@@ -570,6 +587,7 @@ export default function ClientPercentageModule() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search"
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
+                style={{ color: '#000000' }}
               />
             </div>
             <button 
