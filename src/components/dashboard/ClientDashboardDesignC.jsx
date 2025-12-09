@@ -1182,27 +1182,69 @@ export default function ClientDashboardDesignC() {
               data-label={card.label}
               draggable="true"
               onDragStart={(e) => {
-                try { e.dataTransfer.setData('cardLabel', card.label) } catch {}
+                try { 
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('cardLabel', card.label)
+                  setDragStartLabel(card.label)
+                  e.currentTarget.style.opacity = '0.5'
+                } catch {}
               }}
-              onDragOver={(e) => e.preventDefault()}
+              onDragEnd={(e) => {
+                e.currentTarget.style.opacity = '1'
+                setDragStartLabel(null)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+              }}
+              onDragEnter={(e) => {
+                if (dragStartLabel && dragStartLabel !== card.label) {
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(37, 99, 235, 0.3)'
+                }
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.boxShadow = '0 0 12px rgba(75, 75, 75, 0.05)'
+              }}
               onDrop={(e) => {
                 e.preventDefault();
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.boxShadow = '0 0 12px rgba(75, 75, 75, 0.05)'
                 let fromLabel = ''
                 try { fromLabel = e.dataTransfer.getData('cardLabel') } catch {}
                 const toLabel = card.label
-                swapOrder(fromLabel, toLabel)
-              }}
-              onPointerDown={(e) => {
-                setDragStartLabel(card.label)
-                try { e.currentTarget.setPointerCapture(e.pointerId) } catch {}
-              }}
-              onPointerUp={(e) => {
-                const toLabel = card.label
-                if (dragStartLabel) swapOrder(dragStartLabel, toLabel)
+                if (fromLabel && fromLabel !== toLabel) {
+                  swapOrder(fromLabel, toLabel)
+                }
                 setDragStartLabel(null)
               }}
-              onPointerCancel={() => setDragStartLabel(null)}
-              className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-move"
+              onTouchStart={(e) => {
+                setDragStartLabel(card.label)
+                e.currentTarget.style.opacity = '0.5'
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault()
+                const touch = e.touches[0]
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
+                if (elementBelow && elementBelow.closest('[data-label]')) {
+                  const targetLabel = elementBelow.closest('[data-label]').getAttribute('data-label')
+                  if (targetLabel && targetLabel !== card.label && dragStartLabel) {
+                    swapOrder(dragStartLabel, targetLabel)
+                    setDragStartLabel(targetLabel)
+                  }
+                }
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.opacity = '1'
+                setDragStartLabel(null)
+              }}
+              className="min-w-[125px] w-[125px] h-[50px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0 cursor-grab active:cursor-grabbing transition-all duration-200"
+              style={{
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                touchAction: 'none'
+              }}
             >
               <div className="flex items-start justify-between">
                 <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">{card.label}</span>

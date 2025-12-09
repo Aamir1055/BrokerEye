@@ -1022,6 +1022,46 @@ export default function Client2Module() {
             {orderedCards.map((card, i) => (
               <div 
                 key={`${card.label}-${lastUpdateTime}`}
+                draggable
+                onDragStart={(e) => {
+                  setDragStartLabel(card.label)
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.currentTarget.style.opacity = '0.5'
+                }}
+                onDragEnd={(e) => {
+                  e.currentTarget.style.opacity = '1'
+                  setDragStartLabel(null)
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragStartLabel && dragStartLabel !== card.label) {
+                    swapOrder(dragStartLabel, card.label)
+                  }
+                }}
+                onTouchStart={(e) => {
+                  setDragStartLabel(card.label)
+                  e.currentTarget.style.opacity = '0.5'
+                }}
+                onTouchMove={(e) => {
+                  e.preventDefault()
+                  const touch = e.touches[0]
+                  const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY)
+                  if (elementBelow && elementBelow.closest('[data-card-label]')) {
+                    const targetLabel = elementBelow.closest('[data-card-label]').getAttribute('data-card-label')
+                    if (targetLabel && targetLabel !== card.label && dragStartLabel) {
+                      swapOrder(dragStartLabel, targetLabel)
+                    }
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.opacity = '1'
+                  setDragStartLabel(null)
+                }}
+                data-card-label={card.label}
                 style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1041,7 +1081,8 @@ export default function Client2Module() {
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
-                  touchAction: 'pan-x'
+                  touchAction: 'none',
+                  cursor: 'grab'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
