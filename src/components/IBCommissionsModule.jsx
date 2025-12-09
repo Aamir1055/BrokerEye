@@ -239,8 +239,8 @@ export default function IBCommissionsModule() {
 
   // Get visible columns
   const allColumns = [
-    { key: 'checkbox', label: 'Select', width: '60px', sticky: false },
-    { key: 'id', label: 'ID', width: '80px', sticky: true },
+    { key: 'checkbox', label: 'Select', width: '60px', sticky: true },
+    { key: 'id', label: 'ID', width: '80px', sticky: false },
     { key: 'name', label: 'Name', width: '150px' },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
