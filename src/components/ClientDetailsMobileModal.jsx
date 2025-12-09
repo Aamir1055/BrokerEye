@@ -265,14 +265,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderPositions = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead className="bg-gray-50">
+        <thead style={{ backgroundColor: '#4682b4' }}>
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Position</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Price</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Position</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Type</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Volume</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Price</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -302,12 +302,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderNetPositions = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead className="bg-gray-50">
+        <thead style={{ backgroundColor: '#4682b4' }}>
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Net Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Profit</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Count</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Net Volume</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Count</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -329,13 +329,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const renderDeals = () => (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead className="bg-gray-50">
+        <thead style={{ backgroundColor: '#4682b4' }}>
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Deal</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Deal</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Type</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Volume</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
