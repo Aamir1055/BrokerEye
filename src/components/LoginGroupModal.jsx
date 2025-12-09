@@ -180,7 +180,9 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
       }
     }
 
-    onSave();
+    if (typeof onSave === 'function') {
+      onSave();
+    }
     handleClose();
   };
 

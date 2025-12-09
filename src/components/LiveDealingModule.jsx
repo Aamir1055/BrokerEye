@@ -1282,6 +1282,11 @@ export default function LiveDealingModule() {
           setIsLoginGroupModalOpen(false)
           setEditingGroup(null)
         }}
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 

@@ -805,8 +805,12 @@ export default function ClientPercentageModule() {
           setIsLoginGroupModalOpen(false)
           setEditingGroup(null)
         }}
-        editingGroup={editingGroup}
-        moduleName="clientpercentage"
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
+        editGroup={editingGroup}
       />
 
       {/* Column Selector Modal */}

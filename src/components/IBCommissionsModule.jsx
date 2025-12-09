@@ -890,8 +890,12 @@ export default function IBCommissionsModule() {
           setIsLoginGroupModalOpen(false)
           setEditingGroup(null)
         }}
-        editingGroup={editingGroup}
-        moduleName="ibcommissions"
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
+        editGroup={editingGroup}
       />
 
       {/* Edit Percentage Modal */}
