@@ -3521,11 +3521,7 @@ const Client2Page = () => {
                     <div
                       key={cardKey}
                       data-card-key={cardKey}
-                      draggable={false}
-                      onDrop={handleCardDrop}
-                      className={`bg-white rounded-xl shadow-sm border p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative ${
-                        dragOverCard === cardKey ? 'border-blue-400 border-2' : 'border-[#F2F2F7]'
-                      }`}
+                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
                     >
                       <div className="flex items-start justify-between mb-1.5 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">

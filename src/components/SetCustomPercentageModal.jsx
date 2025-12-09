@@ -30,11 +30,8 @@ export default function SetCustomPercentageModal({ client, onClose, onSuccess })
       setSaving(true)
       setError('')
       
-      await brokerAPI.setClientPercentage({
-        client_login: client.client_login || client.login,
-        percentage: percentageNum,
-        comment: comment.trim()
-      })
+      const login = client.client_login || client.login
+      await brokerAPI.setClientPercentage(login, percentageNum, comment.trim())
       
       if (onSuccess) {
         await onSuccess()
