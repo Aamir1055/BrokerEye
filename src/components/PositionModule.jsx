@@ -1430,8 +1430,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center justify-between gap-2 flex-wrap pb-3 px-4">
-              <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-wrap pb-3 px-4">
                 {/* Search Bar */}
                 <div className="h-[36px] min-w-[140px] flex-1 max-w-[200px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1499,10 +1498,8 @@ export default function PositionModule() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Pagination - moved to right */}
-              <div className="flex items-center gap-2">
+                {/* Pagination */}
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={clientNetCurrentPage === 1}
@@ -1526,7 +1523,6 @@ export default function PositionModule() {
                     <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-              </div>
             </div>
 
             {/* Client NET Table */}
