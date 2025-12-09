@@ -632,7 +632,7 @@ export default function MarginLevelModule() {
             </div>
 
             <div className="px-5 py-3 border-b border-[#E5E7EB] flex-shrink-0">
-              <div className="relative">
+              <div className="relative h-12">
                 <input
                   type="text"
                   placeholder="Search Columns"
@@ -653,7 +653,7 @@ export default function MarginLevelModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
               <div className="px-5 py-3">
                 {filteredColumnOptions.map(col => (
                   <label 
