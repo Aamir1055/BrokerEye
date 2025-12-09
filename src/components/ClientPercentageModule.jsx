@@ -793,84 +793,83 @@ export default function ClientPercentageModule() {
 
       {/* Column Selector Modal */}
       {isColumnSelectorOpen && (
-        <>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
           <div 
-            className="fixed inset-0 bg-black/50 z-[9998]"
-            onClick={() => setIsColumnSelectorOpen(false)}
-          />
-          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] z-[9999] max-h-[80vh] flex flex-col animate-slide-up">
-            <div className="flex-shrink-0 pt-3 pb-4 px-5 border-b border-[#F2F2F7]">
-              <div className="w-[47px] h-[2px] bg-[#E5E7EB] rounded-full mx-auto mb-4" />
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-[#000000] font-outfit">Show/Hide Columns</h2>
-                <button 
-                  onClick={() => setIsColumnSelectorOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+            className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
+              <button onClick={() => setIsColumnSelectorOpen(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-5 py-3 border-b border-[#E5E7EB] flex-shrink-0">
+              <div className="relative h-12">
+                <input
+                  type="text"
+                  placeholder="Search Columns"
+                  value={columnSearch}
+                  onChange={(e) => setColumnSearch(e.target.value)}
+                  className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[10px] text-black font-semibold font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M15 5L5 15M5 5L15 15" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </button>
+                  <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M13 13L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-3" style={{ minHeight: '300px' }}>
-              <div className="mb-3">
-                <input 
-                  type="text"
-                  value={columnSearch}
-                  onChange={(e) => setColumnSearch(e.target.value)}
-                  placeholder="Search Columns"
-                  className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{ color: '#000000' }}
-                />
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
+              <div className="px-5 py-3">
+                {allColumns.filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase())).length > 0 ? (
+                  allColumns
+                    .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
+                    .map(col => (
+                    <label 
+                      key={col.key} 
+                      className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                    >
+                      <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
+                      <div className="relative inline-block w-12 h-6">
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[col.key]}
+                          onChange={() => toggleColumn(col.key)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                      </div>
+                    </label>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    No columns match your search
+                  </div>
+                )}
               </div>
-              {allColumns.filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase())).length > 0 ? (
-                allColumns
-                  .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
-                  .map(col => (
-                  <label 
-                    key={col.key} 
-                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0 cursor-pointer hover:bg-gray-50 px-2 rounded"
-                  >
-                    <span className="text-sm text-[#000000] font-outfit">{col.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns[col.key]}
-                      onChange={() => toggleColumn(col.key)}
-                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
-                ))
-              ) : (
-                <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
-                  No columns match your search
-                </div>
-              )}
             </div>
-            <div className="flex-shrink-0 px-5 py-3 border-t border-[#F2F2F7] flex gap-2">
-              <button
-                onClick={() => {
-                  const allChecked = allColumns.every(col => visibleColumns[col.key])
-                  const newState = {}
-                  allColumns.forEach(col => {
-                    newState[col.key] = !allChecked
-                  })
-                  setVisibleColumns(newState)
-                }}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {allColumns.every(col => visibleColumns[col.key]) ? 'Deselect All' : 'Select All'}
-              </button>
-              <button
+
+            <div className="px-5 py-4 border-t border-[#E5E7EB] flex-shrink-0">
+              <button 
                 onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-[12px] hover:bg-blue-700 transition-colors"
               >
-                Apply
+                Done
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Sidebar */}
