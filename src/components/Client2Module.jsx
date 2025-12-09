@@ -1147,13 +1147,20 @@ export default function Client2Module() {
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
-              <div className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+              <div className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
                 {visibleColumnsList.map((col, idx) => (
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-center px-1 gap-1 cursor-pointer hover:bg-[#1557A8] active:bg-[#0F4A91] transition-colors ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
-                    style={{border: 'none', outline: 'none', boxShadow: 'none'}}
+                    className={`h-[28px] flex items-center justify-center px-1 gap-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    style={{
+                      border: 'none', 
+                      outline: 'none', 
+                      boxShadow: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      userSelect: 'none',
+                      touchAction: 'manipulation'
+                    }}
                   >
                     <span>{col.label}</span>
                     {sortColumn === col.key && (
@@ -1567,7 +1574,7 @@ export default function Client2Module() {
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move'
                   e.dataTransfer.setData('cardLabel', card.label)
-                  e.currentTarget.style.opacity = '0.5'
+                  e.currentTarget.style.opacity = '0.4'
                   setDragStartLabel(card.label)
                 }}
                 onDragEnd={(e) => {
@@ -1575,93 +1582,103 @@ export default function Client2Module() {
                   setDragStartLabel(null)
                   // Reset all card styles
                   document.querySelectorAll('[data-card-label]').forEach(el => {
-                    el.style.backgroundColor = '#FFFFFF'
-                    el.style.borderColor = '#F3F4F6'
+                    el.style.backgroundColor = ''
+                    el.style.borderColor = ''
+                    el.style.transform = ''
                   })
                 }}
                 onDragOver={(e) => {
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
-                  
-                  // Swap immediately when dragging over
-                  const fromLabel = dragStartLabel
-                  if (fromLabel && fromLabel !== card.label) {
-                    // Throttle swaps to avoid too many rapid changes
-                    const now = Date.now()
-                    if (!window._lastSwapTime || now - window._lastSwapTime > 100) {
-                      window._lastSwapTime = now
-                      swapOrder(fromLabel, card.label)
-                      setDragStartLabel(card.label) // Update drag source to new position
-                    }
-                  }
                 }}
                 onDragEnter={(e) => {
                   e.preventDefault()
-                  e.currentTarget.style.backgroundColor = '#EFF6FF'
-                  e.currentTarget.style.borderColor = '#93C5FD'
+                  if (dragStartLabel && dragStartLabel !== card.label) {
+                    e.currentTarget.style.backgroundColor = '#EFF6FF'
+                    e.currentTarget.style.borderColor = '#3B82F6'
+                    e.currentTarget.style.transform = 'scale(1.02)'
+                  }
                 }}
                 onDragLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FFFFFF'
-                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  e.currentTarget.style.backgroundColor = ''
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.transform = ''
                 }}
                 onDrop={(e) => {
                   e.preventDefault()
-                  e.currentTarget.style.backgroundColor = '#FFFFFF'
-                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  e.currentTarget.style.backgroundColor = ''
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.transform = ''
+                  
+                  const fromLabel = e.dataTransfer.getData('cardLabel')
+                  if (fromLabel && fromLabel !== card.label) {
+                    swapOrder(fromLabel, card.label)
+                  }
                 }}
                 onTouchStart={(e) => {
                   setDragStartLabel(card.label)
                   e.currentTarget.style.transform = 'scale(0.98)'
-                  e.currentTarget.style.backgroundColor = '#F9FAFB'
+                  e.currentTarget.style.opacity = '0.8'
                 }}
                 onTouchMove={(e) => {
-                  e.preventDefault()
                   const touch = e.touches[0]
                   const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
                   const targetCard = elementAtPoint?.closest('[data-card-label]')
                   
                   // Reset all card backgrounds
                   document.querySelectorAll('[data-card-label]').forEach(el => {
-                    el.style.backgroundColor = '#FFFFFF'
-                    el.style.borderColor = '#F3F4F6'
+                    if (el.dataset.cardLabel !== dragStartLabel) {
+                      el.style.backgroundColor = ''
+                      el.style.borderColor = ''
+                      el.style.transform = ''
+                    }
                   })
                   
-                  // Highlight and swap immediately when over a different card
+                  // Highlight card being hovered over
                   if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
                     targetCard.style.backgroundColor = '#EFF6FF'
-                    targetCard.style.borderColor = '#93C5FD'
-                    
-                    // Swap immediately during touch move
-                    const now = Date.now()
-                    if (!window._lastTouchSwapTime || now - window._lastTouchSwapTime > 150) {
-                      window._lastTouchSwapTime = now
-                      swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
-                      setDragStartLabel(targetCard.dataset.cardLabel) // Update to new position
-                    }
+                    targetCard.style.borderColor = '#3B82F6'
+                    targetCard.style.transform = 'scale(1.02)'
                   }
                 }}
                 onTouchEnd={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.backgroundColor = '#FFFFFF'
-                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  e.currentTarget.style.transform = ''
+                  e.currentTarget.style.opacity = '1'
+                  
+                  const touch = e.changedTouches[0]
+                  const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
+                  const targetCard = elementAtPoint?.closest('[data-card-label]')
+                  
+                  // Perform swap only on drop
+                  if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
+                    swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
+                  }
                   
                   // Reset all backgrounds
                   document.querySelectorAll('[data-card-label]').forEach(el => {
-                    el.style.backgroundColor = '#FFFFFF'
-                    el.style.borderColor = '#F3F4F6'
+                    el.style.backgroundColor = ''
+                    el.style.borderColor = ''
+                    el.style.transform = ''
                   })
                   
                   setDragStartLabel(null)
-                  window._lastTouchSwapTime = null
                 }}
                 onTouchCancel={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.backgroundColor = '#FFFFFF'
-                  e.currentTarget.style.borderColor = '#F3F4F6'
+                  e.currentTarget.style.transform = ''
+                  e.currentTarget.style.opacity = '1'
+                  
+                  // Reset all backgrounds
+                  document.querySelectorAll('[data-card-label]').forEach(el => {
+                    el.style.backgroundColor = ''
+                    el.style.borderColor = ''
+                    el.style.transform = ''
+                  })
+                  
                   setDragStartLabel(null)
                 }}
                 data-card-label={card.label}
-                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move active:scale-95 transition-transform"
+                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 cursor-move touch-none transition-all duration-150"
+                style={{ userSelect: 'none' }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

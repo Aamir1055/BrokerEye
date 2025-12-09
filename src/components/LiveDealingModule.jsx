@@ -1038,8 +1038,6 @@ export default function LiveDealingModule() {
                         WebkitTapHighlightColor: 'transparent',
                         userSelect: 'none',
                         touchAction: 'manipulation'
-                        outline: 'none',
-                        boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
                       <span className="truncate">{col.label}</span>
