@@ -42,6 +42,8 @@ export default function DashboardMobileView({
   const [touchStartPos, setTouchStartPos] = useState(null)
   const [touchedCard, setTouchedCard] = useState(null)
   const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
+  const CARD_VISIBILITY_KEY = 'dashboardMobileCardVisibility'
+  const CARD_VISIBILITY_VERSION = 'v2' // Increment this when changing default cards
 
   // Default card visibility - Show only 4 cards by default
   const defaultCardVisibility = (() => {
@@ -56,15 +58,24 @@ export default function DashboardMobileView({
   })()
 
   const [cardVisibility, setCardVisibility] = useState(() => {
-    const saved = localStorage.getItem('dashboardMobileCardVisibility')
-    return saved ? JSON.parse(saved) : defaultCardVisibility
+    const savedVersion = localStorage.getItem(CARD_VISIBILITY_KEY + '_version')
+    const saved = localStorage.getItem(CARD_VISIBILITY_KEY)
+    
+    // Reset to defaults if version changed or no saved data
+    if (savedVersion !== CARD_VISIBILITY_VERSION || !saved) {
+      localStorage.setItem(CARD_VISIBILITY_KEY + '_version', CARD_VISIBILITY_VERSION)
+      localStorage.setItem(CARD_VISIBILITY_KEY, JSON.stringify(defaultCardVisibility))
+      return defaultCardVisibility
+    }
+    
+    return JSON.parse(saved)
   })
 
   // Toggle card visibility
   const toggleCardVisibility = (cardId) => {
     const updated = { ...cardVisibility, [cardId]: !cardVisibility[cardId] }
     setCardVisibility(updated)
-    localStorage.setItem('dashboardMobileCardVisibility', JSON.stringify(updated))
+    localStorage.setItem(CARD_VISIBILITY_KEY, JSON.stringify(updated))
   }
 
   // Initialize card order from localStorage
@@ -658,7 +669,10 @@ export default function DashboardMobileView({
               </div>
               
               <div className="grid grid-cols-2 gap-3">
-                {getOrderedCards().map(card => renderFaceCard(card, true))}
+                {faceCardOrder.map(cardId => {
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  return card ? renderFaceCard(card, true) : null
+                })}
               </div>
             </div>
           </div>
