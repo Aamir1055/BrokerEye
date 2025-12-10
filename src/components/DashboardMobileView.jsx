@@ -805,16 +805,6 @@ export default function DashboardMobileView({
                 })}
               </div>
             </div>
-
-            {/* Done Button */}
-            <div className="px-5 py-4 border-t border-gray-200 flex-shrink-0">
-              <button 
-                onClick={() => setShowCardFilter(false)}
-                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
-              >
-                Done
-              </button>
-            </div>
           </div>
         </div>
       )}
