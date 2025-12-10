@@ -67,7 +67,7 @@ const LoginGroupsModal = ({
           width: '100%',
           maxWidth: '412px',
           height: 'auto',
-          maxHeight: '80vh',
+          maxHeight: '50vh',
           background: '#FFFFFF',
           borderRadius: '20px 20px 0 0',
           zIndex: 9999,
@@ -190,7 +190,7 @@ const LoginGroupsModal = ({
           style={{
             flex: 1,
             overflowY: 'auto',
-            maxHeight: '500px',
+            maxHeight: '25vh',
           }}
         >
           {hasGroups ? (
