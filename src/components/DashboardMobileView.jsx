@@ -85,8 +85,8 @@ export default function DashboardMobileView({
       if (saved) {
         setOrderedCards(JSON.parse(saved))
       } else {
-        // Default order - show first 12 cards
-        const defaultOrder = faceCardOrder.slice(0, 12).map(id => {
+        // Default order - include all cards from faceCardOrder
+        const defaultOrder = faceCardOrder.map(id => {
           const card = getFaceCardConfig(id, faceCardTotals)
           return card ? card.title : null
         }).filter(Boolean)
@@ -95,7 +95,7 @@ export default function DashboardMobileView({
       }
     } catch (err) {
       console.error('Failed to load card order:', err)
-      const defaultOrder = faceCardOrder.slice(0, 12).map(id => {
+      const defaultOrder = faceCardOrder.map(id => {
         const card = getFaceCardConfig(id, faceCardTotals)
         return card ? card.title : null
       }).filter(Boolean)
