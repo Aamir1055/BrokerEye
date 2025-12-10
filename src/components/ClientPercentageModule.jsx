@@ -678,13 +678,17 @@ export default function ClientPercentageModule() {
                     <div 
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className={`h-[32px] flex items-center justify-start px-1 cursor-pointer hover:bg-[#1557A8] transition-colors select-none ${
+                      className={`h-[32px] flex items-center justify-start px-1 cursor-pointer select-none ${
                         col.sticky ? 'sticky left-0 z-30 bg-blue-500' : ''
                       }`}
                       style={{
                         border: 'none',
                         outline: 'none',
-                        boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none'
+                        boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        userSelect: 'none',
+                        touchAction: 'manipulation',
+                        backgroundColor: '#3B82F6'
                       }}
                     >
                       <span className="truncate">{col.label}</span>

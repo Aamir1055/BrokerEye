@@ -66,8 +66,7 @@ const LoginGroupsModal = ({
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: '412px',
-          height: 'auto',
-          maxHeight: '50vh',
+          height: '60vh',
           background: '#FFFFFF',
           borderRadius: '20px 20px 0 0',
           zIndex: 9999,
@@ -190,7 +189,8 @@ const LoginGroupsModal = ({
           style={{
             flex: 1,
             overflowY: 'auto',
-            maxHeight: '25vh',
+            minHeight: '500px',
+            maxHeight: '500px',
           }}
         >
           {hasGroups ? (

@@ -50,13 +50,13 @@ export default function SetCustomPercentageModal({ client, onClose, onSuccess })
     <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
         {/* Modal Header */}
-        <div className="bg-blue-600 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+        <div className="bg-blue-500 px-6 py-4 rounded-t-2xl flex items-center justify-between">
           <h3 className="text-xl font-bold text-white tracking-tight">
             Set Custom Percentage
           </h3>
           <button
             onClick={onClose}
-            className="text-white hover:text-blue-100 p-2.5 rounded-xl hover:bg-blue-700 transition-all duration-200"
+            className="text-white hover:text-blue-100 p-2.5 rounded-xl hover:bg-blue-600 transition-all duration-200"
             disabled={saving}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
