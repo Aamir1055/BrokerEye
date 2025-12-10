@@ -479,6 +479,74 @@ export default function Client2Module() {
     return cardOrder.map(l => firstMap.get(l)).filter(Boolean)
   }, [cards, cardOrder])
 
+  // Get icon path for each card
+  const getCardIcon = (cardLabel) => {
+    // Remove % suffix if present for matching
+    const cleanLabel = cardLabel.replace(' %', '')
+    const iconMap = {
+      'Total Clients': '/Mobile cards icons/Total Clients.svg',
+      'Lifetime P&L': '/Mobile cards icons/LIFETIME PNL.svg',
+      'NET Lifetime DW': '/Mobile cards icons/NET WD.svg',
+      'Assets': '/Mobile cards icons/Total Balance.svg',
+      'Balance': '/Mobile cards icons/Total Balance.svg',
+      'Blocked Commission': '/Mobile cards icons/Blocked commision.svg',
+      'Blocked Profit': '/Mobile cards icons/Floating Profit.svg',
+      'Commission': '/Mobile cards icons/AVAILABLE Commision.svg',
+      'Credit': '/Mobile cards icons/Total Credit.svg',
+      'Daily Bonus In': '/Mobile cards icons/Daily BONUS IN.svg',
+      'Daily Bonus Out': '/Mobile cards icons/Daily BONUS OUT.svg',
+      'Daily Credit In': '/Mobile cards icons/LIFETIME CREDIT IN.svg',
+      'Daily Credit Out': '/Mobile cards icons/LIFETIME CREDIT OUT.svg',
+      'Daily Deposit': '/Mobile cards icons/Daily Deposite.svg',
+      'Daily P&L': '/Mobile cards icons/Daily PNL.svg',
+      'Daily SO Compensation In': '/Mobile cards icons/Daily BONUS IN.svg',
+      'Daily SO Compensation Out': '/Mobile cards icons/Daily BONUS OUT.svg',
+      'Daily Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
+      'Daily Net D/W': '/Mobile cards icons/NET WD.svg',
+      'NET Daily Bonus': '/Mobile cards icons/Net Daily Bonus.svg',
+      'Equity': '/Mobile cards icons/Total Equity.svg',
+      'Floating P/L': '/Mobile cards icons/Floating Profit.svg',
+      'Liabilities': '/Mobile cards icons/Total Balance.svg',
+      'Lifetime Bonus In': '/Mobile cards icons/LIFETIME BONUS IN.svg',
+      'Lifetime Bonus Out': '/Mobile cards icons/LIFETIME BONUS OUT.svg',
+      'Lifetime Credit In': '/Mobile cards icons/LIFETIME CREDIT IN.svg',
+      'Lifetime Credit Out': '/Mobile cards icons/LIFETIME CREDIT OUT.svg',
+      'Lifetime Deposit': '/Mobile cards icons/Daily Deposite.svg',
+      'Lifetime SO Compensation In': '/Mobile cards icons/LIFETIME BONUS IN.svg',
+      'Lifetime SO Compensation Out': '/Mobile cards icons/LIFETIME BONUS OUT.svg',
+      'Lifetime Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
+      'Margin': '/Mobile cards icons/Total Balance.svg',
+      'Margin Free': '/Mobile cards icons/Total Balance.svg',
+      'Month Bonus In': '/Mobile cards icons/MONTHLY BONUS IN.svg',
+      'Month Bonus Out': '/Mobile cards icons/MONTHLY BONUS OUt.svg',
+      'Month Credit In': '/Mobile cards icons/MONTHLY CREDIT IN.svg',
+      'Month Credit Out': '/Mobile cards icons/MOnthly CREDIT OUT.svg',
+      'Month Deposit': '/Mobile cards icons/MONTLY DEPOSITE.svg',
+      'Month P&L': '/Mobile cards icons/THIS MONTH PNL.svg',
+      'Month SO Compensation In': '/Mobile cards icons/MONTHLY BONUS IN.svg',
+      'Month SO Compensation Out': '/Mobile cards icons/MONTHLY BONUS OUt.svg',
+      'Month Withdrawal': '/Mobile cards icons/MONTLY WITHDRAWL.svg',
+      'NET Month Bonus': '/Mobile cards icons/NET MONTHLY BONUS.svg',
+      'NET Month D/W': '/Mobile cards icons/NET MONTHLY DW.svg',
+      'Profit': '/Mobile cards icons/Floating Profit.svg',
+      'Storage': '/Mobile cards icons/Total Balance.svg',
+      'This Month PnL': '/Mobile cards icons/THIS MONTH PNL.svg',
+      'Week Bonus In': '/Mobile cards icons/Weekly bonus in.svg',
+      'Week Bonus Out': '/Mobile cards icons/WEEK BONUS OUT.svg',
+      'Week Credit In': '/Mobile cards icons/WEEKLY Credit IN.svg',
+      'Week Credit Out': '/Mobile cards icons/WEEKLY CREDIT OUT.svg',
+      'Week Deposit': '/Mobile cards icons/WEEK DEPOSITE.svg',
+      'Week P&L': '/Mobile cards icons/This week pnl.svg',
+      'Week SO Compensation In': '/Mobile cards icons/Weekly bonus in.svg',
+      'Week SO Compensation Out': '/Mobile cards icons/WEEK BONUS OUT.svg',
+      'Week Withdrawal': '/Mobile cards icons/WEEK WITHDRAWL.svg',
+      'NET Week Bonus': '/Mobile cards icons/NET WEEK BONUS.svg',
+      'NET Week D/W': '/Mobile cards icons/NET WEEK DAY.svg',
+      'Book PnL': '/Mobile cards icons/PNL.svg',
+    }
+    return iconMap[cleanLabel] || '/Mobile cards icons/Total Clients.svg' // Default icon
+  }
+
   // Calculate totals for table footer
   const clientStats = {
     totalBalance: filteredClients.reduce((sum, c) => sum + (Number(c.balance) || 0), 0),
@@ -1047,10 +1115,15 @@ export default function Client2Module() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
                   <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                      <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                    </svg>
+                    <img 
+                      src={getCardIcon(card.label)} 
+                      alt={card.label}
+                      style={{ width: '12px', height: '12px' }}
+                      onError={(e) => {
+                        // Fallback to default icon if image fails to load
+                        e.target.style.display = 'none'
+                      }}
+                    />
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1719,12 +1792,15 @@ export default function Client2Module() {
                     </div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-                      <rect x="14" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-                      <rect x="3" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-                      <rect x="14" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-                    </svg>
+                    <img 
+                      src={getCardIcon(card.label)} 
+                      alt={card.label}
+                      className="w-6 h-6"
+                      onError={(e) => {
+                        // Fallback to default icon if image fails to load
+                        e.target.style.display = 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
