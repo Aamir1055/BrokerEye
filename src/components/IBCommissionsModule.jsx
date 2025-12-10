@@ -1090,7 +1090,7 @@ export default function IBCommissionsModule() {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto px-5 py-2">
+            <div className="flex-1 overflow-y-auto px-5 py-2 min-h-[450px] max-h-[55vh]">
               {allColumns
                 .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
                 .map(col => (
@@ -1104,7 +1104,7 @@ export default function IBCommissionsModule() {
                     onChange={() => toggleColumn(col.key)}
                     className="w-5 h-5 rounded border-2 border-[#CCCCCC] text-[#1A63BC] focus:ring-0 focus:ring-offset-0"
                   />
-                  <span className="text-sm text-[#000000] font-medium">{col.label}</span>
+                  <span className="text-sm text-[#000000]">{col.label}</span>
                 </label>
               ))}
             </div>
@@ -1112,13 +1112,13 @@ export default function IBCommissionsModule() {
             <div className="px-5 py-4 border-t border-[#E5E7EB] flex gap-3 flex-shrink-0">
               <button 
                 onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 h-12 rounded-xl bg-[#F8F8F8] text-[#000000] font-semibold text-sm hover:bg-[#ECECEC] transition-colors"
+                className="flex-1 h-12 rounded-xl bg-[#F8F8F8] text-[#000000] text-sm hover:bg-[#ECECEC] transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={() => setIsColumnSelectorOpen(false)}
-                className="flex-1 h-12 rounded-xl bg-[#1A63BC] text-white font-semibold text-sm hover:bg-[#1557A8] transition-colors"
+                className="flex-1 h-12 rounded-xl bg-[#1A63BC] text-white text-sm hover:bg-[#1557A8] transition-colors"
               >
                 Apply
               </button>

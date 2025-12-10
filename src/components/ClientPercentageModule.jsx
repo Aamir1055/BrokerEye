@@ -868,7 +868,7 @@ export default function ClientPercentageModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[240px]">
+            <div className="flex-1 overflow-y-auto min-h-[450px] max-h-[55vh]">
               <div className="px-5 py-3">
                 {allColumns.filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase())).length > 0 ? (
                   allColumns

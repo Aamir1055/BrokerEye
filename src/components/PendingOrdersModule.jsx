@@ -684,7 +684,7 @@ export default function PendingOrdersModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[240px]">
+            <div className="flex-1 overflow-y-auto min-h-[450px] max-h-[55vh]">
               <div className="px-5 py-3">
                 {filteredColumnOptions.length > 0 ? (
                   filteredColumnOptions.map(col => (

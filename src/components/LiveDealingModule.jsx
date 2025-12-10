@@ -1123,7 +1123,7 @@ export default function LiveDealingModule() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[240px]">
+            <div className="flex-1 overflow-y-auto min-h-[450px] max-h-[55vh]">
               <div className="px-5 py-3">
                 {filteredColumnOptions.length > 0 ? (
                   filteredColumnOptions.map(col => (
@@ -1316,7 +1316,7 @@ export default function LiveDealingModule() {
             className="fixed inset-0 bg-black/50 z-[9998]"
             onClick={() => setShowDisplayModeModal(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] z-[9999] max-h-[80vh] flex flex-col animate-slide-up">
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] z-[9999] max-h-[85vh] flex flex-col animate-slide-up">
             <div className="flex-shrink-0 pt-3 pb-4 px-5 border-b border-[#F2F2F7]">
               <div className="w-[47px] h-[2px] bg-[#E5E7EB] rounded-full mx-auto mb-4" />
               <div className="flex items-center justify-between">
