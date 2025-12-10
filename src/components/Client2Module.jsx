@@ -168,9 +168,12 @@ export default function Client2Module() {
   })
 
   // Fetch clients data via API
-  const fetchClients = useCallback(async (overridePercent = null) => {
+  const fetchClients = useCallback(async (overridePercent = null, isInitialLoad = false) => {
     try {
-      setIsLoading(true)
+      // Only show loading on initial load, not on periodic refreshes
+      if (isInitialLoad) {
+        setIsLoading(true)
+      }
       const usePercent = overridePercent !== null ? overridePercent : showPercent
       // Check if any filter is active to determine if we need all data
       const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
@@ -235,19 +238,23 @@ export default function Client2Module() {
       setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
-      setIsLoading(false)
+      if (isInitialLoad) {
+        setIsLoading(false)
+      }
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
       console.error('Failed to fetch clients:', error)
-      setIsLoading(false)
+      if (isInitialLoad) {
+        setIsLoading(false)
+      }
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage])
 
   // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
-    fetchClients()
-    const interval = setInterval(fetchClients, 1000) // Refresh every 1 second
+    fetchClients(null, true) // Initial load with loading state
+    const interval = setInterval(() => fetchClients(null, false), 1000) // Periodic refresh without loading state
     return () => clearInterval(interval)
   }, [fetchClients])
 
