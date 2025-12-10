@@ -41,9 +41,9 @@ export default function DashboardMobileView({
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   const [touchStartPos, setTouchStartPos] = useState(null)
   const [touchedCard, setTouchedCard] = useState(null)
-  const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
+  const CARD_ORDER_KEY = 'dashboard-mobile-card-order-v2' // Changed key to force reset
   const CARD_VISIBILITY_KEY = 'dashboardMobileCardVisibility'
-  const CARD_VISIBILITY_VERSION = 'v2' // Increment this when changing default cards
+  const CARD_VISIBILITY_VERSION = 'v3' // Increment this when changing default cards
 
   // Default card visibility - Show only 4 cards by default
   const defaultCardVisibility = (() => {
