@@ -179,10 +179,10 @@ export default function Client2Module() {
       const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
                                selectedIB || getActiveGroupFilter('client2')
       
-      // Build payload
+      // Build payload - use itemsPerPage (12) for mobile pagination
       const payload = {
         page: hasActiveFilters ? 1 : currentPage,
-        limit: hasActiveFilters ? 10000 : 100,
+        limit: hasActiveFilters ? 10000 : itemsPerPage,
         percentage: usePercent
       }
 
@@ -643,11 +643,10 @@ export default function Client2Module() {
     })
   }, [filteredClients, sortColumn, sortDirection, showPercent])
 
-  // Pagination
-  const totalPages = Math.ceil(sortedClients.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedClients = sortedClients.slice(startIndex, endIndex)
+  // Pagination - use totalClients from API for accurate page count
+  // Since we're fetching itemsPerPage (12) records per API call, use sortedClients directly
+  const totalPages = Math.ceil(totalClients / itemsPerPage)
+  const paginatedClients = sortedClients // No need to slice since API returns exactly itemsPerPage records
 
   // View All handler
   useEffect(() => {
