@@ -1507,6 +1507,8 @@ export default function Client2Module() {
                 'Lifetime PnL': 'lifetimePnL',
                 'This Month PnL': 'thisMonthPnL',
                 'This Week PnL': 'thisWeekPnL',
+                'Processor Time': 'processorTime',
+                'Account Type': 'accountType',
               }).filter(([label]) => 
                 !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
               );
