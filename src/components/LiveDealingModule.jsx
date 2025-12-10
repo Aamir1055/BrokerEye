@@ -1151,15 +1151,6 @@ export default function LiveDealingModule() {
                 )}
               </div>
             </div>
-
-            <div className="px-5 py-4 border-t border-[#E5E7EB] flex-shrink-0">
-              <button 
-                onClick={() => setIsColumnSelectorOpen(false)}
-                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-[12px] hover:bg-blue-700 transition-colors"
-              >
-                Done
-              </button>
-            </div>
           </div>
         </div>
       )}
