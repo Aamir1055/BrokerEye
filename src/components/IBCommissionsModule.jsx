@@ -1062,7 +1062,7 @@ export default function IBCommissionsModule() {
       {isColumnSelectorOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
           <div 
-            className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden"
+            className="bg-white w-full rounded-t-[24px] max-h-[100vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
