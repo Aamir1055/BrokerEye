@@ -22,6 +22,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12)
 
+  // Sorting states
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
+
   // Summary stats
   const [stats, setStats] = useState({
     positionsCount: 0,
@@ -44,6 +47,38 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   useEffect(() => {
     setCurrentPage(1)
   }, [activeTab, searchQuery])
+
+  // Handle column sorting
+  const handleSort = (key) => {
+    let direction = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  // Sort function
+  const sortData = (data, key, direction) => {
+    if (!key) return data
+    
+    return [...data].sort((a, b) => {
+      let aVal = a[key]
+      let bVal = b[key]
+      
+      // Handle numeric values
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return direction === 'asc' ? aVal - bVal : bVal - aVal
+      }
+      
+      // Handle string values
+      aVal = String(aVal || '').toLowerCase()
+      bVal = String(bVal || '').toLowerCase()
+      
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1
+      return 0
+    })
+  }
 
   const fetchPositionsAndInitDeals = async () => {
     try {
@@ -218,30 +253,39 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
   // Filter data based on search
   const filteredPositions = useMemo(() => {
-    if (!searchQuery.trim()) return positions
-    const query = searchQuery.toLowerCase()
-    return positions.filter(p => 
-      (p.symbol || '').toLowerCase().includes(query) ||
-      (p.position || '').toString().includes(query)
-    )
-  }, [positions, searchQuery])
+    let filtered = positions
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = positions.filter(p => 
+        (p.symbol || '').toLowerCase().includes(query) ||
+        (p.position || '').toString().includes(query)
+      )
+    }
+    return sortData(filtered, sortConfig.key, sortConfig.direction)
+  }, [positions, searchQuery, sortConfig])
 
   const filteredNetPositions = useMemo(() => {
-    if (!searchQuery.trim()) return netPositions
-    const query = searchQuery.toLowerCase()
-    return netPositions.filter(p => 
-      (p.symbol || '').toLowerCase().includes(query)
-    )
-  }, [netPositions, searchQuery])
+    let filtered = netPositions
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = netPositions.filter(p => 
+        (p.symbol || '').toLowerCase().includes(query)
+      )
+    }
+    return sortData(filtered, sortConfig.key, sortConfig.direction)
+  }, [netPositions, searchQuery, sortConfig])
 
   const filteredDeals = useMemo(() => {
-    if (!searchQuery.trim()) return deals
-    const query = searchQuery.toLowerCase()
-    return deals.filter(d => 
-      (d.symbol || '').toLowerCase().includes(query) ||
-      (d.deal || '').toString().includes(query)
-    )
-  }, [deals, searchQuery])
+    let filtered = deals
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = deals.filter(d => 
+        (d.symbol || '').toLowerCase().includes(query) ||
+        (d.deal || '').toString().includes(query)
+      )
+    }
+    return sortData(filtered, sortConfig.key, sortConfig.direction)
+  }, [deals, searchQuery, sortConfig])
 
   // Paginate data
   const paginatedPositions = useMemo(() => {
@@ -267,12 +311,54 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Position</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Type</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Price</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
+              <div className="flex items-center gap-1">
+                Position
+                {sortConfig.key === 'position' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+              <div className="flex items-center gap-1">
+                Symbol
+                {sortConfig.key === 'symbol' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
+              <div className="flex items-center gap-1">
+                Type
+                {sortConfig.key === 'action' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+              <div className="flex items-center gap-1">
+                Volume
+                {sortConfig.key === 'volume' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('priceOpen')}>
+              <div className="flex items-center gap-1">
+                Price
+                {sortConfig.key === 'priceOpen' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+              <div className="flex items-center gap-1">
+                Profit
+                {sortConfig.key === 'profit' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -304,9 +390,30 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Net Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+              <div className="flex items-center gap-1">
+                Symbol
+                {sortConfig.key === 'symbol' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+              <div className="flex items-center gap-1">
+                Net Volume
+                {sortConfig.key === 'volume' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+              <div className="flex items-center gap-1">
+                Profit
+                {sortConfig.key === 'profit' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
             <th className="px-3 py-2 text-left text-xs font-medium text-white">Count</th>
           </tr>
         </thead>
@@ -331,11 +438,46 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Deal</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Symbol</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Type</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Volume</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Profit</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('deal')}>
+              <div className="flex items-center gap-1">
+                Deal
+                {sortConfig.key === 'deal' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+              <div className="flex items-center gap-1">
+                Symbol
+                {sortConfig.key === 'symbol' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
+              <div className="flex items-center gap-1">
+                Type
+                {sortConfig.key === 'action' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+              <div className="flex items-center gap-1">
+                Volume
+                {sortConfig.key === 'volume' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+              <div className="flex items-center gap-1">
+                Profit
+                {sortConfig.key === 'profit' && (
+                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
