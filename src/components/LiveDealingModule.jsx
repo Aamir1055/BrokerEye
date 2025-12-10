@@ -444,7 +444,7 @@ export default function LiveDealingModule() {
   const getCardIcon = (label) => {
     if (label.includes('DEALS')) return '/Mobile cards icons/Brokers Eye Platform/Daily PNL.svg'
     const iconMap = {
-      'UNIQUE LOGINS': '/Mobile cards icons/Brokers Eye Platform/material-symbols_person-outline.svg',
+      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
       'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'

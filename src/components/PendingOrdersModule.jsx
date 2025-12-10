@@ -176,10 +176,10 @@ export default function PendingOrdersModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'PENDING ORDERS': '/Mobile cards icons/Pending Order.svg',
-      'UNIQUE LOGINS': '/Mobile cards icons/Unique Login.svg',
-      'SYMBOLS': '/Mobile cards icons/Symbols.svg',
-      'TOTAL VOLUME': '/Mobile cards icons/Volume.svg'
+      'PENDING ORDERS': '/Mobile cards icons/Brokers Eye Platform/Group.svg',
+      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
+      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg',
+      'TOTAL VOLUME': '/Mobile cards icons/Total Balance.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }

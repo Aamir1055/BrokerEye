@@ -660,6 +660,17 @@ export default function PositionModule() {
 
   // Face cards data - matching desktop layout with persistent state
   const [cards, setCards] = useState([])
+
+  // Map card labels to icon file paths
+  const getCardIcon = (label) => {
+    const iconMap = {
+      'POSITIONS': '/Mobile cards icons/Brokers Eye Platform/Group.svg',
+      'FLOATING': '/Mobile cards icons/Floating Profit.svg',
+      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
+      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg'
+    }
+    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+  }
   
   // Update cards when summary stats change
   useEffect(() => {
