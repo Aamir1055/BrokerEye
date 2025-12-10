@@ -5,8 +5,6 @@
 
 /* Mobile viewport fixes */
 html {
-  /* Prevent elastic scrolling */
-  overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -15,8 +13,6 @@ body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   min-height: 100dvh;
-  /* Prevent pull-to-refresh */
-  overscroll-behavior-y: contain;
   /* Prevent text size adjustment */
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
