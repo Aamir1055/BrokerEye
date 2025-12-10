@@ -43,24 +43,15 @@ export default function DashboardMobileView({
   const [touchedCard, setTouchedCard] = useState(null)
   const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
 
-  // Default card visibility
+  // Default card visibility - Show only 4 cards by default
   const defaultCardVisibility = (() => {
     const vis = {}
     for (let i = 1; i <= 50; i++) vis[i] = false
-    // Show default cards
+    // Show only 4 default cards
     vis[1] = true   // Total Clients
-    vis[2] = true   // Total Balance
-    vis[3] = true   // Total Credit
-    vis[4] = true   // Total Equity
-    vis[5] = true   // PNL
-    vis[6] = true   // Floating Profit
     vis[8] = true   // Daily Deposit
-    vis[9] = true   // Daily Withdrawal
-    vis[14] = true  // Net DW
-    vis[10] = true  // Daily PnL
-    vis[11] = true  // This Week PnL
-    vis[12] = true  // This Month PnL
     vis[13] = true  // Lifetime PnL
+    vis[40] = true  // NET Lifetime DW
     return vis
   })()
 
@@ -132,7 +123,7 @@ export default function DashboardMobileView({
 
     const handleTouchMove = (e) => {
       if (!isDraggable || !touchStartPos) return
-      e.preventDefault()
+      // Don't preventDefault here - causes passive event listener warning
     }
 
     const handleTouchEnd = (e) => {
