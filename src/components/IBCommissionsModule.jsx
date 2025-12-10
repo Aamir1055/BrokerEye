@@ -620,7 +620,6 @@ export default function IBCommissionsModule() {
                 </svg>
               </button>
             </div>
-            <button className="text-[#1A63BC] text-sm font-medium">View All</button>
           </div>
         </div>
 
