@@ -221,11 +221,11 @@ export default function IBCommissionsModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'TOTAL REBATE': '/Mobile cards icons/Total Commision.svg',
-      'AVAILABLE REBATE': '/Mobile cards icons/Available Commision.svg',
-      'DISBURSED REBATE': '/Mobile cards icons/Disbursed Commision.svg',
-      'TOTAL REBATE %': '/Mobile cards icons/Total Commision%.svg',
-      'AVAILABLE REBATE %': '/Mobile cards icons/Available Commision%.svg'
+      'TOTAL REBATE': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION.svg',
+      'AVAILABLE REBATE': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision.svg',
+      'DISBURSED REBATE': '/Mobile cards icons/Brokers Eye Platform/Blocked commision.svg',
+      'TOTAL REBATE %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%.svg',
+      'AVAILABLE REBATE %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }

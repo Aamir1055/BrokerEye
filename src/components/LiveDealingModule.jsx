@@ -442,10 +442,10 @@ export default function LiveDealingModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
-    if (label.includes('DEALS')) return '/Mobile cards icons/Deals.svg'
+    if (label.includes('DEALS')) return '/Mobile cards icons/Brokers Eye Platform/Daily PNL.svg'
     const iconMap = {
-      'UNIQUE LOGINS': '/Mobile cards icons/Unique Login.svg',
-      'SYMBOLS': '/Mobile cards icons/Symbols.svg'
+      'UNIQUE LOGINS': '/Mobile cards icons/Brokers Eye Platform/material-symbols_person-outline.svg',
+      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }
