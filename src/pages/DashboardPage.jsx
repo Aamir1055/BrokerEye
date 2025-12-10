@@ -456,6 +456,12 @@ const DashboardPage = () => {
         faceCardOrder={faceCardOrder}
         topIBCommissions={topIBCommissions}
         ibCommissionsLoading={ibCommissionsLoading}
+        topProfitableClients={topProfitableClients}
+        recentPositions={recentPositions}
+        connectionState={connectionState}
+        clientsCount={clients.length}
+        positionsCount={positions.length}
+        ordersCount={orders.length}
       />
     )
   }

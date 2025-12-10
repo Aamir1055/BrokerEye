@@ -7,7 +7,29 @@ const formatNum = (n) => {
   return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-export default function DashboardMobileView({ faceCardTotals, getFaceCardConfig, faceCardOrder, topIBCommissions, ibCommissionsLoading }) {
+const formatCurrency = (value) => {
+  if (value === null || value === undefined) return '$0.00'
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value)
+}
+
+export default function DashboardMobileView({ 
+  faceCardTotals, 
+  getFaceCardConfig, 
+  faceCardOrder, 
+  topIBCommissions, 
+  ibCommissionsLoading,
+  topProfitableClients,
+  recentPositions,
+  connectionState,
+  clientsCount,
+  positionsCount,
+  ordersCount
+}) {
   const navigate = useNavigate()
   const [showViewAll, setShowViewAll] = useState(false)
   const [orderedCards, setOrderedCards] = useState([])
@@ -236,6 +258,92 @@ export default function DashboardMobileView({ faceCardTotals, getFaceCardConfig,
         </div>
       </div>
 
+      {/* Top Profitable Clients Table */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-gray-900">Top Profitable Clients</h2>
+          <button
+            onClick={() => navigate('/clients')}
+            className="text-xs text-blue-600 font-medium hover:text-blue-700"
+          >
+            View All
+          </button>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {topProfitableClients.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-gray-500">No clients data available</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="px-3 py-2 text-left font-semibold">Login</th>
+                    <th className="px-3 py-2 text-left font-semibold">Name</th>
+                    <th className="px-3 py-2 text-right font-semibold">Lifetime P&L</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {topProfitableClients.slice(0, 5).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-gray-900">{row[0]}</td>
+                      <td className="px-3 py-2 text-gray-900">{row[1]}</td>
+                      <td className="px-3 py-2 text-right">{row[3]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Largest Open Positions Table */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-gray-900">Largest Open Positions</h2>
+          <button
+            onClick={() => navigate('/positions')}
+            className="text-xs text-blue-600 font-medium hover:text-blue-700"
+          >
+            View All
+          </button>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          {recentPositions.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-gray-500">No positions data available</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="px-3 py-2 text-left font-semibold">Login</th>
+                    <th className="px-3 py-2 text-left font-semibold">Symbol</th>
+                    <th className="px-3 py-2 text-left font-semibold">Type</th>
+                    <th className="px-3 py-2 text-right font-semibold">Profit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {recentPositions.slice(0, 5).map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-gray-900">{row[0]}</td>
+                      <td className="px-3 py-2 text-gray-900">{row[1]}</td>
+                      <td className="px-3 py-2 text-gray-700">{row[2]}</td>
+                      <td className="px-3 py-2 text-right">{row[4]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Top IB Commissions Table */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-3">
@@ -280,6 +388,50 @@ export default function DashboardMobileView({ faceCardTotals, getFaceCardConfig,
               </table>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* System Status */}
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-gray-900 mb-3">System Status</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 ${
+                connectionState === 'connected' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                <div className={`w-3 h-3 rounded-full ${
+                  connectionState === 'connected' ? 'bg-green-500' : 'bg-red-500'
+                }`} />
+              </div>
+              <p className="text-xs font-medium text-gray-900">WebSocket</p>
+              <p className="text-xs text-gray-500 capitalize">{connectionState}</p>
+            </div>
+
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-2">
+                <span className="text-lg font-bold text-blue-600">{clientsCount}</span>
+              </div>
+              <p className="text-xs font-medium text-gray-900">Total Clients</p>
+              <p className="text-xs text-gray-500">Active accounts</p>
+            </div>
+
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-2">
+                <span className="text-lg font-bold text-green-600">{positionsCount}</span>
+              </div>
+              <p className="text-xs font-medium text-gray-900">Open Positions</p>
+              <p className="text-xs text-gray-500">Active trades</p>
+            </div>
+
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 mb-2">
+                <span className="text-lg font-bold text-orange-600">{ordersCount}</span>
+              </div>
+              <p className="text-xs font-medium text-gray-900">Pending Orders</p>
+              <p className="text-xs text-gray-500">Awaiting execution</p>
+            </div>
+          </div>
         </div>
       </div>
 
