@@ -1723,12 +1723,12 @@ export default function Client2Module() {
                   const deltaY = Math.abs(touch.clientY - touchStartY)
                   
                   // If vertical movement is greater or significant, allow scrolling
-                  if ((deltaY > deltaX || deltaY > 20) && dragStartLabel === null) {
+                  if ((deltaY > deltaX || deltaY > 15) && dragStartLabel === null) {
                     return // Allow native scroll
                   }
                   
-                  // Require more horizontal movement to activate drag (30px instead of 10px)
-                  if (deltaX > 30 && deltaY < 15 && dragStartLabel === null) {
+                  // Require horizontal movement to activate drag (15px threshold)
+                  if (deltaX > 15 && deltaY < 10 && dragStartLabel === null) {
                     e.preventDefault() // Now prevent scroll for dragging
                     setDragStartLabel(card.label)
                     e.currentTarget.style.opacity = '0.8'
@@ -1804,7 +1804,8 @@ export default function Client2Module() {
                 style={{ 
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none'
+                  WebkitTouchCallout: 'none',
+                  touchAction: 'pan-y'
                 }}
               >
                 <div className="flex items-start justify-between">

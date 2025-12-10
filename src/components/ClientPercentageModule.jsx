@@ -42,7 +42,8 @@ export default function ClientPercentageModule() {
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 15
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768)
+  const itemsPerPage = isMobileView ? 12 : 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
@@ -86,6 +87,15 @@ export default function ClientPercentageModule() {
         window.removeEventListener('openCustomizeView', handler)
       }
     }
+  }, [])
+
+  // Detect mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Fetch data on mount

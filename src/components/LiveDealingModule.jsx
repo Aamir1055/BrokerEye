@@ -77,6 +77,7 @@ export default function LiveDealingModule() {
   const [visibleColumns, setVisibleColumns] = useState({
     time: true,
     login: true,
+    symbol: true,
     netType: true,
     netVolume: true,
     averagePrice: true,
@@ -84,7 +85,6 @@ export default function LiveDealingModule() {
     commission: false,
     storage: false,
     appliedPercentage: false,
-    symbol: false,
     action: false,
     deal: false,
     entry: false
@@ -463,6 +463,7 @@ export default function LiveDealingModule() {
   // Get visible columns
   const allColumns = [
     { key: 'login', label: 'Login', width: '80px', sticky: true },
+    { key: 'symbol', label: 'Symbol', width: '90px' },
     { key: 'time', label: 'Time', width: '155px' },
     { key: 'netType', label: 'Net Type', width: '80px' },
     { key: 'netVolume', label: displayMode === 'percentage' ? 'Net Volume (%)' : displayMode === 'both' ? 'Net Volume (Both)' : 'Net Volume', width: '100px' },
@@ -471,7 +472,6 @@ export default function LiveDealingModule() {
     { key: 'commission', label: displayMode === 'percentage' ? 'Commission (%)' : displayMode === 'both' ? 'Commission (Both)' : 'Commission', width: '100px' },
     { key: 'storage', label: displayMode === 'percentage' ? 'Storage (%)' : displayMode === 'both' ? 'Storage (Both)' : 'Storage', width: '90px' },
     { key: 'appliedPercentage', label: 'Applied %', width: '90px' },
-    { key: 'symbol', label: 'Symbol', width: '90px' },
     { key: 'action', label: 'Action', width: '80px' },
     { key: 'deal', label: 'Deal', width: '80px' },
     { key: 'entry', label: 'Entry', width: '80px' }
