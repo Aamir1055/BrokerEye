@@ -1338,7 +1338,7 @@ export default function Client2Module() {
             <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mt-2" />
             <div className="px-4 py-3 flex items-center justify-between border-t border-[#F0F0F0]">
               <button onClick={() => setIsCustomizeOpen(false)} className="w-9 h-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ transform: 'rotate(180deg)' }}><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
               </button>
               <div className="text-[16px] font-semibold text-[#111827]">Customize view</div>
               <div className="w-9 h-9" />
