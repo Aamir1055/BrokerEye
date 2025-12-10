@@ -1159,7 +1159,7 @@ export default function Client2Module() {
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-center px-1 gap-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    className={`h-[28px] flex items-center justify-start px-1 gap-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                     style={{
                       border: 'none', 
                       outline: 'none', 
@@ -1287,36 +1287,102 @@ export default function Client2Module() {
       {isCustomizeOpen && (
         <div className="fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/35" onClick={() => setIsCustomizeOpen(false)} />
-          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)]">
-            <div className="w-12 h-1.5 bg-[#E5E7EB] rounded-full mx-auto mt-2" />
-            <div className="px-4 py-3 flex items-center justify-between border-t border-[#F0F0F0]">
-              <button onClick={() => setIsCustomizeOpen(false)} className="w-9 h-9 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ transform: 'rotate(180deg)' }}><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)] flex flex-col" style={{ maxHeight: '90vh', height: 'auto' }}>
+            {/* Top indicator line */}
+            <div className="w-[47px] h-[2px] rounded-[2px] mx-auto mt-[10px]" style={{ background: 'rgba(71, 84, 103, 0.55)' }} />
+            
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-[10px] mb-[10px]">
+              <button onClick={() => setIsCustomizeOpen(false)} className="p-[5px] bg-transparent border-none cursor-pointer">
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{ transform: 'rotate(180deg)' }}>
+                  <path d="M1 1L7 7L1 13" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
-              <div className="text-[16px] font-semibold text-[#111827]">Customize view</div>
-              <div className="w-9 h-9" />
+              <h2 className="font-semibold text-[18px] leading-6 text-[#4B4B4B] m-0" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.0041em' }}>
+                Customize view
+              </h2>
+              <div className="w-[18px]" />
             </div>
-            <div className="px-4">
-              <div className="divide-y divide-[#EFEFEF]">
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsFilterOpen(true); }}>
-                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M6 9h6M7 13h4" stroke="#1F2937" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                  </span>
-                  <span className="text-[14px] text-[#111827]">Filter</span>
-                </button>
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsIBFilterOpen(true); }}>
-                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#1F2937"/><path d="M4 20a8 8 0 0 1 16 0" stroke="#1F2937"/></svg>
-                  </span>
-                  <span className="text-[14px] text-[#111827]">IB Filter</span>
-                </button>
-                <button className="w-full flex items-center gap-3 py-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
-                  <span className="w-9 h-9 rounded-lg bg-[#F5F7FB] flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="5" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="3" y="13" width="8" height="6" rx="1" stroke="#1F2937"/><rect x="13" y="13" width="8" height="6" rx="1" stroke="#1F2937"/></svg>
-                  </span>
-                  <span className="text-[14px] text-[#111827]">Groups</span>
-                </button>
-              </div>
+
+            {/* Divider */}
+            <div className="w-full h-[1px] bg-[#F2F2F7] mb-5" />
+
+            {/* Menu options */}
+            <div className="flex-1 px-5">
+              {/* Filter option */}
+              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsFilterOpen(true); }}>
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M4 6h10M2 3h14M6 9h6" stroke="#999999" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Filter
+                </span>
+              </button>
+              
+              {/* Divider */}
+              <div className="w-full h-[1px] bg-[#F2F2F7] my-3" />
+
+              {/* IB Filter option */}
+              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsIBFilterOpen(true); }}>
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 9.75C10.6569 9.75 12 8.40685 12 6.75C12 5.09315 10.6569 3.75 9 3.75C7.34315 3.75 6 5.09315 6 6.75C6 8.40685 7.34315 9.75 9 9.75Z" stroke="#999999" strokeWidth="1.5" />
+                    <path d="M3 14.25C3 11.3505 5.35051 9 8.25 9H9.75C12.6495 9 15 11.3505 15 14.25" stroke="#999999" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  IB Filter
+                </span>
+              </button>
+              
+              {/* Divider */}
+              <div className="w-full h-[1px] bg-[#F2F2F7] my-3" />
+
+              {/* Groups option */}
+              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M6 7.5C7.65685 7.5 9 6.15685 9 4.5C9 2.84315 7.65685 1.5 6 1.5C4.34315 1.5 3 2.84315 3 4.5C3 6.15685 4.34315 7.5 6 7.5Z" stroke="#999999" strokeWidth="1.5" />
+                    <path d="M12 7.5C13.6569 7.5 15 6.15685 15 4.5C15 2.84315 13.6569 1.5 12 1.5C10.3431 1.5 9 2.84315 9 4.5C9 6.15685 10.3431 7.5 12 7.5Z" stroke="#999999" strokeWidth="1.5" />
+                    <path d="M6 16.5C7.65685 16.5 9 15.1569 9 13.5C9 11.8431 7.65685 10.5 6 10.5C4.34315 10.5 3 11.8431 3 13.5C3 15.1569 4.34315 16.5 6 16.5Z" stroke="#999999" strokeWidth="1.5" />
+                    <path d="M12 16.5C13.6569 16.5 15 15.1569 15 13.5C15 11.8431 13.6569 10.5 12 10.5C10.3431 10.5 9 11.8431 9 13.5C9 15.1569 10.3431 16.5 12 16.5Z" stroke="#999999" strokeWidth="1.5" />
+                  </svg>
+                </div>
+                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Groups
+                </span>
+              </button>
+            </div>
+
+            {/* Bottom divider */}
+            <div className="w-full h-[1px] bg-[#F2F2F7] my-5" />
+
+            {/* Action buttons */}
+            <div className="flex gap-4 px-5 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+              {/* Reset button */}
+              <button 
+                onClick={() => {
+                  setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+                  clearIBSelection()
+                  setActiveGroupFilter('client2', null)
+                  setIsCustomizeOpen(false)
+                }}
+                className="flex-1 flex justify-center items-center px-4 py-[10px] bg-[#F4F8FC] border border-[#F2F2F7] rounded-[20px] cursor-pointer font-normal text-xs leading-5 uppercase text-[#2563EB]"
+                style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.06em', boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)' }}
+              >
+                Reset
+              </button>
+
+              {/* Apply button */}
+              <button 
+                onClick={() => setIsCustomizeOpen(false)}
+                className="flex-1 flex justify-center items-center px-[27px] py-[10px] bg-white border border-[#F2F2F7] rounded-[20px] cursor-pointer font-normal text-xs leading-5 uppercase text-[#4B4B4B]"
+                style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.06em', boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)' }}
+              >
+                Apply
+              </button>
             </div>
           </div>
         </div>

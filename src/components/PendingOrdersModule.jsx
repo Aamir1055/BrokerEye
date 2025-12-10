@@ -36,7 +36,7 @@ const formatTime = (ts) => {
 export default function PendingOrdersModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { orders, clients } = useData()
+  const { orders, clients, loading } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -439,7 +439,8 @@ export default function PendingOrdersModule() {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
+              disabled={loading.orders}
+              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -591,7 +592,7 @@ export default function PendingOrdersModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 

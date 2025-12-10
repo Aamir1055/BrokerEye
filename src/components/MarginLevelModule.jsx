@@ -30,7 +30,7 @@ const getMarginLevelPercent = (obj) => {
 export default function MarginLevelModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { accounts, clients } = useData()
+  const { accounts, clients, loading } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -183,8 +183,7 @@ export default function MarginLevelModule() {
   const getCardIcon = (label) => {
     const iconMap = {
       'BELOW 50%': '/Mobile cards icons/Brokers Eye Platform/Total Balance.svg',
-      'AVG MARGIN LEVEL': '/Mobile cards icons/Total Equity.svg',
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg'
+      'AVG MARGIN LEVEL': '/Mobile cards icons/Total Equity.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }
@@ -192,8 +191,7 @@ export default function MarginLevelModule() {
   useEffect(() => {
     const newCards = [
       { label: 'BELOW 50%', value: String(summaryStats.totalUnder50) },
-      { label: 'AVG MARGIN LEVEL', value: formatNum(summaryStats.avgMarginLevel, 2) + '%' },
-      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) }
+      { label: 'AVG MARGIN LEVEL', value: formatNum(summaryStats.avgMarginLevel, 2) + '%' }
     ]
     
     if (cards.length === 0) {
@@ -442,7 +440,8 @@ export default function MarginLevelModule() {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all"
+              disabled={loading.accounts}
+              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -452,11 +451,8 @@ export default function MarginLevelModule() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2 pl-5">
-          <div 
-            ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
-          >
+        <div className="pb-2 px-4">
+          <div className="grid grid-cols-2 gap-[8px]">
             {cards.map((card, i) => (
               <div 
                 key={i}
@@ -481,8 +477,6 @@ export default function MarginLevelModule() {
                 }}
                 style={{
                   boxSizing: 'border-box',
-                  minWidth: '125px',
-                  width: '125px',
                   height: '60px',
                   background: '#FFFFFF',
                   border: '1px solid #F2F2F7',
@@ -492,9 +486,6 @@ export default function MarginLevelModule() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  scrollSnapAlign: 'start',
-                  flexShrink: 0,
-                  flex: 'none',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
@@ -589,7 +580,7 @@ export default function MarginLevelModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 

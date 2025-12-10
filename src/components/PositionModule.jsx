@@ -906,7 +906,8 @@ export default function PositionModule() {
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0"
+              disabled={loading.positions}
+              className="w-[37px] h-[37px] rounded-[12px] border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="none" stroke="#1A63BC" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -922,7 +923,7 @@ export default function PositionModule() {
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {loading?.positions ? (
+            {loading && loading.positions ? (
               // Skeleton loading for face cards
               <>
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -1097,7 +1098,7 @@ export default function PositionModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 
@@ -1124,7 +1125,7 @@ export default function PositionModule() {
                 </div>
 
                 {/* Table Rows */}
-                {loading?.positions ? (
+                {loading && loading.positions ? (
                   // Skeleton loading for table rows
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1206,12 +1207,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Symbols</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.length}</span>
@@ -1220,12 +1216,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
@@ -1234,12 +1225,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
-                    <div className={`w-[16px] h-[16px] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'bg-green-500' : 'bg-red-500'} rounded-[3px] flex items-center justify-center flex-shrink-0`}>
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -1250,12 +1236,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Total Logins</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
@@ -1463,12 +1444,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Rows</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{clientNetPositions.length}</span>
@@ -1477,12 +1453,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
@@ -1491,12 +1462,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
-                    <div className={`w-[16px] h-[16px] ${clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'bg-green-500' : 'bg-red-500'} rounded-[3px] flex items-center justify-center flex-shrink-0`}>
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -1507,12 +1473,7 @@ export default function PositionModule() {
                 <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Logins</span>
-                    <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                        <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                      </svg>
-                    </div>
+                    <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                   <div className="flex items-baseline gap-[4px]">
                     <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{new Set(clientNetPositions.map(r=>r.login)).size}</span>

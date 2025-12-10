@@ -767,7 +767,7 @@ export default function IBCommissionsModule() {
                     <div 
                       key={col.key}
                       onClick={() => col.key !== 'actions' && col.key !== 'checkbox' && handleSort(col.key)}
-                      className={`h-[36px] flex items-center justify-center px-1 ${
+                      className={`h-[36px] flex items-center ${col.key === 'checkbox' ? 'justify-center' : 'justify-start'} px-1 ${
                         col.key !== 'checkbox' ? 'cursor-pointer' : ''
                       } ${
                         col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''

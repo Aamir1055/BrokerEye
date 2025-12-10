@@ -485,11 +485,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               </svg>
             </button>
           </div>
-          <p className="text-xs text-gray-500">
-            {activeTab === 'positions' && `${currentPage} / ${Math.ceil(filteredPositions.length / itemsPerPage)} - ${filteredPositions.length} positions`}
-            {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)} - ${filteredNetPositions.length} net positions`}
-            {activeTab === 'deals' && `${currentPage} / ${Math.ceil(filteredDeals.length / itemsPerPage)} - ${filteredDeals.length} deals`}
-          </p>
         </div>
 
         {/* Date Filter for Deals Tab */}

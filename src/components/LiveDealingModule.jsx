@@ -1036,7 +1036,7 @@ export default function LiveDealingModule() {
                     <div 
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className={`h-[32px] flex items-center justify-center px-1 cursor-pointer select-none ${
+                      className={`h-[32px] flex items-center justify-start px-1 cursor-pointer select-none ${
                         col.sticky ? 'sticky left-0 z-30 bg-blue-500' : ''
                       }`}
                       style={{
