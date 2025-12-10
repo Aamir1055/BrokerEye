@@ -224,8 +224,8 @@ export default function IBCommissionsModule() {
       'TOTAL REBATE': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION.svg',
       'AVAILABLE REBATE': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision.svg',
       'DISBURSED REBATE': '/Mobile cards icons/Brokers Eye Platform/Blocked commision.svg',
-      'TOTAL REBATE %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%.svg',
-      'AVAILABLE REBATE %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%.svg'
+      'TOTAL REBATE %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%25.svg',
+      'AVAILABLE REBATE %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%25.svg'
     }
     return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }
