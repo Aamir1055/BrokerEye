@@ -145,7 +145,7 @@ export default function DashboardMobileView({
                   ? (card.isPositive ? 'text-[#16A34A]' : 'text-[#DC2626]')
                   : 'text-black'
               }`}>
-                {card.value || '0'}
+                {card.formattedValue || card.value || '0'}
               </span>
             </div>
           </div>
