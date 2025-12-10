@@ -175,15 +175,32 @@ export default function Client2Module() {
         setIsLoading(true)
       }
       const usePercent = overridePercent !== null ? overridePercent : showPercent
-      // Check if any filter is active to determine if we need all data
-      const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
-                               selectedIB || getActiveGroupFilter('client2')
       
-      // Build payload - use itemsPerPage (12) for mobile pagination
+      // Build payload - always use itemsPerPage (12) for mobile pagination
       const payload = {
-        page: hasActiveFilters ? 1 : currentPage,
-        limit: hasActiveFilters ? 10000 : itemsPerPage,
+        page: currentPage,
+        limit: itemsPerPage,
         percentage: usePercent
+      }
+
+      // Add filters to payload (server-side filtering like desktop)
+      const apiFilters = []
+      if (filters.hasFloating) {
+        apiFilters.push({ field: 'profit', operator: 'not_equal', value: '0' })
+      }
+      if (filters.hasCredit) {
+        apiFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (filters.noDeposit) {
+        apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
+      if (apiFilters.length > 0) {
+        payload.filters = apiFilters
+      }
+
+      // Add search query to payload
+      if (searchInput && searchInput.trim()) {
+        payload.searchQuery = searchInput.trim()
       }
 
       // Add group filter to payload if active
@@ -237,6 +254,8 @@ export default function Client2Module() {
       setClients(data.clients || [])
       setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
+      // Update total pages from API response if available
+      const apiPages = data.pages ? Number(data.pages) : null
       setLastUpdateTime(Date.now())
       if (isInitialLoad) {
         setIsLoading(false)
@@ -251,6 +270,11 @@ export default function Client2Module() {
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage])
 
+  // Reset to page 1 when filters, search, or IB changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters, searchInput, selectedIB, getActiveGroupFilter('client2')])
+
   // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
     fetchClients(null, true) // Initial load with loading state
@@ -258,130 +282,25 @@ export default function Client2Module() {
     return () => clearInterval(interval)
   }, [fetchClients])
 
-  // Filter clients based on applied filters
-  const getFilteredClients = () => {
+  // Server-side filtering is now handled by API, so filteredClients = clients
+  const filteredClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    let filtered = [...clients]
+    // Apply only group filter client-side (group filter is handled via API mt5Accounts)
+    // All other filters are now server-side
+    return clients.filter(c => c != null && c.login != null)
+  }, [clients])
 
-    // Apply group filter first (if active) - use login field
-    filtered = filterByActiveGroup(filtered, 'login', 'client2')
-
-    // Has Floating: show clients where profit field (Floating Profit column) has a value (not blank/null/0)
-    if (filters.hasFloating) {
-      filtered = filtered.filter(c => {
-        const profit = c.profit
-        // Only show if profit exists and is not 0 (can be positive or negative)
-        return profit != null && profit !== '' && Number(profit) !== 0
-      })
-    }
-
-    // Has Credit: show clients where credit > 0
-    if (filters.hasCredit) {
-      filtered = filtered.filter(c => {
-        const credit = c.credit
-        // Only show if credit exists and is greater than 0
-        return credit != null && credit !== '' && Number(credit) > 0
-      })
-    }
-
-    // No Deposit: show clients where lifetimeDeposit is 0
-    if (filters.noDeposit) {
-      filtered = filtered.filter(c => {
-        const lifetimeDeposit = Number(c.lifetimeDeposit || 0)
-        return lifetimeDeposit === 0
-      })
-    }
-
-    // Apply IB filter
-    if (selectedIB && ibMT5Accounts.length > 0) {
-      const ibLogins = new Set(ibMT5Accounts.map(a => String(a)))
-      filtered = filtered.filter(c => ibLogins.has(String(c.login)))
-    }
-
-    // Apply search filter
-    if (searchInput.trim()) {
-      const query = searchInput.toLowerCase().trim()
-      filtered = filtered.filter(c => {
-        return (
-          String(c.login || '').toLowerCase().includes(query) ||
-          String(c.name || '').toLowerCase().includes(query) ||
-          String(c.phone || '').toLowerCase().includes(query) ||
-          String(c.email || '').toLowerCase().includes(query)
-        )
-      })
-    }
-
-    return filtered
-  }
-
-  const filteredClients = getFilteredClients()
-
-  // Calculate cards from filtered clients (when filters active) or API totals (when no filters)
+  // Calculate cards from API totals (filters are handled server-side)
   const cards = useMemo(() => {
-    // Check if any filter is active
-    const hasBasicFilters = Object.values(filters).some(f => f)
-    const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
-    const hasGroupFilter = getActiveGroupFilter('client2') != null
-    const isFiltered = hasBasicFilters || hasIBFilter || hasGroupFilter || (searchInput && searchInput.trim().length > 0)
-    
-    // If filtered, calculate from filteredClients; otherwise use API totals
-    if (isFiltered && Array.isArray(filteredClients) && filteredClients.length > 0) {
-      const sum = (key) => filteredClients.reduce((acc, c) => {
-        const v = c[key]
-        if (v == null) return acc
-        if (typeof v === 'number' && Number.isFinite(v)) return acc + v
-        const n = Number(v)
-        return acc + (Number.isFinite(n) ? n : 0)
-      }, 0)
-      
-      const filteredCount = filteredClients.length
-      const addPercent = (label) => showPercent ? `${label} %` : label
-      const t = {
-        assets: sum('assets'),
-        balance: sum('balance'),
-        credit: sum('credit'),
-        equity: sum('equity'),
-        floating: sum('profit'),
-        profit: sum('profit'),
-        margin: sum('margin'),
-        marginFree: sum('marginFree'),
-        dailyDeposit: sum('dailyDeposit'),
-        dailyWithdrawal: sum('dailyWithdrawal'),
-        dailyPnL: sum('dailyPnL'),
-        lifetimeDeposit: sum('lifetimeDeposit'),
-        lifetimeWithdrawal: sum('lifetimeWithdrawal'),
-        lifetimePnL: sum('lifetimePnL')
-      }
-      
-      // Return cards based on filtered data
-      return [
-        { label: 'Total Clients', value: formatNum(filteredCount), unit: 'Count', numericValue: filteredCount },
-        { label: addPercent('Assets'), value: formatNum(t.assets), unit: 'USD', numericValue: t.assets },
-        { label: addPercent('Balance'), value: formatNum(t.balance), unit: 'USD', numericValue: t.balance },
-        { label: addPercent('Credit'), value: formatNum(t.credit), unit: 'USD', numericValue: t.credit },
-        { label: addPercent('Equity'), value: formatNum(t.equity), unit: 'USD', numericValue: t.equity },
-        { label: addPercent('Floating P/L'), value: formatNum(t.floating), unit: 'USD', numericValue: t.floating },
-        { label: addPercent('Profit'), value: formatNum(t.profit), unit: 'USD', numericValue: t.profit },
-        { label: addPercent('Margin'), value: formatNum(t.margin), unit: 'USD', numericValue: t.margin },
-        { label: addPercent('Margin Free'), value: formatNum(t.marginFree), unit: 'USD', numericValue: t.marginFree },
-        { label: addPercent('Daily Deposit'), value: formatNum(t.dailyDeposit), unit: 'USD', numericValue: t.dailyDeposit },
-        { label: addPercent('Daily Withdrawal'), value: formatNum(t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyWithdrawal },
-        { label: addPercent('Daily Net D/W'), value: formatNum(t.dailyDeposit - t.dailyWithdrawal), unit: 'USD', numericValue: t.dailyDeposit - t.dailyWithdrawal },
-        { label: addPercent('Daily P&L'), value: formatNum(t.dailyPnL), unit: 'USD', numericValue: t.dailyPnL },
-        { label: addPercent('Lifetime Deposit'), value: formatNum(t.lifetimeDeposit), unit: 'USD', numericValue: t.lifetimeDeposit },
-        { label: addPercent('Lifetime Withdrawal'), value: formatNum(t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeWithdrawal },
-        { label: addPercent('NET Lifetime DW'), value: formatNum(t.lifetimeDeposit - t.lifetimeWithdrawal), unit: 'USD', numericValue: t.lifetimeDeposit - t.lifetimeWithdrawal },
-        { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL), unit: 'USD', numericValue: t.lifetimePnL },
-        { label: addPercent('Book PnL'), value: formatNum(t.lifetimePnL + t.floating), unit: 'USD', numericValue: t.lifetimePnL + t.floating }
-      ]
-    }
-    
-    // No filters, use API totals - when percentage mode is active, all monetary fields show %
-    const t = totals || {}
+    // Always use API totals since filters are server-side
     const addPercent = (label) => showPercent ? `${label} %` : label
+    const t = totals || {}
+    
+    // Use totalClients for count
+    const clientCount = totalClients || 0
     
     return [
-      { label: 'Total Clients', value: formatNum(totalClients), unit: 'Count', numericValue: totalClients },
+      { label: 'Total Clients', value: formatNum(clientCount), unit: 'Count', numericValue: clientCount },
       { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
