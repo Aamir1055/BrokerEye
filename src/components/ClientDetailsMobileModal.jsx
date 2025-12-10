@@ -838,13 +838,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         {showColumnSelector && (
           <>
             <div className="fixed inset-0 bg-transparent z-40" onClick={() => setShowColumnSelector(false)} />
-            <div className="absolute top-[180px] right-4 bg-white rounded-lg shadow-xl border border-gray-200 z-50 w-64">
+            <div className="absolute top-[118px] right-[58px] bg-white rounded-lg shadow-xl border border-blue-500 z-50 w-56">
               {/* Header */}
-              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">Show/Hide Columns</h3>
+              <div className="px-4 py-2.5 bg-blue-500 rounded-t-lg flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Show/Hide Columns</h3>
                 <button
                   onClick={() => setShowColumnSelector(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-white hover:text-blue-100 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -853,9 +853,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               </div>
 
               {/* Column List */}
-              <div className="p-2 max-h-96 overflow-y-auto">
+              <div className="p-2 max-h-80 overflow-y-auto bg-white rounded-b-lg">
                 {activeTab === 'positions' && (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries({
                       position: 'Position',
                       symbol: 'Symbol',
@@ -864,17 +864,17 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       priceOpen: 'Price',
                       profit: 'Profit'
                     }).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
-                        <span className="text-sm text-gray-700">{label}</span>
+                      <div key={key} className="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 rounded-md transition-colors">
+                        <span className="text-sm text-gray-700 font-medium">{label}</span>
                         <button
                           onClick={() => setPositionColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            positionColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                            positionColumns[key] ? 'bg-blue-500' : 'bg-gray-300'
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              positionColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                              positionColumns[key] ? 'translate-x-5' : 'translate-x-0.5'
                             }`}
                           />
                         </button>
@@ -884,24 +884,24 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 )}
 
                 {activeTab === 'netPositions' && (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries({
                       symbol: 'Symbol',
                       volume: 'Net Volume',
                       profit: 'Profit',
                       count: 'Count'
                     }).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
-                        <span className="text-sm text-gray-700">{label}</span>
+                      <div key={key} className="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 rounded-md transition-colors">
+                        <span className="text-sm text-gray-700 font-medium">{label}</span>
                         <button
                           onClick={() => setNetPositionColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            netPositionColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                            netPositionColumns[key] ? 'bg-blue-500' : 'bg-gray-300'
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              netPositionColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                              netPositionColumns[key] ? 'translate-x-5' : 'translate-x-0.5'
                             }`}
                           />
                         </button>
@@ -911,7 +911,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 )}
 
                 {activeTab === 'deals' && (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {Object.entries({
                       deal: 'Deal',
                       symbol: 'Symbol',
@@ -919,17 +919,17 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       volume: 'Volume',
                       profit: 'Profit'
                     }).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
-                        <span className="text-sm text-gray-700">{label}</span>
+                      <div key={key} className="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 rounded-md transition-colors">
+                        <span className="text-sm text-gray-700 font-medium">{label}</span>
                         <button
                           onClick={() => setDealColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            dealColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                            dealColumns[key] ? 'bg-blue-500' : 'bg-gray-300'
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              dealColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                              dealColumns[key] ? 'translate-x-5' : 'translate-x-0.5'
                             }`}
                           />
                         </button>
