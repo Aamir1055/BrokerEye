@@ -121,6 +121,62 @@ export default function DashboardMobileView({
     }).filter(Boolean)
   }
 
+  // Get icon path for each card
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'Total Clients': '/Mobile cards icons/Total Clients.svg',
+      'Total Balance': '/Mobile cards icons/Total Balance.svg',
+      'Total Credit': '/Mobile cards icons/Total Credit.svg',
+      'Total Equity': '/Mobile cards icons/Total Equity.svg',
+      'PNL': '/Mobile cards icons/PNL.svg',
+      'Floating Profit': '/Mobile cards icons/Floating Profit.svg',
+      'Daily Deposit': '/Mobile cards icons/Daily Deposite.svg',
+      'Daily Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
+      'Daily PnL': '/Mobile cards icons/Daily PNL.svg',
+      'This Week PnL': '/Mobile cards icons/This week pnl.svg',
+      'This Month PnL': '/Mobile cards icons/THIS MONTH PNL.svg',
+      'Lifetime PnL': '/Mobile cards icons/LIFETIME PNL.svg',
+      'Net DW': '/Mobile cards icons/NET WD.svg',
+      'Total Commission': '/Mobile cards icons/TOTAL COMMISION.svg',
+      'Available Commission': '/Mobile cards icons/AVAILABLE Commision.svg',
+      'Total Commission %': '/Mobile cards icons/TOTAL COMMISION%.svg',
+      'Available Commission %': '/Mobile cards icons/AVAILABLE Commision%.svg',
+      'Blocked Commission': '/Mobile cards icons/Blocked commision.svg',
+      'Daily Bonus IN': '/Mobile cards icons/Daily BONUS IN.svg',
+      'Daily Bonus OUT': '/Mobile cards icons/Daily BONUS OUT.svg',
+      'NET Daily Bonus': '/Mobile cards icons/Net Daily Bonus.svg',
+      'Week Bonus IN': '/Mobile cards icons/Weekly bonus in.svg',
+      'Week Bonus OUT': '/Mobile cards icons/WEEK BONUS OUT.svg',
+      'NET Week Bonus': '/Mobile cards icons/NET WEEK BONUS.svg',
+      'Monthly Bonus IN': '/Mobile cards icons/MONTHLY BONUS IN.svg',
+      'Monthly Bonus OUT': '/Mobile cards icons/MONTHLY BONUS OUt.svg',
+      'NET Monthly Bonus': '/Mobile cards icons/NET MONTHLY BONUS.svg',
+      'Lifetime Bonus IN': '/Mobile cards icons/LIFETIME BONUS IN.svg',
+      'Lifetime Bonus OUT': '/Mobile cards icons/LIFETIME BONUS OUT.svg',
+      'NET Lifetime Bonus': '/Mobile cards icons/NET LIFETIME BONUS.svg',
+      'Week Deposit': '/Mobile cards icons/WEEK DEPOSITE.svg',
+      'Week Withdrawal': '/Mobile cards icons/WEEK WITHDRAWL.svg',
+      'NET Week DW': '/Mobile cards icons/NET WEEK DAY.svg',
+      'Monthly Deposit': '/Mobile cards icons/MONTLY DEPOSITE.svg',
+      'Monthly Withdrawal': '/Mobile cards icons/MONTLY WITHDRAWL.svg',
+      'NET Monthly DW': '/Mobile cards icons/NET MONTHLY DW.svg',
+      'Lifetime Deposit': '/Mobile cards icons/Daily Deposite.svg',
+      'Lifetime Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
+      'NET Lifetime DW': '/Mobile cards icons/NET WD.svg',
+      'Weekly Credit IN': '/Mobile cards icons/WEEKLY Credit IN.svg',
+      'Monthly Credit IN': '/Mobile cards icons/MONTHLY CREDIT IN.svg',
+      'Lifetime Credit IN': '/Mobile cards icons/LIFETIME CREDIT IN.svg',
+      'Weekly Credit OUT': '/Mobile cards icons/WEEKLY CREDIT OUT.svg',
+      'Monthly Credit OUT': '/Mobile cards icons/MOnthly CREDIT OUT.svg',
+      'Lifetime Credit OUT': '/Mobile cards icons/LIFETIME CREDIT OUT.svg',
+      'NET Credit': '/Mobile cards icons/NET CREDIT.svg',
+      'Previous Equity': '/Mobile cards icons/PREVIOUS EQUITY.svg',
+      'Weekly Previous Equity': '/Mobile cards icons/Weekly PREVIOUS EQUITY.svg',
+      'Monthly Previous Equity': '/Mobile cards icons/Monthly PREVIOUS EQUITY.svg',
+    }
+    return iconMap[cardTitle] || '/Mobile cards icons/Total Clients.svg' // Default icon
+  }
+
   // Render face card with updated UI matching Client2Module
   const renderFaceCard = (card, isDraggable = false) => {
     // Touch event handlers for mobile drag and drop
@@ -241,12 +297,15 @@ export default function DashboardMobileView({
             </div>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-              <rect x="14" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-              <rect x="3" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-              <rect x="14" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
-            </svg>
+            <img 
+              src={getCardIcon(card.title)} 
+              alt={card.title}
+              className="w-6 h-6"
+              onError={(e) => {
+                // Fallback to default icon if image fails to load
+                e.target.style.display = 'none'
+              }}
+            />
           </div>
         </div>
       </div>
