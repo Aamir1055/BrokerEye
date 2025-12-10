@@ -1493,7 +1493,7 @@ export default function Client2Module() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[240px]">
+            <div className="flex-1 overflow-y-auto min-h-[400px] max-h-[500px]">
               <div className="px-5 py-3">
                 {(() => {
                   const filteredEntries = Object.entries({

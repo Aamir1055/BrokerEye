@@ -210,6 +210,17 @@ export default function ClientPercentageModule() {
 
   // Face cards data
   const [cards, setCards] = useState([])
+
+  // Map card labels to icon file paths
+  const getCardIcon = (label) => {
+    const iconMap = {
+      'TOTAL CLIENTS': '/Mobile cards icons/Total Clients.svg',
+      'CUSTOM %': '/Mobile cards icons/Custom Percentage.svg',
+      'DEFAULT': '/Mobile cards icons/Default.svg',
+      'AVG %': '/Mobile cards icons/Average Percentage.svg'
+    }
+    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+  }
   
   useEffect(() => {
     const newCards = [
@@ -571,12 +582,7 @@ export default function ClientPercentageModule() {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
-                  <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                      <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                    </svg>
-                  </div>
+                  <img src={getCardIcon(card.label)} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
                   <span style={{
