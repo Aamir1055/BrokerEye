@@ -775,12 +775,13 @@ export default function IBCommissionsModule() {
                       style={{
                         border: 'none',
                         outline: 'none',
-                        boxShadow: 'none',
+                        boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.1)' : 'none',
                         WebkitTapHighlightColor: 'transparent',
                         userSelect: 'none',
                         touchAction: 'manipulation',
                         left: col.sticky ? col.stickyLeft : 'auto',
-                        zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
+                        zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
+                        backgroundColor: col.sticky ? '#3B82F6' : 'transparent'
                       }}
                     >
                       {col.key === 'checkbox' ? (
