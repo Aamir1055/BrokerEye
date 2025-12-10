@@ -460,7 +460,22 @@ export default function DashboardMobileView({
         <div
           className="grid grid-cols-2 gap-3"
         >
-          {visibleCards.map(card => renderFaceCard(card, true))}
+          {!faceCardTotals || Object.keys(faceCardTotals).length === 0 ? (
+            // Skeleton loading for face cards
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={`skeleton-card-${i}`} className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </>
+          ) : (
+            visibleCards.map(card => renderFaceCard(card, true))
+          )}
         </div>
       </div>
 
@@ -622,9 +637,25 @@ export default function DashboardMobileView({
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {ibCommissionsLoading ? (
-            <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="text-sm text-gray-500 mt-2">Loading...</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="px-3 py-2 text-left font-semibold">Name</th>
+                    <th className="px-3 py-2 text-right font-semibold">%</th>
+                    <th className="px-3 py-2 text-right font-semibold">Available</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={`skeleton-ib-${i}`}>
+                      <td className="px-3 py-2"><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="px-3 py-2 text-right"><div className="h-4 w-12 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
+                      <td className="px-3 py-2 text-right"><div className="h-4 w-16 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : topIBCommissions.length === 0 ? (
             <div className="p-8 text-center">

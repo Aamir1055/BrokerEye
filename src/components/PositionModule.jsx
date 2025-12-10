@@ -21,7 +21,7 @@ const formatNum = (n) => {
 export default function PositionModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions, clients } = useData()
+  const { positions, clients, loading } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -919,7 +919,40 @@ export default function PositionModule() {
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {cards.map((card, i) => (
+            {loading?.positions ? (
+              // Skeleton loading for face cards
+              <>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div 
+                    key={`skeleton-card-${i}`}
+                    style={{
+                      boxSizing: 'border-box',
+                      minWidth: '125px',
+                      width: '125px',
+                      height: '60px',
+                      background: '#FFFFFF',
+                      border: '1px solid #F2F2F7',
+                      boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                      borderRadius: '12px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      scrollSnapAlign: 'start',
+                      flexShrink: 0,
+                      flex: 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              cards.map((card, i) => (
               <div 
                 key={i}
                 draggable="true"
@@ -979,7 +1012,8 @@ export default function PositionModule() {
                   </span>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
         )}
@@ -1087,24 +1121,52 @@ export default function PositionModule() {
                 </div>
 
                 {/* Table Rows */}
-                {filteredPositions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pos, idx) => (
-                  <div 
-                    key={idx} 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
-                    style={{
-                      gap: '0px', 
-                      gridGap: '0px', 
-                      columnGap: '0px',
-                      gridTemplateColumns
-                    }}
-                  >
-                    {activeColumns.map(col => (
-                      <React.Fragment key={col.key}>
-                        {renderCellValue(pos, col.key, col.sticky)}
-                      </React.Fragment>
+                {loading?.positions ? (
+                  // Skeleton loading for table rows
+                  <>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div 
+                        key={`skeleton-row-${i}`}
+                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1]"
+                        style={{
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
+                        }}
+                      >
+                        {activeColumns.map((col, colIdx) => (
+                          <div 
+                            key={col.key}
+                            className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                            style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                          >
+                            <div className="h-3 w-full max-w-[80%] bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        ))}
+                      </div>
                     ))}
-                  </div>
-                ))}
+                  </>
+                ) : (
+                  filteredPositions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pos, idx) => (
+                    <div 
+                      key={idx} 
+                      className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
+                      style={{
+                        gap: '0px', 
+                        gridGap: '0px', 
+                        columnGap: '0px',
+                        gridTemplateColumns
+                      }}
+                    >
+                      {activeColumns.map(col => (
+                        <React.Fragment key={col.key}>
+                          {renderCellValue(pos, col.key, col.sticky)}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  ))
+                )}
 
                 {/* Table Footer */}
                 <div 

@@ -100,6 +100,7 @@ export default function Client2Module() {
   const [totals, setTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
+  const [isLoading, setIsLoading] = useState(true)
   // Visible columns state (restored)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -167,6 +168,7 @@ export default function Client2Module() {
   // Fetch clients data via API
   const fetchClients = useCallback(async (overridePercent = null) => {
     try {
+      setIsLoading(true)
       const usePercent = overridePercent !== null ? overridePercent : showPercent
       // Check if any filter is active to determine if we need all data
       const hasActiveFilters = filters.hasFloating || filters.hasCredit || filters.noDeposit || 
@@ -231,10 +233,12 @@ export default function Client2Module() {
       setTotals(t)
       setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
       setLastUpdateTime(Date.now())
+      setIsLoading(false)
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
       console.error('Failed to fetch clients:', error)
+      setIsLoading(false)
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage])
 
@@ -1087,58 +1091,92 @@ export default function Client2Module() {
             ref={scrollContainerRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {orderedCards.map((card, i) => (
-              <div 
-                key={`${card.label}-${lastUpdateTime}`}
-                style={{
-                  boxSizing: 'border-box',
-                  minWidth: '125px',
-                  width: '125px',
-                  height: '60px',
-                  background: '#FFFFFF',
-                  border: '1px solid #F2F2F7',
-                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-                  borderRadius: '12px',
-                  padding: '8px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  scrollSnapAlign: 'start',
-                  flexShrink: 0,
-                  flex: 'none',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  touchAction: 'pan-x'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
-                  <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
-                  <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <img 
-                      src={getCardIcon(card.label)} 
-                      alt={card.label}
-                      style={{ width: '16px', height: '16px' }}
-                      onError={(e) => {
-                        // Fallback to default icon if image fails to load
-                        e.target.style.display = 'none'
-                      }}
-                    />
+            {isLoading ? (
+              // Skeleton loading for face cards
+              <>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div 
+                    key={`skeleton-card-${i}`}
+                    style={{
+                      boxSizing: 'border-box',
+                      minWidth: '125px',
+                      width: '125px',
+                      height: '60px',
+                      background: '#FFFFFF',
+                      border: '1px solid #F2F2F7',
+                      boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                      borderRadius: '12px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      scrollSnapAlign: 'start',
+                      flexShrink: 0,
+                      flex: 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              orderedCards.map((card, i) => (
+                <div 
+                  key={`${card.label}-${lastUpdateTime}`}
+                  style={{
+                    boxSizing: 'border-box',
+                    minWidth: '125px',
+                    width: '125px',
+                    height: '60px',
+                    background: '#FFFFFF',
+                    border: '1px solid #F2F2F7',
+                    boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                    borderRadius: '12px',
+                    padding: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    scrollSnapAlign: 'start',
+                    flexShrink: 0,
+                    flex: 'none',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    touchAction: 'pan-x'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
+                    <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <img 
+                        src={getCardIcon(card.label)} 
+                        alt={card.label}
+                        style={{ width: '16px', height: '16px' }}
+                        onError={(e) => {
+                          // Fallback to default icon if image fails to load
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      lineHeight: '14px',
+                      letterSpacing: '-0.01em',
+                      color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
+                    }}>
+                      {card.value === '' || card.value === undefined ? '0.00' : card.value}
+                    </span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                  <span style={{
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    lineHeight: '14px',
-                    letterSpacing: '-0.01em',
-                    color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
-                  }}>
-                    {card.value === '' || card.value === undefined ? '0.00' : card.value}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -1246,7 +1284,26 @@ export default function Client2Module() {
               </div>
               
               {/* Rows */}
-              {paginatedClients.length === 0 ? (
+              {isLoading ? (
+                // Skeleton loading for table rows
+                <>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <div key={`skeleton-row-${i}`} className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
+                      {visibleColumnsList.map((col, colIdx) => (
+                        <div 
+                          key={col.key}
+                          className={`h-[38px] flex items-center justify-start px-2 ${
+                            col.sticky ? 'sticky left-0 bg-white z-10' : ''
+                          }`}
+                          style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                        >
+                          <div className="h-3 w-full max-w-[80%] bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </>
+              ) : paginatedClients.length === 0 ? (
                 <div className="py-8 text-center text-gray-500">No clients found</div>
               ) : (
                 <>
