@@ -1114,11 +1114,11 @@ export default function Client2Module() {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>{card.label}</span>
-                  <div style={{ width: '16px', height: '16px', background: '#2563EB', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <img 
                       src={getCardIcon(card.label)} 
                       alt={card.label}
-                      style={{ width: '12px', height: '12px' }}
+                      style={{ width: '16px', height: '16px' }}
                       onError={(e) => {
                         // Fallback to default icon if image fails to load
                         e.target.style.display = 'none'
@@ -1791,11 +1791,11 @@ export default function Client2Module() {
                       <span className="text-gray-600 text-xs font-normal uppercase">{card.unit}</span>
                     </div>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
                     <img 
                       src={getCardIcon(card.label)} 
                       alt={card.label}
-                      className="w-6 h-6"
+                      className="w-8 h-8"
                       onError={(e) => {
                         // Fallback to default icon if image fails to load
                         e.target.style.display = 'none'

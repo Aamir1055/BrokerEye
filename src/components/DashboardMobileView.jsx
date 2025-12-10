@@ -296,7 +296,7 @@ export default function DashboardMobileView({
               </span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
             <img 
               src={getCardIcon(card.title)} 
               alt={card.title}
