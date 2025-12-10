@@ -1639,11 +1639,14 @@ export default function Client2Module() {
                   }
                 }}
                 onTouchStart={(e) => {
+                  e.stopPropagation()
                   setDragStartLabel(card.label)
                   e.currentTarget.style.opacity = '0.8'
                   e.currentTarget.style.transform = 'scale(0.98)'
                 }}
                 onTouchMove={(e) => {
+                  e.preventDefault() // Prevent scrolling while dragging
+                  e.stopPropagation()
                   const touch = e.touches[0]
                   const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
                   const targetCard = elementAtPoint?.closest('[data-card-label]')
@@ -1665,6 +1668,7 @@ export default function Client2Module() {
                   }
                 }}
                 onTouchEnd={(e) => {
+                  e.stopPropagation()
                   e.currentTarget.style.transform = ''
                   e.currentTarget.style.opacity = '1'
                   
@@ -1687,6 +1691,7 @@ export default function Client2Module() {
                   setDragStartLabel(null)
                 }}
                 onTouchCancel={(e) => {
+                  e.stopPropagation()
                   e.currentTarget.style.transform = ''
                   e.currentTarget.style.opacity = '1'
                   
@@ -1700,11 +1705,12 @@ export default function Client2Module() {
                   setDragStartLabel(null)
                 }}
                 data-card-label={card.label}
-                className="bg-white rounded-xl p-3 shadow-sm border-2 border-gray-100 cursor-move touch-none transition-all duration-100"
+                className="bg-white rounded-xl p-3 shadow-sm border-2 border-gray-100 cursor-move transition-all duration-100"
                 style={{ 
                   userSelect: 'none',
                   WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none'
+                  WebkitTouchCallout: 'none',
+                  touchAction: 'none'
                 }}
               >
                 <div className="flex items-start justify-between">
