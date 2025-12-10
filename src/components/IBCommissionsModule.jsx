@@ -755,7 +755,7 @@ export default function IBCommissionsModule() {
               <div className="min-w-full">
                 {/* Table Header */}
                 <div 
-                  className="grid bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wide sticky top-0 z-20"
+                  className="grid bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wide sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
                   style={{
                     gap: '0px', 
                     gridGap: '0px', 
