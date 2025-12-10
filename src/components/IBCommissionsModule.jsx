@@ -781,7 +781,7 @@ export default function IBCommissionsModule() {
                         touchAction: 'manipulation',
                         left: col.sticky ? col.stickyLeft : 'auto',
                         zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
-                        backgroundColor: col.sticky ? '#3B82F6' : 'transparent'
+                        backgroundColor: '#3B82F6'
                       }}
                     >
                       {col.key === 'checkbox' ? (
