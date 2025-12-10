@@ -37,7 +37,42 @@ export default function DashboardMobileView({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [orderedCards, setOrderedCards] = useState([])
   const [dragStartLabel, setDragStartLabel] = useState(null)
+  const [showCardFilter, setShowCardFilter] = useState(false)
+  const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
   const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
+
+  // Default card visibility
+  const defaultCardVisibility = (() => {
+    const vis = {}
+    for (let i = 1; i <= 50; i++) vis[i] = false
+    // Show default cards
+    vis[1] = true   // Total Clients
+    vis[2] = true   // Total Balance
+    vis[3] = true   // Total Credit
+    vis[4] = true   // Total Equity
+    vis[5] = true   // PNL
+    vis[6] = true   // Floating Profit
+    vis[8] = true   // Daily Deposit
+    vis[9] = true   // Daily Withdrawal
+    vis[14] = true  // Net DW
+    vis[10] = true  // Daily PnL
+    vis[11] = true  // This Week PnL
+    vis[12] = true  // This Month PnL
+    vis[13] = true  // Lifetime PnL
+    return vis
+  })()
+
+  const [cardVisibility, setCardVisibility] = useState(() => {
+    const saved = localStorage.getItem('dashboardMobileCardVisibility')
+    return saved ? JSON.parse(saved) : defaultCardVisibility
+  })
+
+  // Toggle card visibility
+  const toggleCardVisibility = (cardId) => {
+    const updated = { ...cardVisibility, [cardId]: !cardVisibility[cardId] }
+    setCardVisibility(updated)
+    localStorage.setItem('dashboardMobileCardVisibility', JSON.stringify(updated))
+  }
 
   // Initialize card order from localStorage
   useEffect(() => {
@@ -64,7 +99,7 @@ export default function DashboardMobileView({
     }
   }, [faceCardOrder, faceCardTotals, getFaceCardConfig])
 
-  // Get cards in order
+  // Get cards in order and filter by visibility
   const getOrderedCards = () => {
     return orderedCards.map(title => {
       // Find card by title
@@ -73,7 +108,12 @@ export default function DashboardMobileView({
         return card && card.title === title
       })
       if (!cardId) return null
-      return getFaceCardConfig(cardId, faceCardTotals)
+      const card = getFaceCardConfig(cardId, faceCardTotals)
+      // Filter by visibility
+      if (card && cardVisibility[cardId]) {
+        return card
+      }
+      return null
     }).filter(Boolean)
   }
 
@@ -283,15 +323,28 @@ export default function DashboardMobileView({
       <div className="mb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-gray-900">Key Metrics</h2>
-          <button
-            onClick={() => setShowViewAll(true)}
-            className="text-xs text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1"
-          >
-            View All
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Card Filter Button */}
+            <button
+              onClick={() => setShowCardFilter(true)}
+              className="text-xs text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 border border-blue-200"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filter
+            </button>
+            {/* View All Button */}
+            <button
+              onClick={() => setShowViewAll(true)}
+              className="text-xs text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1"
+            >
+              View All
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
         
         <div
@@ -568,6 +621,87 @@ export default function DashboardMobileView({
               <div className="grid grid-cols-2 gap-3">
                 {getOrderedCards().map(card => renderFaceCard(card, true))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Card Filter Modal */}
+      {showCardFilter && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
+          <div className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <h3 className="text-base font-semibold text-gray-900">Show/Hide Cards</h3>
+              <button onClick={() => setShowCardFilter(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search Box */}
+            <div className="px-5 py-3 border-b border-gray-200 flex-shrink-0">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search cards..."
+                  value={cardFilterSearchQuery}
+                  onChange={(e) => setCardFilterSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 bg-gray-100 border-0 rounded-lg text-xs text-black font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="11" cy="11" r="8" strokeWidth="2"/>
+                  <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Cards List */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-3">
+                {faceCardOrder.filter(cardId => {
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  if (!card) return false
+                  return card.title.toLowerCase().includes(cardFilterSearchQuery.toLowerCase())
+                }).map(cardId => {
+                  const card = getFaceCardConfig(cardId, faceCardTotals)
+                  if (!card) return null
+                  return (
+                    <label 
+                      key={cardId} 
+                      className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
+                    >
+                      <span className="text-sm text-gray-900">{card.title}</span>
+                      <div className="relative inline-block w-12 h-6">
+                        <input
+                          type="checkbox"
+                          checked={cardVisibility[cardId]}
+                          onChange={() => toggleCardVisibility(cardId)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Done Button */}
+            <div className="px-5 py-4 border-t border-gray-200 flex-shrink-0">
+              <button 
+                onClick={() => setShowCardFilter(false)}
+                className="w-full h-12 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
