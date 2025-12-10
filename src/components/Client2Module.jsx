@@ -858,10 +858,10 @@ export default function Client2Module() {
         <div className="px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100"
+            className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M3 12h18M3 6h18M3 18h18" stroke="#000" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
           <h1 className="text-xl font-semibold text-black">Client 2</h1>
@@ -968,16 +968,16 @@ export default function Client2Module() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
-                className={`h-9 px-3 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center gap-1.5 transition-colors relative ${
+                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2'))
                     ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-white border-[#ECECEC] hover:bg-gray-50'
+                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">Filter</span>
+                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
                 {(() => {
                   const filterCount = [
                     filters.hasFloating,
