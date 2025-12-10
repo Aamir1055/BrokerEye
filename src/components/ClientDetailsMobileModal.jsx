@@ -834,27 +834,28 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </div>
         </div>
 
-        {/* Column Selector Modal */}
+        {/* Column Selector Dropdown */}
         {showColumnSelector && (
-          <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+          <>
+            <div className="fixed inset-0 bg-transparent z-40" onClick={() => setShowColumnSelector(false)} />
+            <div className="absolute top-[180px] right-4 bg-white rounded-lg shadow-xl border border-gray-200 z-50 w-64">
               {/* Header */}
-              <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Show/Hide Columns</h3>
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">Show/Hide Columns</h3>
                 <button
                   onClick={() => setShowColumnSelector(false)}
-                  className="text-white hover:text-blue-100 p-2 rounded-lg hover:bg-blue-700 transition-all"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Column List */}
-              <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="p-2 max-h-96 overflow-y-auto">
                 {activeTab === 'positions' && (
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {Object.entries({
                       position: 'Position',
                       symbol: 'Symbol',
@@ -863,42 +864,54 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       priceOpen: 'Price',
                       profit: 'Profit'
                     }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={positionColumns[key]}
-                          onChange={(e) => setPositionColumns(prev => ({ ...prev, [key]: e.target.checked }))}
-                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-900">{label}</span>
-                      </label>
+                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
+                        <span className="text-sm text-gray-700">{label}</span>
+                        <button
+                          onClick={() => setPositionColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            positionColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              positionColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
 
                 {activeTab === 'netPositions' && (
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {Object.entries({
                       symbol: 'Symbol',
                       volume: 'Net Volume',
                       profit: 'Profit',
                       count: 'Count'
                     }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={netPositionColumns[key]}
-                          onChange={(e) => setNetPositionColumns(prev => ({ ...prev, [key]: e.target.checked }))}
-                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-900">{label}</span>
-                      </label>
+                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
+                        <span className="text-sm text-gray-700">{label}</span>
+                        <button
+                          onClick={() => setNetPositionColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            netPositionColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              netPositionColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
 
                 {activeTab === 'deals' && (
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     {Object.entries({
                       deal: 'Deal',
                       symbol: 'Symbol',
@@ -906,31 +919,27 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       volume: 'Volume',
                       profit: 'Profit'
                     }).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
-                        <input
-                          type="checkbox"
-                          checked={dealColumns[key]}
-                          onChange={(e) => setDealColumns(prev => ({ ...prev, [key]: e.target.checked }))}
-                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-gray-900">{label}</span>
-                      </label>
+                      <div key={key} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md">
+                        <span className="text-sm text-gray-700">{label}</span>
+                        <button
+                          onClick={() => setDealColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            dealColumns[key] ? 'bg-blue-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              dealColumns[key] ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
-
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
-                <button
-                  onClick={() => setShowColumnSelector(false)}
-                  className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Apply
-                </button>
-              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
