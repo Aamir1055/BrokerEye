@@ -191,17 +191,21 @@ const DashboardPage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Format Indian number (with commas)
+  // Format Indian number (with commas) - always limits to 2 decimal places
   const formatIndianNumber = (num) => {
-    const numStr = num.toString()
-    const [integerPart, decimalPart] = numStr.split('.')
+    // Convert to number and ensure 2 decimal places
+    const numValue = typeof num === 'number' ? num : parseFloat(num)
+    if (!isFinite(numValue)) return '0.00'
+    
+    const fixed = numValue.toFixed(2)
+    const [integerPart, decimalPart] = fixed.split('.')
     
     // Handle negative numbers
     const isNegative = integerPart.startsWith('-')
     const absoluteInteger = isNegative ? integerPart.substring(1) : integerPart
     
     if (absoluteInteger.length <= 3) {
-      return decimalPart ? `${integerPart}.${decimalPart}` : integerPart
+      return `${integerPart}.${decimalPart}`
     }
     
     // Indian format: last 3 digits, then groups of 2
@@ -211,7 +215,7 @@ const DashboardPage = () => {
     const formatted = `${formattedOther},${lastThree}`
     
     const result = (isNegative ? '-' : '') + formatted
-    return decimalPart ? `${result}.${decimalPart}` : result
+    return `${result}.${decimalPart}`
   }
 
   // Calculate face card totals from clients data
@@ -323,65 +327,65 @@ const DashboardPage = () => {
     
     const configs = {
       1: { id: 1, title: 'Total Clients', value: stats.totalClients, simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600' },
-      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance.toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
-      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit.toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
-      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity.toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
-      5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl).toFixed(2)) },
-      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit).toFixed(2)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
-      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit.toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
-      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal.toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
-      10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL).toFixed(2)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
-      11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL).toFixed(2)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
-      12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL).toFixed(2)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
-      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL).toFixed(2)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
-      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW).toFixed(2)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
-      15: { id: 15, title: 'Total Commission', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0).toFixed(2)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
-      16: { id: 16, title: 'Available Commission', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0).toFixed(2)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
-      17: { id: 17, title: 'Total Commission %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${Math.abs(stats.totalCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
-      18: { id: 18, title: 'Available Commission %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${Math.abs(stats.availableCommissionPercent || 0).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
-      19: { id: 19, title: 'Blocked Commission', value: formatIndianNumber((stats.blockedCommission || 0).toFixed(2)), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
+      2: { id: 2, title: 'Total Balance', value: formatIndianNumber(stats.totalBalance), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600' },
+      3: { id: 3, title: 'Total Credit', value: formatIndianNumber(stats.totalCredit), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600' },
+      4: { id: 4, title: 'Total Equity', value: formatIndianNumber(stats.totalEquity), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600' },
+      5: { id: 5, title: 'PNL', value: stats.totalPnl, withIcon: true, isPositive: stats.totalPnl >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalPnl)) },
+      6: { id: 6, title: 'Floating Profit', value: stats.totalProfit, withIcon: true, isPositive: stats.totalProfit >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalProfit)), iconColor: stats.totalProfit >= 0 ? 'teal' : 'orange' },
+      8: { id: 8, title: 'Daily Deposit', value: formatIndianNumber(stats.dailyDeposit), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      9: { id: 9, title: 'Daily Withdrawal', value: formatIndianNumber(stats.dailyWithdrawal), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      10: { id: 10, title: 'Daily PnL', value: stats.dailyPnL, withArrow: true, isPositive: stats.dailyPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.dailyPnL)), borderColor: stats.dailyPnL >= 0 ? 'border-emerald-200' : 'border-rose-200', textColor: stats.dailyPnL >= 0 ? 'text-emerald-600' : 'text-rose-600', valueColor: stats.dailyPnL >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+      11: { id: 11, title: 'This Week PnL', value: stats.thisWeekPnL, withArrow: true, isPositive: stats.thisWeekPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisWeekPnL)), borderColor: stats.thisWeekPnL >= 0 ? 'border-cyan-200' : 'border-amber-200', textColor: stats.thisWeekPnL >= 0 ? 'text-cyan-600' : 'text-amber-600', valueColor: stats.thisWeekPnL >= 0 ? 'text-cyan-700' : 'text-amber-700' },
+      12: { id: 12, title: 'This Month PnL', value: stats.thisMonthPnL, withArrow: true, isPositive: stats.thisMonthPnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.thisMonthPnL)), borderColor: stats.thisMonthPnL >= 0 ? 'border-teal-200' : 'border-orange-200', textColor: stats.thisMonthPnL >= 0 ? 'text-teal-600' : 'text-orange-600', valueColor: stats.thisMonthPnL >= 0 ? 'text-teal-700' : 'text-orange-700' },
+      13: { id: 13, title: 'Lifetime PnL', value: stats.lifetimePnL, withArrow: true, isPositive: stats.lifetimePnL >= 0, formattedValue: formatIndianNumber(Math.abs(stats.lifetimePnL)), borderColor: stats.lifetimePnL >= 0 ? 'border-violet-200' : 'border-pink-200', textColor: stats.lifetimePnL >= 0 ? 'text-violet-600' : 'text-pink-600', valueColor: stats.lifetimePnL >= 0 ? 'text-violet-700' : 'text-pink-700' },
+      14: { id: 14, title: 'Net DW', value: netDW, withArrow: true, isPositive: netDW >= 0, formattedValue: formatIndianNumber(Math.abs(netDW)), borderColor: netDW >= 0 ? 'border-green-200' : 'border-red-200', textColor: netDW >= 0 ? 'text-green-600' : 'text-red-600', valueColor: netDW >= 0 ? 'text-green-700' : 'text-red-700' },
+      15: { id: 15, title: 'Total Commission', value: stats.totalCommission, withArrow: true, isPositive: stats.totalCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.totalCommission || 0)), borderColor: 'border-amber-200', textColor: 'text-amber-600', valueColor: 'text-amber-700' },
+      16: { id: 16, title: 'Available Commission', value: stats.availableCommission, withArrow: true, isPositive: stats.availableCommission >= 0, formattedValue: formatIndianNumber(Math.abs(stats.availableCommission || 0)), borderColor: 'border-lime-200', textColor: 'text-lime-600', valueColor: 'text-lime-700' },
+      17: { id: 17, title: 'Total Commission %', value: stats.totalCommissionPercent, withArrow: true, isPositive: stats.totalCommissionPercent >= 0, formattedValue: `${(Math.abs(stats.totalCommissionPercent || 0)).toFixed(2)}%`, borderColor: 'border-amber-300', textColor: 'text-amber-700', valueColor: 'text-amber-800' },
+      18: { id: 18, title: 'Available Commission %', value: stats.availableCommissionPercent, withArrow: true, isPositive: stats.availableCommissionPercent >= 0, formattedValue: `${(Math.abs(stats.availableCommissionPercent || 0)).toFixed(2)}%`, borderColor: 'border-lime-300', textColor: 'text-lime-700', valueColor: 'text-lime-800' },
+      19: { id: 19, title: 'Blocked Commission', value: formatIndianNumber(stats.blockedCommission || 0), simple: true, borderColor: 'border-gray-300', textColor: 'text-gray-600', valueColor: 'text-gray-700' },
       // Daily Bonus
-      20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber((stats.dailyBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
-      21: { id: 21, title: 'Daily Bonus OUT', value: formatIndianNumber((stats.dailyBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
-      22: { id: 22, title: 'NET Daily Bonus', value: stats.netDailyBonus || 0, withArrow: true, isPositive: (stats.netDailyBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netDailyBonus || 0).toFixed(2)), borderColor: (stats.netDailyBonus || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      20: { id: 20, title: 'Daily Bonus IN', value: formatIndianNumber(stats.dailyBonusIn || 0), simple: true, borderColor: 'border-emerald-200', textColor: 'text-emerald-600', valueColor: 'text-emerald-700' },
+      21: { id: 21, title: 'Daily Bonus OUT', value: formatIndianNumber(stats.dailyBonusOut || 0), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      22: { id: 22, title: 'NET Daily Bonus', value: stats.netDailyBonus || 0, withArrow: true, isPositive: (stats.netDailyBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netDailyBonus || 0)), borderColor: (stats.netDailyBonus || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netDailyBonus || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
       // Weekly Bonus
-      23: { id: 23, title: 'Week Bonus IN', value: formatIndianNumber((stats.weekBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-cyan-200', textColor: 'text-cyan-600', valueColor: 'text-cyan-700' },
-      24: { id: 24, title: 'Week Bonus OUT', value: formatIndianNumber((stats.weekBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
-      25: { id: 25, title: 'NET Week Bonus', value: stats.netWeekBonus || 0, withArrow: true, isPositive: (stats.netWeekBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekBonus || 0).toFixed(2)), borderColor: (stats.netWeekBonus || 0) >= 0 ? 'border-cyan-200' : 'border-orange-200', textColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-600' : 'text-orange-600', valueColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-700' : 'text-orange-700' },
+      23: { id: 23, title: 'Week Bonus IN', value: formatIndianNumber(stats.weekBonusIn || 0), simple: true, borderColor: 'border-cyan-200', textColor: 'text-cyan-600', valueColor: 'text-cyan-700' },
+      24: { id: 24, title: 'Week Bonus OUT', value: formatIndianNumber(stats.weekBonusOut || 0), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      25: { id: 25, title: 'NET Week Bonus', value: stats.netWeekBonus || 0, withArrow: true, isPositive: (stats.netWeekBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekBonus || 0)), borderColor: (stats.netWeekBonus || 0) >= 0 ? 'border-cyan-200' : 'border-orange-200', textColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-600' : 'text-orange-600', valueColor: (stats.netWeekBonus || 0) >= 0 ? 'text-cyan-700' : 'text-orange-700' },
       // Monthly Bonus
-      26: { id: 26, title: 'Monthly Bonus IN', value: formatIndianNumber((stats.monthBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
-      27: { id: 27, title: 'Monthly Bonus OUT', value: formatIndianNumber((stats.monthBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
-      28: { id: 28, title: 'NET Monthly Bonus', value: stats.netMonthBonus || 0, withArrow: true, isPositive: (stats.netMonthBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthBonus || 0).toFixed(2)), borderColor: (stats.netMonthBonus || 0) >= 0 ? 'border-blue-200' : 'border-red-200', textColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-600' : 'text-red-600', valueColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-700' : 'text-red-700' },
+      26: { id: 26, title: 'Monthly Bonus IN', value: formatIndianNumber(stats.monthBonusIn || 0), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      27: { id: 27, title: 'Monthly Bonus OUT', value: formatIndianNumber(stats.monthBonusOut || 0), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      28: { id: 28, title: 'NET Monthly Bonus', value: stats.netMonthBonus || 0, withArrow: true, isPositive: (stats.netMonthBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthBonus || 0)), borderColor: (stats.netMonthBonus || 0) >= 0 ? 'border-blue-200' : 'border-red-200', textColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-600' : 'text-red-600', valueColor: (stats.netMonthBonus || 0) >= 0 ? 'text-blue-700' : 'text-red-700' },
       // Lifetime Bonus
-      29: { id: 29, title: 'Lifetime Bonus IN', value: formatIndianNumber((stats.lifetimeBonusIn || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
-      30: { id: 30, title: 'Lifetime Bonus OUT', value: formatIndianNumber((stats.lifetimeBonusOut || 0).toFixed(2)), simple: true, borderColor: 'border-pink-200', textColor: 'text-pink-600', valueColor: 'text-pink-700' },
-      31: { id: 31, title: 'NET Lifetime Bonus', value: stats.netLifetimeBonus || 0, withArrow: true, isPositive: (stats.netLifetimeBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeBonus || 0).toFixed(2)), borderColor: (stats.netLifetimeBonus || 0) >= 0 ? 'border-purple-200' : 'border-pink-200', textColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-600' : 'text-pink-600', valueColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-700' : 'text-pink-700' },
+      29: { id: 29, title: 'Lifetime Bonus IN', value: formatIndianNumber(stats.lifetimeBonusIn || 0), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      30: { id: 30, title: 'Lifetime Bonus OUT', value: formatIndianNumber(stats.lifetimeBonusOut || 0), simple: true, borderColor: 'border-pink-200', textColor: 'text-pink-600', valueColor: 'text-pink-700' },
+      31: { id: 31, title: 'NET Lifetime Bonus', value: stats.netLifetimeBonus || 0, withArrow: true, isPositive: (stats.netLifetimeBonus || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeBonus || 0)), borderColor: (stats.netLifetimeBonus || 0) >= 0 ? 'border-purple-200' : 'border-pink-200', textColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-600' : 'text-pink-600', valueColor: (stats.netLifetimeBonus || 0) >= 0 ? 'text-purple-700' : 'text-pink-700' },
       // Weekly Deposit/Withdrawal
-      32: { id: 32, title: 'Week Deposit', value: formatIndianNumber((stats.weekDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-teal-200', textColor: 'text-teal-600', valueColor: 'text-teal-700' },
-      33: { id: 33, title: 'Week Withdrawal', value: formatIndianNumber((stats.weekWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
-      34: { id: 34, title: 'NET Week DW', value: stats.netWeekDW || 0, withArrow: true, isPositive: (stats.netWeekDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekDW || 0).toFixed(2)), borderColor: (stats.netWeekDW || 0) >= 0 ? 'border-teal-200' : 'border-rose-200', textColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-600' : 'text-rose-600', valueColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-700' : 'text-rose-700' },
+      32: { id: 32, title: 'Week Deposit', value: formatIndianNumber(stats.weekDeposit || 0), simple: true, borderColor: 'border-teal-200', textColor: 'text-teal-600', valueColor: 'text-teal-700' },
+      33: { id: 33, title: 'Week Withdrawal', value: formatIndianNumber(stats.weekWithdrawal || 0), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      34: { id: 34, title: 'NET Week DW', value: stats.netWeekDW || 0, withArrow: true, isPositive: (stats.netWeekDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netWeekDW || 0)), borderColor: (stats.netWeekDW || 0) >= 0 ? 'border-teal-200' : 'border-rose-200', textColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-600' : 'text-rose-600', valueColor: (stats.netWeekDW || 0) >= 0 ? 'text-teal-700' : 'text-rose-700' },
       // Monthly Deposit/Withdrawal
-      35: { id: 35, title: 'Monthly Deposit', value: formatIndianNumber((stats.monthDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
-      36: { id: 36, title: 'Monthly Withdrawal', value: formatIndianNumber((stats.monthWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
-      37: { id: 37, title: 'NET Monthly DW', value: stats.netMonthDW || 0, withArrow: true, isPositive: (stats.netMonthDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthDW || 0).toFixed(2)), borderColor: (stats.netMonthDW || 0) >= 0 ? 'border-indigo-200' : 'border-red-200', textColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-600' : 'text-red-600', valueColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-700' : 'text-red-700' },
+      35: { id: 35, title: 'Monthly Deposit', value: formatIndianNumber(stats.monthDeposit || 0), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      36: { id: 36, title: 'Monthly Withdrawal', value: formatIndianNumber(stats.monthWithdrawal || 0), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      37: { id: 37, title: 'NET Monthly DW', value: stats.netMonthDW || 0, withArrow: true, isPositive: (stats.netMonthDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netMonthDW || 0)), borderColor: (stats.netMonthDW || 0) >= 0 ? 'border-indigo-200' : 'border-red-200', textColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-600' : 'text-red-600', valueColor: (stats.netMonthDW || 0) >= 0 ? 'text-indigo-700' : 'text-red-700' },
       // Lifetime Deposit/Withdrawal
-      38: { id: 38, title: 'Lifetime Deposit', value: formatIndianNumber((stats.lifetimeDeposit || 0).toFixed(2)), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
-      39: { id: 39, title: 'Lifetime Withdrawal', value: formatIndianNumber((stats.lifetimeWithdrawal || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
-      40: { id: 40, title: 'NET Lifetime DW', value: stats.netLifetimeDW || 0, withArrow: true, isPositive: (stats.netLifetimeDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeDW || 0).toFixed(2)), borderColor: (stats.netLifetimeDW || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      38: { id: 38, title: 'Lifetime Deposit', value: formatIndianNumber(stats.lifetimeDeposit || 0), simple: true, borderColor: 'border-green-200', textColor: 'text-green-600', valueColor: 'text-green-700' },
+      39: { id: 39, title: 'Lifetime Withdrawal', value: formatIndianNumber(stats.lifetimeWithdrawal || 0), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      40: { id: 40, title: 'NET Lifetime DW', value: stats.netLifetimeDW || 0, withArrow: true, isPositive: (stats.netLifetimeDW || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netLifetimeDW || 0)), borderColor: (stats.netLifetimeDW || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netLifetimeDW || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
       // Credit IN
-      41: { id: 41, title: 'Weekly Credit IN', value: formatIndianNumber((stats.weekCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600', valueColor: 'text-sky-700' },
-      42: { id: 42, title: 'Monthly Credit IN', value: formatIndianNumber((stats.monthCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
-      43: { id: 43, title: 'Lifetime Credit IN', value: formatIndianNumber((stats.lifetimeCreditIn || 0).toFixed(2)), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
+      41: { id: 41, title: 'Weekly Credit IN', value: formatIndianNumber(stats.weekCreditIn || 0), simple: true, borderColor: 'border-sky-200', textColor: 'text-sky-600', valueColor: 'text-sky-700' },
+      42: { id: 42, title: 'Monthly Credit IN', value: formatIndianNumber(stats.monthCreditIn || 0), simple: true, borderColor: 'border-blue-200', textColor: 'text-blue-600', valueColor: 'text-blue-700' },
+      43: { id: 43, title: 'Lifetime Credit IN', value: formatIndianNumber(stats.lifetimeCreditIn || 0), simple: true, borderColor: 'border-indigo-200', textColor: 'text-indigo-600', valueColor: 'text-indigo-700' },
       // Credit OUT
-      44: { id: 44, title: 'Weekly Credit OUT', value: formatIndianNumber((stats.weekCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
-      45: { id: 45, title: 'Monthly Credit OUT', value: formatIndianNumber((stats.monthCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
-      46: { id: 46, title: 'Lifetime Credit OUT', value: formatIndianNumber((stats.lifetimeCreditOut || 0).toFixed(2)), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
+      44: { id: 44, title: 'Weekly Credit OUT', value: formatIndianNumber(stats.weekCreditOut || 0), simple: true, borderColor: 'border-orange-200', textColor: 'text-orange-600', valueColor: 'text-orange-700' },
+      45: { id: 45, title: 'Monthly Credit OUT', value: formatIndianNumber(stats.monthCreditOut || 0), simple: true, borderColor: 'border-red-200', textColor: 'text-red-600', valueColor: 'text-red-700' },
+      46: { id: 46, title: 'Lifetime Credit OUT', value: formatIndianNumber(stats.lifetimeCreditOut || 0), simple: true, borderColor: 'border-rose-200', textColor: 'text-rose-600', valueColor: 'text-rose-700' },
       // NET Credit
-      47: { id: 47, title: 'NET Credit', value: stats.netCredit || 0, withArrow: true, isPositive: (stats.netCredit || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netCredit || 0).toFixed(2)), borderColor: (stats.netCredit || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netCredit || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netCredit || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
+      47: { id: 47, title: 'NET Credit', value: stats.netCredit || 0, withArrow: true, isPositive: (stats.netCredit || 0) >= 0, formattedValue: formatIndianNumber(Math.abs(stats.netCredit || 0)), borderColor: (stats.netCredit || 0) >= 0 ? 'border-green-200' : 'border-red-200', textColor: (stats.netCredit || 0) >= 0 ? 'text-green-600' : 'text-red-600', valueColor: (stats.netCredit || 0) >= 0 ? 'text-green-700' : 'text-red-700' },
       // Previous Equity
-      48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber((stats.weekPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
-      49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber((stats.monthPreviousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
-      50: { id: 50, title: 'Previous Equity', value: formatIndianNumber((stats.previousEquity || 0).toFixed(2)), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' }
+      48: { id: 48, title: 'Weekly Previous Equity', value: formatIndianNumber(stats.weekPreviousEquity || 0), simple: true, borderColor: 'border-violet-200', textColor: 'text-violet-600', valueColor: 'text-violet-700' },
+      49: { id: 49, title: 'Monthly Previous Equity', value: formatIndianNumber(stats.monthPreviousEquity || 0), simple: true, borderColor: 'border-purple-200', textColor: 'text-purple-600', valueColor: 'text-purple-700' },
+      50: { id: 50, title: 'Previous Equity', value: formatIndianNumber(stats.previousEquity || 0), simple: true, borderColor: 'border-fuchsia-200', textColor: 'text-fuchsia-600', valueColor: 'text-fuchsia-700' }
     }
     return configs[cardId]
   }

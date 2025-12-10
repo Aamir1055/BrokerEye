@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -31,7 +32,9 @@ export default function DashboardMobileView({
   ordersCount
 }) {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const [showViewAll, setShowViewAll] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [orderedCards, setOrderedCards] = useState([])
   const [dragStartLabel, setDragStartLabel] = useState(null)
   const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
@@ -74,7 +77,7 @@ export default function DashboardMobileView({
     }).filter(Boolean)
   }
 
-  // Render face card
+  // Render face card with updated UI matching Client2Module
   const renderFaceCard = (card, isDraggable = false) => {
     const cardElement = (
       <div
@@ -109,7 +112,7 @@ export default function DashboardMobileView({
           }
           setDragStartLabel(null)
         } : undefined}
-        className={`bg-white rounded-lg shadow-sm border-2 ${card.borderColor || 'border-gray-200'} p-3 ${isDraggable ? 'cursor-move' : ''} transition-all duration-100 ${dragStartLabel === card.title ? 'opacity-50 scale-95' : ''}`}
+        className={`bg-white rounded-xl shadow-sm border-2 border-gray-100 p-3 ${isDraggable ? 'cursor-move' : ''} transition-all duration-100 ${dragStartLabel === card.title ? 'opacity-50 scale-95' : ''}`}
         style={{
           touchAction: 'none',
           userSelect: 'none',
@@ -118,48 +121,43 @@ export default function DashboardMobileView({
           WebkitTapHighlightColor: 'transparent'
         }}
       >
-        {/* Simple cards */}
-        {card.simple && (
-          <>
-            <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wide mb-1.5`}>{card.title}</p>
-            <p className={`text-base font-bold ${card.valueColor || 'text-gray-900'}`}>{card.value}</p>
-          </>
-        )}
-
-        {/* Cards with icon (PNL, Floating Profit) */}
-        {card.withIcon && (
-          <>
-            <div className="flex items-center justify-between mb-1.5">
-              <p className={`text-[10px] font-semibold ${card.isPositive ? 'text-green-600' : 'text-red-600'} uppercase tracking-wide`}>{card.title}</p>
-              <div className={`w-7 h-7 ${card.isPositive ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'} rounded-lg flex items-center justify-center`}>
-                <svg className={`w-3.5 h-3.5 ${card.isPositive ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  {card.isPositive ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="text-xs font-medium text-gray-600 uppercase mb-1">{card.title}</div>
+            <div className="flex items-baseline gap-1.5">
+              {/* Triangle indicator based on value */}
+              {card.simple ? null : (
+                <>
+                  {card.isPositive !== undefined && card.isPositive && (
+                    <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                      <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
+                    </svg>
                   )}
-                </svg>
-              </div>
+                  {card.isPositive !== undefined && !card.isPositive && (
+                    <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                      <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
+                    </svg>
+                  )}
+                </>
+              )}
+              <span className={`text-xl font-bold ${
+                card.isPositive !== undefined 
+                  ? (card.isPositive ? 'text-[#16A34A]' : 'text-[#DC2626]')
+                  : 'text-black'
+              }`}>
+                {card.value || '0'}
+              </span>
             </div>
-            <p className={`text-base font-bold ${card.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {card.isPositive ? '▲ ' : '▼ '}
-              {card.isPositive ? '' : '-'}
-              {card.formattedValue}
-            </p>
-          </>
-        )}
-
-        {/* Cards with arrow (PnL cards) */}
-        {card.withArrow && (
-          <>
-            <p className={`text-[10px] font-semibold ${card.textColor} uppercase tracking-wide mb-1.5`}>{card.title}</p>
-            <p className={`text-base font-bold ${card.valueColor}`}>
-              {card.isPositive ? '▲ ' : '▼ '}
-              {card.isPositive ? '' : '-'}
-              {card.formattedValue}
-            </p>
-          </>
-        )}
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+              <rect x="14" y="3" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+              <rect x="3" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+              <rect x="14" y="14" width="7" height="7" rx="1" stroke="#3B82F6" strokeWidth="2"/>
+            </svg>
+          </div>
+        </div>
       </div>
     )
 
@@ -170,12 +168,116 @@ export default function DashboardMobileView({
   const visibleCards = getOrderedCards()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 p-4">
-      {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-600 mt-1">Quick overview of your broker metrics</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50">
+      {/* Mobile Header with Sidebar Button */}
+      <div className="sticky top-0 bg-white shadow-md z-30 px-4 py-5">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="w-9 h-9 flex items-center justify-center"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M3 12h18M3 18h18" stroke="#000" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <h1 className="text-xl font-semibold text-black">Dashboard</h1>
+          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" fill="#9CA3AF"/>
+              <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V20" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+        </div>
       </div>
+
+      {/* Sidebar overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-40">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/25"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="absolute left-0 top-0 h-full w-[300px] bg-white shadow-xl rounded-r-2xl flex flex-col">
+            <div className="p-4 flex items-center gap-3 border-b border-[#ECECEC]">
+              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#1A63BC"/></svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold text-[#1A63BC]">Broker Eyes</div>
+                <div className="text-[11px] text-[#7A7A7A]">Trading Platform</div>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)} className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto py-2">
+              <nav className="flex flex-col">
+                {[
+                  {label:'Dashboard', path:'/dashboard', active:true, icon: (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#1A63BC"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#1A63BC"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#1A63BC"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="#1A63BC"/></svg>
+                  )},
+                  {label:'Clients', path:'/client-dashboard-c', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Client 2', path:'/client2', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#404040"/><circle cx="16" cy="8" r="3" stroke="#404040"/><path d="M3 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#404040"/></svg>
+                  )},
+                  {label:'Positions', path:'/positions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="11" width="18" height="3" rx="1" stroke="#404040"/><rect x="3" y="16" width="18" height="3" rx="1" stroke="#404040"/></svg>
+                  )},
+                  {label:'Pending Orders', path:'/pending-orders', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><circle cx="12" cy="12" r="2" fill="#404040"/></svg>
+                  )},
+                  {label:'Margin Level', path:'/margin-level', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18L10 12L14 16L20 8" stroke="#404040" strokeWidth="2"/></svg>
+                  )},
+                  {label:'Live Dealing', path:'/live-dealing', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 0 1 18 0" stroke="#404040"/><path d="M7 12a5 5 0 0 1 10 0" stroke="#404040"/></svg>
+                  )},
+                  {label:'Client Percentage', path:'/client-percentage', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
+                  )},
+                  {label:'Settings', path:'/settings', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
+                  )},
+                ].map((item, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => {
+                      navigate(item.path)
+                      setIsSidebarOpen(false)
+                    }}
+                    className={`flex items-center gap-3 px-4 h-11 text-[13px] ${item.active ? 'text-[#1A63BC] bg-[#EFF4FB] rounded-lg font-semibold' : 'text-[#404040]'}`}
+                  >
+                    <span className="w-5 h-5 flex items-center justify-center">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="p-4 mt-auto border-t border-[#ECECEC]">
+              <button 
+                onClick={logout}
+                className="flex items-center gap-3 px-2 h-10 text-[13px] text-[#404040]"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 17l5-5-5-5" stroke="#404040" strokeWidth="2"/><path d="M4 12h11" stroke="#404040" strokeWidth="2"/></svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="p-4">
+        {/* Dashboard subtitle */}
+        <p className="text-sm text-gray-600 mb-4">Quick overview of your broker metrics</p>
 
       {/* Face Cards Carousel */}
       <div className="mb-4">
@@ -470,6 +572,7 @@ export default function DashboardMobileView({
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
