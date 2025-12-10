@@ -25,6 +25,30 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   // Sorting states
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
 
+  // Column visibility states
+  const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const [positionColumns, setPositionColumns] = useState({
+    position: true,
+    symbol: true,
+    action: true,
+    volume: true,
+    priceOpen: true,
+    profit: true
+  })
+  const [netPositionColumns, setNetPositionColumns] = useState({
+    symbol: true,
+    volume: true,
+    profit: true,
+    count: true
+  })
+  const [dealColumns, setDealColumns] = useState({
+    deal: true,
+    symbol: true,
+    action: true,
+    volume: true,
+    profit: true
+  })
+
   // Summary stats
   const [stats, setStats] = useState({
     positionsCount: 0,
@@ -311,73 +335,89 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
-              <div className="flex items-center gap-1">
-                Position
-                {sortConfig.key === 'position' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
-              <div className="flex items-center gap-1">
-                Symbol
-                {sortConfig.key === 'symbol' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
-              <div className="flex items-center gap-1">
-                Type
-                {sortConfig.key === 'action' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
-              <div className="flex items-center gap-1">
-                Volume
-                {sortConfig.key === 'volume' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('priceOpen')}>
-              <div className="flex items-center gap-1">
-                Price
-                {sortConfig.key === 'priceOpen' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
-              <div className="flex items-center gap-1">
-                Profit
-                {sortConfig.key === 'profit' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
+            {positionColumns.position && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
+                <div className="flex items-center gap-1">
+                  Position
+                  {sortConfig.key === 'position' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {positionColumns.symbol && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+                <div className="flex items-center gap-1">
+                  Symbol
+                  {sortConfig.key === 'symbol' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {positionColumns.action && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
+                <div className="flex items-center gap-1">
+                  Type
+                  {sortConfig.key === 'action' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {positionColumns.volume && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+                <div className="flex items-center gap-1">
+                  Volume
+                  {sortConfig.key === 'volume' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {positionColumns.priceOpen && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('priceOpen')}>
+                <div className="flex items-center gap-1">
+                  Price
+                  {sortConfig.key === 'priceOpen' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {positionColumns.profit && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+                <div className="flex items-center gap-1">
+                  Profit
+                  {sortConfig.key === 'profit' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {paginatedPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.ticket || '-'}</td>
-              <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>
-              <td className="px-3 py-2 text-xs">
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  pos.action === 'Buy' || pos.type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {pos.action || pos.type || '-'}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.volume || 0)}</td>
-              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>
-              <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(pos.profit || 0)}
-              </td>
+              {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.ticket || '-'}</td>}
+              {positionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>}
+              {positionColumns.action && (
+                <td className="px-3 py-2 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    pos.action === 'Buy' || pos.type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {pos.action || pos.type || '-'}
+                  </span>
+                </td>
+              )}
+              {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.volume || 0)}</td>}
+              {positionColumns.priceOpen && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>}
+              {positionColumns.profit && (
+                <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(pos.profit || 0)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -390,42 +430,50 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
-              <div className="flex items-center gap-1">
-                Symbol
-                {sortConfig.key === 'symbol' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
-              <div className="flex items-center gap-1">
-                Net Volume
-                {sortConfig.key === 'volume' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
-              <div className="flex items-center gap-1">
-                Profit
-                {sortConfig.key === 'profit' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white">Count</th>
+            {netPositionColumns.symbol && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+                <div className="flex items-center gap-1">
+                  Symbol
+                  {sortConfig.key === 'symbol' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {netPositionColumns.volume && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+                <div className="flex items-center gap-1">
+                  Net Volume
+                  {sortConfig.key === 'volume' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {netPositionColumns.profit && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+                <div className="flex items-center gap-1">
+                  Profit
+                  {sortConfig.key === 'profit' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {netPositionColumns.count && <th className="px-3 py-2 text-left text-xs font-medium text-white">Count</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {paginatedNetPositions.map((netPos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs font-medium text-gray-900">{netPos.symbol}</td>
-              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>
-              <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(netPos.profit)}
-              </td>
-              <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions.length}</td>
+              {netPositionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{netPos.symbol}</td>}
+              {netPositionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>}
+              {netPositionColumns.profit && (
+                <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(netPos.profit)}
+                </td>
+              )}
+              {netPositionColumns.count && <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions.length}</td>}
             </tr>
           ))}
         </tbody>
@@ -438,64 +486,78 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       <table className="w-full">
         <thead className="bg-blue-500">
           <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('deal')}>
-              <div className="flex items-center gap-1">
-                Deal
-                {sortConfig.key === 'deal' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
-              <div className="flex items-center gap-1">
-                Symbol
-                {sortConfig.key === 'symbol' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
-              <div className="flex items-center gap-1">
-                Type
-                {sortConfig.key === 'action' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
-              <div className="flex items-center gap-1">
-                Volume
-                {sortConfig.key === 'volume' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
-              <div className="flex items-center gap-1">
-                Profit
-                {sortConfig.key === 'profit' && (
-                  <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                )}
-              </div>
-            </th>
+            {dealColumns.deal && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('deal')}>
+                <div className="flex items-center gap-1">
+                  Deal
+                  {sortConfig.key === 'deal' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {dealColumns.symbol && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+                <div className="flex items-center gap-1">
+                  Symbol
+                  {sortConfig.key === 'symbol' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {dealColumns.action && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
+                <div className="flex items-center gap-1">
+                  Type
+                  {sortConfig.key === 'action' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {dealColumns.volume && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+                <div className="flex items-center gap-1">
+                  Volume
+                  {sortConfig.key === 'volume' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {dealColumns.profit && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+                <div className="flex items-center gap-1">
+                  Profit
+                  {sortConfig.key === 'profit' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {paginatedDeals.map((deal, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs text-gray-900">{deal.deal}</td>
-              <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>
-              <td className="px-3 py-2 text-xs">
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  deal.action === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {deal.action}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-xs text-gray-900">{formatNum(deal.volume)}</td>
-              <td className={`px-3 py-2 text-xs ${(deal.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(deal.profit || 0)}
-              </td>
+              {dealColumns.deal && <td className="px-3 py-2 text-xs text-gray-900">{deal.deal}</td>}
+              {dealColumns.symbol && <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>}
+              {dealColumns.action && (
+                <td className="px-3 py-2 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    deal.action === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {deal.action}
+                  </span>
+                </td>
+              )}
+              {dealColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(deal.volume)}</td>}
+              {dealColumns.profit && (
+                <td className={`px-3 py-2 text-xs ${(deal.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(deal.profit || 0)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -591,6 +653,19 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
+            {/* Column Selector Button */}
+            <button
+              onClick={() => setShowColumnSelector(!showColumnSelector)}
+              className="w-8 h-8 rounded-md border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50"
+              title="Select Columns"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="7" stroke="#404040" strokeWidth="2" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" stroke="#404040" strokeWidth="2" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" stroke="#404040" strokeWidth="2" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" stroke="#404040" strokeWidth="2" rx="1"/>
+              </svg>
+            </button>
             {/* Pagination Buttons */}
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -758,6 +833,105 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
             </div>
           </div>
         </div>
+
+        {/* Column Selector Modal */}
+        {showColumnSelector && (
+          <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+              {/* Header */}
+              <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Show/Hide Columns</h3>
+                <button
+                  onClick={() => setShowColumnSelector(false)}
+                  className="text-white hover:text-blue-100 p-2 rounded-lg hover:bg-blue-700 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Column List */}
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {activeTab === 'positions' && (
+                  <div className="space-y-3">
+                    {Object.entries({
+                      position: 'Position',
+                      symbol: 'Symbol',
+                      action: 'Type',
+                      volume: 'Volume',
+                      priceOpen: 'Price',
+                      profit: 'Profit'
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={positionColumns[key]}
+                          onChange={(e) => setPositionColumns(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'netPositions' && (
+                  <div className="space-y-3">
+                    {Object.entries({
+                      symbol: 'Symbol',
+                      volume: 'Net Volume',
+                      profit: 'Profit',
+                      count: 'Count'
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={netPositionColumns[key]}
+                          onChange={(e) => setNetPositionColumns(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'deals' && (
+                  <div className="space-y-3">
+                    {Object.entries({
+                      deal: 'Deal',
+                      symbol: 'Symbol',
+                      action: 'Type',
+                      volume: 'Volume',
+                      profit: 'Profit'
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={dealColumns[key]}
+                          onChange={(e) => setDealColumns(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={() => setShowColumnSelector(false)}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
