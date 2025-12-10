@@ -39,6 +39,8 @@ export default function DashboardMobileView({
   const [dragStartLabel, setDragStartLabel] = useState(null)
   const [showCardFilter, setShowCardFilter] = useState(false)
   const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('')
+  const [touchStartPos, setTouchStartPos] = useState(null)
+  const [touchedCard, setTouchedCard] = useState(null)
   const CARD_ORDER_KEY = 'dashboard-mobile-card-order'
 
   // Default card visibility
@@ -119,6 +121,50 @@ export default function DashboardMobileView({
 
   // Render face card with updated UI matching Client2Module
   const renderFaceCard = (card, isDraggable = false) => {
+    // Touch event handlers for mobile drag and drop
+    const handleTouchStart = (e) => {
+      if (!isDraggable) return
+      const touch = e.touches[0]
+      setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+      setTouchedCard(card.title)
+      setDragStartLabel(card.title)
+    }
+
+    const handleTouchMove = (e) => {
+      if (!isDraggable || !touchStartPos) return
+      e.preventDefault()
+    }
+
+    const handleTouchEnd = (e) => {
+      if (!isDraggable || !touchedCard) return
+      
+      const touch = e.changedTouches[0]
+      const element = document.elementFromPoint(touch.clientX, touch.clientY)
+      const dropTarget = element?.closest('[data-card-label]')
+      
+      if (dropTarget) {
+        const toLabel = dropTarget.getAttribute('data-card-label')
+        const fromLabel = touchedCard
+        
+        if (fromLabel && toLabel && fromLabel !== toLabel) {
+          const newOrder = [...orderedCards]
+          const fromIndex = newOrder.indexOf(fromLabel)
+          const toIndex = newOrder.indexOf(toLabel)
+          
+          if (fromIndex !== -1 && toIndex !== -1) {
+            // Swap
+            [newOrder[fromIndex], newOrder[toIndex]] = [newOrder[toIndex], newOrder[fromIndex]]
+            setOrderedCards(newOrder)
+            localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder))
+          }
+        }
+      }
+      
+      setTouchStartPos(null)
+      setTouchedCard(null)
+      setDragStartLabel(null)
+    }
+
     const cardElement = (
       <div
         key={card.id}
@@ -152,9 +198,12 @@ export default function DashboardMobileView({
           }
           setDragStartLabel(null)
         } : undefined}
-        className={`bg-white rounded-xl shadow-sm border-2 border-gray-100 p-3 ${isDraggable ? 'cursor-move' : ''} transition-all duration-100 ${dragStartLabel === card.title ? 'opacity-50 scale-95' : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={`bg-white rounded-xl shadow-sm border-2 border-gray-100 p-3 ${isDraggable ? 'cursor-move active:opacity-50 active:scale-95' : ''} transition-all duration-100 ${dragStartLabel === card.title ? 'opacity-50 scale-95' : ''}`}
         style={{
-          touchAction: 'none',
+          touchAction: isDraggable ? 'none' : 'auto',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           WebkitTouchCallout: 'none',
@@ -348,10 +397,9 @@ export default function DashboardMobileView({
         </div>
         
         <div
-          className="grid grid-cols-2 gap-3 overflow-hidden"
-          style={{ touchAction: 'pan-y' }}
+          className="grid grid-cols-2 gap-3"
         >
-          {visibleCards.map(card => renderFaceCard(card, false))}
+          {visibleCards.map(card => renderFaceCard(card, true))}
         </div>
       </div>
 
