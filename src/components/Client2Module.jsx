@@ -1146,7 +1146,7 @@ export default function Client2Module() {
         <div className="pb-3 px-4">
           <div className="flex items-center gap-1">
             {/* Search box - compact, edge-to-edge */}
-            <div className="flex-1 min-w-0 h-[32px] bg-[#F5F5F5] border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+            <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
                 <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
                 <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1155,7 +1155,7 @@ export default function Client2Module() {
                 placeholder="Search" 
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 min-w-0 outline-none border-0 text-[13px] text-black font-semibold placeholder:text-[#999999] bg-transparent font-outfit" 
+                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit" 
               />
             </div>
             
