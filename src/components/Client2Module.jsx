@@ -1459,7 +1459,7 @@ export default function Client2Module() {
       {isColumnSelectorOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
           <div 
-            className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden"
+            className="bg-white w-full rounded-t-[24px] max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
@@ -1493,7 +1493,7 @@ export default function Client2Module() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[400px] max-h-[500px]">
+            <div className="flex-1 overflow-y-auto min-h-[450px] max-h-[55vh]">
               <div className="px-5 py-3">
                 {(() => {
                   const filteredEntries = Object.entries({
