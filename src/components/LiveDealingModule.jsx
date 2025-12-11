@@ -857,7 +857,7 @@ export default function LiveDealingModule() {
           <div className="flex items-center justify-between mb-3 px-2">
             <div className="flex gap-[8px]">
               <button 
-                onClick={() => setIsCustomizeOpen(true)} 
+                onClick={() => setIsFilterOpen(true)} 
                 className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (timeFilter !== '24h' || moduleFilter !== 'both' || selectedIB || getActiveGroupFilter('livedealing'))
                     ? 'bg-blue-50 border-blue-200' 
