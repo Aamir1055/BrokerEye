@@ -48,8 +48,8 @@ const LiveDealingPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(50)
   
   // Sorting states
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [sortColumn, setSortColumn] = useState('time')
+  const [sortDirection, setSortDirection] = useState('desc')
   
   // Filter states
   const [showFilterMenu, setShowFilterMenu] = useState(false)
