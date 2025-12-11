@@ -62,7 +62,6 @@ export default function IBCommissionsModule() {
   const [bulkPercentage, setBulkPercentage] = useState('')
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // API State
   const [commissions, setCommissions] = useState([])
@@ -613,27 +612,18 @@ export default function IBCommissionsModule() {
                 </svg>
               </button>
               <button
-                onClick={() => {
-                  if (isRefreshing) return
-                  setIsRefreshing(true)
-                  console.log('[IBCommissions] Refreshing data...')
-                  setTimeout(() => setIsRefreshing(false), 2000)
-                }}
-                disabled={isRefreshing}
-                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
-                  isRefreshing
-                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
-                }`}
-                title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
+                onClick={() => window.location.reload()}
+                disabled={loading}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
-                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+                  className="w-4 h-4"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="#1A63BC"
                   viewBox="0 0 24 24"
+                  strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
