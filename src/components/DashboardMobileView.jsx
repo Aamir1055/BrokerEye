@@ -751,7 +751,14 @@ export default function DashboardMobileView({
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-4" style={{ minHeight: 0 }}>
+            <div 
+              className="flex-1 overflow-y-auto overflow-x-hidden p-4" 
+              style={{ 
+                minHeight: 0,
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehavior: 'contain'
+              }}
+            >
               <div className="mb-3">
                 <p className="text-xs text-gray-600 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -761,7 +768,7 @@ export default function DashboardMobileView({
                 </p>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 pb-4">
                 {faceCardOrder.map(cardId => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
                   return card ? renderFaceCard(card, true) : null
