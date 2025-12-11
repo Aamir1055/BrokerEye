@@ -226,68 +226,28 @@ export default function DashboardMobileView({
     const cardElement = (
       <div
         key={card.id}
-        data-card-label={card.title}
-        draggable={isDraggable}
-        onDragStart={isDraggable ? (e) => {
-          setDragStartLabel(card.title)
-          e.dataTransfer.effectAllowed = 'move'
-        } : undefined}
-        onDragEnd={isDraggable ? () => setDragStartLabel(null) : undefined}
-        onDragOver={isDraggable ? (e) => {
-          e.preventDefault()
-          e.dataTransfer.dropEffect = 'move'
-        } : undefined}
-        onDrop={isDraggable ? (e) => {
-          e.preventDefault()
-          const fromLabel = dragStartLabel
-          const toLabel = card.title
-          
-          if (fromLabel && toLabel && fromLabel !== toLabel) {
-            const newOrder = [...orderedCards]
-            const fromIndex = newOrder.indexOf(fromLabel)
-            const toIndex = newOrder.indexOf(toLabel)
-            
-            if (fromIndex !== -1 && toIndex !== -1) {
-              // Swap
-              [newOrder[fromIndex], newOrder[toIndex]] = [newOrder[toIndex], newOrder[fromIndex]]
-              setOrderedCards(newOrder)
-              localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder))
-            }
-          }
-          setDragStartLabel(null)
-        } : undefined}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className={`bg-white rounded-xl shadow-sm border-2 border-gray-100 p-3 ${isDraggable ? 'cursor-move active:opacity-50 active:scale-95' : ''} transition-all duration-100 ${dragStartLabel === card.title ? 'opacity-50 scale-95' : ''}`}
-        style={{
-          touchAction: isDraggable ? 'none' : 'auto',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none',
-          WebkitTapHighlightColor: 'transparent'
-        }}
+        className="bg-white rounded-xl shadow-sm border-2 border-gray-100 p-2.5"
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="text-xs font-medium text-gray-600 uppercase mb-1">{card.title}</div>
-            <div className="flex items-baseline gap-1.5">
+            <div className="text-[10px] font-medium text-gray-600 uppercase mb-0.5 leading-tight">{card.title}</div>
+            <div className="flex items-baseline gap-1">
               {/* Triangle indicator based on value */}
               {card.simple ? null : (
                 <>
                   {card.isPositive !== undefined && card.isPositive && (
-                    <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
                       <polygon points="4,0 8,8 0,8" fill="#16A34A"/>
                     </svg>
                   )}
                   {card.isPositive !== undefined && !card.isPositive && (
-                    <svg width="12" height="12" viewBox="0 0 8 8" className="flex-shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 8 8" className="flex-shrink-0">
                       <polygon points="4,8 0,0 8,0" fill="#DC2626"/>
                     </svg>
                   )}
                 </>
               )}
-              <span className={`text-xl font-bold ${
+              <span className={`text-base font-bold ${
                 card.isPositive !== undefined 
                   ? (card.isPositive ? 'text-[#16A34A]' : 'text-[#DC2626]')
                   : 'text-black'
@@ -296,11 +256,11 @@ export default function DashboardMobileView({
               </span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
             <img 
               src={getCardIcon(card.title)} 
               alt={card.title}
-              className="w-6 h-6"
+              className="w-5 h-5"
               onError={(e) => {
                 // Fallback to default icon if image fails to load
                 e.target.style.display = 'none'
@@ -752,26 +712,19 @@ export default function DashboardMobileView({
 
             {/* Modal Body */}
             <div 
-              className="flex-1 overflow-y-auto overflow-x-hidden p-4" 
+              className="flex-1 overflow-y-scroll overflow-x-hidden p-4" 
               style={{ 
                 minHeight: 0,
                 WebkitOverflowScrolling: 'touch',
-                overscrollBehavior: 'contain'
+                overscrollBehavior: 'contain',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#CBD5E1 #F1F5F9'
               }}
             >
-              <div className="mb-3">
-                <p className="text-xs text-gray-600 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  Drag cards to reorder
-                </p>
-              </div>
-              
               <div className="grid grid-cols-2 gap-3 pb-4">
                 {faceCardOrder.map(cardId => {
                   const card = getFaceCardConfig(cardId, faceCardTotals)
-                  return card ? renderFaceCard(card, true) : null
+                  return card ? renderFaceCard(card, false) : null
                 })}
               </div>
             </div>
