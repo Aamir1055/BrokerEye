@@ -64,6 +64,7 @@ export default function LiveDealingModule() {
   
   // Deals state
   const [deals, setDeals] = useState([])
+  const [newDealIds, setNewDealIds] = useState(new Set()) // Track new deals for blinking
   const [connectionState, setConnectionState] = useState('disconnected')
   const [timeFilter, setTimeFilter] = useState('24h') // '24h', '7d', 'custom'
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
@@ -228,6 +229,19 @@ export default function LiveDealingModule() {
 
       setDeals(prevDeals => {
         if (prevDeals.some(d => d.id === dealEntry.id)) return prevDeals
+        
+        // Mark this deal as new for blinking effect
+        setNewDealIds(prev => new Set(prev).add(dealEntry.id))
+        
+        // Remove the blink effect after 3 seconds
+        setTimeout(() => {
+          setNewDealIds(prev => {
+            const updated = new Set(prev)
+            updated.delete(dealEntry.id)
+            return updated
+          })
+        }, 3000)
+        
         const updated = [dealEntry, ...prevDeals].slice(0, 1000)
         saveWsCache(updated.slice(0, 200))
         return updated
@@ -1052,6 +1066,16 @@ export default function LiveDealingModule() {
               touchAction: 'pan-x pan-y'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
+                <style>{`
+                  @keyframes dealBlink {
+                    0%, 100% { background-color: #ffffff; }
+                    25%, 75% { background-color: #fef3c7; }
+                    50% { background-color: #fde68a; }
+                  }
+                  .new-deal-blink {
+                    animation: dealBlink 0.6s ease-in-out 4;
+                  }
+                `}</style>
                 {/* Table Header */}
                 <div 
                   className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
@@ -1123,7 +1147,7 @@ export default function LiveDealingModule() {
                   sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal, idx) => (
                     <div 
                       key={idx} 
-                      className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
+                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors ${newDealIds.has(deal.id) ? 'new-deal-blink' : ''}`}
                       style={{
                         gap: '0px', 
                         gridGap: '0px', 

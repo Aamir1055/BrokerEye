@@ -35,6 +35,7 @@ const LiveDealingPage = () => {
   const [editingGroup, setEditingGroup] = useState(null)
   
   const [deals, setDeals] = useState([])
+  const [newDealIds, setNewDealIds] = useState(new Set()) // Track new deals for blinking
   
   const [connectionState, setConnectionState] = useState('disconnected')
   const [loading, setLoading] = useState(true)
@@ -601,6 +602,18 @@ const LiveDealingPage = () => {
         if (prevDeals.some(d => d.id === dealEntry.id)) {
           return prevDeals
         }
+        
+        // Mark this deal as new for blinking effect
+        setNewDealIds(prev => new Set(prev).add(dealEntry.id))
+        
+        // Remove the blink effect after 3 seconds
+        setTimeout(() => {
+          setNewDealIds(prev => {
+            const updated = new Set(prev)
+            updated.delete(dealEntry.id)
+            return updated
+          })
+        }, 3000)
         
         // Add new deal at the beginning (newest first)
         const newDeals = [dealEntry, ...prevDeals]
@@ -1958,6 +1971,14 @@ const LiveDealingPage = () => {
                             background: #2563eb;
                             animation: shimmerSlide 0.9s linear infinite;
                           }
+                          @keyframes dealBlink {
+                            0%, 100% { background-color: inherit; }
+                            25%, 75% { background-color: #fef3c7; }
+                            50% { background-color: #fde68a; }
+                          }
+                          .new-deal-blink {
+                            animation: dealBlink 0.6s ease-in-out 4;
+                          }
                         `}</style>
                         <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
                       </div>
@@ -2011,7 +2032,10 @@ const LiveDealingPage = () => {
                     </tr>
                   ) : (
                     displayedDeals.map((deal, index) => (
-                    <tr key={deal.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <tr 
+                      key={deal.id} 
+                      className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${newDealIds.has(deal.id) ? 'new-deal-blink' : ''}`}
+                    >
                       {visibleColumns.time && (
                         <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
                           {formatTime(deal.time)}
