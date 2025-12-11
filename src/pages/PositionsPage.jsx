@@ -2448,7 +2448,28 @@ const PositionsPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="overflow-x-auto overflow-y-auto flex-1">
+                <div className="overflow-auto flex-1" style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #e5e7eb'
+                }}>
+                  <style>{`
+                    .overflow-auto::-webkit-scrollbar {
+                      width: 12px;
+                      height: 12px;
+                    }
+                    .overflow-auto::-webkit-scrollbar-track {
+                      background: #f3f4f6;
+                      border-radius: 5px;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb {
+                      background: #9ca3af;
+                      border-radius: 5px;
+                      border: 2px solid #f3f4f6;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb:hover {
+                      background: #6b7280;
+                    }
+                  `}</style>
                   {netDisplayedPositions.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
