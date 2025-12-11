@@ -402,3 +402,13 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 .overflow-y-scroll::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* YouTube-style shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

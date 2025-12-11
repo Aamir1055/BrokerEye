@@ -1126,7 +1126,7 @@ export default function PositionModule() {
 
                 {/* Table Rows */}
                 {loading && loading.positions ? (
-                  // Skeleton loading for table rows
+                  // YouTube-style skeleton loading
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                       <div 
@@ -1145,7 +1145,13 @@ export default function PositionModule() {
                             className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
-                            <div className="h-3 w-full max-w-[80%] bg-gray-200 rounded animate-pulse"></div>
+                            <div 
+                              className="h-3 w-full max-w-[80%] bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded"
+                              style={{
+                                backgroundSize: '200% 100%',
+                                animation: 'shimmer 1.5s infinite'
+                              }}
+                            ></div>
                           </div>
                         ))}
                       </div>

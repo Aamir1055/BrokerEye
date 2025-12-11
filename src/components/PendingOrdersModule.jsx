@@ -644,7 +644,40 @@ export default function PendingOrdersModule() {
                 </div>
 
                 {/* Table Rows */}
-                {filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order, idx) => (
+                {loading && loading.orders ? (
+                  // YouTube-style skeleton loading
+                  <>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                      <div 
+                        key={`skeleton-row-${i}`}
+                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1]"
+                        style={{
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
+                        }}
+                      >
+                        {activeColumns.map((col) => (
+                          <div 
+                            key={col.key}
+                            className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                            style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                          >
+                            <div 
+                              className="h-3 w-full max-w-[80%] bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded"
+                              style={{
+                                backgroundSize: '200% 100%',
+                                animation: 'shimmer 1.5s infinite'
+                              }}
+                            ></div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((order, idx) => (
                   <div 
                     key={idx} 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
@@ -661,10 +694,11 @@ export default function PendingOrdersModule() {
                       </React.Fragment>
                     ))}
                   </div>
-                ))}
+                  ))
+                )}
 
                 {/* Total Row */}
-                {filteredOrders.length > 0 && (
+                {filteredOrders.length > 0 && !loading?.orders && (
                   <div 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
                     style={{
