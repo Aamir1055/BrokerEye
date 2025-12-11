@@ -9,7 +9,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [netPositions, setNetPositions] = useState([])
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [positionsSearch, setPositionsSearch] = useState('')
+  const [netPositionsSearch, setNetPositionsSearch] = useState('')
+  const [dealsSearch, setDealsSearch] = useState('')
   
   // Date filter states for deals
   const [fromDate, setFromDate] = useState(null)
@@ -67,10 +69,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     fetchPositionsAndInitDeals()
   }, [client.login])
 
-  // Reset pagination when tab changes or search query changes
+  // Reset pagination when tab changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [activeTab, searchQuery])
+  }, [activeTab])
 
   // Handle column sorting
   const handleSort = (key) => {
@@ -278,38 +280,42 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   // Filter data based on search
   const filteredPositions = useMemo(() => {
     let filtered = positions
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    if (positionsSearch.trim()) {
+      const query = positionsSearch.toLowerCase()
       filtered = positions.filter(p => 
         (p.symbol || '').toLowerCase().includes(query) ||
-        (p.position || '').toString().includes(query)
+        (p.position || '').toString().includes(query) ||
+        (p.action || '').toLowerCase().includes(query) ||
+        (p.type || '').toLowerCase().includes(query)
       )
     }
     return sortData(filtered, sortConfig.key, sortConfig.direction)
-  }, [positions, searchQuery, sortConfig])
+  }, [positions, positionsSearch, sortConfig])
 
   const filteredNetPositions = useMemo(() => {
     let filtered = netPositions
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    if (netPositionsSearch.trim()) {
+      const query = netPositionsSearch.toLowerCase()
       filtered = netPositions.filter(p => 
         (p.symbol || '').toLowerCase().includes(query)
       )
     }
     return sortData(filtered, sortConfig.key, sortConfig.direction)
-  }, [netPositions, searchQuery, sortConfig])
+  }, [netPositions, netPositionsSearch, sortConfig])
 
   const filteredDeals = useMemo(() => {
     let filtered = deals
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    if (dealsSearch.trim()) {
+      const query = dealsSearch.toLowerCase()
       filtered = deals.filter(d => 
         (d.symbol || '').toLowerCase().includes(query) ||
-        (d.deal || '').toString().includes(query)
+        (d.deal || '').toString().includes(query) ||
+        (d.action || '').toLowerCase().includes(query) ||
+        (d.type || '').toLowerCase().includes(query)
       )
     }
     return sortData(filtered, sortConfig.key, sortConfig.direction)
-  }, [deals, searchQuery, sortConfig])
+  }, [deals, dealsSearch, sortConfig])
 
   // Paginate data
   const paginatedPositions = useMemo(() => {
@@ -641,8 +647,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               </svg>
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={activeTab === 'positions' ? positionsSearch : activeTab === 'netPositions' ? netPositionsSearch : dealsSearch}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (activeTab === 'positions') setPositionsSearch(value)
+                  else if (activeTab === 'netPositions') setNetPositionsSearch(value)
+                  else setDealsSearch(value)
+                  setCurrentPage(1)
+                }}
                 placeholder="Search"
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
