@@ -736,9 +736,9 @@ export default function DashboardMobileView({
       {/* View All Modal */}
       {showViewAll && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
               <h3 className="text-lg font-semibold text-gray-900">All Metrics</h3>
               <button
                 onClick={() => setShowViewAll(false)}
@@ -751,7 +751,7 @@ export default function DashboardMobileView({
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4" style={{ minHeight: 0 }}>
               <div className="mb-3">
                 <p className="text-xs text-gray-600 flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
