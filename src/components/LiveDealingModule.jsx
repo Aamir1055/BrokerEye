@@ -68,7 +68,6 @@ export default function LiveDealingModule() {
   const [timeFilter, setTimeFilter] = useState('24h') // '24h', '7d', 'custom'
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
   const [customFromDate, setCustomFromDate] = useState('')
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [customToDate, setCustomToDate] = useState('')
   const [appliedFromDate, setAppliedFromDate] = useState('')
@@ -901,28 +900,18 @@ export default function LiveDealingModule() {
                 </svg>
               </button>
               <button
-                onClick={() => {
-                  if (isRefreshing) return
-                  setIsRefreshing(true)
-                  console.log('[LiveDealing] Refreshing deals...')
-                  // Auto re-enable after 2 seconds
-                  setTimeout(() => setIsRefreshing(false), 2000)
-                }}
-                disabled={isRefreshing}
-                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
-                  isRefreshing
-                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
-                }`}
-                title={isRefreshing ? 'Refreshing...' : 'Refresh deals'}
+                onClick={() => window.location.reload()}
+                disabled={loading}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
-                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+                  className="w-4 h-4"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="#1A63BC"
                   viewBox="0 0 24 24"
+                  strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
@@ -1098,7 +1087,7 @@ export default function LiveDealingModule() {
                 </div>
 
                 {/* Table Rows */}
-                {loading || isRefreshing ? (
+                {loading ? (
                   // YouTube-style skeleton loading
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1152,7 +1141,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Total Row */}
-                {sortedDeals.length > 0 && !loading && !isRefreshing && (
+                {sortedDeals.length > 0 && !loading && (
                   <div 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
                     style={{
@@ -1179,7 +1168,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Empty state */}
-                {sortedDeals.length === 0 && !loading && !isRefreshing && (
+                {sortedDeals.length === 0 && !loading && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">
                     No deals available
                   </div>
