@@ -752,6 +752,11 @@ export default function Client2Module() {
   const formatCellValue = (key, value) => {
     if (value === null || value === undefined) return '-'
     
+    // Handle processorTime boolean field
+    if (key === 'processorTime') {
+      return value === true ? 'Connected' : 'Not Connected'
+    }
+    
     // If showPercent is true and this column supports percentage
     if (showPercent && percentageColumns.has(key)) {
       // The API returns the percentage value directly, format it as a number
@@ -1253,6 +1258,9 @@ export default function Client2Module() {
                         rowData[col.key] = client.zipCode || client.zip_code || '-';
                       } else if (col.key === 'clientID') {
                         rowData[col.key] = client.clientID || client.client_id || '-';
+                      } else if (col.key === 'processorTime') {
+                        // Handle processorTime boolean value
+                        rowData[col.key] = formatCellValue('processorTime', client.processorTime);
                       } else if (percentageColumns.has(col.key)) {
                         // Use getCellValue to get the correct field, then format it
                         const value = getCellValue(col.key, client);
