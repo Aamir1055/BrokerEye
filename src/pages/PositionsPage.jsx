@@ -3382,11 +3382,12 @@ const PositionsPage = () => {
           )}
 
           {/* Positions Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
-            <div className="overflow-y-scroll flex-1" style={{
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0">
+            <div className="overflow-y-scroll overflow-x-auto flex-1" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 #F7FAFC'
+              scrollbarColor: '#CBD5E0 #F7FAFC',
+              maxHeight: '60vh'
             }}>
               <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
