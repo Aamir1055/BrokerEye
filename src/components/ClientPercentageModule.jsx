@@ -228,7 +228,7 @@ export default function ClientPercentageModule() {
   const getCardIcon = (label) => {
     const iconMap = {
       'TOTAL CLIENTS': '/Mobile cards icons/Total Clients.svg',
-      'CUSTOM %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%.svg',
+      'CUSTOM %': '/Mobile cards icons/Brokers Eye Platform/Frame-15.svg',
       'DEFAULT': '/Mobile cards icons/Total Balance.svg',
       'AVG %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%.svg'
     }
@@ -239,8 +239,7 @@ export default function ClientPercentageModule() {
     const newCards = [
       { label: 'TOTAL CLIENTS', value: String(summaryStats.totalClients), numericValue: summaryStats.totalClients },
       { label: 'CUSTOM %', value: String(summaryStats.customClients), numericValue: summaryStats.customClients },
-      { label: 'DEFAULT', value: String(summaryStats.defaultClients), numericValue: summaryStats.defaultClients },
-      { label: 'AVG %', value: formatNum(summaryStats.avgPercentage, 2) + '%', numericValue: summaryStats.avgPercentage }
+      { label: 'DEFAULT', value: String(summaryStats.defaultClients), numericValue: summaryStats.defaultClients }
     ]
     
     if (cards.length === 0) {

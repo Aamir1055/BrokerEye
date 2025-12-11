@@ -314,9 +314,20 @@ export default function LiveDealingModule() {
     return filteredByTime.filter(deal => {
       const login = String(deal.login || '').toLowerCase()
       const symbol = String(deal.rawData?.symbol || '').toLowerCase()
-      const dealId = String(deal.id || '').toLowerCase()
+      const dealId = String(deal.id || deal.rawData?.deal || '').toLowerCase()
+      const action = String(deal.rawData?.action || '').toLowerCase()
+      const entry = String(deal.rawData?.entry || '').toLowerCase()
+      const netType = String(deal.rawData?.net_type || '').toLowerCase()
+      const volume = String(deal.rawData?.volume || deal.rawData?.net_volume || '').toLowerCase()
+      const price = String(deal.rawData?.price || deal.rawData?.average_price || '').toLowerCase()
+      const profit = String(deal.rawData?.profit || deal.rawData?.total_profit || '').toLowerCase()
+      const commission = String(deal.rawData?.commission || '').toLowerCase()
+      const storage = String(deal.rawData?.storage || '').toLowerCase()
       
-      return login.includes(query) || symbol.includes(query) || dealId.includes(query)
+      return login.includes(query) || symbol.includes(query) || dealId.includes(query) ||
+             action.includes(query) || entry.includes(query) || netType.includes(query) ||
+             volume.includes(query) || price.includes(query) || profit.includes(query) ||
+             commission.includes(query) || storage.includes(query)
     })
   }, [filteredByTime, searchInput])
 
