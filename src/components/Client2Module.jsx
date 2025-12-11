@@ -945,8 +945,8 @@ export default function Client2Module() {
                   // Immediately refetch with the next percentage state
                   fetchClients(next)
                 }}
-                className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
-                  showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#ECECEC] hover:bg-gray-50'
+                className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center transition-colors ${
+                  showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -960,12 +960,12 @@ export default function Client2Module() {
                     e.stopPropagation();
                     setIsColumnDropdownOpen(true);
                   }}
-                  className="w-9 h-9 rounded-lg bg-white border border-[#ECECEC] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="w-8 h-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                   title="Download"
                 >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 3v10m0 0l-4-4m4 4l4-4" stroke="#404040" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="4" y="15" width="12" height="2" rx="1" fill="#404040"/>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 3v10m0 0l-4-4m4 4l4-4" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <rect x="4" y="15" width="12" height="2" rx="1" fill="#374151"/>
                   </svg>
                 </button>
                 {/* Dropdown menu - simple absolute positioning */}
