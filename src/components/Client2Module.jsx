@@ -1282,7 +1282,17 @@ export default function Client2Module() {
                             }`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
-                            {rowData[col.key]}
+                            {col.key === 'processorType' ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium ${
+                                client.processorType === true 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {client.processorType === true ? 'Connected' : 'Not Connected'}
+                              </span>
+                            ) : (
+                              rowData[col.key]
+                            )}
                           </div>
                         ))}
                       </div>
