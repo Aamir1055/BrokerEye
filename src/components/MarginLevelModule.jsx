@@ -413,7 +413,7 @@ export default function MarginLevelModule() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsCustomizeOpen(true)} 
-              className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+              className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                 (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('marginlevel'))
                   ? 'bg-blue-50 border-blue-200' 
                   : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
