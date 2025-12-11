@@ -68,6 +68,7 @@ export default function LiveDealingModule() {
   const [timeFilter, setTimeFilter] = useState('24h') // '24h', '7d', 'custom'
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
   const [customFromDate, setCustomFromDate] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [customToDate, setCustomToDate] = useState('')
   const [appliedFromDate, setAppliedFromDate] = useState('')
   const [appliedToDate, setAppliedToDate] = useState('')
@@ -885,6 +886,31 @@ export default function LiveDealingModule() {
                 }`}
               >
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">%</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (isRefreshing) return
+                  setIsRefreshing(true)
+                  console.log('[LiveDealing] Refreshing deals...')
+                  // Auto re-enable after 2 seconds
+                  setTimeout(() => setIsRefreshing(false), 2000)
+                }}
+                disabled={isRefreshing}
+                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center transition-all ${
+                  isRefreshing
+                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
+                }`}
+                title={isRefreshing ? 'Refreshing...' : 'Refresh deals'}
+              >
+                <svg
+                  className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               </button>
               <button 
                 onClick={handleExportToCSV}

@@ -58,6 +58,7 @@ export default function PendingOrdersModule() {
   const itemsPerPage = 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     timeSetup: true,
@@ -534,6 +535,30 @@ export default function PendingOrdersModule() {
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
+            <button
+              onClick={() => {
+                if (isRefreshing) return
+                setIsRefreshing(true)
+                console.log('[PendingOrders] Refreshing orders...')
+                setTimeout(() => setIsRefreshing(false), 2000)
+              }}
+              disabled={isRefreshing}
+              className={`w-[28px] h-[28px] border rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
+                isRefreshing
+                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                  : 'bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer'
+              }`}
+              title={isRefreshing ? 'Refreshing...' : 'Refresh orders'}
+            >
+              <svg
+                className={`w-4 h-4 text-[#4B4B4B] ${isRefreshing ? 'animate-spin' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
             <button 
               onClick={() => setIsColumnSelectorOpen(true)}
               className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50">

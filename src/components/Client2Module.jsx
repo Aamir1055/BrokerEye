@@ -60,6 +60,7 @@ export default function Client2Module() {
   const [touchHoverLabel, setTouchHoverLabel] = useState(null)
   const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Function to swap card order
   const swapOrder = (fromLabel, toLabel) => {
@@ -1678,61 +1679,64 @@ export default function Client2Module() {
 
           <div className="p-3 space-y-2">
             {orderedCards.map((card, index) => {
-              const isDragging = dragStartLabel === card.label
+              const isBeingDragged = dragStartLabel === card.label
+              const isHoveredOver = touchHoverLabel === card.label
               
               return (
               <div
                 key={card.label}
                 draggable="true"
+                data-card-label={card.label}
+                data-card-index={index}
+                className={`bg-white rounded-xl p-3 shadow-sm border-2 cursor-move select-none ${
+                  isBeingDragged 
+                    ? 'opacity-60 scale-95 border-blue-400 shadow-xl' 
+                    : isHoveredOver 
+                      ? 'bg-blue-50 border-blue-500 scale-[1.03] shadow-lg ring-2 ring-blue-200' 
+                      : 'border-gray-200'
+                }`}
+                style={{ 
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                  touchAction: 'pan-y',
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = 'move'
-                  e.dataTransfer.setData('cardLabel', card.label)
-                  e.currentTarget.style.opacity = '0.4'
+                  e.dataTransfer.setData('text/plain', card.label)
                   setDragStartLabel(card.label)
+                  e.currentTarget.classList.add('opacity-60')
                 }}
                 onDragEnd={(e) => {
-                  e.currentTarget.style.opacity = '1'
+                  e.currentTarget.classList.remove('opacity-60')
                   setDragStartLabel(null)
-                  // Reset all card styles
-                  document.querySelectorAll('[data-card-label]').forEach(el => {
-                    el.style.backgroundColor = ''
-                    el.style.borderColor = ''
-                    el.style.transform = ''
-                  })
+                  setTouchHoverLabel(null)
                 }}
                 onDragOver={(e) => {
                   e.preventDefault()
                   e.dataTransfer.dropEffect = 'move'
-                  
-                  if (dragStartLabel && dragStartLabel !== card.label) {
-                    // Show where it will drop
-                    e.currentTarget.style.borderColor = '#3B82F6'
-                    e.currentTarget.style.backgroundColor = '#EFF6FF'
-                  }
                 }}
                 onDragEnter={(e) => {
                   e.preventDefault()
                   if (dragStartLabel && dragStartLabel !== card.label) {
-                    e.currentTarget.style.backgroundColor = '#EFF6FF'
-                    e.currentTarget.style.borderColor = '#3B82F6'
-                    e.currentTarget.style.transform = 'scale(1.02)'
+                    setTouchHoverLabel(card.label)
                   }
                 }}
                 onDragLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = ''
-                  e.currentTarget.style.borderColor = ''
-                  e.currentTarget.style.transform = ''
+                  if (e.currentTarget === e.target) {
+                    setTouchHoverLabel(null)
+                  }
                 }}
                 onDrop={(e) => {
                   e.preventDefault()
-                  e.currentTarget.style.backgroundColor = ''
-                  e.currentTarget.style.borderColor = ''
-                  e.currentTarget.style.transform = ''
-                  
-                  const fromLabel = e.dataTransfer.getData('cardLabel')
+                  const fromLabel = e.dataTransfer.getData('text/plain')
                   if (fromLabel && fromLabel !== card.label) {
                     swapOrder(fromLabel, card.label)
                   }
+                  setTouchHoverLabel(null)
+                  setDragStartLabel(null)
                 }}
                 onTouchStart={(e) => {
                   const touch = e.touches[0]
@@ -1746,79 +1750,63 @@ export default function Client2Module() {
                   
                   const touch = e.touches[0]
                   const deltaX = Math.abs(touch.clientX - touchStartX)
-                  const deltaY = Math.abs(touch.clientY - touchStartY)
+                  const deltaY = touch.clientY - touchStartY
+                  const absDeltaY = Math.abs(deltaY)
                   
-                  // If vertical movement is greater, allow scrolling
-                  if ((deltaY > deltaX || deltaY > 15) && dragStartLabel === null) {
+                  // Allow vertical scrolling if moving primarily vertically
+                  if (absDeltaY > deltaX && dragStartLabel === null) {
                     return
                   }
                   
-                  // Activate drag on horizontal movement (10px threshold)
-                  if (deltaX > 10 && deltaY < 15 && dragStartLabel === null) {
+                  // Start drag on significant horizontal movement
+                  if (deltaX > 8 && absDeltaY < 20 && dragStartLabel === null) {
                     e.preventDefault()
                     setDragStartLabel(card.label)
-                    setIsDragging(true)
-                    // Add haptic feedback if available
                     if (window.navigator.vibrate) {
-                      window.navigator.vibrate(50)
+                      window.navigator.vibrate(40)
                     }
+                    return
                   }
                   
-                  // While dragging
+                  // Continue drag
                   if (dragStartLabel) {
                     e.preventDefault()
-                    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
-                    const targetCard = elementAtPoint?.closest('[data-card-label]')
                     
-                    if (targetCard && targetCard.dataset.cardLabel !== dragStartLabel) {
-                      setTouchHoverLabel(targetCard.dataset.cardLabel)
+                    // Find element at touch position
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+                    if (!element) return
+                    
+                    const targetCard = element.closest('[data-card-label]')
+                    if (targetCard) {
+                      const targetLabel = targetCard.getAttribute('data-card-label')
+                      if (targetLabel && targetLabel !== dragStartLabel) {
+                        setTouchHoverLabel(targetLabel)
+                      } else if (targetLabel === dragStartLabel) {
+                        setTouchHoverLabel(null)
+                      }
                     } else {
                       setTouchHoverLabel(null)
                     }
                   }
                 }}
                 onTouchEnd={(e) => {
-                  if (dragStartLabel) {
-                    const touch = e.changedTouches[0]
-                    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
-                    const targetCard = elementAtPoint?.closest('[data-card-label]')
-                    
-                    if (targetCard && targetCard.dataset.cardLabel && targetCard.dataset.cardLabel !== dragStartLabel) {
-                      swapOrder(dragStartLabel, targetCard.dataset.cardLabel)
-                      // Haptic feedback on successful swap
-                      if (window.navigator.vibrate) {
-                        window.navigator.vibrate([30, 20, 30])
-                      }
+                  if (dragStartLabel && touchHoverLabel && dragStartLabel !== touchHoverLabel) {
+                    swapOrder(dragStartLabel, touchHoverLabel)
+                    if (window.navigator.vibrate) {
+                      window.navigator.vibrate([25, 15, 25])
                     }
                   }
                   
                   setDragStartLabel(null)
                   setTouchHoverLabel(null)
-                  setIsDragging(false)
                   setTouchStartX(null)
                   setTouchStartY(null)
                 }}
                 onTouchCancel={(e) => {
                   setDragStartLabel(null)
                   setTouchHoverLabel(null)
-                  setIsDragging(false)
                   setTouchStartX(null)
                   setTouchStartY(null)
-                }}
-                data-card-label={card.label}
-                className={`bg-white rounded-xl p-3 shadow-sm border-2 cursor-move transition-all duration-200 ${
-                  dragStartLabel === card.label 
-                    ? 'opacity-80 scale-95 border-blue-400' 
-                    : touchHoverLabel === card.label 
-                      ? 'bg-blue-50 border-blue-500 scale-105 shadow-lg' 
-                      : 'border-gray-100'
-                }`}
-                style={{ 
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                  touchAction: 'pan-y',
-                  WebkitTapHighlightColor: 'transparent'
                 }}
               >
                 <div className="flex items-start justify-between">

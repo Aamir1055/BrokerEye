@@ -46,6 +46,7 @@ export default function ClientPercentageModule() {
   const itemsPerPage = isMobileView ? 12 : 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     percentage: true,
@@ -529,6 +530,30 @@ export default function ClientPercentageModule() {
                     </span>
                   ) : null;
                 })()}
+              </button>
+              <button
+                onClick={() => {
+                  if (isRefreshing) return
+                  setIsRefreshing(true)
+                  console.log('[ClientPercentage] Refreshing data...')
+                  setTimeout(() => setIsRefreshing(false), 2000)
+                }}
+                disabled={isRefreshing}
+                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center transition-all ${
+                  isRefreshing
+                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
+                }`}
+                title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
+              >
+                <svg
+                  className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               </button>
               <button 
                 onClick={handleExportToCSV}

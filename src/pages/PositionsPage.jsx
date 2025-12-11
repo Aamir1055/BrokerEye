@@ -117,6 +117,7 @@ const PositionsPage = () => {
   const displayMenuRef = useRef(null)
   const displayButtonRef = useRef(null)
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     position: false,
     time: true,
@@ -552,8 +553,13 @@ const PositionsPage = () => {
       }
     })
 
+    // Re-enable refresh button when positions update
+    if (isRefreshing && (newCount > 0 || updateCount > 0 || deletedCount > 0)) {
+      setIsRefreshing(false)
+    }
+
     prevPositionsRef.current = cachedPositions
-  }, [cachedPositions])
+  }, [cachedPositions, isRefreshing])
   
   // Close suggestions when clicking outside
   useEffect(() => { if (!isAuthenticated) return;
@@ -2068,16 +2074,32 @@ const PositionsPage = () => {
               
               <button
                 onClick={() => {
+                  if (isRefreshing) return
                   console.log('[Positions] Requesting fresh position snapshot from WebSocket...')
+                  setIsRefreshing(true)
                   websocketService.send({
                     type: 'GET_POSITIONS',
                     action: 'snapshot'
                   })
+                  // Auto re-enable after 3 seconds as fallback
+                  setTimeout(() => {
+                    setIsRefreshing(false)
+                  }, 3000)
                 }}
-                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                title="Refresh positions from WebSocket"
+                disabled={isRefreshing}
+                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
+                  isRefreshing 
+                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
+                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
+                }`}
+                title={isRefreshing ? "Refreshing..." : "Refresh positions from WebSocket"}
               >
-                <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg 
+                  className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
