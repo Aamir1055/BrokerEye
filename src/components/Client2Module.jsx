@@ -1290,6 +1290,16 @@ export default function Client2Module() {
                               }`}>
                                 {client.processorType === true ? 'Connected' : 'Not Connected'}
                               </span>
+                            ) : col.key === 'accountType' ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium uppercase ${
+                                (client.accountType || '').toLowerCase() === 'gold' 
+                                  ? 'bg-yellow-100 text-yellow-800' 
+                                  : (client.accountType || '').toLowerCase() === 'silver'
+                                  ? 'bg-gray-200 text-gray-700'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {client.accountType || '-'}
+                              </span>
                             ) : (
                               rowData[col.key]
                             )}
