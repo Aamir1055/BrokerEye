@@ -2450,24 +2450,29 @@ const PositionsPage = () => {
                 </div>
                 <div className="overflow-auto flex-1" style={{
                   scrollbarWidth: 'thin',
-                  scrollbarColor: '#9ca3af #e5e7eb'
+                  scrollbarColor: '#9ca3af #e5e7eb',
+                  overflowY: 'scroll',
+                  overflowX: 'auto'
                 }}>
                   <style>{`
                     .overflow-auto::-webkit-scrollbar {
-                      width: 12px;
-                      height: 12px;
+                      width: 14px;
+                      height: 14px;
                     }
                     .overflow-auto::-webkit-scrollbar-track {
-                      background: #f3f4f6;
-                      border-radius: 5px;
+                      background: #e5e7eb;
+                      border-radius: 0;
                     }
                     .overflow-auto::-webkit-scrollbar-thumb {
-                      background: #9ca3af;
-                      border-radius: 5px;
-                      border: 2px solid #f3f4f6;
+                      background: #6b7280;
+                      border-radius: 4px;
+                      border: 2px solid #e5e7eb;
                     }
                     .overflow-auto::-webkit-scrollbar-thumb:hover {
-                      background: #6b7280;
+                      background: #4b5563;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb:active {
+                      background: #374151;
                     }
                   `}</style>
                   {netDisplayedPositions.length === 0 && !isInitialPositionsLoading ? (
