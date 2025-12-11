@@ -725,7 +725,7 @@ export default function PendingOrdersModule() {
                 )}
 
                 {/* Empty state */}
-                {filteredOrders.length === 0 && (
+                {filteredOrders.length === 0 && !loading?.orders && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">
                     No pending orders found
                   </div>
