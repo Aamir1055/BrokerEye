@@ -855,7 +855,7 @@ export default function LiveDealingModule() {
             <div className="flex gap-[8px]">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
-                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (timeFilter !== '24h' || moduleFilter !== 'both' || selectedIB || getActiveGroupFilter('livedealing'))
                     ? 'bg-blue-50 border-blue-200' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
@@ -881,7 +881,7 @@ export default function LiveDealingModule() {
               </button>
               <button 
                 onClick={() => setShowDisplayModeModal(true)}
-                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all ${
+                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all ${
                   displayMode === 'percentage' || displayMode === 'both' ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
@@ -913,7 +913,7 @@ export default function LiveDealingModule() {
                 title={isRefreshing ? 'Refreshing...' : 'Refresh deals'}
               >
                 <svg
-                  className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`}
+                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
