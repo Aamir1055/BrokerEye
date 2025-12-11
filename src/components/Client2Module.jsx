@@ -1020,20 +1020,18 @@ export default function Client2Module() {
               </div>
               {/* Refresh button */}
               <button
-                onClick={() => {
-                  console.log('[Client2 Mobile] Manually refreshing data...')
-                  fetchClients(null, false)
-                }}
-                className="w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer active:scale-95"
-                title="Refresh data"
+                onClick={() => window.location.reload()}
+                disabled={isLoading}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="#1A63BC"
                   viewBox="0 0 24 24"
+                  strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
