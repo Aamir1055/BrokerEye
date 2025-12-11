@@ -1929,6 +1929,17 @@ const LiveDealingPage = () => {
           {/* Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
+              {/* Blink animation styles should always be present */}
+              <style>{`
+                @keyframes dealBlink {
+                  0%, 100% { background-color: #ffffff; }
+                  25%, 75% { background-color: #dbeafe; }
+                  50% { background-color: #93c5fd; }
+                }
+                .new-deal-blink {
+                  animation: dealBlink 0.6s ease-in-out 4;
+                }
+              `}</style>
               <table className="min-w-full divide-y divide-gray-200 text-xs">
               <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                 <tr>
@@ -1970,14 +1981,6 @@ const LiveDealingPage = () => {
                             height: 100%;
                             background: #2563eb;
                             animation: shimmerSlide 0.9s linear infinite;
-                          }
-                          @keyframes dealBlink {
-                            0%, 100% { background-color: inherit; }
-                            25%, 75% { background-color: #dbeafe; }
-                            50% { background-color: #93c5fd; }
-                          }
-                          .new-deal-blink {
-                            animation: dealBlink 0.6s ease-in-out 4;
                           }
                         `}</style>
                         <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
