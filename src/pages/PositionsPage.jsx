@@ -2325,7 +2325,7 @@ const PositionsPage = () => {
               </div>
 
               {/* NET Position Table */}
-              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ height: '750px' }}>
                 {/* NET module controls */}
                 <div className="h-[70px] bg-white rounded-lg shadow-sm border border-gray-200 mb-3 flex items-center px-4">
                   <div className="flex flex-row items-center justify-between gap-3 w-full">
@@ -2448,7 +2448,7 @@ const PositionsPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="overflow-auto flex-1" style={{
+                <div className="overflow-auto h-full" style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#9ca3af #e5e7eb'
                 }}>
