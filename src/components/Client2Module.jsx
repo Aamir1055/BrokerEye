@@ -172,7 +172,7 @@ export default function Client2Module() {
     lifetimePnL: false,
     thisMonthPnL: false,
     thisWeekPnL: false,
-    processorTime: false,
+    processorType: false,
     accountType: false
   })
 
@@ -744,7 +744,7 @@ export default function Client2Module() {
     { key: 'lifetimePnL', label: 'Lifetime PnL', width: '100px' },
     { key: 'thisMonthPnL', label: 'This Month PnL', width: '110px' },
     { key: 'thisWeekPnL', label: 'This Week PnL', width: '110px' },
-    { key: 'processorTime', label: 'Processor Time', width: '120px' },
+    { key: 'processorType', label: 'Processor Type', width: '120px' },
     { key: 'accountType', label: 'Account Type', width: '100px' }
   ]
 
@@ -752,8 +752,8 @@ export default function Client2Module() {
   const formatCellValue = (key, value) => {
     if (value === null || value === undefined) return '-'
     
-    // Handle processorTime boolean field
-    if (key === 'processorTime') {
+    // Handle processorType boolean field
+    if (key === 'processorType') {
       return value === true ? 'Connected' : 'Not Connected'
     }
     
@@ -1258,9 +1258,9 @@ export default function Client2Module() {
                         rowData[col.key] = client.zipCode || client.zip_code || '-';
                       } else if (col.key === 'clientID') {
                         rowData[col.key] = client.clientID || client.client_id || '-';
-                      } else if (col.key === 'processorTime') {
-                        // Handle processorTime boolean value
-                        rowData[col.key] = formatCellValue('processorTime', client.processorTime);
+                      } else if (col.key === 'processorType') {
+                        // Handle processorType boolean value
+                        rowData[col.key] = formatCellValue('processorType', client.processorType);
                       } else if (percentageColumns.has(col.key)) {
                         // Use getCellValue to get the correct field, then format it
                         const value = getCellValue(col.key, client);
@@ -1636,7 +1636,7 @@ export default function Client2Module() {
                 'Lifetime PnL': 'lifetimePnL',
                 'This Month PnL': 'thisMonthPnL',
                 'This Week PnL': 'thisWeekPnL',
-                'Processor Type': 'processorTime',
+                'Processor Type': 'processorType',
                 'Account Type': 'accountType',
               }).filter(([label]) => 
                 !columnSearch || label.toLowerCase().includes(columnSearch.toLowerCase())
