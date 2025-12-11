@@ -65,7 +65,7 @@ const PendingOrdersPage = () => {
   const allColumns = [
     { key: 'order', label: 'Order' },
     { key: 'time', label: 'Time' },
-    { key: 'login', label: 'Login' },
+    { key: 'login', label: 'Login', sticky: true },
     { key: 'type', label: 'Type' },
     { key: 'symbol', label: 'Symbol' },
     { key: 'volume', label: 'Volume' },

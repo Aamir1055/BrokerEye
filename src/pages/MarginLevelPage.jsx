@@ -79,7 +79,7 @@ const MarginLevelPage = () => {
   })
 
   const allColumns = [
-    { key: 'login', label: 'Login' },
+    { key: 'login', label: 'Login', sticky: true },
     { key: 'name', label: 'Name' },
     { key: 'group', label: 'Group' },
     { key: 'balance', label: 'Balance' },

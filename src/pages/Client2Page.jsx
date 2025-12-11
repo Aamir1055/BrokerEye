@@ -575,7 +575,7 @@ const Client2Page = () => {
 
   // All available columns
   const allColumns = [
-    { key: 'login', label: 'Login', type: 'integer' },
+    { key: 'login', label: 'Login', type: 'integer', sticky: true },
     { key: 'name', label: 'Name', type: 'text' },
     { key: 'lastName', label: 'Last Name', type: 'text' },
     { key: 'middleName', label: 'Middle Name', type: 'text' },

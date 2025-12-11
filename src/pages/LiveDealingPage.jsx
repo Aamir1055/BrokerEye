@@ -133,7 +133,7 @@ const LiveDealingPage = () => {
   const allColumns = [
     { key: 'deal', label: 'Deal' },
     { key: 'time', label: 'Time' },
-    { key: 'login', label: 'Login' },
+    { key: 'login', label: 'Login', sticky: true },
     { key: 'action', label: 'Action' },
     { key: 'symbol', label: 'Symbol' },
     { key: 'volume', label: 'Volume' },

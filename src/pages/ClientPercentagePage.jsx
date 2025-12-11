@@ -61,7 +61,7 @@ const ClientPercentagePage = () => {
   })
 
   const allColumns = [
-    { key: 'login', label: 'Client Login' },
+    { key: 'login', label: 'Client Login', sticky: true },
     { key: 'percentage', label: 'Percentage' },
     { key: 'type', label: 'Type' },
     { key: 'comment', label: 'Comment' },

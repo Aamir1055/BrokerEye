@@ -142,7 +142,7 @@ const PositionsPage = () => {
 
   const allColumns = [
     { key: 'position', label: 'Position' },
-    { key: 'login', label: 'Login' },
+    { key: 'login', label: 'Login', sticky: true },
     { key: 'action', label: 'Action' },
     { key: 'symbol', label: 'Symbol' },
     { key: 'volume', label: 'Volume' },

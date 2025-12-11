@@ -352,7 +352,7 @@ const ClientsPage = () => {
   const [cardVisibility, setCardVisibility] = useState(getInitialCardVisibility)
 
   const allColumns = [
-    { key: 'login', label: 'Login' },
+    { key: 'login', label: 'Login', sticky: true },
     { key: 'name', label: 'Name' },
     { key: 'lastName', label: 'Last Name' },
     { key: 'middleName', label: 'Middle Name' },
