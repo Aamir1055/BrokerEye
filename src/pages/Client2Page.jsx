@@ -163,7 +163,9 @@ const Client2Page = () => {
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
-  // Drag-and-drop for face cards removed per request
+  // Drag-and-drop for face cards
+  const [draggedCardKey, setDraggedCardKey] = useState(null)
+  const [dragOverCardKey, setDragOverCardKey] = useState(null)
   // Trend tracking for face card values (desktop)
   const lastValuesRef = useRef({})
   const lastTrendRef = useRef({})
@@ -2361,6 +2363,52 @@ const Client2Page = () => {
     } catch { }
   }, [faceCardOrder])
 
+  // Drag and drop handlers for face cards
+  const handleCardDragStart = (e, cardKey) => {
+    setDraggedCardKey(cardKey)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.target)
+  }
+
+  const handleCardDragOver = (e, cardKey) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedCardKey && draggedCardKey !== cardKey) {
+      setDragOverCardKey(cardKey)
+    }
+  }
+
+  const handleCardDrop = (e, targetCardKey) => {
+    e.preventDefault()
+    if (!draggedCardKey || draggedCardKey === targetCardKey) {
+      setDraggedCardKey(null)
+      setDragOverCardKey(null)
+      return
+    }
+
+    const newOrder = [...faceCardOrder]
+    const draggedIndex = newOrder.indexOf(draggedCardKey)
+    const targetIndex = newOrder.indexOf(targetCardKey)
+
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      // Remove dragged item
+      newOrder.splice(draggedIndex, 1)
+      // Insert at new position
+      newOrder.splice(targetIndex, 0, draggedCardKey)
+      
+      setFaceCardOrder(newOrder)
+      localStorage.setItem('client2FaceCardOrder', JSON.stringify(newOrder))
+    }
+
+    setDraggedCardKey(null)
+    setDragOverCardKey(null)
+  }
+
+  const handleCardDragEnd = () => {
+    setDraggedCardKey(null)
+    setDragOverCardKey(null)
+  }
+
   const resetClient2FaceCardOrder = () => {
     setFaceCardOrder(defaultClient2FaceCardOrder)
     localStorage.setItem('client2FaceCardOrder', JSON.stringify(defaultClient2FaceCardOrder))
@@ -3521,7 +3569,17 @@ const Client2Page = () => {
                     <div
                       key={cardKey}
                       data-card-key={cardKey}
-                      className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative"
+                      draggable={!isMobile}
+                      onDragStart={(e) => handleCardDragStart(e, cardKey)}
+                      onDragOver={(e) => handleCardDragOver(e, cardKey)}
+                      onDrop={(e) => handleCardDrop(e, cardKey)}
+                      onDragEnd={handleCardDragEnd}
+                      className={`bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 md:p-2 md:hover:shadow-md md:transition-all md:duration-200 select-none w-full relative ${
+                        draggedCardKey === cardKey ? 'opacity-50' : ''
+                      } ${
+                        dragOverCardKey === cardKey ? 'ring-2 ring-blue-500' : ''
+                      }`}
+                      style={{ cursor: isMobile ? 'default' : 'grab' }}
                     >
                       <div className="flex items-start justify-between mb-1.5 select-none">
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">

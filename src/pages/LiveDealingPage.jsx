@@ -1973,8 +1973,8 @@ const LiveDealingPage = () => {
                           }
                           @keyframes dealBlink {
                             0%, 100% { background-color: inherit; }
-                            25%, 75% { background-color: #fef3c7; }
-                            50% { background-color: #fde68a; }
+                            25%, 75% { background-color: #dbeafe; }
+                            50% { background-color: #93c5fd; }
                           }
                           .new-deal-blink {
                             animation: dealBlink 0.6s ease-in-out 4;
