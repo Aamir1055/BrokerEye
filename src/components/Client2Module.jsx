@@ -1014,6 +1014,32 @@ export default function Client2Module() {
                   </>
                 )}
               </div>
+              {/* Refresh button */}
+              <button
+                onClick={() => {
+                  if (isRefreshing) return
+                  setIsRefreshing(true)
+                  console.log('[Client2 Mobile] Refreshing data...')
+                  fetchClients(showPercent)
+                  setTimeout(() => setIsRefreshing(false), 2000)
+                }}
+                disabled={isRefreshing}
+                className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
+                  isRefreshing
+                    ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                    : 'bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer'
+                }`}
+                title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
+              >
+                <svg
+                  className={`w-4 h-4 text-[#404040] ${isRefreshing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
 
             {/* Right side - View All only */}

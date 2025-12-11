@@ -525,15 +525,7 @@ export default function IBCommissionsModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden">
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 flex items-center gap-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-700 font-medium">Loading...</span>
-          </div>
-        </div>
-      )}
+
 
       {/* Error Message */}
       {error && (
@@ -828,7 +820,49 @@ export default function IBCommissionsModule() {
                 </div>
 
                 {/* Table Body */}
-                {paginatedData.map((item, idx) => (
+                {loading ? (
+                  // YouTube-style skeleton loading
+                  Array.from({ length: 8 }).map((_, idx) => (
+                    <div 
+                      key={`skeleton-${idx}`} 
+                      className="grid text-[10px] bg-white border-b border-[#E1E1E1]"
+                      style={{
+                        gap: '0px', 
+                        gridGap: '0px', 
+                        columnGap: '0px',
+                        gridTemplateColumns
+                      }}
+                    >
+                      {activeColumns.map(col => (
+                        <div 
+                          key={col.key}
+                          className={`h-[28px] flex items-center ${col.key === 'checkbox' ? 'justify-center' : 'justify-start'} px-2 ${
+                            col.sticky ? 'sticky left-0 bg-white' : ''
+                          }`}
+                          style={{
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
+                            left: col.sticky ? col.stickyLeft : 'auto',
+                            zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
+                          }}
+                        >
+                          <div 
+                            className={`bg-gray-200 rounded animate-pulse ${
+                              col.key === 'checkbox' ? 'h-4 w-4' :
+                              col.key === 'id' ? 'h-3 w-8' :
+                              col.key === 'name' ? 'h-3 w-24' :
+                              col.key === 'email' ? 'h-3 w-32' :
+                              col.key === 'percentage' || col.key === 'total_commission' || col.key === 'available_rebate' || col.key === 'disbursed_rebate' ? 'h-3 w-16' :
+                              col.key === 'actions' ? 'h-6 w-12' :
+                              'h-3 w-20'
+                            }`}
+                          ></div>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                ) : paginatedData.map((item, idx) => (
                   <div 
                     key={idx} 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
@@ -877,7 +911,7 @@ export default function IBCommissionsModule() {
                 )}
 
                 {/* Empty state */}
-                {paginatedData.length === 0 && (
+                {!loading && paginatedData.length === 0 && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">
                     No data available
                   </div>
