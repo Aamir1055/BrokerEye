@@ -1022,7 +1022,7 @@ export default function Client2Module() {
               <button
                 onClick={() => {
                   console.log('[Client2 Mobile] Manually refreshing data...')
-                  fetchClients(showPercent, false)
+                  fetchClients(null, false)
                 }}
                 className="w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer active:scale-95"
                 title="Refresh data"
