@@ -601,12 +601,80 @@ export default function Client2Module() {
   // Alternative names for pagination functions used in UI
   const goToPreviousPage = goToPrevPage
 
-  // Export functions
-  const exportTableColumns = () => {
+  // Export functions - Fetch ALL data with current filters
+  const exportTableColumns = async () => {
     try {
+      console.log('[Client2Module] Starting table columns export...')
+      setIsLoading(true)
+
+      // Build payload with current filters to fetch ALL data
+      const payload = {
+        page: 1,
+        limit: 100000, // Large limit to get all records
+        percentage: showPercent
+      }
+
+      // Add filters to payload
+      const apiFilters = []
+      if (filters.hasFloating) {
+        apiFilters.push({ field: 'profit', operator: 'not_equal', value: '0' })
+      }
+      if (filters.hasCredit) {
+        apiFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (filters.noDeposit) {
+        apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
+      if (apiFilters.length > 0) {
+        payload.filters = apiFilters
+      }
+
+      // Add search query
+      if (searchInput && searchInput.trim()) {
+        payload.searchQuery = searchInput.trim()
+      }
+
+      // Add group filter
+      const activeGroupName = getActiveGroupFilter('client2')
+      if (activeGroupName && groups && groups.length > 0) {
+        const activeGroup = groups.find(g => g.name === activeGroupName)
+        if (activeGroup) {
+          if (activeGroup.range) {
+            payload.accountRangeMin = activeGroup.range.from
+            payload.accountRangeMax = activeGroup.range.to
+          } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+          }
+        }
+      }
+
+      // Add IB filter
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
+          const groupSet = new Set(payload.mt5Accounts)
+          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        } else {
+          payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+        }
+      }
+
+      // Fetch all data
+      const response = await brokerAPI.searchClients(payload)
+      const responseData = response?.data || {}
+      const data = responseData?.data || responseData
+      const allClients = (data.clients || []).filter(c => c != null && c.login != null)
+
+      console.log('[Client2Module] Fetched', allClients.length, 'clients for export')
+
+      if (allClients.length === 0) {
+        alert('No data to export')
+        setIsLoading(false)
+        return
+      }
+
       // Get data from visible columns only
       const headers = visibleColumnsList.map(col => col.label)
-      const rows = filteredClients.map(client => {
+      const rows = allClients.map(client => {
         return visibleColumnsList.map(col => {
           if (col.key === 'balance' || col.key === 'credit' || col.key === 'equity' || col.key === 'profit' || col.key === 'marginFree' || col.key === 'margin') {
             return formatNum(client[col.key] || 0)
@@ -636,17 +704,90 @@ export default function Client2Module() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
+      
+      setIsLoading(false)
+      console.log('[Client2Module] Export completed successfully')
     } catch (error) {
-      console.error('Export failed:', error)
+      console.error('[Client2Module] Export failed:', error)
+      alert('Export failed. Please try again.')
+      setIsLoading(false)
     }
   }
 
-  const exportAllColumns = () => {
+  const exportAllColumns = async () => {
     try {
+      console.log('[Client2Module] Starting all columns export...')
+      setIsLoading(true)
+
+      // Build payload with current filters to fetch ALL data
+      const payload = {
+        page: 1,
+        limit: 100000, // Large limit to get all records
+        percentage: showPercent
+      }
+
+      // Add filters to payload
+      const apiFilters = []
+      if (filters.hasFloating) {
+        apiFilters.push({ field: 'profit', operator: 'not_equal', value: '0' })
+      }
+      if (filters.hasCredit) {
+        apiFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (filters.noDeposit) {
+        apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
+      if (apiFilters.length > 0) {
+        payload.filters = apiFilters
+      }
+
+      // Add search query
+      if (searchInput && searchInput.trim()) {
+        payload.searchQuery = searchInput.trim()
+      }
+
+      // Add group filter
+      const activeGroupName = getActiveGroupFilter('client2')
+      if (activeGroupName && groups && groups.length > 0) {
+        const activeGroup = groups.find(g => g.name === activeGroupName)
+        if (activeGroup) {
+          if (activeGroup.range) {
+            payload.accountRangeMin = activeGroup.range.from
+            payload.accountRangeMax = activeGroup.range.to
+          } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+          }
+        }
+      }
+
+      // Add IB filter
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
+          const groupSet = new Set(payload.mt5Accounts)
+          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        } else {
+          payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+        }
+      }
+
+      // Fetch all data
+      const response = await brokerAPI.searchClients(payload)
+      const responseData = response?.data || {}
+      const data = responseData?.data || responseData
+      const allClients = (data.clients || []).filter(c => c != null && c.login != null)
+
+      console.log('[Client2Module] Fetched', allClients.length, 'clients for export')
+
+      if (allClients.length === 0) {
+        alert('No data to export')
+        setIsLoading(false)
+        return
+      }
+
       // Export ALL columns regardless of visibility
       const allColumnKeys = columnConfig.map(col => col)
       const headers = allColumnKeys.map(col => col.label)
-      const rows = filteredClients.map(client => {
+      const rows = allClients.map(client => {
         return allColumnKeys.map(col => {
           if (col.key === 'balance' || col.key === 'credit' || col.key === 'equity' || col.key === 'profit' || col.key === 'marginFree' || col.key === 'margin') {
             return formatNum(client[col.key] || 0)
@@ -676,8 +817,13 @@ export default function Client2Module() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
+      
+      setIsLoading(false)
+      console.log('[Client2Module] Export completed successfully')
     } catch (error) {
-      console.error('Export failed:', error)
+      console.error('[Client2Module] Export failed:', error)
+      alert('Export failed. Please try again.')
+      setIsLoading(false)
     }
   }
 
