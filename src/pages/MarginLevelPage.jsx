@@ -1199,6 +1199,14 @@ const MarginLevelPage = () => {
                         </tr>
                       )
                     })}
+                    {/* Total Row */}
+                    {displayedAccounts.length > 0 && (
+                      <tr className="border-t-2 border-blue-500">
+                        <td colSpan={6} className="px-3 py-2 text-sm font-semibold text-gray-900">
+                          Total
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               )}

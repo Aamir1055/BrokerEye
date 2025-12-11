@@ -100,14 +100,17 @@ export default function ClientPercentageModule() {
 
   // Fetch data on mount
   useEffect(() => {
-    fetchAllClientPercentages()
+    fetchAllClientPercentages(1)
   }, [])
 
-  const fetchAllClientPercentages = async () => {
+  const fetchAllClientPercentages = async (page = 1) => {
     try {
       setLoading(true)
       setError('')
-      const response = await brokerAPI.getAllClientPercentages()
+      
+      // Use pagination only for mobile view
+      const params = isMobileView ? { limit: 12, page } : {}
+      const response = await brokerAPI.getAllClientPercentages(params)
       
       const clientsData = response.data?.clients || []
       setClients(clientsData)
@@ -252,11 +255,23 @@ export default function ClientPercentageModule() {
     }
   }, [summaryStats])
 
+  // Fetch data when page changes in mobile view
+  useEffect(() => {
+    if (isMobileView && currentPage > 1) {
+      fetchAllClientPercentages(currentPage)
+    }
+  }, [currentPage])
+
   // Pagination
   const paginatedData = useMemo(() => {
+    // For mobile view, data is already paginated from API
+    if (isMobileView) {
+      return clients.slice(0, 12) // Ensure only 12 items
+    }
+    // For desktop view, use client-side pagination
     const startIndex = (currentPage - 1) * itemsPerPage
     return filteredData.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredData, currentPage, itemsPerPage])
+  }, [clients, filteredData, currentPage, itemsPerPage, isMobileView])
 
   // Get visible columns
   const allColumns = [
@@ -649,12 +664,12 @@ export default function ClientPercentageModule() {
             <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
               <span className="font-semibold">{currentPage}</span>
               <span className="text-[#9CA3AF] mx-1">/</span>
-              <span>{Math.ceil(filteredData.length / itemsPerPage)}</span>
+              <span>{Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage)}</span>
             </div>
 
             <button 
-              onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredData.length / itemsPerPage), prev + 1))}
-              disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
+              onClick={() => setCurrentPage(prev => Math.min(Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage), prev + 1))}
+              disabled={currentPage >= Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage)}
               className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -728,6 +743,33 @@ export default function ClientPercentageModule() {
                     ))}
                   </div>
                 ))}
+
+                {/* Total Row */}
+                {paginatedData.length > 0 && (
+                  <div 
+                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    {activeColumns.map(col => (
+                      <div 
+                        key={col.key}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                        style={{
+                          border: 'none', 
+                          outline: 'none', 
+                          boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+                        }}
+                      >
+                        {col.key === 'login' ? 'Total' : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Empty state */}
                 {paginatedData.length === 0 && (

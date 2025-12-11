@@ -1257,25 +1257,42 @@ export default function Client2Module() {
                     );
                   })}
                   
-                  {/* Footer row */}
-                  <div className="grid bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold border-t-2 border-[#1A63BC]" style={{gap: '0px', gridGap: '0', columnGap: '0', gridTemplateColumns}}>
-                    {visibleColumnsList.map((col, idx) => (
+                  {/* Total Row */}
+                  {filteredClients.length > 0 && (
+                    <>
+                      <div style={{ height: '2px', backgroundColor: '#3B82F6', width: '100%' }} />
                       <div 
-                        key={col.key}
-                        className={`h-[38px] flex items-center justify-start px-2 ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
-                        style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white"
+                        style={{
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
+                        }}
                       >
-                        {col.key === 'login' ? 'Total' : 
-                         col.key === 'balance' ? formatCellValue('balance', clientStats?.totalBalance || 0) :
-                         col.key === 'profit' ? formatCellValue('profit', clientStats?.totalProfit || 0) :
-                         col.key === 'credit' ? formatCellValue('credit', clientStats?.totalCredit || 0) :
-                         col.key === 'equity' ? formatCellValue('equity', clientStats?.totalEquity || 0) :
-                         col.key === 'margin' ? formatCellValue('margin', clientStats?.totalMargin || 0) :
-                         col.key === 'marginFree' ? formatCellValue('marginFree', clientStats?.totalMarginFree || 0) :
-                         ''}
+                        {visibleColumnsList.map((col, idx) => (
+                          <div 
+                            key={col.key}
+                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-white z-10' : ''}`}
+                            style={{
+                              border: 'none', 
+                              outline: 'none', 
+                              boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+                            }}
+                          >
+                            {col.key === 'login' ? 'Total' : 
+                             col.key === 'balance' ? formatCellValue('balance', clientStats?.totalBalance || 0) :
+                             col.key === 'profit' ? formatCellValue('profit', clientStats?.totalProfit || 0) :
+                             col.key === 'credit' ? formatCellValue('credit', clientStats?.totalCredit || 0) :
+                             col.key === 'equity' ? formatCellValue('equity', clientStats?.totalEquity || 0) :
+                             col.key === 'margin' ? formatCellValue('margin', clientStats?.totalMargin || 0) :
+                             col.key === 'marginFree' ? formatCellValue('marginFree', clientStats?.totalMarginFree || 0) :
+                             ''}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </>
               )}
             </div>

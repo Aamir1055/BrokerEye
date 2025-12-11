@@ -822,6 +822,35 @@ export default function IBCommissionsModule() {
                   </div>
                 ))}
 
+                {/* Total Row */}
+                {paginatedData.length > 0 && (
+                  <div 
+                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    {activeColumns.map(col => (
+                      <div 
+                        key={col.key}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white' : ''}`}
+                        style={{
+                          border: 'none', 
+                          outline: 'none', 
+                          boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
+                          left: col.sticky ? col.stickyLeft : 'auto',
+                          zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
+                        }}
+                      >
+                        {col.key === 'checkbox' ? '' : col.key === 'login' ? 'Total' : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Empty state */}
                 {paginatedData.length === 0 && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">

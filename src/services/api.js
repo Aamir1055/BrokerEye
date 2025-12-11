@@ -522,8 +522,8 @@ export const brokerAPI = {
   },
   
   // Get all client percentages
-  getAllClientPercentages: async () => {
-    const response = await api.get('/api/broker/clients/percentages')
+  getAllClientPercentages: async (params = {}) => {
+    const response = await api.get('/api/broker/clients/percentages', { params })
     return response.data
   },
   

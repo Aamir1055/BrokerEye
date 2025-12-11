@@ -1261,6 +1261,14 @@ const PendingOrdersPage = () => {
                         </tr>
                       )
                     })}
+                    {/* Total Row */}
+                    {displayedOrders.length > 0 && (
+                      <tr className="border-t-2 border-blue-500">
+                        <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-2 py-1.5 text-[13px] font-semibold text-gray-900">
+                          Total
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
             </div>
