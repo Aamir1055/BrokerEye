@@ -1094,7 +1094,7 @@ export default function LiveDealingModule() {
                 </div>
 
                 {/* Table Rows */}
-                {loading && loading.deals ? (
+                {isRefreshing ? (
                   // YouTube-style skeleton loading
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1148,7 +1148,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Total Row */}
-                {sortedDeals.length > 0 && !loading?.deals && (
+                {sortedDeals.length > 0 && !isRefreshing && (
                   <div 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
                     style={{
@@ -1175,7 +1175,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Empty state */}
-                {sortedDeals.length === 0 && !loading?.deals && (
+                {sortedDeals.length === 0 && !isRefreshing && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">
                     No deals available
                   </div>
