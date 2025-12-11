@@ -531,6 +531,15 @@ export default function ClientPercentageModule() {
                   ) : null;
                 })()}
               </button>
+              <button 
+                onClick={handleExportToCSV}
+                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                title="Export to CSV"
+              >
+                <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/>
+                </svg>
+              </button>
               <button
                 onClick={() => {
                   if (isRefreshing) return
@@ -539,7 +548,7 @@ export default function ClientPercentageModule() {
                   setTimeout(() => setIsRefreshing(false), 2000)
                 }}
                 disabled={isRefreshing}
-                className={`h-[37px] px-3 rounded-[12px] border shadow-sm flex items-center justify-center transition-all ${
+                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
                   isRefreshing
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
@@ -547,7 +556,7 @@ export default function ClientPercentageModule() {
                 title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
               >
                 <svg
-                  className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`}
+                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -557,7 +566,7 @@ export default function ClientPercentageModule() {
               </button>
               <button 
                 onClick={handleExportToCSV}
-                className="h-[37px] px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                className="h-8 px-3 rounded-[12px] bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
                 title="Download as CSV"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

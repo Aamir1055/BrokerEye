@@ -1012,7 +1012,7 @@ const MarginLevelPage = () => {
                     setTimeout(() => setIsRefreshing(false), 2000)
                   }}
                   disabled={isRefreshing}
-                  className={`h-10 w-10 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
+                  className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
                     isRefreshing
                       ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
                       : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
@@ -1020,7 +1020,7 @@ const MarginLevelPage = () => {
                   title={isRefreshing ? 'Refreshing...' : 'Refresh margin levels'}
                 >
                   <svg
-                    className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

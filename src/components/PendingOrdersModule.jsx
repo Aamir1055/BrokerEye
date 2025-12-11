@@ -543,15 +543,15 @@ export default function PendingOrdersModule() {
                 setTimeout(() => setIsRefreshing(false), 2000)
               }}
               disabled={isRefreshing}
-              className={`w-[28px] h-[28px] border rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
+              className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center transition-all flex-shrink-0 ${
                 isRefreshing
                   ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                  : 'bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer'
+                  : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
               }`}
               title={isRefreshing ? 'Refreshing...' : 'Refresh orders'}
             >
               <svg
-                className={`w-4 h-4 text-[#4B4B4B] ${isRefreshing ? 'animate-spin' : ''}`}
+                className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

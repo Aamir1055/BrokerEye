@@ -1032,7 +1032,7 @@ export default function Client2Module() {
                 title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
               >
                 <svg
-                  className={`w-4 h-4 text-[#404040] ${isRefreshing ? 'animate-spin' : ''}`}
+                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
