@@ -601,21 +601,79 @@ export default function Client2Module() {
   // Alternative names for pagination functions used in UI
   const goToPreviousPage = goToPrevPage
 
-  // Export functions
-  const exportTableColumns = () => {
+  // Export functions - Fetch all data for export
+  const exportTableColumns = async () => {
     try {
+      // Build payload for fetching all data
+      const payload = {
+        page: 1,
+        limit: totalClients, // Fetch all clients
+        percentage: showPercent
+      }
+
+      // Add filters to payload (same as fetchClients)
+      const apiFilters = []
+      if (filters.hasFloating) {
+        apiFilters.push({ field: 'profit', operator: 'not_equal', value: '0' })
+      }
+      if (filters.hasCredit) {
+        apiFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (filters.noDeposit) {
+        apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
+      if (apiFilters.length > 0) {
+        payload.filters = apiFilters
+      }
+
+      // Add search query to payload
+      if (searchInput && searchInput.trim()) {
+        payload.searchQuery = searchInput.trim()
+      }
+
+      // Add group filter to payload if active
+      const activeGroupName = getActiveGroupFilter('client2')
+      if (activeGroupName && groups && groups.length > 0) {
+        const activeGroup = groups.find(g => g.name === activeGroupName)
+        if (activeGroup) {
+          if (activeGroup.range) {
+            payload.accountRangeMin = activeGroup.range.from
+            payload.accountRangeMax = activeGroup.range.to
+          } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+          }
+        }
+      }
+
+      // Add IB filter to payload if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
+          const groupSet = new Set(payload.mt5Accounts)
+          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        } else {
+          payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+        }
+      }
+
+      // Fetch all data
+      const response = await brokerAPI.searchClients(payload)
+      const responseData = response?.data || {}
+      const data = responseData?.data || responseData
+      const allClients = data.clients || []
+
       // Get data from visible columns only
       const headers = visibleColumnsList.map(col => col.label)
-      const rows = filteredClients.map(client => {
+      const rows = allClients.map(client => {
         return visibleColumnsList.map(col => {
+          const value = getCellValue(col.key, client)
           if (col.key === 'balance' || col.key === 'credit' || col.key === 'equity' || col.key === 'profit' || col.key === 'marginFree' || col.key === 'margin') {
-            return formatNum(client[col.key] || 0)
+            return formatNum(value || 0)
           } else if (col.key === 'name') {
             return client.name || client.fullName || client.clientName || client.email || '-'
           } else if (col.key === 'phone') {
             return client.phone || client.phoneNo || client.phone_number || '-'
           } else {
-            return client[col.key] || '-'
+            return value || '-'
           }
         })
       })
@@ -641,21 +699,79 @@ export default function Client2Module() {
     }
   }
 
-  const exportAllColumns = () => {
+  const exportAllColumns = async () => {
     try {
+      // Build payload for fetching all data
+      const payload = {
+        page: 1,
+        limit: totalClients, // Fetch all clients
+        percentage: showPercent
+      }
+
+      // Add filters to payload (same as fetchClients)
+      const apiFilters = []
+      if (filters.hasFloating) {
+        apiFilters.push({ field: 'profit', operator: 'not_equal', value: '0' })
+      }
+      if (filters.hasCredit) {
+        apiFilters.push({ field: 'credit', operator: 'greater_than', value: '0' })
+      }
+      if (filters.noDeposit) {
+        apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
+      }
+      if (apiFilters.length > 0) {
+        payload.filters = apiFilters
+      }
+
+      // Add search query to payload
+      if (searchInput && searchInput.trim()) {
+        payload.searchQuery = searchInput.trim()
+      }
+
+      // Add group filter to payload if active
+      const activeGroupName = getActiveGroupFilter('client2')
+      if (activeGroupName && groups && groups.length > 0) {
+        const activeGroup = groups.find(g => g.name === activeGroupName)
+        if (activeGroup) {
+          if (activeGroup.range) {
+            payload.accountRangeMin = activeGroup.range.from
+            payload.accountRangeMax = activeGroup.range.to
+          } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+          }
+        }
+      }
+
+      // Add IB filter to payload if active
+      if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
+          const groupSet = new Set(payload.mt5Accounts)
+          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        } else {
+          payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+        }
+      }
+
+      // Fetch all data
+      const response = await brokerAPI.searchClients(payload)
+      const responseData = response?.data || {}
+      const data = responseData?.data || responseData
+      const allClients = data.clients || []
+
       // Export ALL columns regardless of visibility
       const allColumnKeys = columnConfig.map(col => col)
       const headers = allColumnKeys.map(col => col.label)
-      const rows = filteredClients.map(client => {
+      const rows = allClients.map(client => {
         return allColumnKeys.map(col => {
+          const value = getCellValue(col.key, client)
           if (col.key === 'balance' || col.key === 'credit' || col.key === 'equity' || col.key === 'profit' || col.key === 'marginFree' || col.key === 'margin') {
-            return formatNum(client[col.key] || 0)
+            return formatNum(value || 0)
           } else if (col.key === 'name') {
             return client.name || client.fullName || client.clientName || client.email || '-'
           } else if (col.key === 'phone') {
             return client.phone || client.phoneNo || client.phone_number || '-'
           } else {
-            return client[col.key] || '-'
+            return value || '-'
           }
         })
       })
