@@ -60,7 +60,6 @@ export default function Client2Module() {
   const [touchHoverLabel, setTouchHoverLabel] = useState(null)
   const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Function to swap card order
   const swapOrder = (fromLabel, toLabel) => {
@@ -1022,22 +1021,20 @@ export default function Client2Module() {
               {/* Refresh button */}
               <button
                 onClick={() => {
-                  if (isRefreshing) return
-                  setIsRefreshing(true)
+                  if (isLoading) return
                   console.log('[Client2 Mobile] Refreshing data...')
-                  fetchClients(showPercent)
-                  setTimeout(() => setIsRefreshing(false), 2000)
+                  fetchClients(showPercent, true)
                 }}
-                disabled={isRefreshing}
+                disabled={isLoading}
                 className={`w-9 h-9 rounded-lg border shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors ${
-                  isRefreshing
+                  isLoading
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
                     : 'bg-white border-[#ECECEC] hover:bg-gray-50 cursor-pointer'
                 }`}
-                title={isRefreshing ? 'Refreshing...' : 'Refresh data'}
+                title={isLoading ? 'Refreshing...' : 'Refresh data'}
               >
                 <svg
-                  className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+                  className={`w-4 h-4 text-blue-600 ${isLoading ? 'animate-spin' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
