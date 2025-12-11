@@ -69,6 +69,7 @@ export default function LiveDealingModule() {
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
   const [customFromDate, setCustomFromDate] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [customToDate, setCustomToDate] = useState('')
   const [appliedFromDate, setAppliedFromDate] = useState('')
   const [appliedToDate, setAppliedToDate] = useState('')
@@ -141,6 +142,7 @@ export default function LiveDealingModule() {
   // Fetch deals from API (24h by default)
   const fetchDeals = async () => {
     try {
+      setLoading(true)
       let from, to
       
       if (timeFilter === '24h') {
@@ -201,8 +203,10 @@ export default function LiveDealingModule() {
       const merged = [...relevantCachedDeals, ...transformedDeals]
       saveWsCache(relevantCachedDeals.slice(0, 200))
       setDeals(merged)
+      setLoading(false)
     } catch (error) {
       console.error('[LiveDealingModule] Error fetching deals:', error)
+      setLoading(false)
     }
   }
 
@@ -1094,7 +1098,7 @@ export default function LiveDealingModule() {
                 </div>
 
                 {/* Table Rows */}
-                {isRefreshing ? (
+                {loading || isRefreshing ? (
                   // YouTube-style skeleton loading
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1148,7 +1152,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Total Row */}
-                {sortedDeals.length > 0 && !isRefreshing && (
+                {sortedDeals.length > 0 && !loading && !isRefreshing && (
                   <div 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
                     style={{
@@ -1175,7 +1179,7 @@ export default function LiveDealingModule() {
                 )}
 
                 {/* Empty state */}
-                {sortedDeals.length === 0 && !isRefreshing && (
+                {sortedDeals.length === 0 && !loading && !isRefreshing && (
                   <div className="text-center py-8 text-[#9CA3AF] text-sm">
                     No deals available
                   </div>
