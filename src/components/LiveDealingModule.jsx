@@ -1287,6 +1287,10 @@ export default function LiveDealingModule() {
       <TimeFilterModal
         isOpen={isTimeFilterOpen}
         onClose={() => setIsTimeFilterOpen(false)}
+        onBack={() => {
+          setIsTimeFilterOpen(false)
+          setIsCustomizeOpen(true)
+        }}
         onApply={(newFilter) => {
           setTimeFilter(newFilter)
           setIsTimeFilterOpen(false)
@@ -1306,6 +1310,10 @@ export default function LiveDealingModule() {
       <DealsFilterModal
         isOpen={isDealsFilterOpen}
         onClose={() => setIsDealsFilterOpen(false)}
+        onBack={() => {
+          setIsDealsFilterOpen(false)
+          setIsCustomizeOpen(true)
+        }}
         onApply={(newFilter) => {
           setModuleFilter(newFilter)
           setIsDealsFilterOpen(false)
@@ -1317,6 +1325,10 @@ export default function LiveDealingModule() {
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
+        onBack={() => {
+          setIsFilterOpen(false)
+          setIsCustomizeOpen(true)
+        }}
         onApply={(newFilters) => {
           setFilters(newFilters)
           setIsFilterOpen(false)
@@ -1328,6 +1340,10 @@ export default function LiveDealingModule() {
       <IBFilterModal
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
+        onBack={() => {
+          setIsIBFilterOpen(false)
+          setIsCustomizeOpen(true)
+        }}
         onSelectIB={(ib) => {
           if (ib) {
             selectIB(ib)
