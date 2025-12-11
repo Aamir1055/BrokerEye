@@ -460,16 +460,6 @@ export default function ClientPercentageModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 flex items-center gap-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-700 font-medium">Loading...</span>
-          </div>
-        </div>
-      )}
-
       {/* Error Message */}
       {error && (
         <div className="fixed top-4 right-4 bg-red-50 border-l-4 border-red-500 rounded-r p-4 shadow-lg z-50 max-w-md">
@@ -725,27 +715,63 @@ export default function ClientPercentageModule() {
                 </div>
 
                 {/* Table Body */}
-                {paginatedData.map((item, idx) => (
-                  <div 
-                    key={idx} 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
-                    style={{
-                      gap: '0px', 
-                      gridGap: '0px', 
-                      columnGap: '0px',
-                      gridTemplateColumns
-                    }}
-                  >
-                    {activeColumns.map(col => (
-                      <React.Fragment key={col.key}>
-                        {renderCellValue(item, col.key, col.sticky)}
-                      </React.Fragment>
+                {loading ? (
+                  /* Loading skeleton */
+                  <div className="space-y-0">
+                    {[...Array(8)].map((_, idx) => (
+                      <div 
+                        key={idx}
+                        className="grid text-[10px] bg-white border-b border-[#E1E1E1]"
+                        style={{
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
+                        }}
+                      >
+                        {activeColumns.map(col => (
+                          <div 
+                            key={col.key}
+                            className={`h-[38px] flex items-center px-2 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                            style={{boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
+                          >
+                            <div 
+                              className="h-3 rounded"
+                              style={{ 
+                                width: col.key === 'login' ? '60%' : '80%',
+                                background: 'linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%)',
+                                backgroundSize: '200% 100%',
+                                animation: 'shimmer 1.5s infinite'
+                              }} 
+                            />
+                          </div>
+                        ))}
+                      </div>
                     ))}
                   </div>
-                ))}
+                ) : (
+                  <>
+                    {paginatedData.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors"
+                        style={{
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
+                        }}
+                      >
+                        {activeColumns.map(col => (
+                          <React.Fragment key={col.key}>
+                            {renderCellValue(item, col.key, col.sticky)}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    ))}
 
-                {/* Total Row */}
-                {paginatedData.length > 0 && (
+                    {/* Total Row */}
+                    {paginatedData.length > 0 && (
                   <div 
                     className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
                     style={{
@@ -769,13 +795,15 @@ export default function ClientPercentageModule() {
                       </div>
                     ))}
                   </div>
-                )}
+                    )}
 
-                {/* Empty state */}
-                {paginatedData.length === 0 && (
-                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
-                    No data available
-                  </div>
+                    {/* Empty state */}
+                    {!loading && paginatedData.length === 0 && (
+                      <div className="text-center py-8 text-[#9CA3AF] text-sm">
+                        No data available
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
