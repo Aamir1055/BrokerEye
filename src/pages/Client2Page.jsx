@@ -3911,7 +3911,8 @@ const Client2Page = () => {
                                 overflow: 'hidden',
                                 backgroundColor: '#2563eb',
                                 position: 'sticky',
-                                top: 0
+                                top: 0,
+                                ...(col.key === 'login' && { left: 0, zIndex: 51 })
                               }}
                             >
                               <div className="flex items-center gap-2 justify-between min-w-0">
@@ -4760,16 +4761,19 @@ const Client2Page = () => {
                             const isPercentageField = percentModeActive && fieldsWithPercentage.includes(col.key)
                             const cellValue = formatValue(col.key, rawValue, isPercentageField)
 
-                            // Special handling for login column - make it blue
+                            // Special handling for login column - make it blue and sticky
                             if (col.key === 'login') {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all"
+                                  className="px-2 py-1.5 text-base text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all bg-white"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    position: 'sticky',
+                                    left: 0,
+                                    zIndex: 10
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation()
