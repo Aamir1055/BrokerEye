@@ -2478,7 +2478,7 @@ const PositionsPage = () => {
                       <p className="text-gray-500 text-sm">No NET positions available</p>
                     </div>
                   ) : (
-                    <table className="w-full divide-y divide-gray-200">
+                    <table className="w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
                       <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                         <tr>
                           {netVisibleColumns.symbol && (
