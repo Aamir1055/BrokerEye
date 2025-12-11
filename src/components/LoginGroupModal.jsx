@@ -423,7 +423,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
               </div>
 
               {/* Logins List */}
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <div style={{ maxHeight: '340px', overflowY: 'auto', marginBottom: '8px' }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: '#999999' }}>
                     Loading...
@@ -495,15 +495,19 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
                 )}
               </div>
 
-              {/* Pagination */}
+              {/* Pagination - Sticky at bottom */}
               {totalPages > 1 && (
                 <div style={{
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
                   gap: '8px',
-                  marginTop: '16px',
                   padding: '12px 0',
+                  position: 'sticky',
+                  bottom: 0,
+                  background: '#FFFFFF',
+                  borderTop: '1px solid #F2F2F7',
+                  zIndex: 10,
                 }}>
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
