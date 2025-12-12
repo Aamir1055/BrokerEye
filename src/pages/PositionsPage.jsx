@@ -3062,13 +3062,34 @@ const PositionsPage = () => {
                       </button>
                     </div>
                 </div>
-                <div className="client-net-scroll-container overflow-x-auto flex-1" style={{
-                  WebkitOverflowScrolling: 'touch',
-                  maxHeight: '80vh',
-                  minHeight: '80vh',
+                <div className="overflow-auto flex-1" style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#9ca3af #e5e7eb',
                   overflowY: 'scroll',
-                  paddingBottom: '20px'
+                  overflowX: 'auto'
                 }}>
+                  <style>{`
+                    .overflow-auto::-webkit-scrollbar {
+                      width: 14px;
+                      height: 14px;
+                    }
+                    .overflow-auto::-webkit-scrollbar-track {
+                      background: #e5e7eb;
+                      border-radius: 0;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb {
+                      background: #6b7280;
+                      border-radius: 4px;
+                      border: 2px solid #e5e7eb;
+                      min-height: 200px;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb:hover {
+                      background: #4b5563;
+                    }
+                    .overflow-auto::-webkit-scrollbar-thumb:active {
+                      background: #374151;
+                    }
+                  `}</style>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
