@@ -489,7 +489,7 @@ const MarginLevelPage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-blue-100 transition-colors select-none group">
+      <th className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider select-none group">
         <div className="flex items-center gap-1 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1"
@@ -497,11 +497,23 @@ const MarginLevelPage = () => {
           >
             <span>{label}</span>
             {sortColumn === actualSortKey ? (
-              <span className="text-blue-600">
-                {sortDirection === 'asc' ? '↑' : '↓'}
-              </span>
+              <svg
+                className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
             ) : (
-              <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+              <svg
+                className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
             )}
           </div>
           
@@ -514,7 +526,7 @@ const MarginLevelPage = () => {
                 e.stopPropagation()
                 setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
               }}
-              className={`p-1 rounded hover:bg-blue-200 transition-colors ${filterCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+              className={`p-1 rounded ${filterCount > 0 ? 'text-blue-200' : 'text-white/70'}`}
               title="Filter column"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -877,7 +889,7 @@ const MarginLevelPage = () => {
           </div>
 
           {/* Summary Cards - Client2 Face Card Design */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Below Under 50%</span>

@@ -675,7 +675,7 @@ export default function PendingOrdersModule() {
                 {/* Total Row */}
                 {filteredOrders.length > 0 && !loading?.orders && (
                   <div 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
+                    className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB] border-t-2 border-[#1A63BC]"
                     style={{
                       gap: '0px', 
                       gridGap: '0px', 
@@ -686,7 +686,7 @@ export default function PendingOrdersModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 

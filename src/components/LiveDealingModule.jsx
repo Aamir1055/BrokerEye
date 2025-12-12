@@ -752,7 +752,6 @@ export default function LiveDealingModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-x-hidden overflow-y-hidden max-w-full" style={{ height: '100dvh', width: '100vw', maxWidth: '100vw', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
         <button 
           onClick={() => setIsSidebarOpen(true)}
@@ -1167,7 +1166,7 @@ export default function LiveDealingModule() {
                 {/* Total Row */}
                 {sortedDeals.length > 0 && !loading && (
                   <div 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
+                    className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB] border-t-2 border-[#1A63BC]"
                     style={{
                       gap: '0px', 
                       gridGap: '0px', 
@@ -1178,7 +1177,7 @@ export default function LiveDealingModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 

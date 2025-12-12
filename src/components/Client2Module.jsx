@@ -1458,9 +1458,9 @@ export default function Client2Module() {
                   {/* Total Row */}
                   {filteredClients.length > 0 && (
                     <>
-                      <div style={{ height: '2px', backgroundColor: '#3B82F6', width: '100%' }} />
+                      <div style={{ height: '2px', backgroundColor: '#1A63BC', width: '100%' }} />
                       <div 
-                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white"
+                        className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB]"
                         style={{
                           gap: '0px', 
                           gridGap: '0px', 
@@ -1471,7 +1471,7 @@ export default function Client2Module() {
                         {visibleColumnsList.map((col, idx) => (
                           <div 
                             key={col.key}
-                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-white z-10' : ''}`}
+                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
                             style={{
                               border: 'none', 
                               outline: 'none', 

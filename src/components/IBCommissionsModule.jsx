@@ -280,9 +280,10 @@ export default function IBCommissionsModule() {
       case 'checkbox':
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-2 ${isSticky ? 'sticky bg-white z-20' : ''}`}
+            className={`h-[28px] flex items-center justify-center px-2 ${isSticky ? 'sticky z-20' : ''}`}
             style={{
               left: isSticky ? stickyLeft : 'auto',
+              backgroundColor: isSticky ? 'inherit' : 'transparent',
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
           >
@@ -335,12 +336,13 @@ export default function IBCommissionsModule() {
 
     return (
       <div 
-        className={`h-[28px] flex items-center justify-start px-2 ${isSticky ? 'sticky bg-white' : ''}`}
+        className={`h-[28px] flex items-center justify-start px-2 ${isSticky ? 'sticky' : ''}`}
         style={{
           border: 'none', 
           outline: 'none', 
           left: isSticky ? stickyLeft : 'auto',
           zIndex: isSticky ? zIndex : 'auto',
+          backgroundColor: isSticky ? 'inherit' : 'transparent',
           boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
         }}
       >
@@ -827,14 +829,15 @@ export default function IBCommissionsModule() {
                         <div 
                           key={col.key}
                           className={`h-[28px] flex items-center ${col.key === 'checkbox' ? 'justify-center' : 'justify-start'} px-2 ${
-                            col.sticky ? 'sticky left-0 bg-white' : ''
+                            col.sticky ? 'sticky left-0' : ''
                           }`}
                           style={{
                             border: 'none',
                             outline: 'none',
                             boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                             left: col.sticky ? col.stickyLeft : 'auto',
-                            zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
+                            zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
+                            backgroundColor: col.sticky ? 'inherit' : 'transparent'
                           }}
                         >
                           <div 
@@ -874,7 +877,7 @@ export default function IBCommissionsModule() {
                 {/* Total Row */}
                 {paginatedData.length > 0 && (
                   <div 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
+                    className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB] border-t border-[#1A63BC]"
                     style={{
                       gap: '0px', 
                       gridGap: '0px', 
@@ -885,7 +888,7 @@ export default function IBCommissionsModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white' : ''}`}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-[#EFF4FB]' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 
@@ -894,7 +897,7 @@ export default function IBCommissionsModule() {
                           zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
                         }}
                       >
-                        {col.key === 'checkbox' ? '' : col.key === 'login' ? 'Total' : ''}
+                        {col.key === 'checkbox' ? '' : (col.key === 'login' || col.key === 'id') ? 'Total' : ''}
                       </div>
                     ))}
                   </div>

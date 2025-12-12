@@ -1648,10 +1648,6 @@ export default function PositionModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
-        onFilterClick={() => {
-          setIsCustomizeOpen(false)
-          setIsFilterOpen(true)
-        }}
         onIBFilterClick={() => {
           setIsCustomizeOpen(false)
           setIsIBFilterOpen(true)

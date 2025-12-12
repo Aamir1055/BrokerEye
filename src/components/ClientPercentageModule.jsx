@@ -786,29 +786,29 @@ export default function ClientPercentageModule() {
 
                     {/* Total Row */}
                     {paginatedData.length > 0 && (
-                  <div 
-                    className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-t-2 border-blue-500"
-                    style={{
-                      gap: '0px', 
-                      gridGap: '0px', 
-                      columnGap: '0px',
-                      gridTemplateColumns
-                    }}
-                  >
-                    {activeColumns.map(col => (
                       <div 
-                        key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                        className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB] border-t-2 border-[#1A63BC]"
                         style={{
-                          border: 'none', 
-                          outline: 'none', 
-                          boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+                          gap: '0px', 
+                          gridGap: '0px', 
+                          columnGap: '0px',
+                          gridTemplateColumns
                         }}
                       >
-                        {col.key === 'login' ? 'Total' : ''}
+                        {activeColumns.map(col => (
+                          <div 
+                            key={col.key}
+                            className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                            style={{
+                              border: 'none', 
+                              outline: 'none', 
+                              boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+                            }}
+                          >
+                            {col.key === 'login' ? 'Total' : ''}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
                     )}
 
                     {/* Empty state */}
