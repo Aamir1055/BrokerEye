@@ -933,12 +933,7 @@ export default function Client2Module() {
             </svg>
           </button>
           <h1 className="text-xl font-semibold text-black">Client 2</h1>
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" fill="#9CA3AF"/>
-              <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V20" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <div className="w-9 h-9"></div>
         </div>
       </div>
 
@@ -1815,12 +1810,7 @@ export default function Client2Module() {
                 </svg>
               </button>
               <h1 className="text-xl font-semibold text-black">Client 2 Matrices</h1>
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="8" r="4" fill="#9CA3AF"/>
-                  <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V20" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
+              <div className="w-9 h-9"></div>
             </div>
           </div>
 
