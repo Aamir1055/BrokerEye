@@ -860,7 +860,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const getActionColor = (action) => {
-    return action === 0 ? 'text-blue-600 bg-blue-50' : 'text-green-600 bg-green-50'
+    // Handle both numeric and string action values
+    if (action === 0 || action === '0' || (typeof action === 'string' && action.toUpperCase() === 'BUY')) {
+      return 'text-blue-600 bg-blue-50' // Buy is blue
+    }
+    return 'text-green-600 bg-green-50' // Sell is green
   }
 
   const getProfitColor = (profit) => {
