@@ -3076,7 +3076,7 @@ const PositionsPage = () => {
                       </svg>
                       <p className="text-gray-500 text-sm">No Client NET data</p>
                     </div>
-                  ) : (
+                  ) : (<>
                     <table className="w-full divide-y divide-gray-200">
                       <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 30, backgroundColor: '#2563eb' }}>
                         <tr>
@@ -3320,7 +3320,7 @@ const PositionsPage = () => {
                     </table>
                     {/* Add bottom padding to keep scrollbar visible */}
                     <div style={{ height: '20px' }}></div>
-                  )}
+                  </>)}
                 </div>
               </div>
             </div>
