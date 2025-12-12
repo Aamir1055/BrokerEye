@@ -3064,8 +3064,8 @@ const PositionsPage = () => {
                 </div>
                 <div className="client-net-scroll-container overflow-x-auto flex-1" style={{
                   WebkitOverflowScrolling: 'touch',
-                  maxHeight: '70vh',
-                  minHeight: '70vh',
+                  maxHeight: '80vh',
+                  minHeight: '80vh',
                   overflowY: 'scroll',
                   paddingBottom: '20px'
                 }}>

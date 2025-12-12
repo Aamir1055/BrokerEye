@@ -406,12 +406,12 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 /* Custom scrollbar for Client Net table - always visible */
 .client-net-scroll-container {
   overflow-y: scroll !important;
-  scrollbar-width: auto;
+  scrollbar-width: thin;
   scrollbar-color: #CBD5E0 #F7FAFC;
 }
 
 .client-net-scroll-container::-webkit-scrollbar {
-  width: 14px;
+  width: 8px;
   -webkit-appearance: none;
 }
 
