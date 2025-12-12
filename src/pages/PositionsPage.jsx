@@ -2495,7 +2495,10 @@ const PositionsPage = () => {
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#9ca3af #e5e7eb',
                   overflowY: 'scroll',
-                  overflowX: 'auto'
+                  overflowX: 'auto',
+                  maxHeight: '80vh',
+                  minHeight: '80vh',
+                  paddingBottom: '24px'
                 }}>
                   <style>{`
                     .overflow-auto::-webkit-scrollbar {
