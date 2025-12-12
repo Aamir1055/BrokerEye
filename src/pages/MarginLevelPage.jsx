@@ -470,6 +470,17 @@ const MarginLevelPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
+  // Get card icon path based on card title
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'Total Under 50%': '/Desktop cards icons/Total Clients.svg',
+      'Avg Margin Level': '/Desktop cards icons/Balance.svg',
+      'Unique Logins': '/Desktop cards icons/Total Clients.svg',
+      'Logins Under 50%': '/Desktop cards icons/Total Clients.svg',
+    }
+    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+  }
+
   // Show loading only for table data
   const isDataLoading = loading.accounts
 
@@ -871,11 +882,15 @@ const MarginLevelPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Under 50%</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Under 50%')} 
+                    alt="Total Under 50%"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               {isDataLoading ? (
@@ -890,11 +905,15 @@ const MarginLevelPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Avg Margin Level</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Avg Margin Level')} 
+                    alt="Avg Margin Level"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               {isDataLoading ? (
@@ -909,11 +928,15 @@ const MarginLevelPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Unique Logins')} 
+                    alt="Unique Logins"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               {isDataLoading ? (
@@ -928,11 +951,15 @@ const MarginLevelPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Logins Under 50%</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Logins Under 50%')} 
+                    alt="Logins Under 50%"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               {isDataLoading ? (
