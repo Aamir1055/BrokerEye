@@ -860,7 +860,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const getActionColor = (action) => {
-    return action === 0 ? 'text-green-600 bg-green-50' : 'text-green-600 bg-green-50'
+    return action === 0 ? 'text-green-600 bg-green-50' : 'text-blue-600 bg-blue-50'
   }
 
   const getProfitColor = (profit) => {
