@@ -3324,8 +3324,7 @@ const PositionsPage = () => {
                 </div>
               </div>
             </div>
-          ) : (
-          <>
+          ) : <>
           {/* Search and Controls Bar */}
           <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -3648,7 +3647,6 @@ const PositionsPage = () => {
             </div>
           </div>
           </>
-          )
           }
         </div>
         </div>
