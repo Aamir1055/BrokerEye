@@ -3016,6 +3016,61 @@ const Client2Page = () => {
     return `${formatIndianNumber(num.toFixed(2))} %`
   }
 
+  // Get card icon path based on card title
+  const getCardIcon = (cardLabel) => {
+    const iconMap = {
+      'ASSETS': '/Desktop cards icons/Assets.svg',
+      'BALANCE': '/Desktop cards icons/Balance.svg',
+      'BLOCKED COMMISSION': '/Desktop cards icons/Blocked Commission.svg',
+      'BLOCKED PROFIT': '/Desktop cards icons/Blocked Profit.svg',
+      'COMMISSION': '/Desktop cards icons/Commission.svg',
+      'CREDIT': '/Desktop cards icons/Credit.svg',
+      'DAILY BONUS IN': '/Desktop cards icons/Daily Bonus In.svg',
+      'DAILY BONUS OUT': '/Desktop cards icons/Daily Bonus Out.svg',
+      'DAILY CREDIT IN': '/Desktop cards icons/Daily Credit In.svg',
+      'DAILY CREDIT OUT': '/Desktop cards icons/Daily Credit Out.svg',
+      'DAILY DEPOSIT': '/Desktop cards icons/Daily Deposite.svg',
+      'DAILY P&L': '/Desktop cards icons/Daily PNL.svg',
+      'DAILY SO COMPENSATION IN': '/Desktop cards icons/Daily SO Compensation In.svg',
+      'DAILY SO COMPENSATION OUT': '/Desktop cards icons/Daily SO Compensation Out.svg',
+      'DAILY WITHDRAWAL': '/Desktop cards icons/Daily Withdrawal.svg',
+      'DAILY NET D/W': '/Desktop cards icons/Daily Net DW.svg',
+      'EQUITY': '/Desktop cards icons/Equity.svg',
+      'FLOATING': '/Desktop cards icons/Floating.svg',
+      'LIABILITIES': '/Desktop cards icons/Liabilities.svg',
+      'LIFETIME BONUS IN': '/Desktop cards icons/Lifetime Bonus In.svg',
+      'LIFETIME BONUS OUT': '/Desktop cards icons/Lifetime Bonus Out.svg',
+      'LIFETIME CREDIT IN': '/Desktop cards icons/Lifetime Credit In.svg',
+      'LIFETIME CREDIT OUT': '/Desktop cards icons/Lifetime Credit Out.svg',
+      'LIFETIME DEPOSIT': '/Desktop cards icons/Lifetime Deposit.svg',
+      'LIFETIME PNL': '/Desktop cards icons/LIFETIME PNL.svg',
+      'LIFETIME SO COMPENSATION IN': '/Desktop cards icons/Lifetime SO Compensation In.svg',
+      'LIFETIME SO COMPENSATION OUT': '/Desktop cards icons/Lifetime SO Compensation Out.svg',
+      'LIFETIME WITHDRAWAL': '/Desktop cards icons/Lifetime Withdrawal.svg',
+      'LIFETIME NET D/W': '/Desktop cards icons/Lifetime Net DW.svg',
+      'MONTHLY BONUS IN': '/Desktop cards icons/Monthly Bonus In.svg',
+      'MONTHLY BONUS OUT': '/Desktop cards icons/Monthly Bonus Out.svg',
+      'MONTHLY CREDIT IN': '/Desktop cards icons/Monthly Credit In.svg',
+      'MONTHLY CREDIT OUT': '/Desktop cards icons/Monthly Credit Out.svg',
+      'MONTHLY DEPOSIT': '/Desktop cards icons/Monthly Deposit.svg',
+      'MONTHLY PNL': '/Desktop cards icons/Monthly PNL.svg',
+      'MONTHLY SO COMPENSATION IN': '/Desktop cards icons/Monthly SO Compensation In.svg',
+      'MONTHLY SO COMPENSATION OUT': '/Desktop cards icons/Monthly SO Compensation Out.svg',
+      'MONTHLY WITHDRAWAL': '/Desktop cards icons/Monthly Withdrawal.svg',
+      'MONTHLY NET D/W': '/Desktop cards icons/Monthly Net DW.svg',
+      'AVAILABLE REBATE': '/Desktop cards icons/Available Rebate.svg',
+      'TOTAL REBATE': '/Desktop cards icons/Total Rebate.svg',
+      'NET LIFETIME PNL': '/Desktop cards icons/Net Lifetime PNL.svg',
+      'BOOK PNL': '/Desktop cards icons/Book PNL.svg',
+      // Percentage variants
+      'AVAILABLE REBATE %': '/Desktop cards icons/Available Rebate.svg',
+      'TOTAL REBATE %': '/Desktop cards icons/Total Rebate.svg',
+      'NET LIFETIME PNL %': '/Desktop cards icons/Net Lifetime PNL.svg',
+      'BOOK PNL %': '/Desktop cards icons/Book PNL.svg',
+    }
+    return iconMap[cardLabel] || '/Desktop cards icons/Total Clients.svg'
+  }
+
   // Save card visibility to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('client2CardVisibility', JSON.stringify(cardVisibility))
@@ -3585,11 +3640,15 @@ const Client2Page = () => {
                         <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider select-none leading-none whitespace-nowrap">
                           {displayLabel}
                         </span>
-                        <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0 select-none">
-                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                            <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                            <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                          </svg>
+                        <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 select-none">
+                          <img 
+                            src={getCardIcon(displayLabel)} 
+                            alt={displayLabel}
+                            style={{ width: '100%', height: '100%' }}
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                            }}
+                          />
                         </div>
                       </div>
                       <div className={`text-sm md:text-base font-bold ${textColorClass} flex items-center gap-1.5 select-none leading-none`}>
