@@ -266,7 +266,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
             maxHeight: '500px'
           }}
         >
-          {loading && !ibEmails.length ? (
+          {loading ? (
             <div
               style={{
                 display: 'flex',
@@ -343,7 +343,6 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
                 <button
                   key={ib.id}
                   onClick={() => handleSelectIB(ib)}
-                  disabled={loading}
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -353,8 +352,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
                     background: 'none',
                     border: 'none',
                     borderBottom: '1px solid #F2F2F7',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.5 : 1,
+                    cursor: 'pointer',
                   }}
                 >
                   <span
@@ -426,7 +424,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           {/* Apply button */}
           <button
             onClick={handleApply}
-            disabled={!tempSelectedIB || loading}
+            disabled={!tempSelectedIB}
             style={{
               flex: 1,
               display: 'flex',
