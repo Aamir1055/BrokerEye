@@ -227,12 +227,12 @@ export default function ClientPercentageModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'TOTAL CLIENTS': '/Mobile cards icons/Total Clients.svg',
-      'CUSTOM %': '/Mobile cards icons/Brokers Eye Platform/Frame-15.svg',
-      'DEFAULT': '/Mobile cards icons/Total Balance.svg',
-      'AVG %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%.svg'
+      'TOTAL CLIENTS': '/Desktop cards icons/Total Clients.svg',
+      'CUSTOM %': '/Desktop cards icons/AVAILABLE Commision%.svg',
+      'DEFAULT': '/Desktop cards icons/Total Balance.svg',
+      'AVG %': '/Desktop cards icons/AVAILABLE Commision%.svg'
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || '/Desktop cards icons/Total Clients.svg'
   }
   
   useEffect(() => {
