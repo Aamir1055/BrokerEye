@@ -805,6 +805,15 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const getActionLabel = (action) => {
+    // Handle both numeric (0, 1) and string ('BUY', 'SELL', 'buy', 'sell') action values
+    if (action === 0 || action === '0') return 'Buy'
+    if (action === 1 || action === '1') return 'Sell'
+    if (typeof action === 'string') {
+      const normalized = action.toUpperCase()
+      if (normalized === 'BUY') return 'Buy'
+      if (normalized === 'SELL') return 'Sell'
+    }
+    // Default fallback
     return action === 0 ? 'Buy' : 'Sell'
   }
 
