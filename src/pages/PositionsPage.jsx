@@ -3077,13 +3077,13 @@ const PositionsPage = () => {
                     </div>
                   ) : (
                     <table className="w-full divide-y divide-gray-200">
-                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, backgroundColor: '#2563eb' }}>
+                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 30, backgroundColor: '#2563eb' }}>
                         <tr>
                           {clientNetVisibleColumns.login && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group sticky left-0 z-20"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group sticky left-0"
                               onClick={() => handleClientNetSort('login')}
-                              style={{ backgroundColor: '#2563eb' }}
+                              style={{ backgroundColor: '#2563eb', zIndex: 31 }}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Login</span>
