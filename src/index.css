@@ -403,6 +403,37 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   background: #94A3B8;
 }
 
+/* Custom scrollbar for Client Net table - always visible */
+.client-net-scroll-container {
+  overflow-y: scroll !important;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E0 #F7FAFC;
+}
+
+.client-net-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  -webkit-appearance: none;
+}
+
+.client-net-scroll-container::-webkit-scrollbar-track {
+  background: #F7FAFC;
+  border-radius: 4px;
+}
+
+.client-net-scroll-container::-webkit-scrollbar-thumb {
+  background: #CBD5E0;
+  border-radius: 4px;
+  min-height: 40px;
+}
+
+.client-net-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #A0AEC0;
+}
+
+.client-net-scroll-container::-webkit-scrollbar-button {
+  display: none;
+}
+
 /* YouTube-style shimmer animation for skeleton loaders */
 @keyframes shimmer {
   0% {

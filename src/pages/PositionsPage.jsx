@@ -3062,13 +3062,12 @@ const PositionsPage = () => {
                       </button>
                     </div>
                 </div>
-                <div className="overflow-y-scroll overflow-x-auto flex-1" style={{
+                <div className="client-net-scroll-container overflow-x-auto flex-1" style={{
                   WebkitOverflowScrolling: 'touch',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#CBD5E0 #F7FAFC',
                   maxHeight: '70vh',
                   minHeight: '70vh',
-                  overflowY: 'scroll'
+                  overflowY: 'scroll',
+                  paddingBottom: '20px'
                 }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
@@ -3083,7 +3082,7 @@ const PositionsPage = () => {
                         <tr>
                           {clientNetVisibleColumns.login && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group sticky left-0"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group sticky left-0"
                               onClick={() => handleClientNetSort('login')}
                               style={{ backgroundColor: '#2563eb', zIndex: 31 }}
                             >
@@ -3103,7 +3102,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.symbol && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('symbol')}
                             >
                               <div className="flex items-center gap-1">
@@ -3122,7 +3121,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.netType && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('netType')}
                             >
                               <div className="flex items-center gap-1">
@@ -3141,7 +3140,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.netVolume && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('netVolume')}
                             >
                               <div className="flex items-center gap-1">
@@ -3160,7 +3159,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.avgPrice && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('avgPrice')}
                             >
                               <div className="flex items-center gap-1">
@@ -3179,7 +3178,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.totalProfit && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('totalProfit')}
                             >
                               <div className="flex items-center gap-1">
@@ -3198,7 +3197,7 @@ const PositionsPage = () => {
                           )}
                           {clientNetVisibleColumns.totalPositions && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
                               onClick={() => handleClientNetSort('totalPositions')}
                             >
                               <div className="flex items-center gap-1">
