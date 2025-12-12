@@ -3062,7 +3062,7 @@ const PositionsPage = () => {
                       </button>
                     </div>
                 </div>
-                <div className="overflow-x-auto overflow-y-scroll flex-1 h-[520px]">
+                <div className="overflow-x-auto flex-1 h-[520px]" style={{ overflowY: 'scroll' }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3076,8 +3076,9 @@ const PositionsPage = () => {
                         <tr>
                           {clientNetVisibleColumns.login && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group sticky left-0 z-20"
                               onClick={() => handleClientNetSort('login')}
+                              style={{ backgroundColor: '#2563eb' }}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Login</span>
@@ -3241,7 +3242,18 @@ const PositionsPage = () => {
                           return (
                             <Fragment key={key}>
                               <tr className="hover:bg-blue-50 transition-all duration-300">
-                                {clientNetVisibleColumns.login && (<td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">{row.login}</td>)}
+                                {clientNetVisibleColumns.login && (
+                                  <td 
+                                    className="px-2 py-1.5 text-[13px] font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap cursor-pointer hover:underline sticky left-0 z-10 bg-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setSelectedLogin(row.login)
+                                    }}
+                                    title="Click to view client details"
+                                  >
+                                    {row.login}
+                                  </td>
+                                )}
                                 {clientNetVisibleColumns.symbol && (<td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">
                                   {row.symbol}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
