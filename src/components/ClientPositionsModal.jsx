@@ -1567,7 +1567,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       {[
                         ['pf_totalPositions','Total Positions'],
                         ['pf_totalVolume','Total Volume'],
-                        ['pf_totalPL','Total P/L'],
+                        ['pf_totalPL','Floating Profit'],
                         ['pf_lifetimePnL','Lifetime PnL'],
                         ['pf_bookPnL','Book PnL']
                       ].map(([key,label]) => (
@@ -2891,7 +2891,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   row1.push({ label: 'Total Volume', value: vol.toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
                 }
                 if (fixedCardVisibility.pf_totalPL) {
-                  row1.push({ label: 'Total P/L', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
+                  row1.push({ label: 'Floating Profit', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_lifetimePnL) {
                   row1.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime), accent: lifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
@@ -2981,7 +2981,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   netPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0
                     ? 'text-emerald-600'
                     : 'text-red-600'
-                }`}>Total P/L</p>
+                }`}>Floating Profit</p>
                 <p className={`text-base font-bold ${getProfitColor(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}`}>
                   {formatCurrency(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}
                 </p>
@@ -3016,7 +3016,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
                     ? 'text-emerald-600'
                     : 'text-red-600'
-                }`}>Total P/L</p>
+                }`}>Floating Profit</p>
                 <p className={`text-base font-bold ${getProfitColor(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
                   {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}
                 </p>

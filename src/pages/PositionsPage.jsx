@@ -3062,7 +3062,12 @@ const PositionsPage = () => {
                       </button>
                     </div>
                 </div>
-                <div className="overflow-x-auto flex-1 h-[520px]" style={{ overflowY: 'scroll' }}>
+                <div className="overflow-y-scroll overflow-x-auto flex-1" style={{
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#CBD5E0 #F7FAFC',
+                  maxHeight: '60vh'
+                }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
