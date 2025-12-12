@@ -209,6 +209,7 @@ export default function Client2Module() {
       // Add search query to payload
       if (searchInput && searchInput.trim()) {
         payload.searchQuery = searchInput.trim()
+        console.log('[Client2] Searching with query:', payload.searchQuery)
       }
 
       // Add group filter to payload if active
@@ -251,6 +252,15 @@ export default function Client2Module() {
       const responseData = response?.data || {}
       const data = responseData?.data || responseData
       const t = data.totals || {}
+      
+      // Debug: Log search results
+      if (searchInput && searchInput.trim()) {
+        console.log('[Client2] Search results:', {
+          query: searchInput.trim(),
+          totalResults: data.total || data.clients?.length || 0,
+          clientsReturned: data.clients?.length || 0
+        })
+      }
       
       // Debug: Log first client to verify percentage fields
       if (data.clients && data.clients.length > 0 && usePercent) {
