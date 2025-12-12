@@ -3067,7 +3067,8 @@ const PositionsPage = () => {
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#CBD5E0 #F7FAFC',
                   maxHeight: '70vh',
-                  minHeight: '70vh'
+                  minHeight: '70vh',
+                  overflowY: 'scroll'
                 }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
