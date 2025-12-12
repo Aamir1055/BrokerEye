@@ -1931,6 +1931,72 @@ const ClientsPage = () => {
     }
   }
   
+  // Get icon path for each card based on title
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'Total Clients': '/Desktop cards icons/Total Clients.svg',
+      'Total Balance': '/Desktop cards icons/Total Balance.svg',
+      'Total Credit': '/Desktop cards icons/Total Credit.svg',
+      'Total Equity': '/Desktop cards icons/Total Equity.svg',
+      'PNL': '/Desktop cards icons/PNL.svg',
+      'Floating Profit': '/Desktop cards icons/Floating Profit.svg',
+      'Daily Deposit': '/Desktop cards icons/Daily Deposite.svg',
+      'Daily Withdrawal': '/Desktop cards icons/Daily WITHDRAWL.svg',
+      'Daily PnL': '/Desktop cards icons/Daily PNL.svg',
+      'This Week PnL': '/Desktop cards icons/This week pnl.svg',
+      'This Month PnL': '/Desktop cards icons/THIS MONTH PNL.svg',
+      'Lifetime PnL': '/Desktop cards icons/LIFETIME PNL.svg',
+      'Daily Net D/W': '/Desktop cards icons/NET WD.svg',
+      'Total Rebate': '/Desktop cards icons/TOTAL COMMISION.svg',
+      'Available Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
+      'Total Rebate %': '/Desktop cards icons/TOTAL COMMISION%.svg',
+      'Available Rebate %': '/Desktop cards icons/AVAILABLE Commision%.svg',
+      'Blocked Rebate': '/Desktop cards icons/Blocked commision.svg',
+      'Daily Bonus IN': '/Desktop cards icons/Daily BONUS IN.svg',
+      'Daily Bonus OUT': '/Desktop cards icons/Daily BONUS OUT.svg',
+      'NET Daily Bonus': '/Desktop cards icons/Net Daily Bonus.svg',
+      'Week Bonus IN': '/Desktop cards icons/Weekly bonus in.svg',
+      'Week Bonus OUT': '/Desktop cards icons/WEEK BONUS OUT.svg',
+      'NET Week Bonus': '/Desktop cards icons/NET WEEK BONUS.svg',
+      'Monthly Bonus IN': '/Desktop cards icons/MONTHLY BONUS IN.svg',
+      'Monthly Bonus OUT': '/Desktop cards icons/MONTHLY BONUS OUt.svg',
+      'NET Monthly Bonus': '/Desktop cards icons/NET MONTHLY BONUS.svg',
+      'Lifetime Bonus IN': '/Desktop cards icons/LIFETIME BONUS IN.svg',
+      'Lifetime Bonus OUT': '/Desktop cards icons/LIFETIME BONUS OUT.svg',
+      'NET Lifetime Bonus': '/Desktop cards icons/NET LIFETIME BONUS.svg',
+      'Week Deposit': '/Desktop cards icons/WEEK DEPOSITE.svg',
+      'Week Withdrawal': '/Desktop cards icons/WEEK WITHDRAWL.svg',
+      'NET Week DW': '/Desktop cards icons/NET WEEK DAY.svg',
+      'Monthly Deposit': '/Desktop cards icons/MONTLY DEPOSITE.svg',
+      'Monthly Withdrawal': '/Desktop cards icons/MONTLY WITHDRAWL.svg',
+      'NET Monthly DW': '/Desktop cards icons/NET MONTHLY DW.svg',
+      'Lifetime Deposit': '/Desktop cards icons/Daily Deposite.svg',
+      'Lifetime Withdrawal': '/Desktop cards icons/Daily WITHDRAWL.svg',
+      'NET Lifetime DW': '/Desktop cards icons/NET WD.svg',
+      'Weekly Credit IN': '/Desktop cards icons/WEEKLY Credit IN.svg',
+      'Monthly Credit IN': '/Desktop cards icons/MONTHLY CREDIT IN.svg',
+      'Lifetime Credit IN': '/Desktop cards icons/LIFETIME CREDIT IN.svg',
+      'Weekly Credit OUT': '/Desktop cards icons/WEEKLY CREDIT OUT.svg',
+      'Monthly Credit OUT': '/Desktop cards icons/MOnthly CREDIT OUT.svg',
+      'Lifetime Credit OUT': '/Desktop cards icons/LIFETIME CREDIT OUT.svg',
+      'NET Credit': '/Desktop cards icons/NET CREDIT.svg',
+      'Previous Equity': '/Desktop cards icons/PREVIOUS EQUITY.svg',
+      'Weekly Previous Equity': '/Desktop cards icons/Weekly PREVIOUS EQUITY.svg',
+      'Monthly Previous Equity': '/Desktop cards icons/Monthly PREVIOUS EQUITY.svg',
+      'Book PnL': '/Desktop cards icons/PNL.svg',
+      'Daily Deposit %': '/Desktop cards icons/Daily Deposite.svg',
+      'Daily Withdrawal %': '/Desktop cards icons/Daily WITHDRAWL.svg',
+      'Total Balance %': '/Desktop cards icons/Total Balance.svg',
+      'Total Credit %': '/Desktop cards icons/Total Credit.svg',
+      'Total Equity %': '/Desktop cards icons/Total Equity.svg',
+      'PNL %': '/Desktop cards icons/PNL.svg',
+      'Floating Profit %': '/Desktop cards icons/Floating Profit.svg',
+      'Book PnL %': '/Desktop cards icons/PNL.svg',
+      'Net Lifetime PnL': '/Desktop cards icons/NET LIFETIME BONUS.svg',
+    }
+    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg' // Default icon
+  }
+
   // Get face card configuration by ID (for draggable cards)
   const getFaceCardConfig = (cardId, stats) => {
     // Calculate Net DW (Deposit - Withdrawal)
@@ -2776,11 +2842,15 @@ const ClientsPage = () => {
                       <div className="h-full flex flex-col justify-center">
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                            </svg>
+                          <div className="w-[16px] h-[16px] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={getCardIcon(card.title)} 
+                              alt={card.title}
+                              style={{ width: '16px', height: '16px' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                              }}
+                            />
                           </div>
                         </div>
                         <div className="flex items-baseline gap-[4px] mt-2">
@@ -2869,11 +2939,15 @@ const ClientsPage = () => {
                       <div className="h-full flex flex-col justify-center">
                         <div className="flex items-start justify-between">
                           <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                          <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                              <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                            </svg>
+                          <div className="w-[16px] h-[16px] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={getCardIcon(card.title)} 
+                              alt={card.title}
+                              style={{ width: '16px', height: '16px' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                              }}
+                            />
                           </div>
                         </div>
                         <div className="flex items-baseline gap-[4px] mt-2">
@@ -2968,11 +3042,15 @@ const ClientsPage = () => {
                         <div className="h-full flex flex-col justify-center">
                           <div className="flex items-start justify-between">
                             <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1 uppercase">{card.title}</span>
-                            <div className="w-[16px] h-[16px] bg-[#2563EB] rounded-[3px] flex items-center justify-center flex-shrink-0">
-                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1.5" y="1.5" width="6" height="6" rx="0.5" stroke="white" strokeWidth="1" fill="none"/>
-                                <rect x="4.5" y="4.5" width="6" height="6" rx="0.5" fill="white" stroke="white" strokeWidth="1"/>
-                              </svg>
+                            <div className="w-[16px] h-[16px] rounded-[3px] flex items-center justify-center flex-shrink-0">
+                              <img 
+                                src={getCardIcon(card.title)} 
+                                alt={card.title}
+                                style={{ width: '16px', height: '16px' }}
+                                onError={(e) => {
+                                  e.target.style.display = 'none'
+                                }}
+                              />
                             </div>
                           </div>
                           <div className="flex items-baseline gap-[4px] mt-2">
