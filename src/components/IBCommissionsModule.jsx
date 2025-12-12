@@ -888,7 +888,7 @@ export default function IBCommissionsModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0 bg-[#EFF4FB]' : ''}`}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold bg-[#EFF4FB] ${col.sticky ? 'sticky left-0' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 
