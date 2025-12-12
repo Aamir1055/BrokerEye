@@ -237,6 +237,12 @@ export default function Client2Module() {
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
         }
       }
+
+      // Add sorting parameters to payload for server-side sorting
+      if (sortColumn) {
+        payload.sortBy = sortColumn
+        payload.sortOrder = sortDirection
+      }
       
       // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients(payload)
@@ -276,7 +282,7 @@ export default function Client2Module() {
         setIsLoading(false)
       }
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection])
 
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
@@ -538,42 +544,10 @@ export default function Client2Module() {
     return client[key]
   }
 
-  // Apply sorting
-  const sortedClients = useMemo(() => {
-    if (!sortColumn) return filteredClients
-    
-    return [...filteredClients].sort((a, b) => {
-      let aVal = getCellValue(sortColumn, a)
-      let bVal = getCellValue(sortColumn, b)
-      
-      // Handle null/undefined values
-      if (aVal == null) aVal = ''
-      if (bVal == null) bVal = ''
-      
-      // Try to compare as numbers if both are numeric
-      const aNum = Number(aVal)
-      const bNum = Number(bVal)
-      
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
-      }
-      
-      // Otherwise compare as strings
-      const aStr = String(aVal).toLowerCase()
-      const bStr = String(bVal).toLowerCase()
-      
-      if (sortDirection === 'asc') {
-        return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
-      } else {
-        return bStr < aStr ? -1 : bStr > aStr ? 1 : 0
-      }
-    })
-  }, [filteredClients, sortColumn, sortDirection, showPercent])
-
   // Pagination - use totalClients from API for accurate page count
-  // Since we're fetching itemsPerPage (12) records per API call, use sortedClients directly
+  // Sorting is now handled server-side, so use filteredClients directly
   const totalPages = Math.ceil(totalClients / itemsPerPage)
-  const paginatedClients = sortedClients // No need to slice since API returns exactly itemsPerPage records
+  const paginatedClients = filteredClients // API returns sorted and paginated data
 
   // View All handler
   useEffect(() => {
@@ -936,6 +910,8 @@ export default function Client2Module() {
       setSortColumn(columnKey)
       setSortDirection('asc')
     }
+    // Reset to page 1 when sorting changes
+    setCurrentPage(1)
   }
 
   // Generate grid template columns string
