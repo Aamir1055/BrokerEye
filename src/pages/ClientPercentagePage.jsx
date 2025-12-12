@@ -408,9 +408,9 @@ const ClientPercentagePage = () => {
   const getCardIcon = (cardTitle) => {
     const iconMap = {
       'Total Clients': '/Desktop cards icons/Total Clients.svg',
-      'Custom Percentages': '/Desktop cards icons/Commission.svg',
-      'Using Default': '/Desktop cards icons/Balance.svg',
-      'Default Percentage': '/Desktop cards icons/Balance.svg',
+      'Custom Percentages': '/Desktop cards icons/TOTAL COMMISION.svg',
+      'Using Default': '/Desktop cards icons/AVAILABLE Commision.svg',
+      'Default Percentage': '/Desktop cards icons/TOTAL COMMISION%25.svg',
     }
     return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
@@ -893,9 +893,6 @@ const ClientPercentagePage = () => {
                     src={getCardIcon('Custom Percentages')} 
                     alt="Custom Percentages"
                     style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
                   />
                 </div>
               </div>
@@ -912,9 +909,6 @@ const ClientPercentagePage = () => {
                     src={getCardIcon('Using Default')} 
                     alt="Using Default"
                     style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
                   />
                 </div>
               </div>
@@ -931,9 +925,6 @@ const ClientPercentagePage = () => {
                     src={getCardIcon('Default Percentage')} 
                     alt="Default Percentage"
                     style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
                   />
                 </div>
               </div>

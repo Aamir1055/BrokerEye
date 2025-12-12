@@ -473,10 +473,9 @@ const MarginLevelPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Under 50%': '/Desktop cards icons/Total Clients.svg',
-      'Avg Margin Level': '/Desktop cards icons/Balance.svg',
+      'Below Under 50%': '/Desktop cards icons/Total Clients.svg',
+      'Avg Margin Level': '/Desktop cards icons/Total Balance.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
-      'Logins Under 50%': '/Desktop cards icons/Total Clients.svg',
     }
     return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
@@ -881,11 +880,11 @@ const MarginLevelPage = () => {
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Under 50%</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Below Under 50%</span>
                 <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                   <img 
-                    src={getCardIcon('Total Under 50%')} 
-                    alt="Total Under 50%"
+                    src={getCardIcon('Below Under 50%')} 
+                    alt="Below Under 50%"
                     style={{ width: '100%', height: '100%' }}
                     onError={(e) => {
                       e.target.style.display = 'none'
@@ -948,29 +947,7 @@ const MarginLevelPage = () => {
                 </div>
               )}
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Logins Under 50%</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Logins Under 50%')} 
-                    alt="Logins Under 50%"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
-              </div>
-              {isDataLoading ? (
-                <div className="h-6 w-12 bg-gray-200 rounded animate-pulse" />
-              ) : (
-                <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                  <span>{new Set(filtered.map(a=>a.login)).size}</span>
-                  <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
-                </div>
-              )}
-            </div>
+            {/* Removed "Logins Under 50%" card as requested */}
           </div>
 
           {/* Search and Controls Bar */}
@@ -1161,67 +1138,115 @@ const MarginLevelPage = () => {
                 </div>
               ) : (
                 <table className="w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0">
+                  <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
                       {renderHeaderCell('login', 'Login')}
                       {renderHeaderCell('name', 'Name')}
                       <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                         onClick={() => handleSort('equity')}
                       >
                         <div className="flex items-center gap-1">
                           Equity
                           {sortColumn === 'equity' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
+                            <svg
+                              className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
                           ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                            <svg
+                              className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                         onClick={() => handleSort('margin')}
                       >
                         <div className="flex items-center gap-1">
                           Margin
                           {sortColumn === 'margin' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
+                            <svg
+                              className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
                           ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                            <svg
+                              className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                         onClick={() => handleSort('marginFree')}
                       >
                         <div className="flex items-center gap-1">
                           Margin Free
                           {sortColumn === 'marginFree' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
+                            <svg
+                              className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
                           ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                            <svg
+                              className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
                           )}
                         </div>
                       </th>
                       <th 
-                        className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors select-none group"
+                        className="px-3 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                         onClick={() => handleSort('marginLevel')}
                       >
                         <div className="flex items-center gap-1">
                           Margin Level
                           {sortColumn === 'marginLevel' ? (
-                            <span className="text-blue-600">
-                              {sortDirection === 'asc' ? '↑' : '↓'}
-                            </span>
+                            <svg
+                              className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
                           ) : (
-                            <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                            <svg
+                              className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                            </svg>
                           )}
                         </div>
                       </th>
@@ -1254,14 +1279,7 @@ const MarginLevelPage = () => {
                         </tr>
                       )
                     })}
-                    {/* Total Row */}
-                    {displayedAccounts.length > 0 && (
-                      <tr className="border-t-2 border-blue-500">
-                        <td colSpan={6} className="px-3 py-2 text-sm font-semibold text-gray-900">
-                          Total
-                        </td>
-                      </tr>
-                    )}
+                    {/* Removed Total row as requested */}
                   </tbody>
                 </table>
               )}

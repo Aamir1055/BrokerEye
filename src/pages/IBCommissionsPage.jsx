@@ -247,13 +247,13 @@ const IBCommissionsPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Rebate': '/Desktop cards icons/Total Rebate.svg',
-      'Available Rebate': '/Desktop cards icons/Available Rebate.svg',
-      'Disbursed Rebate': '/Desktop cards icons/Commission.svg',
-      'Total Rebate %': '/Desktop cards icons/Total Rebate.svg',
-      'Available Rebate %': '/Desktop cards icons/Available Rebate.svg',
+      'Total Rebate': '/Desktop cards icons/TOTAL COMMISION.svg',
+      'Available Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
+      'Disbursed Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
+      'Total Rebate %': '/Desktop cards icons/TOTAL COMMISION%25.svg',
+      'Available Rebate %': '/Desktop cards icons/AVAILABLE Commision%25.svg',
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Commission.svg'
+    return iconMap[cardTitle] || '/Desktop cards icons/TOTAL COMMISION.svg'
   }
 
   const formatDate = (dateString) => {
@@ -371,16 +371,6 @@ const IBCommissionsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Total Rebate')} 
-                    alt="Total Rebate"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
@@ -391,20 +381,17 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Rebate')} 
+                    alt="Total Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Available Rebate')} 
-                    alt="Available Rebate"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
@@ -415,20 +402,17 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Available Rebate')} 
+                    alt="Available Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Disbursed Rebate')} 
-                    alt="Disbursed Rebate"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Disbursed Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
@@ -439,20 +423,17 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Disbursed Rebate')} 
+                    alt="Disbursed Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Total Rebate %')} 
-                    alt="Total Rebate %"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate %</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
@@ -463,20 +444,17 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Rebate %')} 
+                    alt="Total Rebate %"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
-                  <img 
-                    src={getCardIcon('Available Rebate %')} 
-                    alt="Available Rebate %"
-                    style={{ width: '100%', height: '100%' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate %</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
@@ -486,6 +464,13 @@ const IBCommissionsPage = () => {
                       parseFloat(totalAvailableCommissionPercentage || 0).toFixed(2)
                     )}
                   </p>
+                </div>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Available Rebate %')} 
+                    alt="Available Rebate %"
+                    style={{ width: '100%', height: '100%' }}
+                  />
                 </div>
               </div>
             </div>
