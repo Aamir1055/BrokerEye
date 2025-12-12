@@ -3365,26 +3365,27 @@ const PositionsPage = () => {
                     </button>
                   )}
                   
-                  {/* Suggestions Dropdown - keep panel visible even with zero results */}
-                  {showSuggestions && (
+                  {/* Suggestions Dropdown - rendered when visible; show message if empty */}
+                  {showSuggestions ? (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                      {(() => {
-                        const suggestions = getSuggestions()
-                        if (!suggestions || suggestions.length === 0) {
-                          return <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                        }
-                        return suggestions.map((suggestion, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
-                          >
-                            {suggestion}
-                          </button>
-                        ))
-                      })()}
+                      {getSuggestions().length === 0 && (
+                        <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
+                      )}
+                      {getSuggestions().length > 0 && (
+                        <div>
+                          {getSuggestions().map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleSuggestionClick(suggestion)}
+                              className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 
                 {/* Columns Button (icon only) */}
