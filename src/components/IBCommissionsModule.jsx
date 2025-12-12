@@ -877,21 +877,23 @@ export default function IBCommissionsModule() {
                 {/* Total Row */}
                 {paginatedData.length > 0 && (
                   <div 
-                    className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB] border-t border-[#1A63BC]"
+                    className="grid text-[10px] text-[#1A63BC] font-outfit border-t border-[#1A63BC]"
                     style={{
                       gap: '0px', 
                       gridGap: '0px', 
                       columnGap: '0px',
-                      gridTemplateColumns
+                      gridTemplateColumns,
+                      backgroundColor: '#EFF4FB'
                     }}
                   >
                     {activeColumns.map(col => (
                       <div 
                         key={col.key}
-                        className={`h-[28px] flex items-center justify-start px-2 font-semibold bg-[#EFF4FB] ${col.sticky ? 'sticky left-0' : ''}`}
+                        className={`h-[28px] flex items-center justify-start px-2 font-semibold ${col.sticky ? 'sticky left-0' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 
+                          backgroundColor: '#EFF4FB',
                           boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                           left: col.sticky ? col.stickyLeft : 'auto',
                           zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
