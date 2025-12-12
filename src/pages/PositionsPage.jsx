@@ -3368,8 +3368,12 @@ const PositionsPage = () => {
                   {/* Suggestions Dropdown - keep panel visible even with zero results */}
                   {showSuggestions && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                      {getSuggestions().length > 0 ? (
-                        getSuggestions().map((suggestion, index) => (
+                      {(() => {
+                        const suggestions = getSuggestions()
+                        if (!suggestions || suggestions.length === 0) {
+                          return <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
+                        }
+                        return suggestions.map((suggestion, index) => (
                           <button
                             key={index}
                             onClick={() => handleSuggestionClick(suggestion)}
@@ -3378,9 +3382,7 @@ const PositionsPage = () => {
                             {suggestion}
                           </button>
                         ))
-                      ) : (
-                        <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                      )}
+                      })()}
                     </div>
                   )}
                 </div>
