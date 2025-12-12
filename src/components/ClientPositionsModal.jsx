@@ -854,13 +854,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     const stringAction = typeof action === 'string' ? action.toLowerCase() : ''
     
     if (numericAction === 0 || stringAction === 'buy') return 'text-green-600 bg-green-50'
-    if (numericAction === 1 || stringAction === 'sell') return 'text-blue-600 bg-blue-50'
+    if (numericAction === 1 || stringAction === 'sell') return 'text-green-600 bg-green-50'
     if (numericAction === 2 || numericAction === 3 || stringAction === 'balance' || stringAction === 'credit' || stringAction === 'deposit') return 'text-purple-600 bg-purple-50'
     return 'text-gray-600 bg-gray-50'
   }
 
   const getActionColor = (action) => {
-    return action === 0 ? 'text-green-600 bg-green-50' : 'text-blue-600 bg-blue-50'
+    return action === 0 ? 'text-green-600 bg-green-50' : 'text-green-600 bg-green-50'
   }
 
   const getProfitColor = (profit) => {

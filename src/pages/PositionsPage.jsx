@@ -3066,7 +3066,7 @@ const PositionsPage = () => {
                   WebkitOverflowScrolling: 'touch',
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#CBD5E0 #F7FAFC',
-                  maxHeight: '60vh'
+                  maxHeight: '70vh'
                 }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
