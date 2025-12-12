@@ -1222,7 +1222,7 @@ const PositionsPage = () => {
         const use = netVol>0 ? bucket.buyPositions : bucket.sellPositions
         use.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw+=pr*v; tv+=v; tp+=p.profit||0})
         const avg = tv>0? tw/tv : 0
-        const netType = netVol>0? 'Sell':'Buy' // reversed closing action
+        const netType = netVol>0? 'Buy':'Sell' // fixed: when more buy volume, show Buy
         let variantCount=1, variants=[]
         if (groupByBaseSymbol){
           variantCount = bucket.variantMap.size
@@ -1235,7 +1235,7 @@ const PositionsPage = () => {
             const use2 = nv>0? data.buyPositions : data.sellPositions
             use2.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw2+=pr*v; tv2+=v; tp2+=p.profit||0})
             const avg2 = tv2>0? tw2/tv2:0
-            return { exactSymbol: exact, netType: nv>0? 'Sell':'Buy', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
+            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
           }).filter(Boolean)
         }
   // Add totalPositions count (buy + sell) so Client NET Positions column is populated
@@ -3062,7 +3062,7 @@ const PositionsPage = () => {
                       </button>
                     </div>
                 </div>
-                <div className="overflow-y-auto flex-1">
+                <div className="overflow-x-auto overflow-y-auto flex-1">
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3072,7 +3072,7 @@ const PositionsPage = () => {
                     </div>
                   ) : (
                     <table className="w-full divide-y divide-gray-200">
-                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
+                      <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10, backgroundColor: '#2563eb' }}>
                         <tr>
                           {clientNetVisibleColumns.login && (
                             <th 
