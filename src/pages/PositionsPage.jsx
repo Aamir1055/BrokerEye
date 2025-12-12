@@ -3088,15 +3088,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Login</span>
-                                {clientNetSortColumn === 'login' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3107,15 +3098,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Symbol</span>
-                                {clientNetSortColumn === 'symbol' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3126,15 +3108,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Type</span>
-                                {clientNetSortColumn === 'netType' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3145,15 +3118,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Volume</span>
-                                {clientNetSortColumn === 'netVolume' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3164,15 +3128,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Avg Price</span>
-                                {clientNetSortColumn === 'avgPrice' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3183,15 +3138,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Total Profit</span>
-                                {clientNetSortColumn === 'totalProfit' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
@@ -3202,15 +3148,6 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Positions</span>
-                                {clientNetSortColumn === 'totalPositions' ? (
-                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                  </svg>
-                                )}
                               </div>
                             </th>
                           )}
