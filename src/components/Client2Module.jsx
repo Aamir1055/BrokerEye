@@ -206,11 +206,8 @@ export default function Client2Module() {
         payload.filters = apiFilters
       }
 
-      // Add search query to payload
-      if (searchInput && searchInput.trim()) {
-        payload.searchQuery = searchInput.trim()
-        console.log('[Client2] Searching with query:', payload.searchQuery)
-      }
+      // Note: Search is now handled client-side like Positions module
+      // Do not add searchQuery to payload
 
       // Add group filter to payload if active
       const activeGroupName = getActiveGroupFilter('client2')
@@ -253,15 +250,6 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const t = data.totals || {}
       
-      // Debug: Log search results
-      if (searchInput && searchInput.trim()) {
-        console.log('[Client2] Search results:', {
-          query: searchInput.trim(),
-          totalResults: data.total || data.clients?.length || 0,
-          clientsReturned: data.clients?.length || 0
-        })
-      }
-      
       // Debug: Log first client to verify percentage fields
       if (data.clients && data.clients.length > 0 && usePercent) {
         console.log('[Client2] First client with percentage mode:', {
@@ -292,7 +280,7 @@ export default function Client2Module() {
         setIsLoading(false)
       }
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, searchInput])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection])
 
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
@@ -306,13 +294,26 @@ export default function Client2Module() {
     return () => clearInterval(interval)
   }, [fetchClients])
 
-  // Server-side filtering is now handled by API, so filteredClients = clients
+  // Apply client-side search filtering (like Positions module)
   const filteredClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    // Apply only group filter client-side (group filter is handled via API mt5Accounts)
-    // All other filters are now server-side
-    return clients.filter(c => c != null && c.login != null)
-  }, [clients])
+    
+    let filtered = clients.filter(c => c != null && c.login != null)
+    
+    // Apply search query client-side
+    if (searchInput && searchInput.trim()) {
+      const query = searchInput.toLowerCase().trim()
+      filtered = filtered.filter(client => {
+        const login = String(client.login || '').toLowerCase()
+        const name = String(client.name || '').toLowerCase()
+        const email = String(client.email || '').toLowerCase()
+        
+        return login.includes(query) || name.includes(query) || email.includes(query)
+      })
+    }
+    
+    return filtered
+  }, [clients, searchInput])
 
   // Calculate cards from API totals (filters are handled server-side)
   const cards = useMemo(() => {
@@ -613,10 +614,7 @@ export default function Client2Module() {
         payload.filters = apiFilters
       }
 
-      // Add search query
-      if (searchInput && searchInput.trim()) {
-        payload.searchQuery = searchInput.trim()
-      }
+      // Note: Search is handled client-side after fetching data
 
       // Add group filter
       const activeGroupName = getActiveGroupFilter('client2')
@@ -725,10 +723,7 @@ export default function Client2Module() {
         payload.filters = apiFilters
       }
 
-      // Add search query
-      if (searchInput && searchInput.trim()) {
-        payload.searchQuery = searchInput.trim()
-      }
+      // Note: Search is handled client-side after fetching data
 
       // Add group filter
       const activeGroupName = getActiveGroupFilter('client2')
