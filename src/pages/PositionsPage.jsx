@@ -3066,7 +3066,8 @@ const PositionsPage = () => {
                   WebkitOverflowScrolling: 'touch',
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#CBD5E0 #F7FAFC',
-                  maxHeight: '70vh'
+                  maxHeight: '70vh',
+                  minHeight: '70vh'
                 }}>
                   {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
                     <div className="text-center py-12">
@@ -3317,6 +3318,8 @@ const PositionsPage = () => {
                         })}
                       </tbody>
                     </table>
+                    {/* Add bottom padding to keep scrollbar visible */}
+                    <div style={{ height: '20px' }}></div>
                   )}
                 </div>
               </div>
