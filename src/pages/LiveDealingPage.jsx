@@ -766,6 +766,19 @@ const LiveDealingPage = () => {
     return decimal ? `${formatted}.${decimal}` : formatted
   }
 
+  // Get card icon path based on card title
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'DEALS (24H)': '/Desktop cards icons/Total Clients.svg',
+      'DEALS (7D)': '/Desktop cards icons/Total Clients.svg',
+      'FILTERED DEALS': '/Desktop cards icons/Total Clients.svg',
+      'CONNECTION STATUS': '/Desktop cards icons/Balance.svg',
+      'UNIQUE LOGINS': '/Desktop cards icons/Total Clients.svg',
+      'SYMBOLS': '/Desktop cards icons/Total Clients.svg',
+    }
+    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+  }
+
   const handleRefresh = () => {
     console.log('[LiveDealing] 🔄 Refresh: Reloading all deals from API')
     fetchAllDealsOnce()
@@ -1722,11 +1735,15 @@ const LiveDealingPage = () => {
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">
                   {timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS'}
                 </span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon(timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS')} 
+                    alt="Deals"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
@@ -1740,11 +1757,15 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">CONNECTION STATUS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('CONNECTION STATUS')} 
+                    alt="Connection Status"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className={`text-sm md:text-base font-bold leading-none ${
@@ -1760,11 +1781,15 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">UNIQUE LOGINS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('UNIQUE LOGINS')} 
+                    alt="Unique Logins"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
@@ -1778,11 +1803,15 @@ const LiveDealingPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">SYMBOLS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('SYMBOLS')} 
+                    alt="Symbols"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
