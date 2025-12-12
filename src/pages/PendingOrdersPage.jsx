@@ -1038,7 +1038,6 @@ const PendingOrdersPage = () => {
           </div>
 
           {/* Search and Controls Bar */}
-          {sortedOrders && sortedOrders.length > 0 && (
           <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               {/* Left: Search and Columns */}
@@ -1175,7 +1174,6 @@ const PendingOrdersPage = () => {
               </div>
             </div>
           </div>
-          )}
 
           {/* Orders Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
