@@ -296,6 +296,16 @@ const PendingOrdersPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
+  // Get card icon path based on card title
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'Total Orders': '/Desktop cards icons/Total Clients.svg',
+      'Unique Logins': '/Desktop cards icons/Total Clients.svg',
+      'Symbols': '/Desktop cards icons/Total Clients.svg',
+    }
+    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+  }
+
   const formatTime = (ts) => {
     if (!ts) return '-'
     try {
@@ -971,11 +981,15 @@ const PendingOrdersPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Orders</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Orders')} 
+                    alt="Total Orders"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
@@ -986,11 +1000,15 @@ const PendingOrdersPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Unique Logins')} 
+                    alt="Unique Logins"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
@@ -1001,11 +1019,15 @@ const PendingOrdersPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Symbols</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                    <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Symbols')} 
+                    alt="Symbols"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
