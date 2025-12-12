@@ -244,6 +244,18 @@ const IBCommissionsPage = () => {
     return `${formatted}.${decPart}`
   }
 
+  // Get card icon path based on card title
+  const getCardIcon = (cardTitle) => {
+    const iconMap = {
+      'Total Rebate': '/Desktop cards icons/Total Rebate.svg',
+      'Available Rebate': '/Desktop cards icons/Available Rebate.svg',
+      'Disbursed Rebate': '/Desktop cards icons/Commission.svg',
+      'Total Rebate %': '/Desktop cards icons/Total Rebate.svg',
+      'Available Rebate %': '/Desktop cards icons/Available Rebate.svg',
+    }
+    return iconMap[cardTitle] || '/Desktop cards icons/Commission.svg'
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -359,11 +371,15 @@ const IBCommissionsPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="1" width="10" height="10" rx="5" stroke="white" strokeWidth="1.5" fill="none"/>
-                    <path d="M6 3v6M3 6h6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Rebate')} 
+                    alt="Total Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate</p>
@@ -379,11 +395,15 @@ const IBCommissionsPage = () => {
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="1" width="10" height="10" rx="5" stroke="white" strokeWidth="1.5" fill="none"/>
-                    <path d="M3.5 6l2 2 3-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Available Rebate')} 
+                    alt="Available Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate</p>
@@ -399,11 +419,15 @@ const IBCommissionsPage = () => {
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="8" height="6" rx="1" stroke="white" strokeWidth="1.5" fill="none"/>
-                    <path d="M6 6.5v1" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Disbursed Rebate')} 
+                    alt="Disbursed Rebate"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Disbursed Rebate</p>
@@ -419,12 +443,15 @@ const IBCommissionsPage = () => {
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 9L5 6L7 8L10 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="5" cy="6" r="0.75" fill="white"/>
-                    <circle cx="7" cy="8" r="0.75" fill="white"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Total Rebate %')} 
+                    alt="Total Rebate %"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate %</p>
@@ -440,12 +467,15 @@ const IBCommissionsPage = () => {
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-[#2563EB] rounded-md flex items-center justify-center flex-shrink-0">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="7" width="2" height="3" rx="0.5" fill="white"/>
-                    <rect x="5" y="5" width="2" height="5" rx="0.5" fill="white"/>
-                    <rect x="8" y="3" width="2" height="7" rx="0.5" fill="white"/>
-                  </svg>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                  <img 
+                    src={getCardIcon('Available Rebate %')} 
+                    alt="Available Rebate %"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate %</p>
