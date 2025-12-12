@@ -635,6 +635,13 @@ const PositionsPage = () => {
       'Floating Profit %': '/Desktop cards icons/Floating.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
       'Symbols': '/Desktop cards icons/Total Clients.svg',
+      // NET Position cards
+      'NET Symbols': '/Desktop cards icons/Total Clients.svg',
+      'Total NET Volume': '/Desktop cards icons/Total Balance.svg',
+      'Total NET P/L': '/Desktop cards icons/PNL.svg',
+      'Total Logins': '/Desktop cards icons/Total Clients.svg',
+      // Client NET cards
+      'Client NET Rows': '/Desktop cards icons/Total Clients.svg',
     }
     return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
@@ -2273,11 +2280,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">NET Symbols</span>
-                      <div className="w-6 h-6 bg-purple-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                          <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                        </svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('NET Symbols')} 
+                          alt="NET Symbols"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
@@ -2290,11 +2299,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET Volume</span>
-                      <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                          <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                        </svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total NET Volume')} 
+                          alt="Total NET Volume"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
@@ -2307,11 +2318,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET P/L</span>
-                      <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                          <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                        </svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total NET P/L')} 
+                          alt="Total NET P/L"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className={`text-lg font-bold flex items-center gap-2 ${
@@ -2336,11 +2349,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Logins</span>
-                      <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                          <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                        </svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total Logins')} 
+                          alt="Total Logins"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
@@ -2838,8 +2853,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Client NET Rows</span>
-                      <div className="w-6 h-6 bg-purple-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Client NET Rows')} 
+                          alt="Client NET Rows"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
@@ -2851,8 +2871,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET Volume</span>
-                      <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total NET Volume')} 
+                          alt="Total NET Volume"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
@@ -2864,10 +2889,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET P/L</span>
-                      <div className={`w-6 h-6 ${
-                        clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'bg-green-600' : 'bg-red-600'
-                      } rounded-md flex items-center justify-center flex-shrink-0`}>
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total NET P/L')} 
+                          alt="Total NET P/L"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className={`text-lg font-bold flex items-center gap-2 ${
@@ -2884,8 +2912,13 @@ const PositionsPage = () => {
                   <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Logins</span>
-                      <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center flex-shrink-0">
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getCardIcon('Total Logins')} 
+                          alt="Total Logins"
+                          style={{ width: '100%', height: '100%' }}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
                       </div>
                     </div>
                     <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
