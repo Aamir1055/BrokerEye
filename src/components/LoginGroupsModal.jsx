@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const LoginGroupsModal = ({ 
   isOpen, 
@@ -11,6 +11,8 @@ const LoginGroupsModal = ({
   activeGroupName
 }) => {
   const [tempSelectedGroup, setTempSelectedGroup] = useState(activeGroupName)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const modalRef = useRef(null)
 
   // Update temp selection when modal opens
   React.useEffect(() => {
@@ -18,6 +20,29 @@ const LoginGroupsModal = ({
       setTempSelectedGroup(activeGroupName)
     }
   }, [isOpen, activeGroupName])
+
+  // Detect focus within modal to expand height when inputs are focused (e.g., search bar)
+  useEffect(() => {
+    if (!isOpen) return
+    const el = modalRef.current
+    if (!el) return
+    const onFocusIn = (e) => {
+      const target = e.target
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.getAttribute('role') === 'search')) {
+        setIsSearchFocused(true)
+      }
+    }
+    const onFocusOut = (e) => {
+      // Collapse when focus leaves inputs
+      setIsSearchFocused(false)
+    }
+    el.addEventListener('focusin', onFocusIn)
+    el.addEventListener('focusout', onFocusOut)
+    return () => {
+      el.removeEventListener('focusin', onFocusIn)
+      el.removeEventListener('focusout', onFocusOut)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null;
 
@@ -59,6 +84,7 @@ const LoginGroupsModal = ({
 
       {/* Modal content - Bottom Sheet */}
       <div
+        ref={modalRef}
         style={{
           position: 'fixed',
           bottom: 0,
@@ -67,11 +93,13 @@ const LoginGroupsModal = ({
           width: '100%',
           maxWidth: '412px',
           height: 'auto',
-          maxHeight: '85vh',
+          maxHeight: isSearchFocused ? 'calc(85vh + 100px)' : '85vh',
           background: '#FFFFFF',
+          borderRadius: '20px 20px 0 0',
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
+          transition: 'max-height 0.25s ease'
         }}
       >
         {/* Top indicator line */}
@@ -190,7 +218,8 @@ const LoginGroupsModal = ({
             flex: 1,
             overflowY: 'auto',
             minHeight: '500px',
-            maxHeight: '500px',
+            maxHeight: isSearchFocused ? '600px' : '500px',
+            transition: 'max-height 0.25s ease'
           }}
         >
           {hasGroups ? (
