@@ -250,17 +250,22 @@ const GroupModal = ({
   const filteredItems = getFilteredItems()
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 group-modal-wrapper">
       <style>{`
         @media (max-width: 768px) {
           .group-modal-container {
-            max-height: ${isSearchFocused ? 'calc(90vh + 100px)' : '90vh'} !important;
+            max-height: ${isSearchFocused ? '65vh' : '90vh'} !important;
             transition: max-height 0.3s ease;
           }
           .group-modal-content {
-            min-height: ${isSearchFocused ? '400px' : '300px'} !important;
-            max-height: ${isSearchFocused ? '500px' : '400px'} !important;
+            min-height: ${isSearchFocused ? '350px' : '300px'} !important;
+            max-height: ${isSearchFocused ? '450px' : '400px'} !important;
             transition: min-height 0.3s ease, max-height 0.3s ease;
+          }
+          .group-modal-wrapper {
+            align-items: ${isSearchFocused ? 'flex-start' : 'center'} !important;
+            padding-top: ${isSearchFocused ? '20px' : '0'} !important;
+            transition: align-items 0.3s ease, padding-top 0.3s ease;
           }
         }
       `}</style>
