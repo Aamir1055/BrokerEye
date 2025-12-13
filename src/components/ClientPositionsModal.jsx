@@ -384,10 +384,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         }
       }
       
-      if (pos.action === 0) { // Buy
+      // Normalize action using helper to handle numeric and string variants
+      const actionLabel = getActionLabel(pos.action)
+      if (actionLabel === 'Buy') {
         grouped[symbol].buyVolume += pos.volume
         grouped[symbol].buyPrices.push({ price: pos.priceOpen, volume: pos.volume })
-      } else { // Sell
+      } else if (actionLabel === 'Sell') {
         grouped[symbol].sellVolume += pos.volume
         grouped[symbol].sellPrices.push({ price: pos.priceOpen, volume: pos.volume })
       }
@@ -410,7 +412,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           netType: 'Buy',
           avgOpenPrice: avgBuyPrice,
           totalProfit: group.totalProfit,
-          positionCount: group.positions.filter(p => p.action === 0).length
+          positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Buy').length
         })
       }
       
@@ -425,7 +427,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           netType: 'Sell',
           avgOpenPrice: avgSellPrice,
           totalProfit: group.totalProfit,
-          positionCount: group.positions.filter(p => p.action === 1).length
+          positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Sell').length
         })
       }
     })
