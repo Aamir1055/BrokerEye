@@ -46,8 +46,8 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   
   const handleNavigate = (path) => {
     navigate(path)
-    // Close sidebar on mobile after navigation
-    if (window.innerWidth < 1024 && typeof onClose === 'function') {
+    // Close sidebar after navigation to avoid layout thrash and speed up desktop transitions
+    if (typeof onClose === 'function') {
       onClose()
     }
   }
