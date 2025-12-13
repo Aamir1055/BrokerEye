@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import FilterModal from './FilterModal'
+import CustomizeViewModal from './CustomizeViewModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
@@ -1474,110 +1475,31 @@ export default function Client2Module() {
         </div>
       </div>
 
-      {/* Customize View Bottom Sheet */}
-      {isCustomizeOpen && (
-        <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/35" onClick={() => setIsCustomizeOpen(false)} />
-          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl shadow-[0_-8px_24px_rgba(0,0,0,0.12)] flex flex-col" style={{ maxHeight: '90vh', height: 'auto' }}>
-            {/* Top indicator line */}
-            <div className="w-[47px] h-[2px] rounded-[2px] mx-auto mt-[10px]" style={{ background: 'rgba(71, 84, 103, 0.55)' }} />
-            
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-[10px] mb-[10px]">
-              <button onClick={() => setIsCustomizeOpen(false)} className="p-[5px] bg-transparent border-none cursor-pointer">
-                <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{ transform: 'rotate(180deg)' }}>
-                  <path d="M1 1L7 7L1 13" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <h2 className="font-semibold text-[18px] leading-6 text-[#4B4B4B] m-0" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.0041em' }}>
-                Customize view
-              </h2>
-              <div className="w-[18px]" />
-            </div>
-
-            {/* Divider */}
-            <div className="w-full h-[1px] bg-[#F2F2F7] mb-5" />
-
-            {/* Menu options */}
-            <div className="flex-1 px-5">
-              {/* Filter option */}
-              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsFilterOpen(true); }}>
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M4 6h10M2 3h14M6 9h6" stroke="#999999" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                  Filter
-                </span>
-              </button>
-              
-              {/* Divider */}
-              <div className="w-full h-[1px] bg-[#F2F2F7] my-3" />
-
-              {/* IB Filter option */}
-              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsIBFilterOpen(true); }}>
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M9 9.75C10.6569 9.75 12 8.40685 12 6.75C12 5.09315 10.6569 3.75 9 3.75C7.34315 3.75 6 5.09315 6 6.75C6 8.40685 7.34315 9.75 9 9.75Z" stroke="#999999" strokeWidth="1.5" />
-                    <path d="M3 14.25C3 11.3505 5.35051 9 8.25 9H9.75C12.6495 9 15 11.3505 15 14.25" stroke="#999999" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                  IB Filter
-                </span>
-              </button>
-              
-              {/* Divider */}
-              <div className="w-full h-[1px] bg-[#F2F2F7] my-3" />
-
-              {/* Groups option */}
-              <button className="flex items-center gap-[10px] w-full py-[10px] bg-transparent border-none cursor-pointer mb-3" onClick={() => { setIsCustomizeOpen(false); setIsLoginGroupsOpen(true); }}>
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: 'rgba(230, 238, 248, 0.44)' }}>
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M6 7.5C7.65685 7.5 9 6.15685 9 4.5C9 2.84315 7.65685 1.5 6 1.5C4.34315 1.5 3 2.84315 3 4.5C3 6.15685 4.34315 7.5 6 7.5Z" stroke="#999999" strokeWidth="1.5" />
-                    <path d="M12 7.5C13.6569 7.5 15 6.15685 15 4.5C15 2.84315 13.6569 1.5 12 1.5C10.3431 1.5 9 2.84315 9 4.5C9 6.15685 10.3431 7.5 12 7.5Z" stroke="#999999" strokeWidth="1.5" />
-                    <path d="M6 16.5C7.65685 16.5 9 15.1569 9 13.5C9 11.8431 7.65685 10.5 6 10.5C4.34315 10.5 3 11.8431 3 13.5C3 15.1569 4.34315 16.5 6 16.5Z" stroke="#999999" strokeWidth="1.5" />
-                    <path d="M12 16.5C13.6569 16.5 15 15.1569 15 13.5C15 11.8431 13.6569 10.5 12 10.5C10.3431 10.5 9 11.8431 9 13.5C9 15.1569 10.3431 16.5 12 16.5Z" stroke="#999999" strokeWidth="1.5" />
-                  </svg>
-                </div>
-                <span className="font-normal text-base leading-5 text-[#1B2D45] text-left" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                  Groups
-                </span>
-              </button>
-            </div>
-
-            {/* Bottom divider */}
-            <div className="w-full h-[1px] bg-[#F2F2F7] my-5" />
-
-            {/* Action buttons */}
-            <div className="flex gap-4 px-5 pb-6" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
-              {/* Reset button */}
-              <button 
-                onClick={() => {
-                  setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
-                  clearIBSelection()
-                  setActiveGroupFilter('client2', null)
-                  setIsCustomizeOpen(false)
-                }}
-                className="flex-1 flex justify-center items-center px-4 py-[10px] bg-[#F4F8FC] border border-[#F2F2F7] rounded-[20px] cursor-pointer font-normal text-xs leading-5 uppercase text-[#2563EB]"
-                style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.06em', boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)' }}
-              >
-                Reset
-              </button>
-
-              {/* Apply button */}
-              <button 
-                onClick={() => setIsCustomizeOpen(false)}
-                className="flex-1 flex justify-center items-center px-[27px] py-[10px] bg-white border border-[#F2F2F7] rounded-[20px] cursor-pointer font-normal text-xs leading-5 uppercase text-[#4B4B4B]"
-                style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.06em', boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)' }}
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* CustomizeView Modal (shared) */}
+      <CustomizeViewModal
+        isOpen={isCustomizeOpen}
+        onClose={() => setIsCustomizeOpen(false)}
+        onFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsFilterOpen(true)
+        }}
+        onIBFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsIBFilterOpen(true)
+        }}
+        onGroupsClick={() => {
+          setIsCustomizeOpen(false)
+          setIsLoginGroupsOpen(true)
+        }}
+        onReset={() => {
+          setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+          clearIBSelection()
+          setActiveGroupFilter('client2', null)
+        }}
+        onApply={() => {
+          setIsCustomizeOpen(false)
+        }}
+      />
 
       {/* Filter Modal */}
       <FilterModal
