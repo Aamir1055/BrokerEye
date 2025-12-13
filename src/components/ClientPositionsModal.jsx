@@ -1764,7 +1764,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       )}
                     </div>
                   ) : (
-                <div className="overflow-x-auto max-h-96 relative">
+                <div className="overflow-x-auto overflow-y-auto max-h-96 relative">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
@@ -2200,7 +2200,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <p className="text-gray-400 text-xs mt-1">Open some positions to see NET position summary</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto max-h-96 relative">
+                <div className="overflow-x-auto overflow-y-auto max-h-96 relative">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
@@ -2392,7 +2392,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               {dealsLoading ? (
                 <>
                   {/* Show table structure with loading bar */}
-                  <div className="overflow-x-auto max-h-96 relative">
+                  <div className="overflow-x-auto overflow-y-auto max-h-96 relative">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                         <tr>
@@ -2537,7 +2537,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </div>
                   ) : (
                     <>
-                      <div className="overflow-x-auto max-h-96 relative">
+                      <div className="overflow-x-auto overflow-y-auto max-h-96 relative">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
