@@ -250,33 +250,37 @@ const GroupModal = ({
   const filteredItems = getFilteredItems()
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 group-modal-wrapper">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex z-50 p-4 transition-all duration-300 ${isSearchFocused ? 'items-start pt-5' : 'items-center justify-center'}`}>
       <style>{`
         @media (max-width: 768px) {
-          .group-modal-container {
-            max-height: ${isSearchFocused ? '65vh' : '90vh'} !important;
-            transition: max-height 0.3s ease;
+          .group-modal-container-focused {
+            max-height: 55vh !important;
+            transition: max-height 0.35s ease-in-out;
           }
-          .group-modal-content {
-            min-height: ${isSearchFocused ? '350px' : '300px'} !important;
-            max-height: ${isSearchFocused ? '450px' : '400px'} !important;
-            transition: min-height 0.3s ease, max-height 0.3s ease;
+          .group-modal-container-normal {
+            max-height: 90vh !important;
+            transition: max-height 0.35s ease-in-out;
           }
-          .group-modal-wrapper {
-            align-items: ${isSearchFocused ? 'flex-start' : 'center'} !important;
-            padding-top: ${isSearchFocused ? '20px' : '0'} !important;
-            transition: align-items 0.3s ease, padding-top 0.3s ease;
+          .group-modal-content-focused {
+            min-height: 300px !important;
+            max-height: 400px !important;
+            transition: min-height 0.35s ease-in-out, max-height 0.35s ease-in-out;
+          }
+          .group-modal-content-normal {
+            min-height: 300px !important;
+            max-height: 400px !important;
+            transition: min-height 0.35s ease-in-out, max-height 0.35s ease-in-out;
           }
         }
       `}</style>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] group-modal-container flex flex-col">
+      <div className={`bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col ${isSearchFocused ? 'group-modal-container-focused' : 'group-modal-container-normal'}`}>
         <div className="px-4 py-2.5 border-b border-gray-200">
           <h3 className="text-base font-semibold text-gray-900">
             {isEditMode ? 'Edit Login Group' : 'Create Login Group'}
           </h3>
         </div>
         
-        <div className="px-4 py-3 overflow-y-auto flex-1 group-modal-content">
+        <div className={`px-4 py-3 overflow-y-auto flex-1 ${isSearchFocused ? 'group-modal-content-focused' : 'group-modal-content-normal'}`}>
           {/* Group Name */}
           <div className="mb-3">
             <input
