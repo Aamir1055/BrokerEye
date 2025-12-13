@@ -39,6 +39,14 @@ const PositionsPage = () => {
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
+  
+  // Critical: Set unmounted flag ASAP to unblock route transitions
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const v = localStorage.getItem('sidebarOpen')
@@ -564,6 +572,7 @@ const PositionsPage = () => {
   // Close suggestions when clicking outside
   useEffect(() => { if (!isAuthenticated) return;
     const handleClickOutside = (event) => {
+      if (!isMountedRef.current) return
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false)
       }
@@ -594,6 +603,7 @@ const PositionsPage = () => {
       }
     }
     const handleKeyDown = (event) => {
+      if (!isMountedRef.current) return
       if (event.key === 'Escape') {
         if (showDisplayMenu) setShowDisplayMenu(false)
         if (netShowSuggestions) setNetShowSuggestions(false)
@@ -1062,6 +1072,7 @@ const PositionsPage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (!isMountedRef.current) return
       if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
         if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
           setShowFilterDropdown(null)
