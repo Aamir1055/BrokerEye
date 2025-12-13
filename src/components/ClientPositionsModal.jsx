@@ -405,13 +405,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       if (group.buyVolume > 0) {
         const totalWeightedPrice = group.buyPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
         const avgBuyPrice = totalWeightedPrice / group.buyVolume
+        const buyProfit = group.positions
+          .filter(p => getActionLabel(p.action) === 'Buy')
+          .reduce((sum, p) => sum + Number(p.profit || 0), 0)
         
         netPos.push({
           symbol: group.symbol,
           netVolume: group.buyVolume,
           netType: 'Buy',
           avgOpenPrice: avgBuyPrice,
-          totalProfit: group.totalProfit,
+          totalProfit: buyProfit,
           positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Buy').length
         })
       }
@@ -420,13 +423,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       if (group.sellVolume > 0) {
         const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
         const avgSellPrice = totalWeightedPrice / group.sellVolume
+        const sellProfit = group.positions
+          .filter(p => getActionLabel(p.action) === 'Sell')
+          .reduce((sum, p) => sum + Number(p.profit || 0), 0)
         
         netPos.push({
           symbol: group.symbol,
           netVolume: group.sellVolume,
           netType: 'Sell',
           avgOpenPrice: avgSellPrice,
-          totalProfit: group.totalProfit,
+          totalProfit: sellProfit,
           positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Sell').length
         })
       }
@@ -2974,7 +2980,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           )}
 
           {activeTab === 'netpositions' && netPositions.length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
                 <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">NET Symbols</p>
                 <p className="text-base font-bold text-purple-900">{netPositions.length}</p>
@@ -2985,20 +2991,34 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   {netPositions.reduce((sum, p) => sum + p.netVolume, 0).toFixed(2)}
                 </p>
               </div>
-              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
-                netPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0
-                  ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-red-50 border-red-200'
-              }`}>
-                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
-                  netPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0
-                    ? 'text-emerald-600'
-                    : 'text-red-600'
-                }`}>Floating Profit</p>
-                <p className={`text-base font-bold ${getProfitColor(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}`}>
-                  {formatCurrency(netPositions.reduce((sum, p) => sum + p.totalProfit, 0))}
-                </p>
-              </div>
+              {(() => {
+                const buyTotal = netPositions.filter(p => p.netType === 'Buy').reduce((sum, p) => sum + p.totalProfit, 0)
+                const sellTotal = netPositions.filter(p => p.netType === 'Sell').reduce((sum, p) => sum + p.totalProfit, 0)
+                return (
+                  <>
+                    <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                      buyTotal >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                      <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                        buyTotal >= 0 ? 'text-emerald-600' : 'text-red-600'
+                      }`}>Buy Floating Profit</p>
+                      <p className={`text-base font-bold ${getProfitColor(buyTotal)}`}>
+                        {formatCurrency(buyTotal)}
+                      </p>
+                    </div>
+                    <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
+                      sellTotal >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                      <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
+                        sellTotal >= 0 ? 'text-emerald-600' : 'text-red-600'
+                      }`}>Sell Floating Profit</p>
+                      <p className={`text-base font-bold ${getProfitColor(sellTotal)}`}>
+                        {formatCurrency(sellTotal)}
+                      </p>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           )}
 
