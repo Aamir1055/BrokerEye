@@ -243,7 +243,7 @@ const PositionsPage = () => {
   
   // Pagination states for ALL positions view
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(25)
+  const [itemsPerPage, setItemsPerPage] = useState(() => isMobile ? 12 : 25)
   
   // NET positions toggle and grouping
   const [showNetPositions, setShowNetPositions] = useState(false)
@@ -252,7 +252,7 @@ const PositionsPage = () => {
   
   // NET positions pagination
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const [netItemsPerPage, setNetItemsPerPage] = useState(25)
+  const [netItemsPerPage, setNetItemsPerPage] = useState(() => isMobile ? 12 : 25)
   
   // Client NET toggle
   const [showClientNet, setShowClientNet] = useState(false)
