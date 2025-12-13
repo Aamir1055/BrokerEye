@@ -440,7 +440,7 @@ const CustomizeViewModal = ({
           }}
         />
 
-        {/* Action buttons */}
+        {/* Action buttons: match exactly with Filter modal */}
         <div
           style={{
             display: 'flex',
@@ -456,16 +456,18 @@ const CustomizeViewModal = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '12px 16px',
-              background: '#FFFFFF',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
-              boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+              padding: '10px 16px',
+              background: '#E5E7EB',
+              border: '1px solid #D1D5DB',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '14px',
+              fontWeight: 400,
+              fontSize: '12px',
               lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
               color: '#6B7280',
             }}
           >
@@ -481,16 +483,18 @@ const CustomizeViewModal = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '12px 27px',
+              padding: '10px 27px',
               background: hasInteracted ? '#2563EB' : '#E5E7EB',
               border: '1px solid ' + (hasInteracted ? '#2563EB' : '#D1D5DB'),
-              borderRadius: '12px',
-              boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: hasInteracted ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '14px',
+              fontWeight: 400,
+              fontSize: '12px',
               lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
               color: hasInteracted ? '#FFFFFF' : '#6B7280',
             }}
           >
