@@ -589,6 +589,23 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
+      <style>{`
+        .react-datepicker__input-container input {
+          font-size: 12px !important;
+          height: 26px !important;
+          padding: 2px 6px !important;
+          width: 95px !important;
+        }
+        .react-datepicker-wrapper {
+          width: 95px !important;
+        }
+        .react-datepicker__input-container {
+          width: 95px !important;
+        }
+        .compact-calendar {
+          font-size: 11px;
+        }
+      `}</style>
       <div className="bg-white w-full h-[95vh] rounded-t-2xl flex flex-col">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
@@ -597,7 +614,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               <path d="M15 18l-6-6 6-6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-          <h2 className="text-lg font-semibold">Clients Detail Page</h2>
+          <div className="flex-1" />
           <div className="w-9" />
         </div>
 
@@ -725,59 +742,66 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </div>
         </div>
 
-        {/* Date Filter for Deals Tab */}
+        {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
-          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex-shrink-0">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-semibold text-gray-700">Date:</span>
+          <div className="px-2 py-1.5 bg-blue-50 border-b border-blue-100 flex-shrink-0">
+            <div className="flex items-center gap-1.5" style={{ justifyContent: 'space-between' }}>
+              {/* Quick Filter Dropdown */}
+              <select
+                value={quickFilter}
+                onChange={(e) => handleQuickFilter(e.target.value)}
+                className="px-1.5 py-0.5 border border-blue-300 rounded text-[9px] font-medium text-blue-700 bg-white"
+                style={{ height: '24px', fontSize: '9px', width: '60px', flex: '0 0 60px' }}
+              >
+                <option value="Today">Today</option>
+                <option value="Last Week">Week</option>
+                <option value="Last Month">Month</option>
+                <option value="Last 3 Months">3M</option>
+                <option value="Last 6 Months">6M</option>
+                <option value="All History">All</option>
+              </select>
+
+              {/* Date Inputs */}
+              <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <DatePicker
                   selected={fromDate}
                   onChange={(date) => setFromDate(date)}
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat="dd/MM/yy"
                   placeholderText="From"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[8px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="border border-gray-300 rounded text-gray-900 bg-white"
                   calendarClassName="compact-calendar"
                   maxDate={toDate || new Date()}
                 />
-                <span className="text-[9px] text-gray-500">to</span>
+              </div>
+              <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
+              <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <DatePicker
                   selected={toDate}
                   onChange={(date) => setToDate(date)}
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat="dd/MM/yy"
                   placeholderText="To"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[8px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="border border-gray-300 rounded text-gray-900 bg-white"
                   calendarClassName="compact-calendar"
                   minDate={fromDate}
                   maxDate={new Date()}
                 />
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleApplyDateFilter}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={handleClearDateFilter}
-                  className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-medium rounded hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
-                <select
-                  value={quickFilter}
-                  onChange={(e) => handleQuickFilter(e.target.value)}
-                  className="px-2 py-1.5 border border-gray-300 rounded text-xs text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="Today">Today</option>
-                  <option value="Last Week">Last Week</option>
-                  <option value="Last Month">Last Month</option>
-                  <option value="Last 3 Months">Last 3 Months</option>
-                  <option value="Last 6 Months">Last 6 Months</option>
-                  <option value="All History">All History</option>
-                </select>
-              </div>
+
+              {/* Action Buttons */}
+              <button
+                onClick={handleApplyDateFilter}
+                className="px-3 py-0.5 bg-blue-600 text-white text-[9px] font-medium rounded hover:bg-blue-700"
+                style={{ height: '24px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+              >
+                Apply
+              </button>
+              <button
+                onClick={handleClearDateFilter}
+                className="px-3 py-0.5 bg-white border border-gray-300 text-gray-700 text-[9px] font-medium rounded hover:bg-gray-50"
+                style={{ height: '24px', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+              >
+                Clear
+              </button>
             </div>
           </div>
         )}

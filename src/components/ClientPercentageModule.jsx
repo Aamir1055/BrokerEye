@@ -43,7 +43,7 @@ export default function ClientPercentageModule() {
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768)
-  const itemsPerPage = isMobileView ? 12 : 15
+  const itemsPerPage = isMobileView ? 12 : 100
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
@@ -108,17 +108,23 @@ export default function ClientPercentageModule() {
       setLoading(true)
       setError('')
       
-      // Use pagination only for mobile view
-      const params = isMobileView ? { limit: 12, page } : {}
+      // Server-side pagination for both views
+      // Some backends use `limit` instead of `page_size` for this endpoint
+      const params = isMobileView ? { page, limit: 12 } : { page, limit: 100 }
       const response = await brokerAPI.getAllClientPercentages(params)
-      
-      const clientsData = response.data?.clients || []
+
+      // Normalize nested API shape: response.data?.data
+      const payload = response?.data?.data || response?.data || {}
+      try {
+        console.log('[ClientPercentage] fetch', { page, params, parsedTotal: payload?.total, count: Array.isArray(payload?.clients) ? payload.clients.length : 0 })
+      } catch {}
+      const clientsData = payload?.clients || []
       setClients(clientsData)
       setStats({
-        total: response.data?.total || clientsData.length,
-        total_custom: response.data?.total_custom || 0,
-        total_default: response.data?.total_default || 0,
-        default_percentage: response.data?.default_percentage || 0
+        total: Number(payload?.total) || clientsData.length,
+        total_custom: Number(payload?.total_custom) || 0,
+        total_default: Number(payload?.total_default) || 0,
+        default_percentage: Number(payload?.default_percentage) || 0
       })
       
       setLoading(false)
@@ -254,23 +260,16 @@ export default function ClientPercentageModule() {
     }
   }, [summaryStats])
 
-  // Fetch data when page changes in mobile view
+  // Fetch data when page changes
   useEffect(() => {
-    if (isMobileView && currentPage > 1) {
-      fetchAllClientPercentages(currentPage)
-    }
+    fetchAllClientPercentages(currentPage)
   }, [currentPage])
 
   // Pagination
   const paginatedData = useMemo(() => {
-    // For mobile view, data is already paginated from API
-    if (isMobileView) {
-      return clients.slice(0, 12) // Ensure only 12 items
-    }
-    // For desktop view, use client-side pagination
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredData.slice(startIndex, startIndex + itemsPerPage)
-  }, [clients, filteredData, currentPage, itemsPerPage, isMobileView])
+    // Use server-side pagination data directly from API for both views
+    return filteredData.length > 0 ? filteredData : clients
+  }, [clients, filteredData])
 
   // Get visible columns
   const allColumns = [
@@ -665,19 +664,43 @@ export default function ClientPercentageModule() {
             </button>
 
             {/* Page indicator */}
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
-              <span className="font-semibold">{currentPage}</span>
-              <span className="text-[#9CA3AF] mx-1">/</span>
-              <span>{Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage)}</span>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))}
+                value={currentPage}
+                onChange={(e) => {
+                  const total = Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))
+                  const n = Number(e.target.value)
+                  if (!isNaN(n)) setCurrentPage(Math.min(Math.max(1, n), total))
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
+              <span>{Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))}</span>
             </div>
 
             <button 
-              onClick={() => setCurrentPage(prev => Math.min(Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage), prev + 1))}
-              disabled={currentPage >= Math.ceil((isMobileView ? stats.total : filteredData.length) / itemsPerPage)}
+              onClick={() => setCurrentPage(prev => {
+                const total = Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))
+                return Math.min(total, prev + 1)
+              })}
+              disabled={currentPage >= Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))}
               className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button 
+              onClick={() => setCurrentPage(Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1))))}
+              disabled={currentPage >= Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M7 6h6v8H7V6zm7 0h3v8h-3V6z" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
