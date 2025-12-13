@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const CustomizeViewModal = ({ 
   isOpen, 
@@ -10,6 +10,25 @@ const CustomizeViewModal = ({
   onReset,
   onApply 
 }) => {
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Reset interaction state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setHasInteracted(false);
+    }
+  }, [isOpen]);
+
+  const handleOptionClick = (callback) => {
+    setHasInteracted(true);
+    if (callback) callback();
+  };
+
+  const handleReset = () => {
+    setHasInteracted(false);
+    if (onReset) onReset();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -126,7 +145,7 @@ const CustomizeViewModal = ({
           {onFilterClick && (
             <>
               <button
-                onClick={onFilterClick}
+                onClick={() => handleOptionClick(onFilterClick)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -280,7 +299,7 @@ const CustomizeViewModal = ({
           {onIBFilterClick && (
             <>
               <button
-                onClick={onIBFilterClick}
+                onClick={() => handleOptionClick(onIBFilterClick)}
                 style={{
               display: 'flex',
               alignItems: 'center',
@@ -348,7 +367,7 @@ const CustomizeViewModal = ({
           {onGroupsClick && (
             <>
               <button
-                onClick={onGroupsClick}
+                onClick={() => handleOptionClick(onGroupsClick)}
                 style={{
               display: 'flex',
               alignItems: 'center',
@@ -431,7 +450,7 @@ const CustomizeViewModal = ({
         >
           {/* Reset button */}
           <button
-            onClick={onReset}
+            onClick={handleReset}
             style={{
               flex: 1,
               display: 'flex',
@@ -456,22 +475,23 @@ const CustomizeViewModal = ({
           {/* Apply button */}
           <button
             onClick={onApply}
+            disabled={!hasInteracted}
             style={{
               flex: 1,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               padding: '12px 27px',
-              background: '#2563EB',
-              border: '1px solid #2563EB',
+              background: hasInteracted ? '#2563EB' : '#E5E7EB',
+              border: '1px solid ' + (hasInteracted ? '#2563EB' : '#D1D5DB'),
               borderRadius: '12px',
               boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
-              cursor: 'pointer',
+              cursor: hasInteracted ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
               fontWeight: 500,
               fontSize: '14px',
               lineHeight: '20px',
-              color: '#FFFFFF',
+              color: hasInteracted ? '#FFFFFF' : '#6B7280',
             }}
           >
             Apply
