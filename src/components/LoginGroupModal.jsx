@@ -226,7 +226,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: '412px',
-          height: '750px',
+          height: 'auto',
           maxHeight: '85vh',
           background: '#FFFFFF',
           zIndex: 9999,
