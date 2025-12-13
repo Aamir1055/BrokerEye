@@ -22,6 +22,7 @@ const GroupModal = ({
   const [activeTab, setActiveTab] = useState('manual') // 'manual' or 'range'
   const [isEditMode, setIsEditMode] = useState(false)
   const [originalGroupName, setOriginalGroupName] = useState('')
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   
   // API state for My Login tab
   const [apiLogins, setApiLogins] = useState([])
@@ -250,14 +251,27 @@ const GroupModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <style>{`
+        @media (max-width: 768px) {
+          .group-modal-container {
+            max-height: ${isSearchFocused ? 'calc(90vh + 100px)' : '90vh'} !important;
+            transition: max-height 0.3s ease;
+          }
+          .group-modal-content {
+            min-height: ${isSearchFocused ? '400px' : '300px'} !important;
+            max-height: ${isSearchFocused ? '500px' : '400px'} !important;
+            transition: min-height 0.3s ease, max-height 0.3s ease;
+          }
+        }
+      `}</style>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] group-modal-container flex flex-col">
         <div className="px-4 py-2.5 border-b border-gray-200">
           <h3 className="text-base font-semibold text-gray-900">
             {isEditMode ? 'Edit Login Group' : 'Create Login Group'}
           </h3>
         </div>
         
-        <div className="px-4 py-3 overflow-y-auto flex-1">
+        <div className="px-4 py-3 overflow-y-auto flex-1 group-modal-content">
           {/* Group Name */}
           <div className="mb-3">
             <input
@@ -315,6 +329,8 @@ const GroupModal = ({
                     setSearchQuery(e.target.value)
                     setCurrentPage(1) // Reset to page 1 when searching
                   }}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
                   placeholder="Search by login, name, email..."
                   className="w-full px-2.5 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 mb-2"
                 />

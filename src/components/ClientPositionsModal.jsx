@@ -396,35 +396,42 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       grouped[symbol].positions.push(pos)
     })
     
-    // Calculate net positions with weighted average prices
-    const netPos = Object.values(grouped).map(group => {
-      const netVolume = group.buyVolume - group.sellVolume
-      const absNetVolume = Math.abs(netVolume)
-      
-      // Determine net type (show actual result, not opposite)
-      const netType = netVolume > 0 ? 'Buy' : netVolume < 0 ? 'Sell' : 'Neutral'
-      
-      // Calculate weighted average open price for the dominant side
-      let avgOpenPrice = 0
-      if (netVolume > 0) {
-        // More buys than sells, calculate weighted average of buy prices
+    // Calculate net positions - create separate entries for buy and sell
+    const netPos = []
+    Object.values(grouped).forEach(group => {
+      // Add buy entry if there are buys
+      if (group.buyVolume > 0) {
         const totalWeightedPrice = group.buyPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
-        avgOpenPrice = group.buyVolume > 0 ? totalWeightedPrice / group.buyVolume : 0
-      } else if (netVolume < 0) {
-        // More sells than buys, calculate weighted average of sell prices
-        const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
-        avgOpenPrice = group.sellVolume > 0 ? totalWeightedPrice / group.sellVolume : 0
+        const avgBuyPrice = totalWeightedPrice / group.buyVolume
+        
+        netPos.push({
+          symbol: group.symbol,
+          netVolume: group.buyVolume,
+          netType: 'Buy',
+          avgOpenPrice: avgBuyPrice,
+          totalProfit: group.totalProfit,
+          positionCount: group.positions.filter(p => p.action === 0).length
+        })
       }
       
-      return {
-        symbol: group.symbol,
-        netVolume: absNetVolume,
-        netType,
-        avgOpenPrice,
-        totalProfit: group.totalProfit,
-        positionCount: group.positions.length
+      // Add sell entry if there are sells
+      if (group.sellVolume > 0) {
+        const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
+        const avgSellPrice = totalWeightedPrice / group.sellVolume
+        
+        netPos.push({
+          symbol: group.symbol,
+          netVolume: group.sellVolume,
+          netType: 'Sell',
+          avgOpenPrice: avgSellPrice,
+          totalProfit: group.totalProfit,
+          positionCount: group.positions.filter(p => p.action === 1).length
+        })
       }
-    }).filter(pos => pos.netVolume > 0) // Only show symbols with net positions
+    })
+    
+    // Sort by volume descending
+    netPos.sort((a, b) => b.netVolume - a.netVolume)
     
     setNetPositions(netPos)
   }
