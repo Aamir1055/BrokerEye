@@ -150,10 +150,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   // Build dynamic page-size options for Deals based on total rows
   const getDealsPageSizeOptions = (total) => {
-    const base = [50, 100, 200]
+    const base = [10, 25, 50, 100, 200]
     let options = base.filter(n => n <= total)
     if (total > 0 && options.length === 0) {
-      // If all base options exceed total, include total as the only numeric option
       options = [total]
     }
     return options
@@ -161,10 +160,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   // Build dynamic page-size options for Positions based on total rows
   const getPositionsPageSizeOptions = (total) => {
-    const base = [50, 100, 200]
+    const base = [10, 25, 50, 100, 200]
     let options = base.filter(n => n <= total)
     if (total > 0 && options.length === 0) {
-      // If all base options exceed total, include total as the only numeric option
       options = [total]
     }
     return options
