@@ -61,11 +61,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   
   // Pagination states for deals
   const [dealsCurrentPage, setDealsCurrentPage] = useState(1)
-  const [dealsItemsPerPage, setDealsItemsPerPage] = useState(50)
+  const [dealsItemsPerPage, setDealsItemsPerPage] = useState(10)
   
   // Pagination states for positions
   const [positionsCurrentPage, setPositionsCurrentPage] = useState(1)
-  const [positionsItemsPerPage, setPositionsItemsPerPage] = useState(50)
+  const [positionsItemsPerPage, setPositionsItemsPerPage] = useState(10)
   
   // Column visibility for positions
   const [showPositionsColumnSelector, setShowPositionsColumnSelector] = useState(false)
@@ -2213,7 +2213,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                      {netPositions.map((netPos, index) => (
+                      {netPositions.slice(0, 10).map((netPos, index) => (
                         <tr key={`${netPos.symbol}-${index}`} className="hover:bg-blue-50 transition-colors">
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {netPos.symbol}
