@@ -426,8 +426,7 @@ const CustomizeViewModal = ({
           style={{
             display: 'flex',
             gap: '16px',
-            padding: '0 20px 24px',
-            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+            padding: '0 20px 20px',
           }}
         >
           {/* Reset button */}
