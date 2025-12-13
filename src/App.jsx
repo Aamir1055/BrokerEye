@@ -41,6 +41,8 @@ const AppContent = () => {
 
   return (
     <Suspense fallback={<LoadingSpinner />}>
+      {/* Preload other routes in the background to speed up navigation */}
+      <PreloadRoutes />
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/login" element={<DashboardPage />} />
@@ -61,6 +63,37 @@ const AppContent = () => {
       </Routes>
     </Suspense>
   )
+}
+
+// Preloads lazy routes after initial render to make navigation snappy
+function PreloadRoutes() {
+  useEffect(() => {
+    const preload = () => {
+      try {
+        // Preload commonly navigated pages
+        import('./pages/ClientsPage')
+        import('./pages/Client2Page')
+        import('./pages/PendingOrdersPage')
+        import('./pages/MarginLevelPage')
+        import('./pages/LiveDealingPage')
+        import('./pages/ClientPercentagePage')
+        import('./pages/BrokerRulePage')
+        import('./pages/IBCommissionsPage')
+        import('./pages/SettingsPage')
+        import('./pages/GraphicalAnalyticsPage')
+        import('./pages/ClientDashboardDesignC')
+      } catch {}
+    }
+    if ('requestIdleCallback' in window) {
+      // Prefer idle time so we don't impact interactivity
+      window.requestIdleCallback(preload, { timeout: 2000 })
+    } else {
+      // Fallback to a short delay
+      const t = setTimeout(preload, 1200)
+      return () => clearTimeout(t)
+    }
+  }, [])
+  return null
 }
 
 function App() {
