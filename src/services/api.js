@@ -423,9 +423,10 @@ export const brokerAPI = {
     return response.data
   },
   
-  // Get client deals (attempt with limit first, fallback without if not supported)
-  getClientDeals: async (login, from, to, limit = 1000) => {
+  // Get client deals with pagination support
+  getClientDeals: async (login, from, to, limit = 1000, offset = 0) => {
     const endpoints = [
+      `/api/broker/clients/${login}/deals?from=${from}&to=${to}&limit=${limit}&offset=${offset}`,
       `/api/broker/clients/${login}/deals?from=${from}&to=${to}&limit=${limit}`,
       `/api/broker/clients/${login}/deals?from=${from}&to=${to}`
     ]

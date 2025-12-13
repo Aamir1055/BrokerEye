@@ -42,6 +42,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState('')
   const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
+  const [totalDealsCount, setTotalDealsCount] = useState(0)
+  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
   
   // Search and filter states for positions
   const [searchQuery, setSearchQuery] = useState('')
@@ -470,24 +472,33 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
   }
 
-  const fetchDeals = async (fromTimestamp, toTimestamp) => {
+  const fetchDeals = async (fromTimestamp, toTimestamp, page = 1, limit = null) => {
     try {
       setDealsLoading(true)
       setError('')
       
-      // Fetch deals from API with specific date range
-      const response = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, CLIENT_DEALS_FETCH_LIMIT)
+      // Calculate offset based on page and items per page
+      const itemsLimit = limit || dealsItemsPerPage
+      const offset = (page - 1) * itemsLimit
+      
+      // Fetch deals from API with specific date range and pagination
+      const response = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, itemsLimit, offset)
       const clientDeals = response.data?.deals || []
+      const total = response.data?.total || response.total || clientDeals.length
+      
       setDeals(clientDeals)
       setAllDeals(clientDeals)
       setFilteredDeals(clientDeals)
+      setTotalDealsCount(total)
+      setCurrentDateFilter({ from: fromTimestamp, to: toTimestamp })
       setHasAppliedFilter(true)
-      setDealsServerLimitReached(clientDeals.length >= CLIENT_DEALS_FETCH_LIMIT)
+      setDealsServerLimitReached(false)
     } catch (error) {
       setError('Failed to load deals')
       setDeals([])
       setAllDeals([])
       setFilteredDeals([])
+      setTotalDealsCount(0)
       setDealsServerLimitReached(false)
     } finally {
       setDealsLoading(false)
@@ -744,7 +755,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     const toTimestamp = toDateObj ? Math.floor(toDateObj.getTime() / 1000) : Math.floor(Date.now() / 1000)
 
     // Fetch deals from API with selected date range
-    await fetchDeals(fromTimestamp, toTimestamp)
+    setDealsCurrentPage(1)
+    await fetchDeals(fromTimestamp, toTimestamp, 1, dealsItemsPerPage)
     setOperationError('')
   }
 
@@ -813,7 +825,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     // Automatically apply the filter
     const fromTimestamp = Math.floor(fromDateObj.getTime() / 1000)
     const toTimestamp = Math.floor(toDateObj.getTime() / 1000)
-    await fetchDeals(fromTimestamp, toTimestamp)
+    await fetchDeals(fromTimestamp, toTimestamp, 1, dealsItemsPerPage)
     setOperationError('')
   }
 
@@ -1307,26 +1319,32 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return filtered
   })()
 
-  // Apply pagination to deals
-  const dealsTotalPages = Math.ceil(filteredDealsResult.length / dealsItemsPerPage)
-  const dealsStartIndex = (dealsCurrentPage - 1) * dealsItemsPerPage
-  const dealsEndIndex = dealsStartIndex + dealsItemsPerPage
-  const displayedDeals = filteredDealsResult.slice(dealsStartIndex, dealsEndIndex)
+  // Apply pagination to deals (server-side pagination, so use filteredDealsResult directly)
+  // For display purposes, calculate total pages from server's total count
+  const dealsTotalPages = Math.ceil(totalDealsCount / dealsItemsPerPage)
+  const displayedDeals = filteredDealsResult
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setDealsCurrentPage(1)
   }, [dealsSearchQuery, hasAppliedFilter])
 
-  // Keep page-size selection valid when total filtered rows changes
+  // Fetch deals when page or items per page changes
   useEffect(() => {
-    const total = filteredDealsResult.length
+    if (activeTab === 'deals' && hasAppliedFilter && currentDateFilter.from !== 0) {
+      fetchDeals(currentDateFilter.from, currentDateFilter.to, dealsCurrentPage, dealsItemsPerPage)
+    }
+  }, [dealsCurrentPage, dealsItemsPerPage, activeTab])
+
+  // Keep page-size selection valid when total deals count changes
+  useEffect(() => {
+    const total = totalDealsCount || filteredDealsResult.length
     const options = getDealsPageSizeOptions(total)
     if (options.length > 0 && (!options.includes(dealsItemsPerPage) || dealsItemsPerPage > total)) {
       setDealsItemsPerPage(options[0] || 50)
       setDealsCurrentPage(1)
     }
-  }, [filteredDealsResult.length])
+  }, [totalDealsCount, filteredDealsResult.length])
 
   // Column resize handlers for positions
   const handlePositionsResizeStart = (e, columnKey) => {
@@ -1510,7 +1528,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
               }`}
             >
-              Deals ({deals.length})
+              Deals ({totalDealsCount || deals.length})
             </button>
           </div>
 
@@ -2332,7 +2350,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           onChange={(e) => setDealsItemsPerPage(parseInt(e.target.value))}
                           className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                         >
-                          {getDealsPageSizeOptions(filteredDealsResult.length).map((opt) => (
+                          {getDealsPageSizeOptions(totalDealsCount || filteredDealsResult.length).map((opt) => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
@@ -2512,7 +2530,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       )}
                     </div>
                     <div className="text-sm text-gray-600 whitespace-nowrap">
-                      {displayedDeals.length} of {filteredDealsResult.length} deals
+                      {displayedDeals.length} of {totalDealsCount} deals
                     </div>
                   </div>
 

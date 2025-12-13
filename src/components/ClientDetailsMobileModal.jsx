@@ -19,6 +19,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [dealsLoading, setDealsLoading] = useState(false)
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [quickFilter, setQuickFilter] = useState('Today')
+  const [totalDealsCount, setTotalDealsCount] = useState(0)
+  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -73,6 +75,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   useEffect(() => {
     setCurrentPage(1)
   }, [activeTab])
+
+  // Fetch deals when page changes in deals tab
+  useEffect(() => {
+    if (activeTab === 'deals' && hasAppliedFilter && currentDateFilter.from !== 0) {
+      fetchDealsWithDateFilter(currentDateFilter.from, currentDateFilter.to, currentPage)
+    }
+  }, [currentPage, activeTab])
 
   // Handle column sorting
   const handleSort = (key) => {
@@ -145,7 +154,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       const endOfDay = new Date(today)
       endOfDay.setHours(23, 59, 59, 999)
       
-      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000))
+      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1)
       
       setLoading(false)
     } catch (error) {
@@ -154,13 +163,20 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     }
   }
 
-  const fetchDealsWithDateFilter = async (fromTimestamp, toTimestamp) => {
+  const fetchDealsWithDateFilter = async (fromTimestamp, toTimestamp, page = 1) => {
     try {
       setDealsLoading(true)
       
-      const dealsRes = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, 1000)
+      // Calculate offset based on page
+      const offset = (page - 1) * itemsPerPage
+      
+      const dealsRes = await brokerAPI.getClientDeals(client.login, fromTimestamp, toTimestamp, itemsPerPage, offset)
       const dealsData = dealsRes.data?.deals || dealsRes.deals || []
+      const total = dealsRes.data?.total || dealsRes.total || dealsData.length
+      
       setDeals(dealsData)
+      setTotalDealsCount(total)
+      setCurrentDateFilter({ from: fromTimestamp, to: toTimestamp })
       setHasAppliedFilter(true)
 
       // Calculate stats with positions and deals data
@@ -260,7 +276,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     const fromTimestamp = fromDateObj ? Math.floor(fromDateObj.getTime() / 1000) : 0
     const toTimestamp = toDateObj ? Math.floor(toDateObj.getTime() / 1000) : Math.floor(Date.now() / 1000)
 
-    await fetchDealsWithDateFilter(fromTimestamp, toTimestamp)
+    await fetchDealsWithDateFilter(fromTimestamp, toTimestamp, 1)
   }
 
   const handleClearDateFilter = () => {
@@ -304,6 +320,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   }, [netPositions, netPositionsSearch, sortConfig])
 
   const filteredDeals = useMemo(() => {
+    // For deals, apply client-side filtering only (data is paginated from server)
     let filtered = deals
     if (dealsSearch.trim()) {
       const query = dealsSearch.toLowerCase()
@@ -317,7 +334,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     return sortData(filtered, sortConfig.key, sortConfig.direction)
   }, [deals, dealsSearch, sortConfig])
 
-  // Paginate data
+  // Paginate data (positions and netPositions only - deals are paginated from server)
   const paginatedPositions = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
     const end = start + itemsPerPage
@@ -330,16 +347,15 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     return filteredNetPositions.slice(start, end)
   }, [filteredNetPositions, currentPage, itemsPerPage])
 
+  // For deals, use filteredDeals directly (already paginated from server)
   const paginatedDeals = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filteredDeals.slice(start, end)
-  }, [filteredDeals, currentPage, itemsPerPage])
+    return filteredDeals
+  }, [filteredDeals])
 
   const renderPositions = () => (
-    <div className="overflow-x-auto">
+    <>
       <table className="w-full">
-        <thead className="bg-blue-500">
+        <thead className="bg-blue-500 sticky top-0 z-20">
           <tr>
             {positionColumns.position && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
@@ -428,13 +444,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   )
 
   const renderNetPositions = () => (
-    <div className="overflow-x-auto">
+    <>
       <table className="w-full">
-        <thead className="bg-blue-500">
+        <thead className="bg-blue-500 sticky top-0 z-20">
           <tr>
             {netPositionColumns.symbol && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
@@ -484,13 +500,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   )
 
   const renderDeals = () => (
-    <div className="overflow-x-auto">
+    <>
       <table className="w-full">
-        <thead className="bg-blue-500">
+        <thead className="bg-blue-500 sticky top-0 z-20">
           <tr>
             {dealColumns.deal && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('deal')}>
@@ -568,14 +584,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   )
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
-      <div className="bg-white w-full h-[95vh] rounded-t-2xl flex flex-col overflow-hidden">
+      <div className="bg-white w-full h-[95vh] rounded-t-2xl flex flex-col">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <button onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M15 18l-6-6 6-6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/>
@@ -586,7 +602,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         </div>
 
         {/* Client Info Card */}
-        <div className="px-4 py-4 bg-white border-b border-gray-200">
+        <div className="px-4 py-4 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
               <span className="text-lg font-semibold text-gray-600">
@@ -632,13 +648,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Deals ({filteredDeals.length})
+              Deals ({hasAppliedFilter ? totalDealsCount : 0})
             </button>
           </div>
         </div>
 
         {/* Search */}
-        <div className="px-4 py-3 bg-white border-b border-gray-200">
+        <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
@@ -684,7 +700,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
             <span className="text-[10px] font-semibold text-[#000000] font-outfit">
               {activeTab === 'positions' && `${currentPage} / ${Math.ceil(filteredPositions.length / itemsPerPage)}`}
               {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)}`}
-              {activeTab === 'deals' && `${currentPage} / ${Math.ceil(filteredDeals.length / itemsPerPage)}`}
+              {activeTab === 'deals' && `${currentPage} / ${Math.ceil(totalDealsCount / itemsPerPage)}`}
             </span>
             <button
               onClick={() => setCurrentPage(prev => {
@@ -692,13 +708,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   ? Math.ceil(filteredPositions.length / itemsPerPage)
                   : activeTab === 'netPositions'
                   ? Math.ceil(filteredNetPositions.length / itemsPerPage)
-                  : Math.ceil(filteredDeals.length / itemsPerPage)
+                  : Math.ceil(totalDealsCount / itemsPerPage)
                 return prev < maxPage ? prev + 1 : prev
               })}
               disabled={
                 (activeTab === 'positions' && currentPage >= Math.ceil(filteredPositions.length / itemsPerPage)) ||
                 (activeTab === 'netPositions' && currentPage >= Math.ceil(filteredNetPositions.length / itemsPerPage)) ||
-                (activeTab === 'deals' && currentPage >= Math.ceil(filteredDeals.length / itemsPerPage))
+                (activeTab === 'deals' && currentPage >= Math.ceil(totalDealsCount / itemsPerPage))
               }
               className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -711,26 +727,26 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
         {/* Date Filter for Deals Tab */}
         {activeTab === 'deals' && (
-          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex-shrink-0">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold text-gray-700">Date:</span>
+                <span className="text-[9px] font-semibold text-gray-700">Date:</span>
                 <DatePicker
                   selected={fromDate}
                   onChange={(date) => setFromDate(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="From"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[10px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[8px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
                   calendarClassName="compact-calendar"
                   maxDate={toDate || new Date()}
                 />
-                <span className="text-[10px] text-gray-500">to</span>
+                <span className="text-[9px] text-gray-500">to</span>
                 <DatePicker
                   selected={toDate}
                   onChange={(date) => setToDate(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="To"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[10px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-[8px] text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
                   calendarClassName="compact-calendar"
                   minDate={fromDate}
                   maxDate={new Date()}
@@ -766,8 +782,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           </div>
         )}
 
-        {/* Table Content */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        {/* Table Content - Scrollable Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -777,7 +793,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="bg-white">
+            <div className="bg-white relative min-w-full">
               {activeTab === 'positions' && renderPositions()}
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
@@ -786,7 +802,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         </div>
 
         {/* Summary Cards */}
-        <div className="px-4 py-3 bg-white border-t border-gray-200">
+        <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-lg p-2">
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
