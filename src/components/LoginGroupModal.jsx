@@ -427,7 +427,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
               </div>
 
               {/* Logins List */}
-              <div style={{ maxHeight: '340px', overflowY: 'auto', marginBottom: '8px' }}>
+              <div style={{ height: '340px', minHeight: '340px', maxHeight: '340px', overflowY: 'auto', marginBottom: '8px' }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: '#999999' }}>
                     Loading...
