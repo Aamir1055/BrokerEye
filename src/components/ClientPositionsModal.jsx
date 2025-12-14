@@ -713,19 +713,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const formatDateToInput = (dateStr) => {
-    // Convert dd/mm/yyyy to yyyy-mm-dd for date input
-    if (!dateStr || !dateStr.includes('/')) return dateStr
-    const parts = dateStr.split('/')
-    if (parts.length !== 3) return dateStr
-    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-  }
-
-  const formatDateFromInput = (dateStr) => {
-    // Convert yyyy-mm-dd to dd/mm/yyyy for display
+    // Convert yyyy-mm-dd to dd/mm/yyyy for text input display
     if (!dateStr || !dateStr.includes('-')) return dateStr
     const parts = dateStr.split('-')
     if (parts.length !== 3) return dateStr
     return `${parts[2]}/${parts[1]}/${parts[0]}`
+  }
+
+  const formatDateFromInput = (inputStr) => {
+    // Convert dd/mm/yyyy back to yyyy-mm-dd for internal use
+    if (!inputStr || !inputStr.includes('/')) return inputStr
+    const parts = inputStr.split('/')
+    if (parts.length !== 3) return inputStr
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
   }
 
   const handleApplyDateFilter = async () => {
@@ -1329,12 +1329,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     setDealsCurrentPage(1)
   }, [dealsSearchQuery, hasAppliedFilter])
 
-  // Fetch deals when page or items per page changes
+  // Fetch deals when page or items per page changes (but not on initial tab switch)
   useEffect(() => {
-    if (activeTab === 'deals' && hasAppliedFilter && currentDateFilter.from !== 0) {
+    if (activeTab === 'deals' && hasAppliedFilter && currentDateFilter.from !== 0 && hasAutoLoadedDeals.current) {
       fetchDeals(currentDateFilter.from, currentDateFilter.to, dealsCurrentPage, dealsItemsPerPage)
     }
-  }, [dealsCurrentPage, dealsItemsPerPage, activeTab])
+  }, [dealsCurrentPage, dealsItemsPerPage])
 
   // Keep page-size selection valid when total deals count changes
   useEffect(() => {
@@ -2274,23 +2274,33 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <div className="flex items-center gap-2 text-xs">
                     <span className="font-medium text-gray-700 whitespace-nowrap">Date Range:</span>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="dd/mm/yyyy"
                       value={formatDateToInput(fromDate)}
                       onChange={(e) => {
-                        setFromDate(e.target.value)
-                        setSelectedPreset('')
+                        const input = e.target.value
+                        // Allow only numbers and slashes
+                        if (/^[\d/]*$/.test(input)) {
+                          setFromDate(formatDateFromInput(input))
+                          setSelectedPreset('')
+                        }
                       }}
-                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900 w-24"
                     />
                     <span className="text-gray-500">to</span>
                     <input
-                      type="date"
+                      type="text"
+                      placeholder="dd/mm/yyyy"
                       value={formatDateToInput(toDate)}
                       onChange={(e) => {
-                        setToDate(e.target.value)
-                        setSelectedPreset('')
+                        const input = e.target.value
+                        // Allow only numbers and slashes
+                        if (/^[\d/]*$/.test(input)) {
+                          setToDate(formatDateFromInput(input))
+                          setSelectedPreset('')
+                        }
                       }}
-                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900"
+                      className="px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs text-gray-900 w-24"
                     />
                     <button
                       onClick={handleApplyDateFilter}
