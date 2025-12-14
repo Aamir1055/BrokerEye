@@ -1071,11 +1071,12 @@ export default function PositionModule() {
         <div>
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
             {/* Single scroll container with sticky header */}
-            <div className="w-full overflow-x-auto overflow-y-visible scrollbar-hide" style={{
+            <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
               paddingRight: '8px',
-              paddingBottom: '8px'
+              paddingBottom: '8px',
+              maxHeight: 'calc(100vh - 280px)'
             }}>
                 <div className="relative" style={{ minWidth: 'max-content' }}>
                   {/* Table Header - Sticky */}
@@ -1308,9 +1309,10 @@ export default function PositionModule() {
             <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Body - Scrollable with sticky header */}
-                <div className="overflow-x-auto scrollbar-hide" style={{
+                <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
                   paddingRight: '8px',
-                  paddingBottom: '8px'
+                  paddingBottom: '8px',
+                  maxHeight: 'calc(100vh - 350px)'
                 }}>
                     {/* Header - Sticky inside scroll */}
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
@@ -1524,9 +1526,10 @@ export default function PositionModule() {
             <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Table - single scroll container */}
-                <div className="overflow-x-auto scrollbar-hide" style={{
+                <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
                   paddingRight: '8px',
-                  paddingBottom: '8px'
+                  paddingBottom: '8px',
+                  maxHeight: 'calc(100vh - 350px)'
                 }}>
                     {/* Header - Sticky */}
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
