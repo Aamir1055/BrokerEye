@@ -1068,19 +1068,19 @@ export default function PositionModule() {
 
         {/* Table - full width, remove outer padding */}
         {!showNetPositions && !showClientNet && (
-        <div style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
+        <div>
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+            {/* Header - Fixed */}
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
               scrollbarColor: '#CBD5E0 #F7FAFC',
-              paddingRight: '8px',
-              paddingBottom: '8px'
+              paddingRight: '8px'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
                 <div 
-                  className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+                  className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
                   style={{
                     gap: '0px', 
                     gridGap: '0px', 
@@ -1092,7 +1092,7 @@ export default function PositionModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 
@@ -1117,7 +1117,19 @@ export default function PositionModule() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
 
+            {/* Body - Scrollable */}
+            <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
+              <div className="w-full overflow-x-auto overflow-y-visible" style={{
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#CBD5E0 #F7FAFC',
+                paddingRight: '8px',
+                paddingBottom: '8px'
+              }}>
+                <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Rows */}
                 {loading && loading.positions ? (
                   // YouTube-style skeleton loading
@@ -1191,6 +1203,7 @@ export default function PositionModule() {
                       {idx === 0 ? 'Total' : (col.key === 'totalProfit' || col.key === 'profit') ? formatNum(totalProfit) : '-'}
                     </div>
                   ))}
+                </div>
                 </div>
               </div>
             </div>
