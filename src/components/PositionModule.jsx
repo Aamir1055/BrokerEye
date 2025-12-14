@@ -40,7 +40,7 @@ export default function PositionModule() {
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const itemsPerPage = 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [showNetPositions, setShowNetPositions] = useState(false)
@@ -48,7 +48,7 @@ export default function PositionModule() {
   
   // NET Position states
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const netItemsPerPage = 10
+  const netItemsPerPage = 15
   const [netCardsVisible, setNetCardsVisible] = useState({
     netSymbols: true,
     totalNetVolume: true,
@@ -78,7 +78,7 @@ export default function PositionModule() {
   
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
-  const clientNetItemsPerPage = 10
+  const clientNetItemsPerPage = 15
   const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
     clientNetRows: true,
     totalNetVolume: true,
@@ -1076,14 +1076,14 @@ export default function PositionModule() {
 
         {/* Table - full width, remove outer padding */}
         {!showNetPositions && !showClientNet && (
-        <div>
+        <div style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
               scrollbarColor: '#CBD5E0 #F7FAFC',
-              paddingRight: '16px',
-              paddingLeft: '4px'
+              paddingRight: '8px',
+              paddingBottom: '8px'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
@@ -1333,9 +1333,12 @@ export default function PositionModule() {
             </div>
 
             {/* NET Positions Table */}
-            <div className="pt-3">
+            <div className="pt-3" style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto scrollbar-hide">
+              <div className="overflow-x-auto scrollbar-hide" style={{
+                paddingRight: '8px',
+                paddingBottom: '8px'
+              }}>
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
@@ -1568,9 +1571,12 @@ export default function PositionModule() {
             </div>
 
             {/* Client NET Table */}
-            <div className="pt-3">
+            <div className="pt-3" style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto scrollbar-hide">
+              <div className="overflow-x-auto scrollbar-hide" style={{
+                paddingRight: '8px',
+                paddingBottom: '8px'
+              }}>
                 <div className="min-w-full">
                   {/* Header */}
                   <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
