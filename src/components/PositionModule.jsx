@@ -1070,66 +1070,55 @@ export default function PositionModule() {
         {!showNetPositions && !showClientNet && (
         <div>
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-            {/* Header - Fixed */}
-            <div className="w-full overflow-x-auto overflow-y-visible" style={{
+            {/* Single scroll container with sticky header */}
+            <div className="w-full overflow-x-auto overflow-y-visible scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 #F7FAFC',
-              paddingRight: '8px'
+              scrollbarWidth: 'none',
+              paddingRight: '8px',
+              paddingBottom: '8px'
             }}>
-              <div className="relative" style={{ minWidth: 'max-content' }}>
-                {/* Table Header */}
-                <div 
-                  className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
-                  style={{
-                    gap: '0px', 
-                    gridGap: '0px', 
-                    columnGap: '0px',
-                    gridTemplateColumns
-                  }}
-                >
-                  {activeColumns.map(col => (
-                    <div 
-                      key={col.key} 
-                      onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
-                      style={{
-                        border: 'none', 
-                        outline: 'none', 
-                        boxShadow: 'none',
-                        WebkitTapHighlightColor: 'transparent',
-                        userSelect: 'none',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      <span>{col.label}</span>
-                      {sortColumn === col.key && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
-                          <path 
-                            d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
-                            stroke="white" 
-                            strokeWidth="2" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Body - Scrollable */}
-            <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
-              <div className="w-full overflow-x-auto overflow-y-visible" style={{
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#CBD5E0 #F7FAFC',
-                paddingRight: '8px',
-                paddingBottom: '8px'
-              }}>
                 <div className="relative" style={{ minWidth: 'max-content' }}>
+                  {/* Table Header - Sticky */}
+                  <div 
+                    className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit shadow-[0_2px_4px_rgba(0,0,0,0.1)] sticky top-0 z-20"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    {activeColumns.map(col => (
+                      <div 
+                        key={col.key} 
+                        onClick={() => handleSort(col.key)}
+                        className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                        style={{
+                          border: 'none', 
+                          outline: 'none', 
+                          boxShadow: 'none',
+                          WebkitTapHighlightColor: 'transparent',
+                          userSelect: 'none',
+                          touchAction: 'manipulation'
+                        }}
+                      >
+                        <span>{col.label}</span>
+                        {sortColumn === col.key && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                            <path 
+                              d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
+                              stroke="white" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Table Rows */}
                 {/* Table Rows */}
                 {loading && loading.positions ? (
                   // YouTube-style skeleton loading
@@ -1203,7 +1192,6 @@ export default function PositionModule() {
                       {idx === 0 ? 'Total' : (col.key === 'totalProfit' || col.key === 'profit') ? formatNum(totalProfit) : '-'}
                     </div>
                   ))}
-                </div>
                 </div>
               </div>
             </div>
@@ -1319,31 +1307,25 @@ export default function PositionModule() {
             {/* NET Positions Table */}
             <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-                {/* Header - Fixed */}
+                {/* Body - Scrollable with sticky header */}
                 <div className="overflow-x-auto scrollbar-hide" style={{
-                  paddingRight: '8px'
+                  paddingRight: '8px',
+                  paddingBottom: '8px'
                 }}>
-                  <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px]">
-                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Login</div>}
-                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Symbol</div>}
-                    {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
-                    {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
-                    {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
-                    {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
-                    {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
-                    {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
-                    {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Logins</div>}
-                    {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
-                    {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Variants</div>}
-                  </div>
-                </div>
-
-                {/* Body - Scrollable */}
-                <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
-                  <div className="overflow-x-auto scrollbar-hide" style={{
-                    paddingRight: '8px',
-                    paddingBottom: '8px'
-                  }}>
+                    {/* Header - Sticky inside scroll */}
+                    <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
+                      {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Login</div>}
+                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 sticky left-0 z-30">Symbol</div>}
+                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
+                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
+                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
+                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
+                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
+                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
+                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Logins</div>}
+                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
+                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Variants</div>}
+                    </div>
                   {netPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
                   ) : (
@@ -1427,7 +1409,6 @@ export default function PositionModule() {
                       {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
                     </div>
                   )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1542,29 +1523,23 @@ export default function PositionModule() {
             {/* Client NET Table */}
             <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-                {/* Header - Fixed */}
+                {/* Table - single scroll container */}
                 <div className="overflow-x-auto scrollbar-hide" style={{
-                  paddingRight: '8px'
+                  paddingRight: '8px',
+                  paddingBottom: '8px'
                 }}>
-                  <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px]">
-                    {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-10">Login</div>}
-                    {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Symbol</div>}
-                    {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
-                    {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
-                    {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
-                    {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
-                    {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
-                    {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
-                    {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
-                  </div>
-                </div>
-
-                {/* Body - Scrollable */}
-                <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
-                  <div className="overflow-x-auto scrollbar-hide" style={{
-                    paddingRight: '8px',
-                    paddingBottom: '8px'
-                  }}>
+                    {/* Header - Sticky */}
+                    <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
+                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-30">Login</div>}
+                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Symbol</div>}
+                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
+                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
+                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
+                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
+                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
+                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
+                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
+                    </div>
                   {clientNetPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No Client NET positions found</div>
                   ) : (
@@ -1617,7 +1592,6 @@ export default function PositionModule() {
                       {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
-                  </div>
                 </div>
               </div>
             </div>
