@@ -71,7 +71,6 @@ export default function PositionModule() {
     variantCount: false
   })
   const [netShowColumnSelector, setNetShowColumnSelector] = useState(false)
-  const netColumnSelectorRef = useRef(null)
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
   const [expandedNetSymbols, setExpandedNetSymbols] = useState(new Set())
   const [netSearchInput, setNetSearchInput] = useState('')
@@ -509,9 +508,6 @@ export default function PositionModule() {
     const handleClickOutside = (e) => {
       if (netCardFilterRef.current && !netCardFilterRef.current.contains(e.target)) {
         setNetCardFilterOpen(false)
-      }
-      if (netColumnSelectorRef.current && !netColumnSelectorRef.current.contains(e.target)) {
-        setNetShowColumnSelector(false)
       }
       if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(e.target)) {
         setClientNetCardFilterOpen(false)
@@ -1275,31 +1271,10 @@ export default function PositionModule() {
                 </button>
 
                 {/* Columns */}
-                <div className="relative" ref={netColumnSelectorRef}>
-                  <button onClick={() => setNetShowColumnSelector(v => !v)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
+                <div>
+                  <button onClick={() => setNetShowColumnSelector(true)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
                     <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                   </button>
-                  {netShowColumnSelector && (
-                    <div className="absolute left-0 top-full mt-1 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-44 max-h-60 overflow-y-auto">
-                      {Object.keys(netVisibleColumns).map(k => (
-                        <label key={k} className="flex items-center gap-1.5 py-1 px-1 rounded hover:bg-blue-50 cursor-pointer">
-                          <input type="checkbox" checked={netVisibleColumns[k]} onChange={() => setNetVisibleColumns(prev => ({ ...prev, [k]: !prev[k] }))} className="w-3 h-3" />
-                          <span className="text-[10px] text-gray-700 capitalize">{
-                            k === 'netType' ? 'NET Type' : 
-                            k === 'netVolume' ? 'NET Volume' : 
-                            k === 'avgPrice' ? 'Avg Price' : 
-                            k === 'totalProfit' ? 'Total Profit' : 
-                            k === 'totalStorage' ? 'Total Storage' :
-                            k === 'totalCommission' ? 'Total Commission' :
-                            k === 'loginCount' ? 'Login Count' : 
-                            k === 'totalPositions' ? 'Total Positions' :
-                            k === 'variantCount' ? 'Variant Count' :
-                            k
-                          }</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Pagination */}
@@ -1329,15 +1304,13 @@ export default function PositionModule() {
             </div>
 
             {/* NET Positions Table */}
-            <div className="pt-3" style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
+            <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto scrollbar-hide" style={{
-                paddingRight: '8px',
-                paddingBottom: '8px'
-              }}>
-                <div className="min-w-full">
-                  {/* Header */}
-                  <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
+                {/* Header - Fixed */}
+                <div className="overflow-x-auto scrollbar-hide" style={{
+                  paddingRight: '8px'
+                }}>
+                  <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
                     {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
                     {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC] sticky left-0 z-10">Symbol</div>}
                     {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
@@ -1350,8 +1323,14 @@ export default function PositionModule() {
                     {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Positions</div>}
                     {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Variants</div>}
                   </div>
+                </div>
 
-                  {/* Body */}
+                {/* Body - Scrollable */}
+                <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
+                  <div className="overflow-x-auto scrollbar-hide" style={{
+                    paddingRight: '8px',
+                    paddingBottom: '8px'
+                  }}>
                   {netPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
                   ) : (
@@ -1435,9 +1414,9 @@ export default function PositionModule() {
                       {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">-</div>}
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           </div>
         )}
@@ -1548,15 +1527,13 @@ export default function PositionModule() {
             </div>
 
             {/* Client NET Table */}
-            <div className="pt-3" style={{ maxHeight: 'calc(100vh - 420px)', overflow: 'auto' }}>
+            <div className="pt-3">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
-              <div className="overflow-x-auto scrollbar-hide" style={{
-                paddingRight: '8px',
-                paddingBottom: '8px'
-              }}>
-                <div className="min-w-full">
-                  {/* Header */}
-                  <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
+                {/* Header - Fixed */}
+                <div className="overflow-x-auto scrollbar-hide" style={{
+                  paddingRight: '8px'
+                }}>
+                  <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
                     {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC] sticky left-0 z-10">Login</div>}
                     {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
                     {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
@@ -1567,8 +1544,14 @@ export default function PositionModule() {
                     {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Comm</div>}
                     {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Positions</div>}
                   </div>
+                </div>
 
-                  {/* Body */}
+                {/* Body - Scrollable */}
+                <div style={{ maxHeight: 'calc(100vh - 500px)', overflow: 'auto' }}>
+                  <div className="overflow-x-auto scrollbar-hide" style={{
+                    paddingRight: '8px',
+                    paddingBottom: '8px'
+                  }}>
                   {clientNetPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No Client NET positions found</div>
                   ) : (
@@ -1621,9 +1604,9 @@ export default function PositionModule() {
                       {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           </div>
         )}
@@ -1835,6 +1818,60 @@ export default function PositionModule() {
                     </div>
                   )
                 })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NET Position Column Selector Modal */}
+      {netShowColumnSelector && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setNetShowColumnSelector(false)}>
+          <div 
+            className="bg-white w-full rounded-t-[24px] max-h-[75vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
+              <button onClick={() => setNetShowColumnSelector(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-5 py-3">
+                {[
+                  { key: 'login', label: 'Login' },
+                  { key: 'symbol', label: 'Symbol' },
+                  { key: 'netType', label: 'NET Type' },
+                  { key: 'netVolume', label: 'NET Volume' },
+                  { key: 'avgPrice', label: 'Avg Price' },
+                  { key: 'totalProfit', label: 'Total Profit' },
+                  { key: 'totalStorage', label: 'Total Storage' },
+                  { key: 'totalCommission', label: 'Total Commission' },
+                  { key: 'loginCount', label: 'Login Count' },
+                  { key: 'totalPositions', label: 'Total Positions' },
+                  { key: 'variantCount', label: 'Variant Count' }
+                ].map(({ key, label }) => (
+                  <label 
+                    key={key} 
+                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                  >
+                    <span className="text-sm text-[#000000] font-outfit">{label}</span>
+                    <div className="relative inline-block w-12 h-6">
+                      <input
+                        type="checkbox"
+                        checked={netVisibleColumns[key]}
+                        onChange={() => setNetVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
