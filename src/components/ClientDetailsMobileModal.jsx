@@ -10,6 +10,21 @@ const formatDate = (timestamp) => {
   return `${day}/${month}/${year}`
 }
 
+const formatDateToDisplay = (dateStr) => {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-')
+  const shortYear = year.slice(-2) // Get last 2 digits of year
+  return `${day}/${month}/${shortYear}`
+}
+
+const formatDateToValue = (displayStr) => {
+  if (!displayStr) return ''
+  const [day, month, year] = displayStr.split('/')
+  // Handle 2-digit year by prepending '20'
+  const fullYear = year.length === 2 ? '20' + year : year
+  return `${fullYear}-${month}-${day}`
+}
+
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
@@ -153,8 +168,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       // Set default date range to Today
       const today = new Date()
       const todayStr = today.toISOString().split('T')[0]
-      setFromDate(todayStr)
-      setToDate(todayStr)
+      setFromDate(formatDateToDisplay(todayStr))
+      setToDate(formatDateToDisplay(todayStr))
       
       // Fetch deals for today by default
       const startOfDay = new Date(today)
@@ -256,9 +271,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         return
     }
 
-    // Update date inputs (format as YYYY-MM-DD for native date input)
-    setFromDate(fromDateObj.toISOString().split('T')[0])
-    setToDate(toDateObj.toISOString().split('T')[0])
+    // Update date inputs (format as dd/mm/yyyy for display)
+    const fromDateStr = fromDateObj.toISOString().split('T')[0]
+    const toDateStr = toDateObj.toISOString().split('T')[0]
+    setFromDate(formatDateToDisplay(fromDateStr))
+    setToDate(formatDateToDisplay(toDateStr))
 
     // Fetch deals
     fromDateObj.setHours(0, 0, 0, 0)
@@ -271,8 +288,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
     setCurrentPage(1) // Reset to page 1
 
-    const fromDateObj = fromDate ? new Date(fromDate) : null
-    const toDateObj = toDate ? new Date(toDate) : null
+    const fromDateObj = fromDate ? new Date(formatDateToValue(fromDate)) : null
+    const toDateObj = toDate ? new Date(formatDateToValue(toDate)) : null
 
     if (fromDateObj) {
       fromDateObj.setHours(0, 0, 0, 0)
@@ -609,7 +626,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
 
-      <div className="bg-white w-full h-[95vh] rounded-t-2xl flex flex-col">
+      <div className="bg-white w-full h-[90vh] rounded-t-2xl flex flex-col">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <button onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -752,10 +769,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               {/* Date Inputs */}
               <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <input
-                  type="date"
+                  type="text"
                   value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  max={toDate || new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9/]/g, '')
+                    if (val.length <= 8) setFromDate(val)
+                  }}
+                  placeholder="dd/mm/yy"
                   className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
                   style={{ fontSize: '10px', height: '24px' }}
                 />
@@ -763,11 +783,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
               <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <input
-                  type="date"
+                  type="text"
                   value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  min={fromDate}
-                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9/]/g, '')
+                    if (val.length <= 8) setToDate(val)
+                  }}
+                  placeholder="dd/mm/yy"
                   className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
                   style={{ fontSize: '10px', height: '24px' }}
                 />

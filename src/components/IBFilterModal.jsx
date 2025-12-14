@@ -263,6 +263,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
             padding: '0 20px', 
             overflowY: 'auto',
             marginBottom: '20px',
+            height: '500px',
+            minHeight: '500px',
             maxHeight: '500px'
           }}
         >
