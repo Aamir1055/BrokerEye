@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
 
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
@@ -14,8 +12,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [dealsSearch, setDealsSearch] = useState('')
   
   // Date filter states for deals
-  const [fromDate, setFromDate] = useState(null)
-  const [toDate, setToDate] = useState(null)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [dealsLoading, setDealsLoading] = useState(false)
   const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
   const [quickFilter, setQuickFilter] = useState('Today')
@@ -248,9 +246,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         return
     }
 
-    // Update date inputs
-    setFromDate(fromDateObj)
-    setToDate(toDateObj)
+    // Update date inputs (format as YYYY-MM-DD for native date input)
+    setFromDate(fromDateObj.toISOString().split('T')[0])
+    setToDate(toDateObj.toISOString().split('T')[0])
 
     // Fetch deals
     fromDateObj.setHours(0, 0, 0, 0)
@@ -280,8 +278,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   }
 
   const handleClearDateFilter = () => {
-    setFromDate(null)
-    setToDate(null)
+    setFromDate('')
+    setToDate('')
     setDeals([])
     setHasAppliedFilter(false)
     setQuickFilter('Today')
@@ -589,23 +587,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
-      <style>{`
-        .react-datepicker__input-container input {
-          font-size: 12px !important;
-          height: 26px !important;
-          padding: 2px 6px !important;
-          width: 95px !important;
-        }
-        .react-datepicker-wrapper {
-          width: 95px !important;
-        }
-        .react-datepicker__input-container {
-          width: 95px !important;
-        }
-        .compact-calendar {
-          font-size: 11px;
-        }
-      `}</style>
+
       <div className="bg-white w-full h-[95vh] rounded-t-2xl flex flex-col">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
@@ -746,6 +728,30 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         {activeTab === 'deals' && (
           <div className="px-2 py-1.5 bg-blue-50 border-b border-blue-100 flex-shrink-0">
             <div className="flex items-center gap-1.5" style={{ justifyContent: 'space-between' }}>
+              {/* Date Inputs */}
+              <div style={{ width: '95px', flex: '0 0 95px' }}>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  max={toDate || new Date().toISOString().split('T')[0]}
+                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
+                  style={{ fontSize: '10px', height: '24px' }}
+                />
+              </div>
+              <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
+              <div style={{ width: '95px', flex: '0 0 95px' }}>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  min={fromDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
+                  style={{ fontSize: '10px', height: '24px' }}
+                />
+              </div>
+
               {/* Quick Filter Dropdown */}
               <select
                 value={quickFilter}
@@ -760,32 +766,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 <option value="Last 6 Months">6M</option>
                 <option value="All History">All</option>
               </select>
-
-              {/* Date Inputs */}
-              <div style={{ width: '95px', flex: '0 0 95px' }}>
-                <DatePicker
-                  selected={fromDate}
-                  onChange={(date) => setFromDate(date)}
-                  dateFormat="dd/MM/yy"
-                  placeholderText="From"
-                  className="border border-gray-300 rounded text-gray-900 bg-white"
-                  calendarClassName="compact-calendar"
-                  maxDate={toDate || new Date()}
-                />
-              </div>
-              <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
-              <div style={{ width: '95px', flex: '0 0 95px' }}>
-                <DatePicker
-                  selected={toDate}
-                  onChange={(date) => setToDate(date)}
-                  dateFormat="dd/MM/yy"
-                  placeholderText="To"
-                  className="border border-gray-300 rounded text-gray-900 bg-white"
-                  calendarClassName="compact-calendar"
-                  minDate={fromDate}
-                  maxDate={new Date()}
-                />
-              </div>
 
               {/* Action Buttons */}
               <button
