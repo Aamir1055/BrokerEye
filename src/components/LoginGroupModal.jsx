@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useGroups } from '../contexts/GroupContext';
+import './LoginGroupModal.css';
 
 const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
   const { createGroup, createRangeGroup, updateGroup } = useGroups();
@@ -219,6 +220,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
 
       {/* Modal - Bottom Sheet */}
       <div
+        className="login-group-modal"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -232,6 +234,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
+          transition: 'max-height 0.3s ease-in-out',
         }}
       >
         {/* Top indicator */}
@@ -387,6 +390,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
               <div style={{ marginBottom: '16px', position: 'relative' }}>
                 <input
                   type="text"
+                  className="login-group-search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && fetchLogins()}
