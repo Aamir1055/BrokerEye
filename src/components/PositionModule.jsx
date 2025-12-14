@@ -40,7 +40,7 @@ export default function PositionModule() {
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 15
+  const itemsPerPage = 12
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [showNetPositions, setShowNetPositions] = useState(false)
@@ -48,7 +48,7 @@ export default function PositionModule() {
   
   // NET Position states
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const netItemsPerPage = 15
+  const netItemsPerPage = 12
   const [netCardsVisible, setNetCardsVisible] = useState({
     netSymbols: true,
     totalNetVolume: true,
@@ -78,7 +78,7 @@ export default function PositionModule() {
   
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
-  const clientNetItemsPerPage = 15
+  const clientNetItemsPerPage = 12
   const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
     clientNetRows: true,
     totalNetVolume: true,
