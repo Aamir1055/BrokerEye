@@ -1080,7 +1080,7 @@ export default function PositionModule() {
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
                 <div 
-                  className="grid bg-[#1A63BC] text-white text-[10px] font-semibold font-outfit shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+                  className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
                   style={{
                     gap: '0px', 
                     gridGap: '0px', 
@@ -1092,7 +1092,7 @@ export default function PositionModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-[#1A63BC] z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 
@@ -1323,18 +1323,18 @@ export default function PositionModule() {
                 <div className="overflow-x-auto scrollbar-hide" style={{
                   paddingRight: '8px'
                 }}>
-                  <div className="flex bg-[#1A63BC] text-white text-[10px] font-semibold h-[28px]">
-                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Login</div>}
-                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Symbol</div>}
-                    {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#1A63BC]">Type</div>}
-                    {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">NET Vol</div>}
-                    {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Avg Price</div>}
-                    {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">P/L</div>}
-                    {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Storage</div>}
-                    {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Comm</div>}
-                    {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#1A63BC]">Logins</div>}
-                    {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Positions</div>}
-                    {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#1A63BC]">Variants</div>}
+                  <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px]">
+                    {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Login</div>}
+                    {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Symbol</div>}
+                    {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
+                    {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
+                    {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
+                    {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
+                    {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
+                    {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
+                    {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Logins</div>}
+                    {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
+                    {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Variants</div>}
                   </div>
                 </div>
 
