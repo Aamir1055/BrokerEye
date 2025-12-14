@@ -435,7 +435,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               {positionColumns.action && (
                 <td className="px-3 py-2 text-xs">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    pos.action === 'Buy' || pos.type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    (pos.action || pos.type || '').toLowerCase() === 'buy' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                   }`}>
                     {pos.action || pos.type || '-'}
                   </span>
@@ -785,7 +785,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 <option value="Last Month">Month</option>
                 <option value="Last 3 Months">3M</option>
                 <option value="Last 6 Months">6M</option>
-                <option value="All History">All</option>
               </select>
 
               {/* Action Buttons */}
