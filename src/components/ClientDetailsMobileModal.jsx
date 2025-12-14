@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
 
+const formatDate = (timestamp) => {
+  if (!timestamp) return '-'
+  const date = new Date(timestamp * 1000)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
@@ -45,6 +54,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   })
   const [dealColumns, setDealColumns] = useState({
     deal: true,
+    time: true,
     symbol: true,
     action: true,
     volume: true,
@@ -516,6 +526,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 </div>
               </th>
             )}
+            {dealColumns.time && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('time')}>
+                <div className="flex items-center gap-1">
+                  Time
+                  {sortConfig.key === 'time' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
             {dealColumns.symbol && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
                 <div className="flex items-center gap-1">
@@ -562,6 +582,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           {paginatedDeals.map((deal, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               {dealColumns.deal && <td className="px-3 py-2 text-xs text-gray-900">{deal.deal}</td>}
+              {dealColumns.time && <td className="px-3 py-2 text-xs text-gray-900">{formatDate(deal.time)}</td>}
               {dealColumns.symbol && <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>}
               {dealColumns.action && (
                 <td className="px-3 py-2 text-xs">

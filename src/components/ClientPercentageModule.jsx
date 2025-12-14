@@ -243,9 +243,9 @@ export default function ClientPercentageModule() {
   
   useEffect(() => {
     const newCards = [
-      { label: 'TOTAL CLIENTS', value: String(summaryStats.totalClients), numericValue: summaryStats.totalClients },
-      { label: 'CUSTOM %', value: String(summaryStats.customClients), numericValue: summaryStats.customClients },
-      { label: 'DEFAULT', value: String(summaryStats.defaultClients), numericValue: summaryStats.defaultClients }
+      { label: 'TOTAL CLIENTS', value: String(stats.total), numericValue: stats.total },
+      { label: 'CUSTOM %', value: String(stats.total_custom), numericValue: stats.total_custom },
+      { label: 'DEFAULT', value: String(stats.total_default), numericValue: stats.total_default }
     ]
     
     if (cards.length === 0) {
@@ -258,7 +258,7 @@ export default function ClientPercentageModule() {
         })
       })
     }
-  }, [summaryStats])
+  }, [stats])
 
   // Fetch data when page changes
   useEffect(() => {

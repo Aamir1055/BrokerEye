@@ -1081,7 +1081,9 @@ export default function PositionModule() {
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 #F7FAFC'
+              scrollbarColor: '#CBD5E0 #F7FAFC',
+              paddingRight: '16px',
+              paddingLeft: '4px'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}

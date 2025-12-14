@@ -586,9 +586,9 @@ export default function LiveDealingModule() {
           
           return value
         }).join(',')
-      }).join('\\n')
+      }).join('\n')
       
-      const csvContent = headers + '\\n' + rows
+      const csvContent = headers + '\n' + rows
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')

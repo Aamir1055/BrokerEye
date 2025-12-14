@@ -41,7 +41,7 @@ const ClientPercentagePage = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(200)
+  const [itemsPerPage, setItemsPerPage] = useState(100)
   
   // Search states
   const [searchQuery, setSearchQuery] = useState('')
@@ -276,8 +276,15 @@ const ClientPercentagePage = () => {
   // Module filter removed (belongs to Live Dealing)
 
   useEffect(() => {
-    fetchAllClientPercentages()
+    fetchAllClientPercentages(1)
   }, [])
+
+  // Fetch data when page changes
+  useEffect(() => {
+    if (currentPage > 1) {
+      fetchAllClientPercentages(currentPage)
+    }
+  }, [currentPage])
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -293,11 +300,11 @@ const ClientPercentagePage = () => {
     }
   }, [showSuggestions])
 
-  const fetchAllClientPercentages = async () => {
+  const fetchAllClientPercentages = async (page = 1) => {
     try {
       setLoading(true)
       setError('')
-      const response = await brokerAPI.getAllClientPercentages()
+      const response = await brokerAPI.getAllClientPercentages({ page, page_size: itemsPerPage })
       
       const clientsData = response.data?.clients || []
       setClients(clientsData)
@@ -491,30 +498,29 @@ const ClientPercentagePage = () => {
   }
 
   const getAvailableOptions = () => {
-    const totalItems = sortedClients().length
+    const totalItems = stats.total
     const options = []
     
-    // Start from 200 and increment by 200, dynamically based on total data
-    for (let i = 200; i <= totalItems; i += 200) {
+    // Start from 100 and increment by 100, dynamically based on total data
+    for (let i = 100; i <= totalItems; i += 100) {
       options.push(i)
       if (options.length >= 10) break // Limit to 10 options
     }
     
-    // If no options generated or total is less than 200, add at least one option
+    // If no options generated or total is less than 100, add at least one option
     if (options.length === 0) {
-      options.push(Math.max(200, totalItems))
+      options.push(Math.max(100, totalItems))
     }
     
     return options
   }
 
   const paginatedClients = () => {
-    const sorted = sortedClients()
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return sorted.slice(startIndex, startIndex + itemsPerPage)
+    // Server-side pagination: just return sorted clients as-is
+    return sortedClients()
   }
 
-  const totalPages = Math.ceil(sortedClients().length / itemsPerPage)
+  const totalPages = Math.ceil(stats.total / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const displayedClients = paginatedClients()
