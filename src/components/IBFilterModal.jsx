@@ -393,9 +393,10 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
         <div
           style={{
             display: 'flex',
-            gap: '16px',
-            padding: '0 20px 20px',
+            gap: '12px',
+            padding: '16px 20px 24px',
             borderTop: '1px solid #F2F2F7',
+            marginTop: 'auto',
           }}
         >
           {/* Reset button */}
@@ -406,19 +407,17 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '10px 16px',
-              background: '#E5E7EB',
-              border: '1px solid #D1D5DB',
-              borderRadius: '20px',
-              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
+              padding: '14px 16px',
+              background: '#FFFFFF',
+              border: '1px solid #E5E7EB',
+              borderRadius: '12px',
+              boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
               cursor: 'pointer',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 400,
-              fontSize: '12px',
+              fontWeight: 500,
+              fontSize: '14px',
               lineHeight: '20px',
-              letterSpacing: '0.06em',
-              textTransform: 'capitalize',
-              color: '#6B7280',
+              color: '#4B4B4B',
             }}
           >
             Reset
@@ -426,28 +425,27 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           {/* Apply button */}
           <button
             onClick={handleApply}
-            disabled={!tempSelectedIB}
+            disabled={!tempSelectedIB || loading}
             style={{
               flex: 1,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '10px 27px',
+              padding: '14px 16px',
               background: tempSelectedIB && !loading ? '#2563EB' : '#E5E7EB',
-              border: '1px solid ' + (tempSelectedIB && !loading ? '#2563EB' : '#D1D5DB'),
-              borderRadius: '20px',
-              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
+              border: 'none',
+              borderRadius: '12px',
+              boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
               cursor: tempSelectedIB && !loading ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 400,
-              fontSize: '12px',
+              fontWeight: 500,
+              fontSize: '14px',
               lineHeight: '20px',
-              letterSpacing: '0.06em',
-              textTransform: 'capitalize',
-              color: tempSelectedIB && !loading ? '#FFFFFF' : '#6B7280',
+              color: tempSelectedIB && !loading ? '#FFFFFF' : '#9CA3AF',
+              opacity: tempSelectedIB && !loading ? 1 : 0.6,
             }}
           >
-            Apply
+            {loading ? 'Applying...' : 'Apply'}
           </button>
         </div>
       </div>
