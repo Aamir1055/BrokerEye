@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -334,7 +334,9 @@ export default function PositionModule() {
     return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
   }
 
-  const netPositions = useMemo(() => calculateGlobalNetPositions(ibFilteredPositions), [ibFilteredPositions, groupByBaseSymbol])
+  // Defer heavy NET position calculations to allow navigation to be responsive
+  const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
+  const netPositions = useMemo(() => calculateGlobalNetPositions(deferredIbFilteredPositions), [deferredIbFilteredPositions, groupByBaseSymbol])
 
   // Calculate Client NET positions (group by login then symbol)
   const calculateClientNetPositions = (positions) => {
@@ -415,7 +417,7 @@ export default function PositionModule() {
     return rows.sort((a, b) => a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
   }
 
-  const clientNetPositions = useMemo(() => calculateClientNetPositions(ibFilteredPositions), [ibFilteredPositions, groupByBaseSymbol])
+  const clientNetPositions = useMemo(() => calculateClientNetPositions(deferredIbFilteredPositions), [deferredIbFilteredPositions, groupByBaseSymbol])
 
   // Filter NET positions based on search
   const filteredNetPositions = useMemo(() => {
