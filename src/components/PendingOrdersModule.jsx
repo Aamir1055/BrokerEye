@@ -50,6 +50,11 @@ export default function PendingOrdersModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+    // Pending apply tracking
+    const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+    const [pendingIBDraft, setPendingIBDraft] = useState(null)
+    const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
+    const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
@@ -797,10 +802,25 @@ export default function PendingOrdersModule() {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
           clearIBSelection()
           setActiveGroupFilter('pendingorders', null)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
         onApply={() => {
+          if (hasPendingIBChanges) {
+            if (pendingIBDraft) { selectIB(pendingIBDraft) } else { clearIBSelection() }
+          }
+          if (hasPendingGroupChanges) {
+            setActiveGroupFilter('pendingorders', pendingGroupDraft ? pendingGroupDraft.name : null)
+          }
           setIsCustomizeOpen(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
+        hasPendingChanges={hasPendingIBChanges || hasPendingGroupChanges}
       />
 
       {/* Filter Modal */}
@@ -827,6 +847,10 @@ export default function PendingOrdersModule() {
           setIsIBFilterOpen(false)
         }}
         currentSelectedIB={selectedIB}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingIBChanges(hasPending)
+          setPendingIBDraft(draft || null)
+        }}
       />
 
       {/* Group Modal */}
@@ -856,6 +880,8 @@ export default function PendingOrdersModule() {
             setActiveGroupFilter('pendingorders', group.name)
           }
           setIsLoginGroupsOpen(false)
+          setHasPendingGroupChanges(false)
+          setPendingGroupDraft(null)
         }}
         onCreateGroup={() => {
           setIsLoginGroupsOpen(false)
@@ -868,6 +894,10 @@ export default function PendingOrdersModule() {
           setIsLoginGroupModalOpen(true)
         }}
         onDeleteGroup={deleteGroup}
+        onPendingChange={(hasPending, draftName) => {
+          setHasPendingGroupChanges(hasPending)
+          setPendingGroupDraft(draftName ? { name: draftName } : null)
+        }}
       />
 
       {/* Login Group Modal */}

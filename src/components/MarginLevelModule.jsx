@@ -44,6 +44,13 @@ export default function MarginLevelModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+    // Pending apply tracking
+    const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
+    const [pendingFilterDraft, setPendingFilterDraft] = useState(null)
+    const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+    const [pendingIBDraft, setPendingIBDraft] = useState(null)
+    const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
+    const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
@@ -794,10 +801,32 @@ export default function MarginLevelModule() {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
           clearIBSelection()
           setActiveGroupFilter('marginlevel', null)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
         onApply={() => {
+          if (hasPendingFilterChanges && pendingFilterDraft) {
+            setFilters(pendingFilterDraft)
+          }
+          if (hasPendingIBChanges) {
+            if (pendingIBDraft) { selectIB(pendingIBDraft) } else { clearIBSelection() }
+          }
+          if (hasPendingGroupChanges) {
+            setActiveGroupFilter('marginlevel', pendingGroupDraft ? pendingGroupDraft.name : null)
+          }
           setIsCustomizeOpen(false)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
+        hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges || hasPendingGroupChanges}
       />
 
       {/* Filter Modal */}
@@ -807,8 +836,14 @@ export default function MarginLevelModule() {
         onApply={(newFilters) => {
           setFilters(newFilters)
           setIsFilterOpen(false)
+          setHasPendingFilterChanges(false)
+          setPendingFilterDraft(null)
         }}
         filters={filters}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingFilterChanges(hasPending)
+          setPendingFilterDraft(draft || null)
+        }}
       />
 
       {/* IB Filter Modal */}
@@ -824,6 +859,10 @@ export default function MarginLevelModule() {
           setIsIBFilterOpen(false)
         }}
         currentSelectedIB={selectedIB}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingIBChanges(hasPending)
+          setPendingIBDraft(draft || null)
+        }}
       />
 
       {/* Group Modal */}
@@ -853,6 +892,8 @@ export default function MarginLevelModule() {
             setActiveGroupFilter('marginlevel', group.name)
           }
           setIsLoginGroupsOpen(false)
+          setHasPendingGroupChanges(false)
+          setPendingGroupDraft(null)
         }}
         onCreateGroup={() => {
           setIsLoginGroupsOpen(false)
@@ -865,6 +906,10 @@ export default function MarginLevelModule() {
           setIsLoginGroupModalOpen(true)
         }}
         onDeleteGroup={deleteGroup}
+        onPendingChange={(hasPending, draftName) => {
+          setHasPendingGroupChanges(hasPending)
+          setPendingGroupDraft(draftName ? { name: draftName } : null)
+        }}
       />
 
       {/* Login Group Modal */}
