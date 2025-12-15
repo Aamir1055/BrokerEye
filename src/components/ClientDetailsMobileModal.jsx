@@ -856,11 +856,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               {/* Date Inputs */}
               <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <input
-                  type="text"
-                  value={fromDate}
+                  type="date"
+                  value={fromDate ? formatDateToValue(fromDate) : ''}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9/]/g, '')
-                    if (val.length <= 8) setFromDate(val)
+                    const dateValue = e.target.value
+                    if (dateValue) {
+                      const [year, month, day] = dateValue.split('-')
+                      setFromDate(`${day}/${month}/${year.slice(-2)}`)
+                    } else {
+                      setFromDate('')
+                    }
                   }}
                   placeholder="dd/mm/yy"
                   className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
@@ -870,11 +875,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
               <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
               <div style={{ width: '95px', flex: '0 0 95px' }}>
                 <input
-                  type="text"
-                  value={toDate}
+                  type="date"
+                  value={toDate ? formatDateToValue(toDate) : ''}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9/]/g, '')
-                    if (val.length <= 8) setToDate(val)
+                    const dateValue = e.target.value
+                    if (dateValue) {
+                      const [year, month, day] = dateValue.split('-')
+                      setToDate(`${day}/${month}/${year.slice(-2)}`)
+                    } else {
+                      setToDate('')
+                    }
                   }}
                   placeholder="dd/mm/yy"
                   className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
