@@ -183,26 +183,44 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       netPosMap.forEach(group => {
         const buyVol = group.buyPositions.reduce((s, p) => s + (p.volume || 0), 0)
         const sellVol = group.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
-        const netVol = buyVol - sellVol
-        if (netVol === 0) return
-        const dominant = netVol > 0 ? group.buyPositions : group.sellPositions
-        let tw = 0, tv = 0, tp = 0
-        dominant.forEach(p => {
-          const v = p.volume || 0
-          const pr = p.priceOpen || p.price || 0
-          tw += pr * v
-          tv += v
-          tp += p.profit || 0
-        })
-        const avg = tv > 0 ? tw / tv : 0
-        computedNet.push({
-          symbol: group.symbol,
-          netType: netVol > 0 ? 'Sell' : 'Buy',
-          volume: Math.abs(netVol),
-          avgPrice: avg,
-          profit: tp,
-          positions: group.buyPositions.length + group.sellPositions.length
-        })
+
+        if (buyVol > 0) {
+          let twB = 0, tpB = 0
+          group.buyPositions.forEach(p => {
+            const v = p.volume || 0
+            const pr = p.priceOpen || p.price || 0
+            twB += pr * v
+            tpB += p.profit || 0
+          })
+          const avgB = buyVol > 0 ? twB / buyVol : 0
+          computedNet.push({
+            symbol: group.symbol,
+            netType: 'Buy',
+            volume: buyVol,
+            avgPrice: avgB,
+            profit: tpB,
+            positions: group.buyPositions.length
+          })
+        }
+
+        if (sellVol > 0) {
+          let twS = 0, tpS = 0
+          group.sellPositions.forEach(p => {
+            const v = p.volume || 0
+            const pr = p.priceOpen || p.price || 0
+            twS += pr * v
+            tpS += p.profit || 0
+          })
+          const avgS = sellVol > 0 ? twS / sellVol : 0
+          computedNet.push({
+            symbol: group.symbol,
+            netType: 'Sell',
+            volume: sellVol,
+            avgPrice: avgS,
+            profit: tpS,
+            positions: group.sellPositions.length
+          })
+        }
       })
       setNetPositions(computedNet)
 
