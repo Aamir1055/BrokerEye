@@ -832,7 +832,7 @@ export default function PositionModule() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center gap-2">
@@ -1120,9 +1120,8 @@ export default function PositionModule() {
                   </div>
 
                   {/* Table Rows */}
-                {/* Table Rows */}
-                {loading && loading.positions ? (
-                  // YouTube-style skeleton loading
+                  {loading && loading.positions ? (
+                    // YouTube-style skeleton loading
                   <>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                       <div 
