@@ -539,15 +539,17 @@ export default function ClientPercentageModule() {
                   })()}
                 </button>
               )}
-              <button 
-                onClick={handleExportToCSV}
-                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                title="Export to CSV"
-              >
-                <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/>
-                </svg>
-              </button>
+              {!isMobileView && (
+                <button 
+                  onClick={handleExportToCSV}
+                  className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  title="Export to CSV"
+                >
+                  <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-3-3m3 3l3-3M4 20h16"/>
+                  </svg>
+                </button>
+              )}
               <button
                 onClick={() => window.location.reload()}
                 disabled={loading}

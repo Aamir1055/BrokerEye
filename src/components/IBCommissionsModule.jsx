@@ -291,7 +291,7 @@ export default function IBCommissionsModule() {
             className={`h-[28px] flex items-center justify-center px-2 ${isSticky ? 'sticky z-20' : ''}`}
             style={{
               left: isSticky ? stickyLeft : 'auto',
-              backgroundColor: isSticky ? 'inherit' : 'transparent',
+              backgroundColor: isSticky ? 'white' : 'transparent',
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
           >
@@ -350,7 +350,7 @@ export default function IBCommissionsModule() {
           outline: 'none', 
           left: isSticky ? stickyLeft : 'auto',
           zIndex: isSticky ? zIndex : 'auto',
-          backgroundColor: isSticky ? 'inherit' : 'transparent',
+          backgroundColor: isSticky ? 'white' : 'transparent',
           boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
         }}
       >
@@ -771,7 +771,7 @@ export default function IBCommissionsModule() {
         {/* Table */}
         <div>
           <div className="bg-white shadow-[0_0_20px_rgba(75,75,75,0.08)] overflow-hidden">
-            <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' }}>
+            <div className="w-full overflow-x-auto overflow-y-visible" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: '#CBD5E0 #F7FAFC' }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
                 <div 
@@ -849,7 +849,7 @@ export default function IBCommissionsModule() {
                             boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none',
                             left: col.sticky ? col.stickyLeft : 'auto',
                             zIndex: col.sticky ? (col.zIndex || 10) : 'auto',
-                            backgroundColor: col.sticky ? 'inherit' : 'transparent'
+                            backgroundColor: col.sticky ? 'white' : 'transparent'
                           }}
                         >
                           <div 
