@@ -711,9 +711,29 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   )
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
+    <>
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-date-picker::-webkit-calendar-picker-indicator {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            cursor: pointer;
+          }
+          
+          input[type="date"].mobile-date-picker {
+            font-size: 10px !important;
+          }
+        }
+      `}</style>
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
 
-      <div className="bg-white w-full h-[90vh] rounded-t-2xl flex flex-col">
+        <div className="bg-white w-full h-[90vh] rounded-t-2xl flex flex-col">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <button onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -867,7 +887,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setFromDate('')
                     }
                   }}
-                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
+                  className="mobile-date-picker w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
                   style={{ fontSize: '10px', height: '24px', zIndex: 2 }}
                 />
                 <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none" style={{ fontSize: '10px', height: '24px' }}>
@@ -891,7 +911,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setToDate('')
                     }
                   }}
-                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
+                  className="mobile-date-picker w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
                   style={{ fontSize: '10px', height: '24px', zIndex: 2 }}
                 />
                 <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none" style={{ fontSize: '10px', height: '24px' }}>
@@ -1119,6 +1139,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         )}
       </div>
     </div>
+    </>
   )
 }
 
