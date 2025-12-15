@@ -37,6 +37,12 @@ export default function ClientPercentageModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
+  const [pendingFilterDraft, setPendingFilterDraft] = useState(null)
+  const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+  const [pendingIBDraft, setPendingIBDraft] = useState(null)
+  const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
+  const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
   const [selectedClientForDetails, setSelectedClientForDetails] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
@@ -868,10 +874,32 @@ export default function ClientPercentageModule() {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
           clearIBSelection()
           setActiveGroupFilter('clientpercentage', null)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
         onApply={() => {
+          if (hasPendingFilterChanges) {
+            setFilters(pendingFilterDraft || { hasFloating: false, hasCredit: false, noDeposit: false })
+          }
+          if (hasPendingIBChanges) {
+            if (pendingIBDraft) { selectIB(pendingIBDraft) } else { clearIBSelection() }
+          }
+          if (hasPendingGroupChanges) {
+            setActiveGroupFilter('clientpercentage', pendingGroupDraft ? pendingGroupDraft.name : null)
+          }
           setIsCustomizeOpen(false)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
+        hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges || hasPendingGroupChanges}
       />
 
       {/* Filter Modal */}
@@ -883,6 +911,10 @@ export default function ClientPercentageModule() {
           setIsFilterOpen(false)
         }}
         filters={filters}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingFilterChanges(hasPending)
+          setPendingFilterDraft(draft || null)
+        }}
       />
 
       {/* IB Filter Modal */}
@@ -896,6 +928,11 @@ export default function ClientPercentageModule() {
         onClearSelection={() => {
           clearIBSelection()
           setIsIBFilterOpen(false)
+        }}
+        currentSelectedIB={selectedIB}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingIBChanges(hasPending)
+          setPendingIBDraft(draft || null)
         }}
       />
 
@@ -917,6 +954,8 @@ export default function ClientPercentageModule() {
             setActiveGroupFilter('clientpercentage', group.name)
           }
           setIsLoginGroupsOpen(false)
+          setHasPendingGroupChanges(false)
+          setPendingGroupDraft(null)
         }}
         onCreateGroup={() => {
           setIsLoginGroupsOpen(false)
@@ -932,6 +971,10 @@ export default function ClientPercentageModule() {
           if (window.confirm(`Delete group "${group.name}"?`)) {
             deleteGroup(group.name)
           }
+        }}
+        onPendingChange={(hasPending, draftName) => {
+          setHasPendingGroupChanges(hasPending)
+          setPendingGroupDraft(draftName ? { name: draftName } : null)
         }}
       />
 
