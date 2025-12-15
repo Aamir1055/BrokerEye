@@ -178,6 +178,9 @@ export default function PositionModule() {
     return filterByActiveIB(groupFilteredPositions)
   }, [groupFilteredPositions, filterByActiveIB, selectedIB, ibMT5Accounts])
 
+  // Defer heavy calculations to allow navigation to be responsive
+  const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
+
   // Calculate summary statistics (use deferred value to prevent blocking navigation)
   const summaryStats = useMemo(() => {
     const totalPositions = deferredIbFilteredPositions.length
@@ -334,8 +337,6 @@ export default function PositionModule() {
     return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
   }
 
-  // Defer heavy NET position calculations to allow navigation to be responsive
-  const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
   const netPositions = useMemo(() => calculateGlobalNetPositions(deferredIbFilteredPositions), [deferredIbFilteredPositions, groupByBaseSymbol])
 
   // Calculate Client NET positions (group by login then symbol)
