@@ -1816,7 +1816,7 @@ export default function PositionModule() {
                     { label: 'Comment', key: 'comment' },
                     { label: 'Commission', key: 'commission' }
                   ]
-                  const excludedOnMobile = new Set(['firstName','middleName','lastName','email'])
+                  const excludedOnMobile = new Set(['firstName','middleName','lastName','email','phone'])
                   const filtered = allColumns
                     .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
                     .filter(col => !isMobileView || !excludedOnMobile.has(col.key))
