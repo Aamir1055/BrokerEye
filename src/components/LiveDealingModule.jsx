@@ -770,7 +770,7 @@ export default function LiveDealingModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-x-hidden overflow-y-hidden max-w-full" style={{ height: '100dvh', width: '100vw', maxWidth: '100vw', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-      <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
+      <div className="flex items-center px-4 py-4 bg-white border-b border-[#ECECEC] relative">
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
@@ -779,11 +779,11 @@ export default function LiveDealingModule() {
             <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-[#000000]">Live Dealing</h1>
+        <h1 className="text-lg font-semibold text-[#000000] absolute left-1/2 transform -translate-x-1/2">Live Dealing</h1>
         {!isMobileView && (
           <button 
             onClick={() => navigate('/profile')}
-            className="w-12 h-12 rounded-full bg-[#1A63BC] flex items-center justify-center text-white font-semibold text-sm"
+            className="w-12 h-12 rounded-full bg-[#1A63BC] flex items-center justify-center text-white font-semibold text-sm ml-auto"
           >
             U
           </button>
@@ -1109,7 +1109,7 @@ export default function LiveDealingModule() {
                     <div 
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className={`h-[32px] flex items-center justify-start px-1 cursor-pointer select-none ${
+                      className={`h-[32px] flex items-center justify-center px-1 cursor-pointer select-none ${
                         col.sticky ? 'sticky left-0 z-30 bg-blue-500' : ''
                       }`}
                       style={{

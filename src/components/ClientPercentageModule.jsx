@@ -479,22 +479,20 @@ export default function ClientPercentageModule() {
 
       {/* Sticky Header */}
       <div className="flex-shrink-0 bg-white border-b border-[#E5E7EB] px-5 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M3 12h18M3 6h18M3 18h18" stroke="#1F2937" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-            <h1 className="text-xl font-bold text-[#1F2937]">Client Percentage</h1>
-          </div>
+        <div className="flex items-center relative">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M3 12h18M3 6h18M3 18h18" stroke="#1F2937" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold text-[#1F2937] absolute left-1/2 transform -translate-x-1/2">Client Percentage</h1>
           {!isMobileView && (
             <button 
               onClick={() => navigate('/dashboard')}
-              className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-semibold hover:bg-[#1D4ED8] transition-colors"
+              className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-semibold hover:bg-[#1D4ED8] transition-colors ml-auto"
             >
               U
             </button>
@@ -742,7 +740,7 @@ export default function ClientPercentageModule() {
                     <div 
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className={`h-[32px] flex items-center justify-start px-1 cursor-pointer select-none ${
+                      className={`h-[32px] flex items-center justify-center px-1 cursor-pointer select-none ${
                         col.sticky ? 'sticky left-0 z-30 bg-blue-500' : ''
                       }`}
                       style={{

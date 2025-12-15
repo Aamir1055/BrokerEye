@@ -307,7 +307,7 @@ export default function PendingOrdersModule() {
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-[#ECECEC]">
+      <div className="flex items-center px-4 py-4 bg-white border-b border-[#ECECEC] relative">
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
@@ -317,9 +317,9 @@ export default function PendingOrdersModule() {
           </svg>
         </button>
         
-        <h1 className="text-xl font-semibold text-black">Pending Orders</h1>
+        <h1 className="text-xl font-semibold text-black absolute left-1/2 transform -translate-x-1/2">Pending Orders</h1>
         {/* Hide profile avatar on mobile widths */}
-        <div className="hidden md:flex w-12 h-12 rounded-full bg-blue-600 items-center justify-center">
+        <div className="hidden md:flex w-12 h-12 rounded-full bg-blue-600 items-center justify-center ml-auto">
           <span className="text-white text-sm font-semibold">U</span>
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function PendingOrdersModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 
