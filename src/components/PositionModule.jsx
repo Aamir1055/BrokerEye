@@ -178,13 +178,13 @@ export default function PositionModule() {
     return filterByActiveIB(groupFilteredPositions)
   }, [groupFilteredPositions, filterByActiveIB, selectedIB, ibMT5Accounts])
 
-  // Calculate summary statistics (same as desktop)
+  // Calculate summary statistics (use deferred value to prevent blocking navigation)
   const summaryStats = useMemo(() => {
-    const totalPositions = ibFilteredPositions.length
-    const totalFloatingProfit = ibFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
-    const totalFloatingProfitPercentage = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
-    const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
-    const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
+    const totalPositions = deferredIbFilteredPositions.length
+    const totalFloatingProfit = deferredIbFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfitPercentage = deferredIbFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
+    const uniqueLogins = new Set(deferredIbFilteredPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(deferredIbFilteredPositions.map(p => p.symbol)).size
     
     return {
       totalPositions,
@@ -193,7 +193,7 @@ export default function PositionModule() {
       uniqueLogins,
       uniqueSymbols
     }
-  }, [ibFilteredPositions])
+  }, [deferredIbFilteredPositions])
 
   // Calculate NET positions
   const calculateGlobalNetPositions = (positions) => {
@@ -440,9 +440,9 @@ export default function PositionModule() {
     )
   }, [clientNetPositions, clientNetSearchInput])
 
-  // Filter positions based on search
+  // Filter positions based on search (use deferred value to prevent blocking navigation)
   const filteredPositions = useMemo(() => {
-    let filtered = ibFilteredPositions.filter(pos => {
+    let filtered = deferredIbFilteredPositions.filter(pos => {
       // Apply search filter
       if (searchInput.trim()) {
         const query = searchInput.toLowerCase()
@@ -495,7 +495,7 @@ export default function PositionModule() {
     }
 
     return filtered
-  }, [ibFilteredPositions, searchInput, sortColumn, sortDirection, filters])
+  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection, filters])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -509,20 +509,35 @@ export default function PositionModule() {
     }
   }
 
-  // Calculate totals
-  const totalProfit = filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0)
+  // Calculate totals (memoized to prevent recalculation)
+  const totalProfit = useMemo(() => 
+    filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0),
+    [filteredPositions]
+  )
 
-  // Pagination calculations for NET and Client NET
-  const netTotalPages = Math.ceil(filteredNetPositions.length / netItemsPerPage)
-  const netPaginatedPositions = filteredNetPositions.slice(
-    (netCurrentPage - 1) * netItemsPerPage,
-    netCurrentPage * netItemsPerPage
+  // Pagination calculations for NET and Client NET (memoized)
+  const netTotalPages = useMemo(() => 
+    Math.ceil(filteredNetPositions.length / netItemsPerPage),
+    [filteredNetPositions.length, netItemsPerPage]
+  )
+  const netPaginatedPositions = useMemo(() =>
+    filteredNetPositions.slice(
+      (netCurrentPage - 1) * netItemsPerPage,
+      netCurrentPage * netItemsPerPage
+    ),
+    [filteredNetPositions, netCurrentPage, netItemsPerPage]
   )
   
-  const clientNetTotalPages = Math.ceil(filteredClientNetPositions.length / clientNetItemsPerPage)
-  const clientNetPaginatedPositions = filteredClientNetPositions.slice(
-    (clientNetCurrentPage - 1) * clientNetItemsPerPage,
-    clientNetCurrentPage * clientNetItemsPerPage
+  const clientNetTotalPages = useMemo(() =>
+    Math.ceil(filteredClientNetPositions.length / clientNetItemsPerPage),
+    [filteredClientNetPositions.length, clientNetItemsPerPage]
+  )
+  const clientNetPaginatedPositions = useMemo(() =>
+    filteredClientNetPositions.slice(
+      (clientNetCurrentPage - 1) * clientNetItemsPerPage,
+      clientNetCurrentPage * clientNetItemsPerPage
+    ),
+    [filteredClientNetPositions, clientNetCurrentPage, clientNetItemsPerPage]
   )
 
   // Click outside handlers
