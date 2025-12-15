@@ -1201,7 +1201,7 @@ export default function PositionModule() {
 
         {/* NET Position View */}
         {showNetPositions && (
-          <div className="bg-[#F5F7FA] min-h-screen">
+          <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
             <div className="pb-2 px-4">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
@@ -1418,7 +1418,7 @@ export default function PositionModule() {
 
         {/* Client NET View */}
         {showClientNet && (
-          <div className="bg-[#F5F7FA] min-h-screen">
+          <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
             <div className="pb-2 px-4">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
