@@ -19,8 +19,12 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendi
   // Notify parent when there are pending changes
   useEffect(() => {
     if (isOpen && onPendingChange) {
-      const hasPending = tempSelectedIB?.email !== currentSelectedIB?.email;
-      onPendingChange(hasPending);
+      const hasPending = (tempSelectedIB?.email || null) !== (currentSelectedIB?.email || null)
+      try {
+        onPendingChange(hasPending, tempSelectedIB || null)
+      } catch {
+        onPendingChange(hasPending)
+      }
     }
   }, [isOpen, tempSelectedIB, currentSelectedIB, onPendingChange])
 
@@ -411,8 +415,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendi
         <div
           style={{
             display: 'flex',
-            gap: '16px',
-            padding: '12px 20px 16px',
+            gap: '20px',
+            padding: '5px 18px 16px',
             background: '#FFFFFF',
           }}
         >

@@ -44,6 +44,8 @@ export default function Client2Module() {
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+  const [pendingFilterDraft, setPendingFilterDraft] = useState(null)
+  const [pendingIBDraft, setPendingIBDraft] = useState(null)
   const viewAllRef = useRef(null)
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
@@ -1501,11 +1503,27 @@ export default function Client2Module() {
           setActiveGroupFilter('client2', null)
           setHasPendingFilterChanges(false)
           setHasPendingIBChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
         }}
         onApply={() => {
+          // Apply any pending changes made in sub-modals
+          if (hasPendingFilterChanges && pendingFilterDraft) {
+            setFilters(pendingFilterDraft)
+          }
+          if (hasPendingIBChanges) {
+            if (pendingIBDraft) {
+              // Selecting IB triggers mt5 fetch via IBContext effect
+              selectIB(pendingIBDraft)
+            } else {
+              clearIBSelection()
+            }
+          }
           setIsCustomizeOpen(false)
           setHasPendingFilterChanges(false)
           setHasPendingIBChanges(false)
+          setPendingFilterDraft(null)
+          setPendingIBDraft(null)
         }}
         hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges}
       />
@@ -1518,9 +1536,13 @@ export default function Client2Module() {
           setFilters(newFilters)
           setIsFilterOpen(false)
           setHasPendingFilterChanges(false)
+          setPendingFilterDraft(null)
         }}
         filters={filters}
-        onPendingChange={setHasPendingFilterChanges}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingFilterChanges(hasPending)
+          setPendingFilterDraft(draft)
+        }}
       />
 
       {/* IB Filter Modal */}
@@ -1535,9 +1557,13 @@ export default function Client2Module() {
           }
           setIsIBFilterOpen(false)
           setHasPendingIBChanges(false)
+          setPendingIBDraft(null)
         }}
         currentSelectedIB={selectedIB}
-        onPendingChange={setHasPendingIBChanges}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingIBChanges(hasPending)
+          setPendingIBDraft(draft || null)
+        }}
       />
 
       {/* Group Modal */}

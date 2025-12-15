@@ -23,10 +23,16 @@ const FilterModal = ({
   // Notify parent when there are pending changes
   useEffect(() => {
     if (isOpen && onPendingChange) {
-      const hasPending = hasFloating !== filters.hasFloating || 
-                        hasCredit !== filters.hasCredit || 
-                        noDeposit !== filters.noDeposit;
-      onPendingChange(hasPending);
+      const hasPending = hasFloating !== (filters.hasFloating || false) || 
+                        hasCredit !== (filters.hasCredit || false) || 
+                        noDeposit !== (filters.noDeposit || false);
+      const draft = { hasFloating, hasCredit, noDeposit }
+      try {
+        onPendingChange(hasPending, draft)
+      } catch {
+        // backward compatibility if consumer only expects boolean
+        onPendingChange(hasPending)
+      }
     }
   }, [isOpen, hasFloating, hasCredit, noDeposit, filters, onPendingChange]);
 
