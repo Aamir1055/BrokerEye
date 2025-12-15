@@ -268,7 +268,7 @@ export default function IBCommissionsModule() {
   // Get visible columns
   const allColumns = [
     { key: 'checkbox', label: '', width: '50px', sticky: true, stickyLeft: '0px', zIndex: 20 },
-    { key: 'id', label: 'ID', width: '80px', sticky: true, stickyLeft: '50px', zIndex: 10 },
+    { key: 'id', label: 'ID', width: '80px', sticky: !isMobileView, stickyLeft: '50px', zIndex: 10 },
     { key: 'name', label: 'Name', width: '150px' },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
@@ -368,7 +368,7 @@ export default function IBCommissionsModule() {
         return
       }
 
-      const exportColumns = activeColumns
+      const exportColumns = activeColumns.filter(col => col.key !== 'actions' && col.key !== 'checkbox')
       const headers = exportColumns.map(col => col.label).join(',')
       
       const rows = dataToExport.map(item => {
