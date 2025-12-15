@@ -491,12 +491,14 @@ export default function ClientPercentageModule() {
             </button>
             <h1 className="text-xl font-bold text-[#1F2937]">Client Percentage</h1>
           </div>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-semibold hover:bg-[#1D4ED8] transition-colors"
-          >
-            U
-          </button>
+          {!isMobileView && (
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="w-10 h-10 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-semibold hover:bg-[#1D4ED8] transition-colors"
+            >
+              U
+            </button>
+          )}
         </div>
       </div>
 
@@ -506,35 +508,37 @@ export default function ClientPercentageModule() {
         <div className="px-5 pt-3 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex gap-[8px]">
-              <button 
-                onClick={() => {
-                  setIsCustomizeOpen(true)
-                }} 
-                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
-                  (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('clientpercentage'))
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
-                }`}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filters</span>
-                {(() => {
-                  const filterCount = [
-                    filters.hasFloating,
-                    filters.hasCredit,
-                    filters.noDeposit,
-                    selectedIB,
-                    getActiveGroupFilter('clientpercentage')
-                  ].filter(Boolean).length;
-                  return filterCount > 0 ? (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                      {filterCount}
-                    </span>
-                  ) : null;
-                })()}
-              </button>
+              {!isMobileView && (
+                <button 
+                  onClick={() => {
+                    setIsCustomizeOpen(true)
+                  }} 
+                  className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                    (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('clientpercentage'))
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                  <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filters</span>
+                  {(() => {
+                    const filterCount = [
+                      filters.hasFloating,
+                      filters.hasCredit,
+                      filters.noDeposit,
+                      selectedIB,
+                      getActiveGroupFilter('clientpercentage')
+                    ].filter(Boolean).length;
+                    return filterCount > 0 ? (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                        {filterCount}
+                      </span>
+                    ) : null;
+                  })()}
+                </button>
+              )}
               <button 
                 onClick={handleExportToCSV}
                 className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
