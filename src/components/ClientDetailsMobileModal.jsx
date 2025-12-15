@@ -63,9 +63,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   })
   const [netPositionColumns, setNetPositionColumns] = useState({
     symbol: true,
+    netType: true,
     volume: true,
+    avgPrice: true,
     profit: true,
-    count: true
+    positions: true
   })
   const [dealColumns, setDealColumns] = useState({
     deal: true,
@@ -89,6 +91,19 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     totalDeals: 0,
     winRate: 0
   })
+
+  const netStats = useMemo(() => {
+    const symbols = netPositions.length
+    const totalNetVolume = netPositions.reduce((s, p) => s + (p.volume || 0), 0)
+    let buyFloating = 0
+    let sellFloating = 0
+    positions.forEach(p => {
+      const action = (p.action || p.type || '').toString().toLowerCase()
+      if (action === 'buy' || p.action === 0 || p.type === 0) buyFloating += (p.profit || 0)
+      else sellFloating += (p.profit || 0)
+    })
+    return { symbols, totalNetVolume, buyFloating, sellFloating }
+  }, [netPositions, positions])
 
   useEffect(() => {
     fetchPositionsAndInitDeals()
@@ -146,24 +161,50 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
       const positionsData = allPositionsCache ? allPositionsCache.filter(pos => pos.login === client.login) : []
       setPositions(positionsData)
 
-      // Calculate net positions
-      const netPosMap = {}
+      // Calculate net positions per symbol (desktop parity)
+      const netPosMap = new Map()
       positionsData.forEach(pos => {
         const symbol = pos.symbol
-        if (!netPosMap[symbol]) {
-          netPosMap[symbol] = {
+        if (!symbol) return
+        if (!netPosMap.has(symbol)) {
+          netPosMap.set(symbol, {
             symbol,
-            volume: 0,
-            profit: 0,
-            positions: []
-          }
+            buyPositions: [],
+            sellPositions: []
+          })
         }
-        const volumeWithSign = pos.action === 'Buy' ? pos.volume : -pos.volume
-        netPosMap[symbol].volume += volumeWithSign
-        netPosMap[symbol].profit += (pos.profit || 0)
-        netPosMap[symbol].positions.push(pos)
+        const bucket = netPosMap.get(symbol)
+        const action = (pos.action || pos.type || '').toString().toLowerCase()
+        if (action === 'buy' || pos.action === 0 || pos.type === 0) bucket.buyPositions.push(pos)
+        else bucket.sellPositions.push(pos)
       })
-      setNetPositions(Object.values(netPosMap))
+
+      const computedNet = []
+      netPosMap.forEach(group => {
+        const buyVol = group.buyPositions.reduce((s, p) => s + (p.volume || 0), 0)
+        const sellVol = group.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
+        const netVol = buyVol - sellVol
+        if (netVol === 0) return
+        const dominant = netVol > 0 ? group.buyPositions : group.sellPositions
+        let tw = 0, tv = 0, tp = 0
+        dominant.forEach(p => {
+          const v = p.volume || 0
+          const pr = p.priceOpen || p.price || 0
+          tw += pr * v
+          tv += v
+          tp += p.profit || 0
+        })
+        const avg = tv > 0 ? tw / tv : 0
+        computedNet.push({
+          symbol: group.symbol,
+          netType: netVol > 0 ? 'Sell' : 'Buy',
+          volume: Math.abs(netVol),
+          avgPrice: avg,
+          profit: tp,
+          positions: group.buyPositions.length + group.sellPositions.length
+        })
+      })
+      setNetPositions(computedNet)
 
       // Set default date range to Today
       const today = new Date()
@@ -487,11 +528,31 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 </div>
               </th>
             )}
+            {netPositionColumns.netType && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('netType')}>
+                <div className="flex items-center gap-1">
+                  Net Type
+                  {sortConfig.key === 'netType' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
             {netPositionColumns.volume && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
                 <div className="flex items-center gap-1">
                   Net Volume
                   {sortConfig.key === 'volume' && (
+                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
+              </th>
+            )}
+            {netPositionColumns.avgPrice && (
+              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('avgPrice')}>
+                <div className="flex items-center gap-1">
+                  Avg Open Price
+                  {sortConfig.key === 'avgPrice' && (
                     <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </div>
@@ -507,20 +568,28 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 </div>
               </th>
             )}
-            {netPositionColumns.count && <th className="px-3 py-2 text-left text-xs font-medium text-white">Count</th>}
+            {netPositionColumns.positions && <th className="px-3 py-2 text-left text-xs font-medium text-white">Positions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {paginatedNetPositions.map((netPos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
               {netPositionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{netPos.symbol}</td>}
+              {netPositionColumns.netType && (
+                <td className={`px-3 py-2 text-xs ${netPos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${netPos.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {netPos.netType}
+                  </span>
+                </td>
+              )}
               {netPositionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>}
+              {netPositionColumns.avgPrice && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.avgPrice, 5)}</td>}
               {netPositionColumns.profit && (
                 <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatNum(netPos.profit)}
                 </td>
               )}
-              {netPositionColumns.count && <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions.length}</td>}
+              {netPositionColumns.positions && <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions}</td>}
             </tr>
           ))}
         </tbody>
@@ -849,56 +918,83 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
 
         {/* Summary Cards */}
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
-              <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.totalPnL)}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
-              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.lifetimePnL)}
-              </p>
-            </div>
-          </div>
+          {activeTab !== 'netPositions' ? (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
+                  <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
+                    {formatNum(stats.totalPnL)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
+                  <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
+                    {formatNum(stats.lifetimePnL)}
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
-              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.bookPnL)}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
-            </div>
-          </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
+                  <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
+                    {formatNum(stats.bookPnL)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
-              <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
-            </div>
-          </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
+                  <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2">
+                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
+                  <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
+                  <p className="text-[10px] text-purple-700 uppercase font-semibold">NET Symbols</p>
+                  <p className="text-sm font-bold text-purple-900 truncate">{netStats.symbols}</p>
+                </div>
+                <div className="bg-indigo-50 rounded-lg p-2 border border-indigo-200">
+                  <p className="text-[10px] text-indigo-700 uppercase font-semibold">Total Net Volume</p>
+                  <p className="text-sm font-bold text-indigo-900 truncate">{formatNum(netStats.totalNetVolume)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-green-50 rounded-lg p-2 border border-green-200">
+                  <p className="text-[10px] text-green-700 uppercase font-semibold">Buy Floating Profit</p>
+                  <p className="text-sm font-bold text-green-700 truncate">{formatNum(netStats.buyFloating)}</p>
+                </div>
+                <div className="bg-red-50 rounded-lg p-2 border border-red-200">
+                  <p className="text-[10px] text-red-700 uppercase font-semibold">Sell Floating Profit</p>
+                  <p className="text-sm font-bold text-red-700 truncate">{formatNum(netStats.sellFloating)}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Column Selector Dropdown */}
@@ -954,9 +1050,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                   <div className="space-y-0.5">
                     {Object.entries({
                       symbol: 'Symbol',
+                      netType: 'Net Type',
                       volume: 'Net Volume',
+                      avgPrice: 'Avg Open Price',
                       profit: 'Profit',
-                      count: 'Count'
+                      positions: 'Positions'
                     }).map(([key, label]) => (
                       <div key={key} className="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 rounded-md transition-colors">
                         <span className="text-sm text-gray-700 font-medium">{label}</span>
