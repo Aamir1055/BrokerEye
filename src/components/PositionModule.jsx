@@ -1416,17 +1416,17 @@ export default function PositionModule() {
 
                   {/* Footer */}
                   {netPaginatedPositions.length > 0 && (
-                    <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">Total</div>}
-                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
-                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
-                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
-                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
-                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
-                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
-                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
-                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
-                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
+                    <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px]">
+                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
+                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
+                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
+                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
+                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
                     </div>
                   )}
                 </div>
@@ -1601,16 +1601,16 @@ export default function PositionModule() {
 
                   {/* Footer */}
                   {clientNetPaginatedPositions.length > 0 && (
-                    <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px] border-t-2 border-[#1A63BC]">
-                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">Total</div>}
-                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
-                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
-                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
-                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
-                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-b-2 border-[#1A63BC]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
+                    <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px]">
+                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
+                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
+                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
                 </div>
