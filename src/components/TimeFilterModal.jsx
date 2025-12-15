@@ -9,7 +9,8 @@ const TimeFilterModal = ({
   customToDate = '',
   onCustomFromDateChange,
   onCustomToDateChange,
-  onApplyCustomDates
+  onApplyCustomDates,
+  onPendingChange
 }) => {
   const [selectedFilter, setSelectedFilter] = useState(currentFilter);
 
@@ -18,6 +19,20 @@ const TimeFilterModal = ({
       setSelectedFilter(currentFilter);
     }
   }, [isOpen, currentFilter]);
+
+  // Notify parent about pending selection
+  useEffect(() => {
+    if (!isOpen) return
+    if (onPendingChange) {
+      const hasPending = selectedFilter !== currentFilter || (selectedFilter==='custom')
+      const draft = { type: selectedFilter, from: customFromDate, to: customToDate }
+      try {
+        onPendingChange(hasPending, draft)
+      } catch {
+        onPendingChange(hasPending)
+      }
+    }
+  }, [isOpen, selectedFilter, currentFilter, customFromDate, customToDate, onPendingChange]);
 
   if (!isOpen) return null;
 

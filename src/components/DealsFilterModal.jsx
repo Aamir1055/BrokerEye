@@ -4,7 +4,8 @@ const DealsFilterModal = ({
   isOpen, 
   onClose, 
   onApply,
-  currentFilter = 'money'
+  currentFilter = 'money',
+  onPendingChange
 }) => {
   const [selectedFilter, setSelectedFilter] = useState(currentFilter);
 
@@ -13,6 +14,19 @@ const DealsFilterModal = ({
       setSelectedFilter(currentFilter);
     }
   }, [isOpen, currentFilter]);
+
+  // Notify parent when pending selection differs
+  useEffect(() => {
+    if (!isOpen) return
+    if (onPendingChange) {
+      const hasPending = selectedFilter !== currentFilter
+      try {
+        onPendingChange(hasPending, selectedFilter)
+      } catch {
+        onPendingChange(hasPending)
+      }
+    }
+  }, [isOpen, selectedFilter, currentFilter, onPendingChange]);
 
   if (!isOpen) return null;
 

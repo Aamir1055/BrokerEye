@@ -75,6 +75,16 @@ export default function LiveDealingModule() {
   const [appliedToDate, setAppliedToDate] = useState('')
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', 'both'
   const [showDisplayModeModal, setShowDisplayModeModal] = useState(false)
+
+  // Pending change tracking for Customize View Apply
+  const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+  const [pendingIBDraft, setPendingIBDraft] = useState(null)
+  const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
+  const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
+  const [hasPendingTimeChanges, setHasPendingTimeChanges] = useState(false)
+  const [pendingTimeDraft, setPendingTimeDraft] = useState(null)
+  const [hasPendingDealsChanges, setHasPendingDealsChanges] = useState(false)
+  const [pendingDealsDraft, setPendingDealsDraft] = useState(null)
   
   const [visibleColumns, setVisibleColumns] = useState({
     time: true,
@@ -1300,10 +1310,48 @@ export default function LiveDealingModule() {
           setActiveGroupFilter('livedealing', null)
           setTimeFilter('24h')
           setModuleFilter('both')
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setHasPendingTimeChanges(false)
+          setHasPendingDealsChanges(false)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
+          setPendingTimeDraft(null)
+          setPendingDealsDraft(null)
         }}
         onApply={() => {
+          // Apply any pending drafts
+          if (hasPendingIBChanges) {
+            if (pendingIBDraft) { selectIB(pendingIBDraft) } else { clearIBSelection() }
+          }
+          if (hasPendingGroupChanges) {
+            setActiveGroupFilter('livedealing', pendingGroupDraft ? pendingGroupDraft.name : null)
+          }
+          if (hasPendingTimeChanges && pendingTimeDraft) {
+            setTimeFilter(pendingTimeDraft.type)
+            if (pendingTimeDraft.type === 'custom') {
+              setCustomFromDate(pendingTimeDraft.from || '')
+              setCustomToDate(pendingTimeDraft.to || '')
+              setAppliedFromDate(pendingTimeDraft.from || '')
+              setAppliedToDate(pendingTimeDraft.to || '')
+            }
+          }
+          if (hasPendingDealsChanges && pendingDealsDraft) {
+            setModuleFilter(pendingDealsDraft)
+          }
           setIsCustomizeOpen(false)
+          setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
+          setHasPendingTimeChanges(false)
+          setHasPendingDealsChanges(false)
+          setPendingIBDraft(null)
+          setPendingGroupDraft(null)
+          setPendingTimeDraft(null)
+          setPendingDealsDraft(null)
         }}
+        hasPendingChanges={
+          hasPendingIBChanges || hasPendingGroupChanges || hasPendingTimeChanges || hasPendingDealsChanges
+        }
       />
 
       {/* Time Filter Modal */}
@@ -1330,6 +1378,10 @@ export default function LiveDealingModule() {
           setAppliedFromDate(customFromDate)
           setAppliedToDate(customToDate)
         }}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingTimeChanges(hasPending)
+          setPendingTimeDraft(draft || null)
+        }}
       />
 
       {/* Deals Filter Modal */}
@@ -1348,6 +1400,10 @@ export default function LiveDealingModule() {
           setIsDealsFilterOpen(false)
         }}
         currentFilter={moduleFilter}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingDealsChanges(hasPending)
+          setPendingDealsDraft(draft || null)
+        }}
       />
 
       {/* Filter Modal (hasFloating/hasCredit/noDeposit) */}
@@ -1388,6 +1444,10 @@ export default function LiveDealingModule() {
           setIsIBFilterOpen(false)
         }}
         currentSelectedIB={selectedIB}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingIBChanges(hasPending)
+          setPendingIBDraft(draft || null)
+        }}
       />
       {/* Group Modal */}
       <GroupModal
@@ -1416,6 +1476,8 @@ export default function LiveDealingModule() {
             setActiveGroupFilter('livedealing', group.name)
           }
           setIsLoginGroupsOpen(false)
+          setHasPendingGroupChanges(false)
+          setPendingGroupDraft(null)
         }}
         onCreateGroup={() => {
           setIsLoginGroupsOpen(false)
@@ -1428,6 +1490,10 @@ export default function LiveDealingModule() {
           setIsLoginGroupModalOpen(true)
         }}
         onDeleteGroup={deleteGroup}
+        onPendingChange={(hasPending, draftName) => {
+          setHasPendingGroupChanges(hasPending)
+          setPendingGroupDraft(draftName ? { name: draftName } : null)
+        }}
       />
 
       {/* Login Group Modal */}

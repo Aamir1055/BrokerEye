@@ -8,7 +8,8 @@ const LoginGroupsModal = ({
   onEditGroup,
   onDeleteGroup,
   onSelectGroup,
-  activeGroupName
+  activeGroupName,
+  onPendingChange
 }) => {
   const [tempSelectedGroup, setTempSelectedGroup] = useState(activeGroupName)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
@@ -20,6 +21,19 @@ const LoginGroupsModal = ({
       setTempSelectedGroup(activeGroupName)
     }
   }, [isOpen, activeGroupName])
+
+  // Notify parent about pending selection differences
+  useEffect(() => {
+    if (!isOpen) return
+    if (onPendingChange) {
+      const hasPending = (tempSelectedGroup || null) !== (activeGroupName || null)
+      try {
+        onPendingChange(hasPending, tempSelectedGroup || null)
+      } catch {
+        onPendingChange(hasPending)
+      }
+    }
+  }, [isOpen, tempSelectedGroup, activeGroupName, onPendingChange])
 
   // Detect focus within modal to expand height when inputs are focused (e.g., search bar)
   useEffect(() => {

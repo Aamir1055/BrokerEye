@@ -44,8 +44,10 @@ export default function Client2Module() {
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
+  const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
   const [pendingFilterDraft, setPendingFilterDraft] = useState(null)
   const [pendingIBDraft, setPendingIBDraft] = useState(null)
+  const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
   const viewAllRef = useRef(null)
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
@@ -1522,10 +1524,12 @@ export default function Client2Module() {
           setIsCustomizeOpen(false)
           setHasPendingFilterChanges(false)
           setHasPendingIBChanges(false)
+          setHasPendingGroupChanges(false)
           setPendingFilterDraft(null)
           setPendingIBDraft(null)
+          setPendingGroupDraft(null)
         }}
-        hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges}
+        hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges || hasPendingGroupChanges}
       />
 
       {/* Filter Modal */}
@@ -1563,6 +1567,44 @@ export default function Client2Module() {
         onPendingChange={(hasPending, draft) => {
           setHasPendingIBChanges(hasPending)
           setPendingIBDraft(draft || null)
+        }}
+      />
+
+      {/* Login Groups Modal with pending tracking */}
+      <LoginGroupsModal
+        isOpen={isLoginGroupsOpen}
+        onClose={() => setIsLoginGroupsOpen(false)}
+        groups={groups.map(g => ({
+          ...g,
+          loginCount: g.range 
+            ? (g.range.to - g.range.from + 1) 
+            : g.loginIds.length
+        }))}
+        activeGroupName={getActiveGroupFilter('client2')}
+        onSelectGroup={(group) => {
+          if (group === null) {
+            setActiveGroupFilter('client2', null)
+          } else {
+            setActiveGroupFilter('client2', group.name)
+          }
+          setIsLoginGroupsOpen(false)
+          setHasPendingGroupChanges(false)
+          setPendingGroupDraft(null)
+        }}
+        onCreateGroup={() => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onEditGroup={(group) => {
+          setIsLoginGroupsOpen(false)
+          setEditingGroup(group)
+          setIsLoginGroupModalOpen(true)
+        }}
+        onDeleteGroup={deleteGroup}
+        onPendingChange={(hasPending, draftName) => {
+          setHasPendingGroupChanges(hasPending)
+          setPendingGroupDraft(draftName ? { name: draftName } : null)
         }}
       />
 
