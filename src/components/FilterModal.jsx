@@ -4,7 +4,8 @@ const FilterModal = ({
   isOpen, 
   onClose, 
   onApply,
-  filters = {}
+  filters = {},
+  onPendingChange
 }) => {
   const [hasFloating, setHasFloating] = useState(filters.hasFloating || false);
   const [hasCredit, setHasCredit] = useState(filters.hasCredit || false);
@@ -18,6 +19,16 @@ const FilterModal = ({
       setNoDeposit(filters.noDeposit || false);
     }
   }, [isOpen, filters]);
+
+  // Notify parent when there are pending changes
+  useEffect(() => {
+    if (isOpen && onPendingChange) {
+      const hasPending = hasFloating !== filters.hasFloating || 
+                        hasCredit !== filters.hasCredit || 
+                        noDeposit !== filters.noDeposit;
+      onPendingChange(hasPending);
+    }
+  }, [isOpen, hasFloating, hasCredit, noDeposit, filters, onPendingChange]);
 
   if (!isOpen) return null;
 

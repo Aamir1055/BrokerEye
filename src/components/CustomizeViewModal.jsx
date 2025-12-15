@@ -8,7 +8,8 @@ const CustomizeViewModal = ({
   onIBFilterClick,
   onGroupsClick,
   onReset,
-  onApply 
+  onApply,
+  hasPendingChanges = false
 }) => {
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -477,25 +478,25 @@ const CustomizeViewModal = ({
           {/* Apply button */}
           <button
             onClick={onApply}
-            disabled={!hasInteracted}
+            disabled={!hasInteracted && !hasPendingChanges}
             style={{
               flex: 1,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
               padding: '10px 27px',
-              background: hasInteracted ? '#2563EB' : '#E5E7EB',
-              border: '1px solid ' + (hasInteracted ? '#2563EB' : '#D1D5DB'),
+              background: (hasInteracted || hasPendingChanges) ? '#2563EB' : '#E5E7EB',
+              border: '1px solid ' + ((hasInteracted || hasPendingChanges) ? '#2563EB' : '#D1D5DB'),
               borderRadius: '20px',
               boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
-              cursor: hasInteracted ? 'pointer' : 'not-allowed',
+              cursor: (hasInteracted || hasPendingChanges) ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
               fontWeight: 400,
               fontSize: '12px',
               lineHeight: '20px',
               letterSpacing: '0.06em',
               textTransform: 'capitalize',
-              color: hasInteracted ? '#FFFFFF' : '#6B7280',
+              color: (hasInteracted || hasPendingChanges) ? '#FFFFFF' : '#6B7280',
             }}
           >
             Apply

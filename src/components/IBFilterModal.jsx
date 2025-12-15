@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import api from '../services/api'
 
-const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
+const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendingChange }) => {
   const [ibEmails, setIbEmails] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -15,6 +15,14 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
       setTempSelectedIB(currentSelectedIB)
     }
   }, [isOpen, currentSelectedIB])
+
+  // Notify parent when there are pending changes
+  useEffect(() => {
+    if (isOpen && onPendingChange) {
+      const hasPending = tempSelectedIB?.email !== currentSelectedIB?.email;
+      onPendingChange(hasPending);
+    }
+  }, [isOpen, tempSelectedIB, currentSelectedIB, onPendingChange])
 
   const fetchIBEmails = async () => {
     setLoading(true)
@@ -404,7 +412,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           style={{
             display: 'flex',
             gap: '16px',
-            padding: '16px 20px 24px',
+            padding: '12px 20px 16px',
             background: '#FFFFFF',
           }}
         >

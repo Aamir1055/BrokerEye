@@ -42,6 +42,8 @@ export default function Client2Module() {
   const columnDropdownRef = useRef(null)
   const columnSelectorButtonRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
+  const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
   const viewAllRef = useRef(null)
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
@@ -1497,10 +1499,15 @@ export default function Client2Module() {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
           clearIBSelection()
           setActiveGroupFilter('client2', null)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
         }}
         onApply={() => {
           setIsCustomizeOpen(false)
+          setHasPendingFilterChanges(false)
+          setHasPendingIBChanges(false)
         }}
+        hasPendingChanges={hasPendingFilterChanges || hasPendingIBChanges}
       />
 
       {/* Filter Modal */}
@@ -1510,8 +1517,10 @@ export default function Client2Module() {
         onApply={(newFilters) => {
           setFilters(newFilters)
           setIsFilterOpen(false)
+          setHasPendingFilterChanges(false)
         }}
         filters={filters}
+        onPendingChange={setHasPendingFilterChanges}
       />
 
       {/* IB Filter Modal */}
@@ -1525,8 +1534,10 @@ export default function Client2Module() {
             clearIBSelection()
           }
           setIsIBFilterOpen(false)
+          setHasPendingIBChanges(false)
         }}
         currentSelectedIB={selectedIB}
+        onPendingChange={setHasPendingIBChanges}
       />
 
       {/* Group Modal */}
