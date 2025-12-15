@@ -26,18 +26,13 @@ export const GroupProvider = ({ children }) => {
 
 
   // Track active group per module (e.g., { clients: 'Group1', positions: 'Group2' })
-  // Load from localStorage on initialization
-  const [activeGroupFilters, setActiveGroupFilters] = useState(() => {
-    try {
-      const saved = localStorage.getItem('activeGroupFilters')
-      const loaded = saved ? JSON.parse(saved) : {}
-      console.log('Loading active group filters from localStorage:', loaded)
-      return loaded
-    } catch (error) {
-      console.error('Failed to load active group filters:', error)
-      return {}
-    }
-  })
+  // Clear on page refresh - no persistence
+  const [activeGroupFilters, setActiveGroupFilters] = useState({})
+
+  // Clear group filters from localStorage on page refresh
+  useEffect(() => {
+    localStorage.removeItem('activeGroupFilters');
+  }, []);
 
   // Save to localStorage whenever groups change
   useEffect(() => {

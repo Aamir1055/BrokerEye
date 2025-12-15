@@ -156,18 +156,10 @@ export const IBProvider = ({ children }) => {
     });
   };
 
-  // Restore selected IB from localStorage on mount
+  // Clear IB filter on page refresh
   useEffect(() => {
-    const savedIB = localStorage.getItem('selectedIB');
-    if (savedIB) {
-      try {
-        const parsedIB = JSON.parse(savedIB);
-        setSelectedIB(parsedIB);
-      } catch (err) {
-        console.error('Error parsing saved IB:', err);
-        localStorage.removeItem('selectedIB');
-      }
-    }
+    localStorage.removeItem('selectedIB');
+    setSelectedIB(null);
   }, []);
 
   const value = {

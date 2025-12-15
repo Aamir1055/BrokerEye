@@ -137,6 +137,13 @@ export default function PositionModule() {
   })
 
   // Listen for global request to open Customize View from child modals
+  // Clear all filters on component mount (page refresh)
+  useEffect(() => {
+    setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+    clearIBSelection()
+    setActiveGroupFilter('positions', null)
+  }, [])
+
   useEffect(() => {
     const handler = () => {
       setIsFilterOpen(false)

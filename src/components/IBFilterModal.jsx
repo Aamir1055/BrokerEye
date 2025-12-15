@@ -143,6 +143,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendi
           zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
+          paddingBottom: 'env(safe-area-inset-bottom, 20px)',
         }}
       >
         {/* Top indicator line */}
@@ -275,7 +276,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendi
             flex: 1, 
             padding: '0 20px', 
             overflowY: 'auto',
-            minHeight: '400px',
+            minHeight: 0,
+            maxHeight: 'calc(70vh - 200px)',
             marginBottom: '0'
           }}
         >
@@ -416,7 +418,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB, onPendi
           style={{
             display: 'flex',
             gap: '20px',
-            padding: '5px 18px 16px',
+            padding: '5px 18px 32px',
             background: '#FFFFFF',
           }}
         >
