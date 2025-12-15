@@ -934,85 +934,58 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           )}
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Cards (same for Positions and Net Positions) */}
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
-          {activeTab !== 'netPositions' ? (
-            <>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
-                  <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
-                    {formatNum(stats.totalPnL)}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
-                  <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
-                    {formatNum(stats.lifetimePnL)}
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
+              <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(stats.totalPnL)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
+              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(stats.lifetimePnL)}
+              </p>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
-                  <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
-                    {formatNum(stats.bookPnL)}
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
+              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(stats.bookPnL)}
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
-                  <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
-                  <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-purple-50 rounded-lg p-2 border border-purple-200">
-                  <p className="text-[10px] text-purple-700 uppercase font-semibold">NET Symbols</p>
-                  <p className="text-sm font-bold text-purple-900 truncate">{netStats.symbols}</p>
-                </div>
-                <div className="bg-indigo-50 rounded-lg p-2 border border-indigo-200">
-                  <p className="text-[10px] text-indigo-700 uppercase font-semibold">Total Net Volume</p>
-                  <p className="text-sm font-bold text-indigo-900 truncate">{formatNum(netStats.totalNetVolume)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="bg-green-50 rounded-lg p-2 border border-green-200">
-                  <p className="text-[10px] text-green-700 uppercase font-semibold">Buy Floating Profit</p>
-                  <p className="text-sm font-bold text-green-700 truncate">{formatNum(netStats.buyFloating)}</p>
-                </div>
-                <div className="bg-red-50 rounded-lg p-2 border border-red-200">
-                  <p className="text-[10px] text-red-700 uppercase font-semibold">Sell Floating Profit</p>
-                  <p className="text-sm font-bold text-red-700 truncate">{formatNum(netStats.sellFloating)}</p>
-                </div>
-              </div>
-            </>
-          )}
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-2">
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
+              <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
+            </div>
+          </div>
         </div>
 
         {/* Column Selector Dropdown */}
