@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, Fragment } from 'react'
+import { useEffect, useRef, useState, useMemo, Fragment, useDeferredValue } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroups } from '../contexts/GroupContext'
@@ -954,6 +954,9 @@ const PositionsPage = () => {
     return sorted
   }
   
+  // Defer heavy list processing so route changes remain responsive
+  const deferredPositions = useDeferredValue(cachedPositions)
+
   // Memoize filtered and sorted positions to prevent blocking on navigation
   const { sortedPositions, ibFilteredPositions } = useMemo(() => {
     // Return empty arrays if not authenticated to avoid unnecessary processing
@@ -961,7 +964,7 @@ const PositionsPage = () => {
       return { sortedPositions: [], ibFilteredPositions: [] }
     }
     
-    const searchedPositions = searchPositions(cachedPositions)
+    const searchedPositions = searchPositions(deferredPositions)
     
     // Apply group filter if active
     let groupFilteredPositions = filterByActiveGroup(searchedPositions, 'login', 'positions')
@@ -999,7 +1002,7 @@ const PositionsPage = () => {
     const sorted = sortPositions(ibFiltered)
     
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
-  }, [cachedPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
+  }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
@@ -1087,8 +1090,8 @@ const PositionsPage = () => {
   // Calculate NET positions using useMemo - use cachedPositions for all data
   const netPositionsData = useMemo(() => {
     if (!showNetPositions) return []
-    return calculateGlobalNetPositions(cachedPositions)
-  }, [showNetPositions, cachedPositions, groupByBaseSymbol])
+    return calculateGlobalNetPositions(deferredPositions)
+  }, [showNetPositions, deferredPositions, groupByBaseSymbol])
 
   // NET suggestions
   const getNetSuggestions = () => {
