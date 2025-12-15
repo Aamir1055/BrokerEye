@@ -35,6 +35,7 @@ export default function PositionModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
     // Pending apply tracking for Customize View
     const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
     const [pendingIBDraft, setPendingIBDraft] = useState(null)
@@ -152,6 +153,13 @@ export default function PositionModule() {
         window.removeEventListener('openCustomizeView', handler)
       }
     }
+  }, [])
+
+  // Detect mobile view
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Apply group and IB filters to positions (same as desktop)
@@ -1808,9 +1816,10 @@ export default function PositionModule() {
                     { label: 'Comment', key: 'comment' },
                     { label: 'Commission', key: 'commission' }
                   ]
-                  const filtered = allColumns.filter(col => 
-                    col.label.toLowerCase().includes(columnSearch.toLowerCase())
-                  )
+                  const excludedOnMobile = new Set(['firstName','middleName','lastName','email'])
+                  const filtered = allColumns
+                    .filter(col => col.label.toLowerCase().includes(columnSearch.toLowerCase()))
+                    .filter(col => !isMobileView || !excludedOnMobile.has(col.key))
                   return filtered.length > 0 ? (
                     filtered.map(col => (
                       <label 
