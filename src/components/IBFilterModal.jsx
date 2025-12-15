@@ -404,7 +404,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           style={{
             display: 'flex',
             gap: '16px',
-            padding: '20px',
+            padding: '16px 20px 24px',
             background: '#FFFFFF',
           }}
         >
