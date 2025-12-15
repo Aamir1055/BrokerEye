@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 
 const formatDate = (timestamp) => {
@@ -43,6 +43,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
   const [quickFilter, setQuickFilter] = useState('Today')
   const [totalDealsCount, setTotalDealsCount] = useState(0)
   const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
+  
+  // Refs for date inputs
+  const fromDateInputRef = useRef(null)
+  const toDateInputRef = useRef(null)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -874,8 +878,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           <div className="px-2 py-1.5 bg-blue-50 border-b border-blue-100 flex-shrink-0">
             <div className="flex items-center gap-1.5" style={{ justifyContent: 'space-between' }}>
               {/* Date Inputs */}
-              <div style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}>
+              <div 
+                style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}
+                onClick={() => fromDateInputRef.current?.showPicker?.()}
+              >
                 <input
+                  ref={fromDateInputRef}
                   type="date"
                   value={fromDate ? formatDateToValue(fromDate) : ''}
                   onChange={(e) => {
@@ -887,10 +895,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setFromDate('')
                     }
                   }}
-                  className="mobile-date-picker w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute top-0 left-0 opacity-0 cursor-pointer"
-                  style={{ fontSize: '10px', height: '24px', zIndex: 10, width: '100%' }}
+                  className="mobile-date-picker absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ width: '100%', height: '100%', zIndex: 10 }}
                 />
-                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none relative" style={{ fontSize: '10px', height: '24px', zIndex: 1 }}>
+                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between cursor-pointer" style={{ fontSize: '10px', height: '24px' }}>
                   <span>{fromDate || 'dd/mm/yy'}</span>
                   <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -898,8 +906,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                 </div>
               </div>
               <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
-              <div style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}>
+              <div 
+                style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}
+                onClick={() => toDateInputRef.current?.showPicker?.()}
+              >
                 <input
+                  ref={toDateInputRef}
                   type="date"
                   value={toDate ? formatDateToValue(toDate) : ''}
                   onChange={(e) => {
@@ -911,10 +923,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setToDate('')
                     }
                   }}
-                  className="mobile-date-picker w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute top-0 left-0 opacity-0 cursor-pointer"
-                  style={{ fontSize: '10px', height: '24px', zIndex: 10, width: '100%' }}
+                  className="mobile-date-picker absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ width: '100%', height: '100%', zIndex: 10 }}
                 />
-                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none relative" style={{ fontSize: '10px', height: '24px', zIndex: 1 }}>
+                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between cursor-pointer" style={{ fontSize: '10px', height: '24px' }}>
                   <span>{toDate || 'dd/mm/yy'}</span>
                   <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
