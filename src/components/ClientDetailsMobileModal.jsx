@@ -854,7 +854,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
           <div className="px-2 py-1.5 bg-blue-50 border-b border-blue-100 flex-shrink-0">
             <div className="flex items-center gap-1.5" style={{ justifyContent: 'space-between' }}>
               {/* Date Inputs */}
-              <div style={{ width: '95px', flex: '0 0 95px' }}>
+              <div style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}>
                 <input
                   type="date"
                   value={fromDate ? formatDateToValue(fromDate) : ''}
@@ -867,13 +867,18 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setFromDate('')
                     }
                   }}
-                  placeholder="dd/mm/yy"
-                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
-                  style={{ fontSize: '10px', height: '24px' }}
+                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
+                  style={{ fontSize: '10px', height: '24px', zIndex: 2 }}
                 />
+                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none" style={{ fontSize: '10px', height: '24px' }}>
+                  <span>{fromDate || 'dd/mm/yy'}</span>
+                  <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
               </div>
               <span className="text-[12px] text-gray-500 font-medium" style={{ flex: '0 0 auto' }}>to</span>
-              <div style={{ width: '95px', flex: '0 0 95px' }}>
+              <div style={{ width: '95px', flex: '0 0 95px', position: 'relative' }}>
                 <input
                   type="date"
                   value={toDate ? formatDateToValue(toDate) : ''}
@@ -886,10 +891,15 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
                       setToDate('')
                     }
                   }}
-                  placeholder="dd/mm/yy"
-                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5"
-                  style={{ fontSize: '10px', height: '24px' }}
+                  className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 absolute opacity-0 cursor-pointer"
+                  style={{ fontSize: '10px', height: '24px', zIndex: 2 }}
                 />
+                <div className="w-full border border-gray-300 rounded text-gray-900 bg-white px-1 py-0.5 flex items-center justify-between pointer-events-none" style={{ fontSize: '10px', height: '24px' }}>
+                  <span>{toDate || 'dd/mm/yy'}</span>
+                  <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
               </div>
 
               {/* Quick Filter Dropdown */}
