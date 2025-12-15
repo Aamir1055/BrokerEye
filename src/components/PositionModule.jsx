@@ -741,9 +741,7 @@ export default function PositionModule() {
         
         <h1 className="text-xl font-semibold text-black">Positions</h1>
         
-        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-          <span className="text-white text-sm font-semibold">U</span>
-        </div>
+        <div className="w-12 h-12"></div>
       </div>
 
       {/* Sidebar Overlay */}
