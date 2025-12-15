@@ -634,7 +634,7 @@ export default function LiveDealingModule() {
         const actionLower = action.toLowerCase()
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            className={`h-[28px] flex items-center justify-start px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
             style={{
               border: 'none', 
               outline: 'none', 
@@ -679,7 +679,7 @@ export default function LiveDealingModule() {
         }
         return (
           <div 
-            className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            className={`h-[28px] flex items-center justify-start px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
             style={{
               border: 'none', 
               outline: 'none', 
@@ -734,7 +734,7 @@ export default function LiveDealingModule() {
 
     return (
       <div 
-        className={`h-[28px] flex items-center justify-center px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+        className={`h-[28px] flex items-center justify-start px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
         style={{
           border: 'none', 
           outline: 'none', 
@@ -1127,7 +1127,7 @@ export default function LiveDealingModule() {
                         {activeColumns.map((col) => (
                           <div 
                             key={col.key}
-                            className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
+                            className={`h-[38px] flex items-center justify-start px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
                             <div 
