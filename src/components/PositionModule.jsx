@@ -565,14 +565,15 @@ export default function PositionModule() {
   const renderCellValue = (pos, columnKey, isSticky = false) => {
     const stickyClass = isSticky ? 'sticky left-0 bg-white z-10' : ''
     const stickyStyle = isSticky ? { boxShadow: '2px 0 4px rgba(0,0,0,0.05)' } : {}
+    const cellBorderClass = 'border-b border-[#E1E1E1]'
     
     switch(columnKey) {
       case 'symbol':
-        return <div className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap text-black font-semibold ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap text-black font-semibold ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{pos.symbol || '-'}</div>
       case 'netType':
       case 'action':
         return (
-          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+          <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
               pos.type === 0 || pos.type === 'Buy' 
                 ? 'bg-green-100 text-green-700' 
@@ -585,35 +586,35 @@ export default function PositionModule() {
       case 'totalProfit':
       case 'profit':
         return (
-          <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${
+          <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${cellBorderClass} ${
             (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
           } ${stickyClass}`} style={stickyStyle}>
             {formatNum(pos.profit || 0)}
           </div>
         )
       case 'priceOpen':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
       case 'priceCurrent':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceCurrent || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceCurrent || 0)}</div>
       case 'volume':
       case 'netVolume':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
       case 'volumePercentage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
       case 'profitPercentage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
       case 'storage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
       case 'storagePercentage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
       case 'appliedPercentage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.appliedPercentage || 0)}%</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.appliedPercentage || 0)}%</div>
       case 'sl':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
       case 'tp':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
       case 'commission':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
       case 'login':
         const handleLoginClick = () => {
           const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -621,7 +622,7 @@ export default function PositionModule() {
         }
         return (
           <div 
-            className={`h-[38px] flex items-center justify-start px-2 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
+            className={`h-[38px] flex items-center justify-start px-2 text-[#1A63BC] font-semibold ${cellBorderClass} ${stickyClass} cursor-pointer hover:underline`} 
             style={stickyStyle}
             onClick={handleLoginClick}
             onTouchEnd={(e) => {
@@ -635,7 +636,7 @@ export default function PositionModule() {
       case 'updated':
         const timeValue = pos.timeUpdate || pos.timeCreate
         const formattedTime = timeValue ? new Date(timeValue * 1000).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '-'
-        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -644,9 +645,9 @@ export default function PositionModule() {
       case 'position':
       case 'reason':
       case 'comment':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
       default:
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>-</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>-</div>
     }
   }
 
@@ -1332,14 +1333,14 @@ export default function PositionModule() {
                   ) : (
                     netPaginatedPositions.map((pos, idx) => (
                       <React.Fragment key={idx}>
-                        <div className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
+                        <div className="flex text-[10px] text-[#4B4B4B] hover:bg-[#F8FAFC]">
                           {netVisibleColumns.login && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B]">
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">
                               {pos.loginCount > 0 ? `${pos.loginCount} logins` : '-'}
                             </div>
                           )}
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
+                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10 border-b border-[#E1E1E1]" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
                               <div className="flex flex-col items-center gap-0.5">
                                 <span>{pos.symbol}</span>
                                 {groupByBaseSymbol && pos.variantCount > 1 && (
@@ -1362,15 +1363,15 @@ export default function PositionModule() {
                               </div>
                             </div>
                           )}
-                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
-                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.netVolume)}</div>}
-                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.avgPrice)}</div>}
-                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
-                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.totalStorage || 0)}</div>}
-                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.totalCommission || 0)}</div>}
-                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-white text-[#4B4B4B]">{pos.loginCount}</div>}
-                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{pos.totalPositions}</div>}
-                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{pos.variantCount}</div>}
+                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'}`}>{pos.netType}</div>}
+                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
+                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
+                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
+                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
+                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.loginCount}</div>}
+                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
+                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.variantCount}</div>}
                         </div>
 
                         {/* Variant Rows */}
@@ -1546,10 +1547,10 @@ export default function PositionModule() {
                     <div className="text-center py-8 text-[#6B7280] text-sm">No Client NET positions found</div>
                   ) : (
                     clientNetPaginatedPositions.map((pos, idx) => (
-                      <div key={idx} className="flex text-[10px] text-[#4B4B4B] border-b border-[#E1E1E1] hover:bg-[#F8FAFC]">
+                      <div key={idx} className="flex text-[10px] text-[#4B4B4B] hover:bg-[#F8FAFC]">
                         {clientNetVisibleColumns.login && (
                           <div 
-                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10"
+                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10 border-b border-[#E1E1E1]"
                             style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}
                             onClick={() => {
                               const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -1564,18 +1565,18 @@ export default function PositionModule() {
                             {pos.login}
                           </div>
                         )}
-                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black">{pos.symbol}</div>}
-                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white ${
+                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black border-b border-[#E1E1E1]">{pos.symbol}</div>}
+                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
                         }`}>{pos.netType}</div>}
-                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.netVolume)}</div>}
-                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.avgPrice)}</div>}
-                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white ${
+                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
+                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
+                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
                           pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>{formatNum(pos.totalProfit)}</div>}
-                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.totalStorage || 0)}</div>}
-                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{formatNum(pos.totalCommission || 0)}</div>}
-                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B]">{pos.totalPositions}</div>}
+                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
+                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
+                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
                       </div>
                     ))
                   )}
