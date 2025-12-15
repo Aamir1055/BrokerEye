@@ -262,10 +262,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
             flex: 1, 
             padding: '0 20px', 
             overflowY: 'auto',
-            marginBottom: '20px',
-            height: '500px',
-            minHeight: '500px',
-            maxHeight: '500px'
+            maxHeight: 'calc(60vh - 180px)',
+            marginBottom: '0'
           }}
         >
           {loading ? (
@@ -389,14 +387,22 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           )}
         </div>
 
-        {/* Reset and Apply buttons (match FilterModal styles) */}
+        {/* Bottom divider */}
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            background: '#F2F2F7',
+            margin: '20px 0',
+          }}
+        />
+
+        {/* Action buttons */}
         <div
           style={{
             display: 'flex',
-            gap: '12px',
-            padding: '16px 20px 24px',
-            borderTop: '1px solid #F2F2F7',
-            marginTop: 'auto',
+            gap: '16px',
+            padding: '0 20px 20px',
           }}
         >
           {/* Reset button */}
@@ -407,21 +413,24 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '14px 16px',
-              background: '#FFFFFF',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
-              boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+              padding: '10px 16px',
+              background: '#E5E7EB',
+              border: '1px solid #D1D5DB',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '14px',
+              fontWeight: 400,
+              fontSize: '12px',
               lineHeight: '20px',
-              color: '#4B4B4B',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#6B7280',
             }}
           >
             Reset
           </button>
+
           {/* Apply button */}
           <button
             onClick={handleApply}
@@ -431,18 +440,19 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: '14px 16px',
-              background: tempSelectedIB && !loading ? '#2563EB' : '#E5E7EB',
-              border: 'none',
-              borderRadius: '12px',
-              boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-              cursor: tempSelectedIB && !loading ? 'pointer' : 'not-allowed',
+              padding: '10px 27px',
+              background: (tempSelectedIB && !loading) ? '#2563EB' : '#E5E7EB',
+              border: '1px solid ' + ((tempSelectedIB && !loading) ? '#2563EB' : '#D1D5DB'),
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
+              cursor: (tempSelectedIB && !loading) ? 'pointer' : 'not-allowed',
               fontFamily: 'Outfit, sans-serif',
-              fontWeight: 500,
-              fontSize: '14px',
+              fontWeight: 400,
+              fontSize: '12px',
               lineHeight: '20px',
-              color: tempSelectedIB && !loading ? '#FFFFFF' : '#9CA3AF',
-              opacity: tempSelectedIB && !loading ? 1 : 0.6,
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: (tempSelectedIB && !loading) ? '#FFFFFF' : '#6B7280',
             }}
           >
             {loading ? 'Applying...' : 'Apply'}
