@@ -324,8 +324,8 @@ export default function MarginLevelModule() {
         </button>
         
         <h1 className="text-xl font-semibold text-black">Margin Level</h1>
-        
-        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
+        {/* Hide profile avatar on mobile widths */}
+        <div className="hidden md:flex w-12 h-12 rounded-full bg-blue-600 items-center justify-center">
           <span className="text-white text-sm font-semibold">U</span>
         </div>
       </div>

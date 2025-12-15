@@ -771,8 +771,8 @@ export default function IBCommissionsModule() {
         {/* Table */}
         <div>
           <div className="bg-white shadow-[0_0_20px_rgba(75,75,75,0.08)] overflow-hidden">
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
+            <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' }}>
+              <div className="relative" style={{ minWidth: 'max-content' }}>
                 {/* Table Header */}
                 <div 
                   className="grid bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wide sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]"

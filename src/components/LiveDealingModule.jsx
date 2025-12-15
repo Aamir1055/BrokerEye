@@ -61,6 +61,7 @@ export default function LiveDealingModule() {
   const itemsPerPage = 15
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
+  const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
   
   // Deals state
   const [deals, setDeals] = useState([])
@@ -121,6 +122,13 @@ export default function LiveDealingModule() {
         window.removeEventListener('openCustomizeView', handler)
       }
     }
+  }, [])
+
+  // Detect mobile view
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Format request text from deal data
@@ -772,12 +780,14 @@ export default function LiveDealingModule() {
           </svg>
         </button>
         <h1 className="text-lg font-semibold text-[#000000]">Live Dealing</h1>
-        <button 
-          onClick={() => navigate('/profile')}
-          className="w-12 h-12 rounded-full bg-[#1A63BC] flex items-center justify-center text-white font-semibold text-sm"
-        >
-          U
-        </button>
+        {!isMobileView && (
+          <button 
+            onClick={() => navigate('/profile')}
+            className="w-12 h-12 rounded-full bg-[#1A63BC] flex items-center justify-center text-white font-semibold text-sm"
+          >
+            U
+          </button>
+        )}
       </div>
 
       {/* Sidebar Overlay */}
