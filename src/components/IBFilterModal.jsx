@@ -123,8 +123,9 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: '412px',
-          height: 'auto',
-          maxHeight: '80vh',
+          height: '70vh',
+          minHeight: '600px',
+          maxHeight: '70vh',
           background: '#FFFFFF',
           borderRadius: '20px 20px 0 0',
           zIndex: 9999,
@@ -262,7 +263,7 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
             flex: 1, 
             padding: '0 20px', 
             overflowY: 'auto',
-            maxHeight: 'calc(60vh - 180px)',
+            minHeight: '400px',
             marginBottom: '0'
           }}
         >
@@ -393,7 +394,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
             width: '100%',
             height: '1px',
             background: '#F2F2F7',
-            margin: '20px 0',
+            margin: '0',
+            marginTop: 'auto',
           }}
         />
 
@@ -402,7 +404,8 @@ const IBFilterModal = ({ isOpen, onClose, onSelectIB, currentSelectedIB }) => {
           style={{
             display: 'flex',
             gap: '16px',
-            padding: '0 20px 20px',
+            padding: '20px',
+            background: '#FFFFFF',
           }}
         >
           {/* Reset button */}
