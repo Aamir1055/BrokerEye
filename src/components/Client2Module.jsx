@@ -230,43 +230,52 @@ export default function Client2Module() {
       if (activeGroupName && groups && groups.length > 0) {
         const activeGroup = groups.find(g => g.name === activeGroupName)
         if (activeGroup) {
+          console.log('[Client2] Group filter active:', activeGroupName, activeGroup)
           if (activeGroup.range) {
             // Range-based group
             payload.accountRangeMin = activeGroup.range.from
             payload.accountRangeMax = activeGroup.range.to
+            console.log('[Client2] Applied range filter:', payload.accountRangeMin, '-', payload.accountRangeMax)
           } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
             // Manual selection group - store accounts for potential IB intersection
             groupAccountsSet = new Set(activeGroup.loginIds.map(id => String(id)))
             payload.mt5Accounts = Array.from(groupAccountsSet)
+            console.log('[Client2] Applied manual group filter:', payload.mt5Accounts.length, 'accounts')
           }
         }
       }
 
       // Add IB filter to payload if active
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
+        console.log('[Client2] IB filter active:', selectedIB, 'with', ibMT5Accounts.length, 'accounts')
         const ibAccountsSet = new Set(ibMT5Accounts.map(id => String(id)))
         
         if (payload.accountRangeMin !== undefined && payload.accountRangeMax !== undefined) {
           // Range-based group + IB filter: Filter IB accounts by range
           const rangeMin = parseInt(payload.accountRangeMin)
           const rangeMax = parseInt(payload.accountRangeMax)
+          const beforeCount = ibMT5Accounts.length
           payload.mt5Accounts = ibMT5Accounts
             .filter(id => {
               const numId = parseInt(String(id))
               return numId >= rangeMin && numId <= rangeMax
             })
             .map(id => String(id))
+          console.log('[Client2] Range + IB intersection:', beforeCount, '→', payload.mt5Accounts.length, 'accounts')
           // Remove range params since we're using explicit account list
           delete payload.accountRangeMin
           delete payload.accountRangeMax
         } else if (groupAccountsSet) {
           // Manual selection group + IB filter: Intersect both sets
+          const beforeCount = ibMT5Accounts.length
           payload.mt5Accounts = ibMT5Accounts
             .filter(id => groupAccountsSet.has(String(id)))
             .map(id => String(id))
+          console.log('[Client2] Manual group + IB intersection:', beforeCount, '→', payload.mt5Accounts.length, 'accounts')
         } else {
           // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
+          console.log('[Client2] Only IB filter (no group):', payload.mt5Accounts.length, 'accounts')
         }
       }
 
