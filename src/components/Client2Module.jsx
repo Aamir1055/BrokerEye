@@ -1368,7 +1368,11 @@ export default function Client2Module() {
                   ))}
                 </>
               ) : paginatedClients.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">No clients found</div>
+                <div className="py-8 text-center text-gray-500">
+                  {(filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2') || searchInput.trim())
+                    ? 'No clients match the applied filters'
+                    : 'No clients found'}
+                </div>
               ) : (
                 <>
                   {paginatedClients.map((client, idx) => {
