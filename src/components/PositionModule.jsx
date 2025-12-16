@@ -464,7 +464,14 @@ export default function PositionModule() {
     let filtered = applySearchFilter(deferredIbFilteredPositions, searchInput, ['symbol', 'login'])
     
     // Map column keys to actual data fields for sorting
-    const sortKey = sortColumn === 'updated' ? 'timeUpdate' : sortColumn
+    const columnKeyMapping = {
+      'updated': 'timeUpdate',
+      'netType': 'type',
+      'action': 'type',
+      'netVolume': 'volume',
+      'totalProfit': 'profit'
+    }
+    const sortKey = columnKeyMapping[sortColumn] || sortColumn
     
     // Apply sorting
     filtered = applySorting(filtered, sortKey, sortDirection)
