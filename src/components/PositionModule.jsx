@@ -56,6 +56,8 @@ export default function PositionModule() {
   // NET Position states
   const [netCurrentPage, setNetCurrentPage] = useState(1)
   const netItemsPerPage = 12
+  const [netSortColumn, setNetSortColumn] = useState(null)
+  const [netSortDirection, setNetSortDirection] = useState('asc')
   const [netCardsVisible, setNetCardsVisible] = useState({
     netSymbols: true,
     totalNetVolume: true,
@@ -85,6 +87,8 @@ export default function PositionModule() {
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
   const clientNetItemsPerPage = 12
+  const [clientNetSortColumn, setClientNetSortColumn] = useState(null)
+  const [clientNetSortDirection, setClientNetSortDirection] = useState('asc')
   const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
     clientNetRows: true,
     totalNetVolume: true,
@@ -425,24 +429,34 @@ export default function PositionModule() {
 
   // Filter NET positions based on search
   const filteredNetPositions = useMemo(() => {
-    if (!netSearchInput.trim()) return netPositions
-    const query = netSearchInput.toLowerCase()
-    return netPositions.filter(pos => 
-      String(pos.symbol || '').toLowerCase().includes(query) ||
-      String(pos.netType || '').toLowerCase().includes(query)
-    )
-  }, [netPositions, netSearchInput])
+    let filtered = netPositions
+    if (netSearchInput.trim()) {
+      const query = netSearchInput.toLowerCase()
+      filtered = filtered.filter(pos => 
+        String(pos.symbol || '').toLowerCase().includes(query) ||
+        String(pos.netType || '').toLowerCase().includes(query)
+      )
+    }
+    // Apply sorting
+    filtered = applySorting(filtered, netSortColumn, netSortDirection)
+    return filtered
+  }, [netPositions, netSearchInput, netSortColumn, netSortDirection])
 
   // Filter Client NET positions based on search
   const filteredClientNetPositions = useMemo(() => {
-    if (!clientNetSearchInput.trim()) return clientNetPositions
-    const query = clientNetSearchInput.toLowerCase()
-    return clientNetPositions.filter(pos =>
-      String(pos.login || '').toLowerCase().includes(query) ||
-      String(pos.symbol || '').toLowerCase().includes(query) ||
-      String(pos.netType || '').toLowerCase().includes(query)
-    )
-  }, [clientNetPositions, clientNetSearchInput])
+    let filtered = clientNetPositions
+    if (clientNetSearchInput.trim()) {
+      const query = clientNetSearchInput.toLowerCase()
+      filtered = filtered.filter(pos =>
+        String(pos.login || '').toLowerCase().includes(query) ||
+        String(pos.symbol || '').toLowerCase().includes(query) ||
+        String(pos.netType || '').toLowerCase().includes(query)
+      )
+    }
+    // Apply sorting
+    filtered = applySorting(filtered, clientNetSortColumn, clientNetSortDirection)
+    return filtered
+  }, [clientNetPositions, clientNetSearchInput, clientNetSortColumn, clientNetSortDirection])
 
   // Apply search and sorting (use deferred value to prevent blocking navigation)
   const filteredPositions = useMemo(() => {
@@ -464,6 +478,26 @@ export default function PositionModule() {
       // New column, default to ascending
       setSortColumn(columnKey)
       setSortDirection('asc')
+    }
+  }
+
+  // Handle NET position column sorting
+  const handleNetSort = (columnKey) => {
+    if (netSortColumn === columnKey) {
+      setNetSortDirection(netSortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setNetSortColumn(columnKey)
+      setNetSortDirection('asc')
+    }
+  }
+
+  // Handle Client NET column sorting
+  const handleClientNetSort = (columnKey) => {
+    if (clientNetSortColumn === columnKey) {
+      setClientNetSortDirection(clientNetSortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setClientNetSortColumn(columnKey)
+      setClientNetSortDirection('asc')
     }
   }
 
@@ -1318,17 +1352,171 @@ export default function PositionModule() {
                 }}>
                     {/* Header - Sticky inside scroll */}
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
-                      {netVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Login</div>}
-                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 sticky left-0 z-30">Symbol</div>}
-                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
-                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
-                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
-                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
-                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
-                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
-                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500">Logins</div>}
-                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
-                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Variants</div>}
+                      {netVisibleColumns.login && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('loginCount'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('loginCount'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Login
+                          {netSortColumn === 'loginCount' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.symbol && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('symbol'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('symbol'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Symbol
+                          {netSortColumn === 'symbol' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.netType && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('netType'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('netType'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Type
+                          {netSortColumn === 'netType' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.netVolume && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('netVolume'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('netVolume'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          NET Vol
+                          {netSortColumn === 'netVolume' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.avgPrice && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('avgPrice'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('avgPrice'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Avg Price
+                          {netSortColumn === 'avgPrice' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.totalProfit && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('totalProfit'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalProfit'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          P/L
+                          {netSortColumn === 'totalProfit' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.totalStorage && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('totalStorage'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalStorage'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Storage
+                          {netSortColumn === 'totalStorage' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.totalCommission && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('totalCommission'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalCommission'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Comm
+                          {netSortColumn === 'totalCommission' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.loginCount && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('loginCount'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('loginCount'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Logins
+                          {netSortColumn === 'loginCount' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.totalPositions && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('totalPositions'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalPositions'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Positions
+                          {netSortColumn === 'totalPositions' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {netVisibleColumns.variantCount && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleNetSort('variantCount'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('variantCount'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Variants
+                          {netSortColumn === 'variantCount' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={netSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
                     </div>
                   {netPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No NET positions found</div>
@@ -1535,15 +1723,141 @@ export default function PositionModule() {
                 }}>
                     {/* Header - Sticky */}
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
-                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-30">Login</div>}
-                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Symbol</div>}
-                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500">Type</div>}
-                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">NET Vol</div>}
-                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Avg Price</div>}
-                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">P/L</div>}
-                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Storage</div>}
-                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Comm</div>}
-                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500">Positions</div>}
+                      {clientNetVisibleColumns.login && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('login'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('login'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Login
+                          {clientNetSortColumn === 'login' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.symbol && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('symbol'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('symbol'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Symbol
+                          {clientNetSortColumn === 'symbol' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.netType && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('netType'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('netType'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Type
+                          {clientNetSortColumn === 'netType' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.netVolume && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('netVolume'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('netVolume'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          NET Vol
+                          {clientNetSortColumn === 'netVolume' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.avgPrice && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('avgPrice'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('avgPrice'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Avg Price
+                          {clientNetSortColumn === 'avgPrice' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.totalProfit && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalProfit'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalProfit'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          P/L
+                          {clientNetSortColumn === 'totalProfit' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.totalStorage && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalStorage'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalStorage'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Storage
+                          {clientNetSortColumn === 'totalStorage' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.totalCommission && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalCommission'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalCommission'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Comm
+                          {clientNetSortColumn === 'totalCommission' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
+                      {clientNetVisibleColumns.totalPositions && (
+                        <div 
+                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalPositions'); }}
+                          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalPositions'); }}
+                          style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
+                        >
+                          Positions
+                          {clientNetSortColumn === 'totalPositions' && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path d={clientNetSortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                      )}
                     </div>
                   {clientNetPaginatedPositions.length === 0 ? (
                     <div className="text-center py-8 text-[#6B7280] text-sm">No Client NET positions found</div>
