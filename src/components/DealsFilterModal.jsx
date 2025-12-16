@@ -257,16 +257,22 @@ const DealsFilterModal = ({
             onClick={handleReset}
             style={{
               flex: 1,
-              height: '56px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 27px',
               background: '#FFFFFF',
-              border: '1px solid #E5E7EB',
-              borderRadius: '16px',
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 600,
-              fontSize: '16px',
-              lineHeight: '20px',
-              color: '#000000',
+              border: '1px solid #D1D5DB',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#6B7280',
             }}
           >
             Reset
@@ -275,16 +281,22 @@ const DealsFilterModal = ({
             onClick={handleApply}
             style={{
               flex: 1,
-              height: '56px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '10px 27px',
               background: '#2563EB',
-              border: 'none',
-              borderRadius: '16px',
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 600,
-              fontSize: '16px',
-              lineHeight: '20px',
-              color: '#FFFFFF',
+              border: '1px solid #2563EB',
+              borderRadius: '20px',
+              boxShadow: '0px 0px 50px rgba(0, 0, 0, 0.05)',
               cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 400,
+              fontSize: '12px',
+              lineHeight: '20px',
+              letterSpacing: '0.06em',
+              textTransform: 'capitalize',
+              color: '#FFFFFF',
             }}
           >
             Apply
