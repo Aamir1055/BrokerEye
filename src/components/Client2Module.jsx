@@ -1614,10 +1614,10 @@ export default function Client2Module() {
           setIsLoginGroupModalOpen(true)
         }}
         onDeleteGroup={deleteGroup}
-        onPendingChange={(hasPending, draftName) => {
+        onPendingChange={useCallback((hasPending, draftName) => {
           setHasPendingGroupChanges(hasPending)
           setPendingGroupDraft(draftName ? { name: draftName } : null)
-        }}
+        }, [])}
       />
 
       {/* Group Modal */}
