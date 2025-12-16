@@ -104,6 +104,20 @@ export default function LiveDealingModule() {
     entry: false
   })
 
+  // Clear all filters on component mount (when navigating to this module)
+  useEffect(() => {
+    setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+    clearIBSelection()
+    setActiveGroupFilter('livedealing', null)
+    setSearchInput('')
+    setTimeFilter('24h')
+    setModuleFilter('both')
+    setCustomFromDate('')
+    setCustomToDate('')
+    setAppliedFromDate('')
+    setAppliedToDate('')
+  }, [])
+
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
     const handler = () => {

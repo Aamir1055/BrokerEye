@@ -77,6 +77,13 @@ export default function ClientPercentageModule() {
     default_percentage: 0
   })
 
+  // Clear all filters on component mount (when navigating to this module)
+  useEffect(() => {
+    clearIBSelection()
+    setActiveGroupFilter('clientpercentage', null)
+    setSearchInput('')
+  }, [])
+
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
     const handler = () => {

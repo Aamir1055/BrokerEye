@@ -76,6 +76,13 @@ export default function IBCommissionsModule() {
     available_rebate: 0
   })
 
+  // Clear all filters on component mount (when navigating to this module)
+  useEffect(() => {
+    clearIBSelection()
+    setActiveGroupFilter('ibcommissions', null)
+    setSearchInput('')
+  }, [])
+
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
     const handler = () => {

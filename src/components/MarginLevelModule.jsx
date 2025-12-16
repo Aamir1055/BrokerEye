@@ -75,6 +75,14 @@ export default function MarginLevelModule() {
     currency: false
   })
 
+  // Clear all filters on component mount (when navigating to this module)
+  useEffect(() => {
+    setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+    clearIBSelection()
+    setActiveGroupFilter('marginlevel', null)
+    setSearchInput('')
+  }, [])
+
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
     const handler = () => {

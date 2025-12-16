@@ -89,6 +89,14 @@ export default function Client2Module() {
     }
   }
 
+  // Clear all filters on component mount (when navigating to this module)
+  useEffect(() => {
+    setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+    clearIBSelection()
+    setActiveGroupFilter('client2', null)
+    setSearchInput('')
+  }, [])
+
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
     const handler = () => {
