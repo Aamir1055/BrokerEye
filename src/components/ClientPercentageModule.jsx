@@ -50,7 +50,7 @@ export default function ClientPercentageModule() {
   const [columnSearch, setColumnSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768)
-  const itemsPerPage = isMobileView ? 12 : 100
+  const itemsPerPage = isMobileView ? 15 : 100
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
@@ -117,7 +117,7 @@ export default function ClientPercentageModule() {
       
       // Server-side pagination for both views
       // Some backends use `limit` instead of `page_size` for this endpoint
-      const params = isMobileView ? { page, limit: 12 } : { page, limit: 100 }
+      const params = isMobileView ? { page, limit: 15 } : { page, limit: 100 }
       const response = await brokerAPI.getAllClientPercentages(params)
 
       // Normalize nested API shape: response.data?.data
