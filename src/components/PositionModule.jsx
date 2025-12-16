@@ -11,6 +11,7 @@ import LoginGroupModal from './LoginGroupModal'
 import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { applyCumulativeFilters, applySearchFilter, applySorting } from '../utils/mobileFilters'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -169,18 +170,16 @@ export default function PositionModule() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Apply filters in correct order for mobile: IB first, then Group
-  // Start from raw positions, apply IB selection, then apply Group filter on the IB-filtered dataset
-  const ibFirstFilteredPositions = useMemo(() => {
-    return filterByActiveIB(positions)
-  }, [positions, filterByActiveIB, selectedIB, ibMT5Accounts])
-
-  const ibThenGroupFilteredPositions = useMemo(() => {
-    return filterByActiveGroup(ibFirstFilteredPositions, 'login', 'positions')
-  }, [ibFirstFilteredPositions, filterByActiveGroup, activeGroupFilters])
-
-  // Preserve variable name used throughout the module
-  const ibFilteredPositions = ibThenGroupFilteredPositions
+  // Apply all filters in cumulative order: Customize View -> IB -> Group
+  const ibFilteredPositions = useMemo(() => {
+    return applyCumulativeFilters(positions, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'positions'
+    })
+  }, [positions, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Defer heavy calculations to allow navigation to be responsive
   const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
@@ -445,62 +444,16 @@ export default function PositionModule() {
     )
   }, [clientNetPositions, clientNetSearchInput])
 
-  // Filter positions based on search (use deferred value to prevent blocking navigation)
+  // Apply search and sorting (use deferred value to prevent blocking navigation)
   const filteredPositions = useMemo(() => {
-    let filtered = deferredIbFilteredPositions.filter(pos => {
-      // Apply search filter
-      if (searchInput.trim()) {
-        const query = searchInput.toLowerCase()
-        const matchesSearch = (
-          String(pos.symbol || '').toLowerCase().includes(query) ||
-          String(pos.login || '').toLowerCase().includes(query)
-        )
-        if (!matchesSearch) return false
-      }
-
-      // Apply hasFloating filter
-      if (filters.hasFloating && (!pos.profit || pos.profit === 0)) {
-        return false
-      }
-
-      // Apply hasCredit filter
-      if (filters.hasCredit && (!pos.credit || pos.credit === 0)) {
-        return false
-      }
-
-      // Apply noDeposit filter
-      if (filters.noDeposit && pos.deposit && pos.deposit > 0) {
-        return false
-      }
-
-      return true
-    })
-
+    // Apply search filter
+    let filtered = applySearchFilter(deferredIbFilteredPositions, searchInput, ['symbol', 'login'])
+    
     // Apply sorting
-    if (sortColumn) {
-      filtered = [...filtered].sort((a, b) => {
-        let aVal = a[sortColumn]
-        let bVal = b[sortColumn]
-        
-        // Handle numeric values
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
-        }
-        
-        // Handle string values
-        aVal = String(aVal || '').toLowerCase()
-        bVal = String(bVal || '').toLowerCase()
-        
-        if (sortDirection === 'asc') {
-          return aVal.localeCompare(bVal)
-        } else {
-          return bVal.localeCompare(aVal)
-        }
-      })
-    }
-
+    filtered = applySorting(filtered, sortColumn, sortDirection)
+    
     return filtered
-  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection, filters])
+  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection])
 
   // Handle column sorting
   const handleSort = (columnKey) => {

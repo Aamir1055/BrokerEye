@@ -11,6 +11,7 @@ import LoginGroupModal from './LoginGroupModal'
 import EditPercentageModal from './EditPercentageModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { applyCumulativeFilters } from '../utils/mobileFilters'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -146,14 +147,16 @@ export default function IBCommissionsModule() {
   // Use commissions data
   const commissionsData = commissions
 
-  // Apply group and IB filters
-  const groupFilteredData = useMemo(() => {
-    return filterByActiveGroup(commissionsData, 'ibcommissions')
-  }, [commissionsData, filterByActiveGroup, activeGroupFilters])
-
+  // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredData = useMemo(() => {
-    return filterByActiveIB(groupFilteredData)
-  }, [groupFilteredData, filterByActiveIB, selectedIB, ibMT5Accounts])
+    return applyCumulativeFilters(commissionsData, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'ibcommissions'
+    })
+  }, [commissionsData, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {

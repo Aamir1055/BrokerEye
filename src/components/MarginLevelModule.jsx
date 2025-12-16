@@ -11,6 +11,7 @@ import LoginGroupModal from './LoginGroupModal'
 import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { applyCumulativeFilters, applySearchFilter, applySorting } from '../utils/mobileFilters'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -102,26 +103,24 @@ export default function MarginLevelModule() {
     })
   }, [accounts])
 
-  // Second filter: Apply search
+  // Apply cumulative filters: Customize View -> IB -> Group
+  const cumulativeFilteredAccounts = useMemo(() => {
+    return applyCumulativeFilters(filteredByMarginLevel, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'marginlevel'
+    })
+  }, [filteredByMarginLevel, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
+
+  // Apply search
   const searchedAccounts = useMemo(() => {
-    if (!searchInput.trim()) return filteredByMarginLevel
-    const query = searchInput.toLowerCase()
-    return filteredByMarginLevel.filter(acc => 
-      String(acc.login || '').toLowerCase().includes(query) ||
-      String(acc.name || '').toLowerCase().includes(query) ||
-      String(acc.group || '').toLowerCase().includes(query)
-    )
-  }, [filteredByMarginLevel, searchInput])
+    return applySearchFilter(cumulativeFilteredAccounts, searchInput, ['login', 'name', 'group'])
+  }, [cumulativeFilteredAccounts, searchInput])
 
-  // Third filter: Apply group filter
-  const groupFilteredAccounts = useMemo(() => {
-    return filterByActiveGroup(searchedAccounts, 'login', 'marginlevel')
-  }, [searchedAccounts, filterByActiveGroup, activeGroupFilters])
-
-  // Fourth filter: Apply IB filter
-  const ibFilteredAccounts = useMemo(() => {
-    return filterByActiveIB(groupFilteredAccounts, 'login')
-  }, [groupFilteredAccounts, filterByActiveIB, selectedIB, ibMT5Accounts])
+  // Use searched accounts as ibFilteredAccounts for compatibility
+  const ibFilteredAccounts = searchedAccounts
 
   // Calculate summary statistics from the fully filtered data
   const summaryStats = useMemo(() => {
@@ -144,34 +143,16 @@ export default function MarginLevelModule() {
   const sortedAccounts = useMemo(() => {
     if (!sortColumn) return ibFilteredAccounts
     
-    return [...ibFilteredAccounts].sort((a, b) => {
-      let aVal = a[sortColumn]
-      let bVal = b[sortColumn]
-      
-      // Special handling for marginLevel
-      if (sortColumn === 'marginLevel') {
-        aVal = getMarginLevelPercent(a) || 0
-        bVal = getMarginLevelPercent(b) || 0
-      }
-      
-      if (aVal == null && bVal == null) return 0
-      if (aVal == null) return 1
-      if (bVal == null) return -1
-      
-      const aNum = Number(aVal)
-      const bNum = Number(bVal)
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
-      }
-      
-      const aStr = String(aVal).toLowerCase()
-      const bStr = String(bVal).toLowerCase()
-      if (sortDirection === 'asc') {
-        return aStr.localeCompare(bStr)
-      } else {
-        return bStr.localeCompare(aStr)
-      }
-    })
+    // Special handling for marginLevel column
+    if (sortColumn === 'marginLevel') {
+      return [...ibFilteredAccounts].sort((a, b) => {
+        const aVal = getMarginLevelPercent(a) || 0
+        const bVal = getMarginLevelPercent(b) || 0
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
+      })
+    }
+    
+    return applySorting(ibFilteredAccounts, sortColumn, sortDirection)
   }, [ibFilteredAccounts, sortColumn, sortDirection])
 
   const handleSort = (columnKey) => {

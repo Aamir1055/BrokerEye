@@ -15,6 +15,7 @@ import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import websocketService from '../services/websocket'
 import { brokerAPI } from '../services/api'
+import { applyCumulativeFilters } from '../utils/mobileFilters'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -390,15 +391,16 @@ export default function LiveDealingModule() {
     })
   }, [searchedDeals, moduleFilter])
 
-  // Apply group filter
-  const groupFilteredDeals = useMemo(() => {
-    return filterByActiveGroup(moduleFilteredDeals, 'login', 'livedealing')
-  }, [moduleFilteredDeals, filterByActiveGroup, activeGroupFilters])
-
-  // Apply IB filter
+  // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredDeals = useMemo(() => {
-    return filterByActiveIB(groupFilteredDeals, 'login')
-  }, [groupFilteredDeals, filterByActiveIB, selectedIB, ibMT5Accounts])
+    return applyCumulativeFilters(moduleFilteredDeals, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'livedealing'
+    })
+  }, [moduleFilteredDeals, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Sort the filtered deals
   const sortedDeals = useMemo(() => {

@@ -11,6 +11,7 @@ import LoginGroupModal from './LoginGroupModal'
 import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { applyCumulativeFilters } from '../utils/mobileFilters'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -96,14 +97,16 @@ export default function PendingOrdersModule() {
     }
   }, [])
 
-  // Apply group and IB filters to orders (same as desktop)
-  const groupFilteredOrders = useMemo(() => {
-    return filterByActiveGroup(orders, 'pendingorders')
-  }, [orders, filterByActiveGroup, activeGroupFilters])
-
+  // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredOrders = useMemo(() => {
-    return filterByActiveIB(groupFilteredOrders)
-  }, [groupFilteredOrders, filterByActiveIB, selectedIB, ibMT5Accounts])
+    return applyCumulativeFilters(orders, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'pendingorders'
+    })
+  }, [orders, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {

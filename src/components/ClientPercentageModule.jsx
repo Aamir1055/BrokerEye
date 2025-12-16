@@ -13,6 +13,7 @@ import SetCustomPercentageModal from './SetCustomPercentageModal'
 import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
+import { applyCumulativeFilters } from '../utils/mobileFilters'
 
 const formatNum = (n, decimals = 2) => {
   const v = Number(n || 0)
@@ -157,14 +158,16 @@ export default function ClientPercentageModule() {
   // Use clients data instead of placeholder
   const percentageData = clients
 
-  // Apply group and IB filters
-  const groupFilteredData = useMemo(() => {
-    return filterByActiveGroup(percentageData, 'clientpercentage')
-  }, [percentageData, filterByActiveGroup, activeGroupFilters])
-
+  // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredData = useMemo(() => {
-    return filterByActiveIB(groupFilteredData)
-  }, [groupFilteredData, filterByActiveIB, selectedIB, ibMT5Accounts])
+    return applyCumulativeFilters(percentageData, {
+      customizeFilters: filters,
+      filterByActiveIB,
+      filterByActiveGroup,
+      loginField: 'login',
+      moduleName: 'clientpercentage'
+    })
+  }, [percentageData, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
