@@ -226,6 +226,7 @@ export default function Client2Module() {
 
       // Add group filter to payload if active
       const activeGroupName = getActiveGroupFilter('client2')
+      let groupAccountsSet = null
       if (activeGroupName && groups && groups.length > 0) {
         const activeGroup = groups.find(g => g.name === activeGroupName)
         if (activeGroup) {
@@ -234,19 +235,37 @@ export default function Client2Module() {
             payload.accountRangeMin = activeGroup.range.from
             payload.accountRangeMax = activeGroup.range.to
           } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-            // Manual selection group
-            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+            // Manual selection group - store accounts for potential IB intersection
+            groupAccountsSet = new Set(activeGroup.loginIds.map(id => String(id)))
+            payload.mt5Accounts = Array.from(groupAccountsSet)
           }
         }
       }
 
       // Add IB filter to payload if active
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
-        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
-          // Intersect with group filter if both exist
-          const groupSet = new Set(payload.mt5Accounts)
-          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        const ibAccountsSet = new Set(ibMT5Accounts.map(id => String(id)))
+        
+        if (payload.accountRangeMin !== undefined && payload.accountRangeMax !== undefined) {
+          // Range-based group + IB filter: Filter IB accounts by range
+          const rangeMin = parseInt(payload.accountRangeMin)
+          const rangeMax = parseInt(payload.accountRangeMax)
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => {
+              const numId = parseInt(String(id))
+              return numId >= rangeMin && numId <= rangeMax
+            })
+            .map(id => String(id))
+          // Remove range params since we're using explicit account list
+          delete payload.accountRangeMin
+          delete payload.accountRangeMax
+        } else if (groupAccountsSet) {
+          // Manual selection group + IB filter: Intersect both sets
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => groupAccountsSet.has(String(id)))
+            .map(id => String(id))
         } else {
+          // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
         }
       }
@@ -633,6 +652,7 @@ export default function Client2Module() {
 
       // Add group filter
       const activeGroupName = getActiveGroupFilter('client2')
+      let groupAccountsSet = null
       if (activeGroupName && groups && groups.length > 0) {
         const activeGroup = groups.find(g => g.name === activeGroupName)
         if (activeGroup) {
@@ -640,17 +660,35 @@ export default function Client2Module() {
             payload.accountRangeMin = activeGroup.range.from
             payload.accountRangeMax = activeGroup.range.to
           } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+            groupAccountsSet = new Set(activeGroup.loginIds.map(id => String(id)))
+            payload.mt5Accounts = Array.from(groupAccountsSet)
           }
         }
       }
 
       // Add IB filter
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
-        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
-          const groupSet = new Set(payload.mt5Accounts)
-          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        const ibAccountsSet = new Set(ibMT5Accounts.map(id => String(id)))
+        
+        if (payload.accountRangeMin !== undefined && payload.accountRangeMax !== undefined) {
+          // Range-based group + IB filter: Filter IB accounts by range
+          const rangeMin = parseInt(payload.accountRangeMin)
+          const rangeMax = parseInt(payload.accountRangeMax)
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => {
+              const numId = parseInt(String(id))
+              return numId >= rangeMin && numId <= rangeMax
+            })
+            .map(id => String(id))
+          delete payload.accountRangeMin
+          delete payload.accountRangeMax
+        } else if (groupAccountsSet) {
+          // Manual selection group + IB filter: Intersect both sets
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => groupAccountsSet.has(String(id)))
+            .map(id => String(id))
         } else {
+          // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
         }
       }
@@ -742,6 +780,7 @@ export default function Client2Module() {
 
       // Add group filter
       const activeGroupName = getActiveGroupFilter('client2')
+      let groupAccountsSet = null
       if (activeGroupName && groups && groups.length > 0) {
         const activeGroup = groups.find(g => g.name === activeGroupName)
         if (activeGroup) {
@@ -749,17 +788,35 @@ export default function Client2Module() {
             payload.accountRangeMin = activeGroup.range.from
             payload.accountRangeMax = activeGroup.range.to
           } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-            payload.mt5Accounts = activeGroup.loginIds.map(id => String(id))
+            groupAccountsSet = new Set(activeGroup.loginIds.map(id => String(id)))
+            payload.mt5Accounts = Array.from(groupAccountsSet)
           }
         }
       }
 
       // Add IB filter
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
-        if (payload.mt5Accounts && payload.mt5Accounts.length > 0) {
-          const groupSet = new Set(payload.mt5Accounts)
-          payload.mt5Accounts = ibMT5Accounts.filter(id => groupSet.has(String(id))).map(id => String(id))
+        const ibAccountsSet = new Set(ibMT5Accounts.map(id => String(id)))
+        
+        if (payload.accountRangeMin !== undefined && payload.accountRangeMax !== undefined) {
+          // Range-based group + IB filter: Filter IB accounts by range
+          const rangeMin = parseInt(payload.accountRangeMin)
+          const rangeMax = parseInt(payload.accountRangeMax)
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => {
+              const numId = parseInt(String(id))
+              return numId >= rangeMin && numId <= rangeMax
+            })
+            .map(id => String(id))
+          delete payload.accountRangeMin
+          delete payload.accountRangeMax
+        } else if (groupAccountsSet) {
+          // Manual selection group + IB filter: Intersect both sets
+          payload.mt5Accounts = ibMT5Accounts
+            .filter(id => groupAccountsSet.has(String(id)))
+            .map(id => String(id))
         } else {
+          // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
         }
       }
