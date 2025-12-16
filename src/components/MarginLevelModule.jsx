@@ -152,7 +152,13 @@ export default function MarginLevelModule() {
       })
     }
     
-    return applySorting(ibFilteredAccounts, sortColumn, sortDirection)
+    // Map column keys to actual data fields for sorting
+    const columnKeyMapping = {
+      'marginFree': 'margin_free'
+    }
+    const sortKey = columnKeyMapping[sortColumn] || sortColumn
+    
+    return applySorting(ibFilteredAccounts, sortKey, sortDirection)
   }, [ibFilteredAccounts, sortColumn, sortDirection])
 
   const handleSort = (columnKey) => {
