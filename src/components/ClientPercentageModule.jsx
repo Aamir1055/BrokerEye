@@ -707,15 +707,6 @@ export default function ClientPercentageModule() {
                 <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button 
-              onClick={() => setCurrentPage(Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1))))}
-              disabled={currentPage >= Math.max(1, Math.ceil(Number(stats.total || 0) / Number(itemsPerPage || 1)))}
-              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M7 6h6v8H7V6zm7 0h3v8h-3V6z" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
         </div>
 
