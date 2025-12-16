@@ -1233,7 +1233,7 @@ export default function PositionModule() {
                   {activeColumns.map((col, idx) => (
                     <div 
                       key={col.key} 
-                      className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                      className={`h-[38px] flex items-center justify-start px-1 ${col.sticky ? 'sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
                       style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                     >
                       {idx === 0 ? 'Total' : (col.key === 'totalProfit' || col.key === 'profit') ? formatNum(totalProfit) : '-'}
@@ -1364,7 +1364,7 @@ export default function PositionModule() {
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
                       {netVisibleColumns.login && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('loginCount'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('loginCount'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1379,7 +1379,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.symbol && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('symbol'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('symbol'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1394,7 +1394,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.netType && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('netType'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('netType'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1409,7 +1409,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.netVolume && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('netVolume'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('netVolume'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1424,7 +1424,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.avgPrice && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('avgPrice'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('avgPrice'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1439,7 +1439,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.totalProfit && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('totalProfit'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalProfit'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1454,7 +1454,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.totalStorage && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('totalStorage'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalStorage'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1469,7 +1469,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.totalCommission && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('totalCommission'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalCommission'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1484,7 +1484,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.loginCount && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[70px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('loginCount'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('loginCount'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1499,7 +1499,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.totalPositions && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('totalPositions'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('totalPositions'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1514,7 +1514,7 @@ export default function PositionModule() {
                       )}
                       {netVisibleColumns.variantCount && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleNetSort('variantCount'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleNetSort('variantCount'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1535,12 +1535,12 @@ export default function PositionModule() {
                       <React.Fragment key={idx}>
                         <div className="flex text-[10px] text-[#4B4B4B] hover:bg-[#F8FAFC]">
                           {netVisibleColumns.login && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">
+                            <div className="flex items-center justify-start px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">
                               {pos.loginCount > 0 ? `${pos.loginCount} logins` : '-'}
                             </div>
                           )}
                           {netVisibleColumns.symbol && (
-                            <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10 border-b border-[#E1E1E1]" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
+                            <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black sticky left-0 z-10 border-b border-[#E1E1E1]" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>
                               <div className="flex flex-col items-center gap-0.5">
                                 <span>{pos.symbol}</span>
                                 {groupByBaseSymbol && pos.variantCount > 1 && (
@@ -1563,32 +1563,32 @@ export default function PositionModule() {
                               </div>
                             </div>
                           )}
-                          {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.netType === 'Buy' ? 'text-red-600' : 'text-green-600'}`}>{pos.netType}</div>}
-                          {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
-                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
-                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
-                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
-                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
-                          {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.loginCount}</div>}
-                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
-                          {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.variantCount}</div>}
+                          {netVisibleColumns.netType && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.netType === 'Buy' ? 'text-red-600' : 'text-green-600'}`}>{pos.netType}</div>}
+                          {netVisibleColumns.netVolume && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
+                          {netVisibleColumns.avgPrice && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
+                          {netVisibleColumns.totalProfit && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(pos.totalProfit)}</div>}
+                          {netVisibleColumns.totalStorage && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
+                          {netVisibleColumns.totalCommission && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
+                          {netVisibleColumns.loginCount && <div className="flex items-center justify-start px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.loginCount}</div>}
+                          {netVisibleColumns.totalPositions && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
+                          {netVisibleColumns.variantCount && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.variantCount}</div>}
                         </div>
 
                         {/* Variant Rows */}
                         {groupByBaseSymbol && expandedNetSymbols.has(pos.symbol) && pos.variants && pos.variants.length > 0 && (
                           pos.variants.map((variant, vIdx) => (
                             <div key={`${idx}-v-${vIdx}`} className="flex text-[10px] text-[#6B7280] bg-[#EEF2FF] border-b border-[#C7D2FE] border-l-4 border-l-indigo-400">
-                              {netVisibleColumns.login && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-3 font-medium bg-[#EEF2FF] text-indigo-900 sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>{variant.exactSymbol}</div>}
-                              {netVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#EEF2FF] ${variant.netType === 'Buy' ? 'text-red-600' : 'text-green-600'}`}>{variant.netType}</div>}
-                              {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
-                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
-                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
-                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalStorage || 0)}</div>}
-                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalCommission || 0)}</div>}
-                              {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
-                              {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.login && <div className="flex items-center justify-start px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.symbol && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 pl-3 font-medium bg-[#EEF2FF] text-indigo-900 sticky left-0 z-10" style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}>{variant.exactSymbol}</div>}
+                              {netVisibleColumns.netType && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[60px] flex-shrink-0 bg-[#EEF2FF] ${variant.netType === 'Buy' ? 'text-red-600' : 'text-green-600'}`}>{variant.netType}</div>}
+                              {netVisibleColumns.netVolume && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.netVolume)}</div>}
+                              {netVisibleColumns.avgPrice && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.avgPrice)}</div>}
+                              {netVisibleColumns.totalProfit && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] ${variant.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatNum(variant.totalProfit)}</div>}
+                              {netVisibleColumns.totalStorage && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalStorage || 0)}</div>}
+                              {netVisibleColumns.totalCommission && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">{formatNum(variant.totalCommission || 0)}</div>}
+                              {netVisibleColumns.loginCount && <div className="flex items-center justify-start px-1 h-[40px] min-w-[70px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.totalPositions && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
+                              {netVisibleColumns.variantCount && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-[#EEF2FF] text-[#6B7280]">-</div>}
                             </div>
                           ))
                         )}
@@ -1599,16 +1599,16 @@ export default function PositionModule() {
                   {/* Footer */}
                   {netPaginatedPositions.length > 0 && (
                     <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px]">
-                      {netVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
-                      {netVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
-                      {netVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
-                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
-                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
-                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
-                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
-                      {netVisibleColumns.loginCount && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
-                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
-                      {netVisibleColumns.variantCount && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {netVisibleColumns.symbol && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
+                      {netVisibleColumns.netType && <div className="flex items-center justify-start px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {netVisibleColumns.netVolume && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {netVisibleColumns.avgPrice && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {netVisibleColumns.totalProfit && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {netVisibleColumns.totalStorage && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {netVisibleColumns.totalCommission && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(netPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
+                      {netVisibleColumns.loginCount && <div className="flex items-center justify-start px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</div>}
+                      {netVisibleColumns.totalPositions && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{netPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
+                      {netVisibleColumns.variantCount && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
                     </div>
                   )}
                 </div>
@@ -1735,7 +1735,7 @@ export default function PositionModule() {
                     <div className="flex bg-blue-500 text-white text-[10px] font-semibold h-[28px] sticky top-0 z-20">
                       {clientNetVisibleColumns.login && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[70px] flex-shrink-0 bg-blue-500 sticky left-0 z-30 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('login'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('login'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1750,7 +1750,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.symbol && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('symbol'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('symbol'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1765,7 +1765,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.netType && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[60px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('netType'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('netType'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1780,7 +1780,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.netVolume && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('netVolume'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('netVolume'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1795,7 +1795,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.avgPrice && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('avgPrice'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('avgPrice'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1810,7 +1810,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.totalProfit && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalProfit'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalProfit'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1825,7 +1825,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.totalStorage && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalStorage'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalStorage'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1840,7 +1840,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.totalCommission && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalCommission'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalCommission'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1855,7 +1855,7 @@ export default function PositionModule() {
                       )}
                       {clientNetVisibleColumns.totalPositions && (
                         <div 
-                          className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
+                          className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-blue-500 cursor-pointer"
                           onClick={(e) => { e.stopPropagation(); handleClientNetSort('totalPositions'); }}
                           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); handleClientNetSort('totalPositions'); }}
                           style={{ userSelect: 'none', touchAction: 'manipulation', pointerEvents: 'auto' }}
@@ -1876,7 +1876,7 @@ export default function PositionModule() {
                       <div key={idx} className="flex text-[10px] text-[#4B4B4B] hover:bg-[#F8FAFC]">
                         {clientNetVisibleColumns.login && (
                           <div 
-                            className="flex items-center justify-center px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10 border-b border-[#E1E1E1]"
+                            className="flex items-center justify-start px-1 h-[40px] min-w-[70px] flex-shrink-0 font-semibold bg-white text-[#1A63BC] cursor-pointer hover:underline sticky left-0 z-10 border-b border-[#E1E1E1]"
                             style={{boxShadow: '2px 0 4px rgba(0,0,0,0.05)'}}
                             onClick={() => {
                               const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -1891,18 +1891,18 @@ export default function PositionModule() {
                             {pos.login}
                           </div>
                         )}
-                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black border-b border-[#E1E1E1]">{pos.symbol}</div>}
-                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
+                        {clientNetVisibleColumns.symbol && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white text-black border-b border-[#E1E1E1]">{pos.symbol}</div>}
+                        {clientNetVisibleColumns.netType && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[60px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
                           pos.netType === 'Buy' ? 'text-green-600' : 'text-red-600'
                         }`}>{pos.netType}</div>}
-                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
-                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
-                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
+                        {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.netVolume)}</div>}
+                        {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.avgPrice)}</div>}
+                        {clientNetVisibleColumns.totalProfit && <div className={`flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 font-semibold bg-white border-b border-[#E1E1E1] ${
                           pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>{formatNum(pos.totalProfit)}</div>}
-                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
-                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
-                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
+                        {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalStorage || 0)}</div>}
+                        {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{formatNum(pos.totalCommission || 0)}</div>}
+                        {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-start px-1 h-[40px] min-w-[80px] flex-shrink-0 bg-white text-[#4B4B4B] border-b border-[#E1E1E1]">{pos.totalPositions}</div>}
                       </div>
                     ))
                   )}
@@ -1910,15 +1910,15 @@ export default function PositionModule() {
                   {/* Footer */}
                   {clientNetPaginatedPositions.length > 0 && (
                     <div className="flex bg-[#EFF4FB] text-[#1A63BC] text-[10px] font-semibold h-[38px]">
-                      {clientNetVisibleColumns.login && <div className="flex items-center justify-center px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
-                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-center px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
-                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
-                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
-                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
-                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
-                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-center px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
+                      {clientNetVisibleColumns.login && <div className="flex items-center justify-start px-1 min-w-[70px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">Total</div>}
+                      {clientNetVisibleColumns.symbol && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.netType && <div className="flex items-center justify-start px-1 min-w-[60px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.netVolume && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</div>}
+                      {clientNetVisibleColumns.avgPrice && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">-</div>}
+                      {clientNetVisibleColumns.totalProfit && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}</div>}
+                      {clientNetVisibleColumns.totalStorage && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalStorage||0),0))}</div>}
+                      {clientNetVisibleColumns.totalCommission && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{formatNum(clientNetPositions.reduce((s,p)=>s+(p.totalCommission||0),0))}</div>}
+                      {clientNetVisibleColumns.totalPositions && <div className="flex items-center justify-start px-1 min-w-[80px] flex-shrink-0 bg-[#EFF4FB] border-t-2 border-[#1A63BC]">{clientNetPositions.reduce((s,p)=>s+p.totalPositions,0)}</div>}
                     </div>
                   )}
                 </div>
@@ -2283,3 +2283,4 @@ export default function PositionModule() {
     </div>
   )
 }
+

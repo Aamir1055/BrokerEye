@@ -635,7 +635,7 @@ export default function PendingOrdersModule() {
                     <div 
                       key={col.key} 
                       onClick={() => handleSort(col.key)}
-                      className={`h-[28px] flex items-center justify-center px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                      className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                       style={{
                         border: 'none', 
                         outline: 'none', 
@@ -959,3 +959,4 @@ export default function PendingOrdersModule() {
     </div>
   )
 }
+
