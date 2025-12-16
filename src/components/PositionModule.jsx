@@ -1086,7 +1086,15 @@ export default function PositionModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key} 
-                        onClick={() => handleSort(col.key)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSort(col.key)
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleSort(col.key)
+                        }}
                         className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                         style={{
                           border: 'none', 
@@ -1094,7 +1102,8 @@ export default function PositionModule() {
                           boxShadow: 'none',
                           WebkitTapHighlightColor: 'transparent',
                           userSelect: 'none',
-                          touchAction: 'manipulation'
+                          touchAction: 'manipulation',
+                          pointerEvents: 'auto'
                         }}
                       >
                         <span>{col.label}</span>
