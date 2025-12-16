@@ -137,9 +137,44 @@ export default function PendingOrdersModule() {
 
     // Apply sorting
     if (sortColumn) {
+      // Map column keys to actual data fields for sorting
+      const columnKeyMapping = {
+        'volume': 'volumeCurrent',
+        'priceOrder': 'priceOrder',
+        'priceTrigger': 'priceTrigger',
+        'priceSL': 'priceSL',
+        'priceTP': 'priceTP',
+        'timeSetup': 'timeSetup'
+      }
+      
+      const sortKey = columnKeyMapping[sortColumn] || sortColumn
+      
       filtered.sort((a, b) => {
-        const aVal = a[sortColumn]
-        const bVal = b[sortColumn]
+        // Get values with fallbacks for certain fields
+        let aVal, bVal
+        
+        if (sortColumn === 'volume') {
+          aVal = a.volumeCurrent || a.volume
+          bVal = b.volumeCurrent || b.volume
+        } else if (sortColumn === 'priceOrder') {
+          aVal = a.priceOrder || a.price
+          bVal = b.priceOrder || b.price
+        } else if (sortColumn === 'priceTrigger') {
+          aVal = a.priceTrigger || a.trigger
+          bVal = b.priceTrigger || b.trigger
+        } else if (sortColumn === 'priceSL') {
+          aVal = a.priceSL || a.sl
+          bVal = b.priceSL || b.sl
+        } else if (sortColumn === 'priceTP') {
+          aVal = a.priceTP || a.tp
+          bVal = b.priceTP || b.tp
+        } else if (sortColumn === 'timeSetup') {
+          aVal = a.timeSetup || a.timeUpdate || a.timeCreate
+          bVal = b.timeSetup || b.timeUpdate || b.timeCreate
+        } else {
+          aVal = a[sortKey]
+          bVal = b[sortKey]
+        }
         
         if (aVal == null && bVal == null) return 0
         if (aVal == null) return 1
