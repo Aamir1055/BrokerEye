@@ -169,14 +169,18 @@ export default function PositionModule() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Apply group and IB filters to positions (same as desktop)
-  const groupFilteredPositions = useMemo(() => {
-    return filterByActiveGroup(positions, 'login', 'positions')
-  }, [positions, filterByActiveGroup, activeGroupFilters])
+  // Apply filters in correct order for mobile: IB first, then Group
+  // Start from raw positions, apply IB selection, then apply Group filter on the IB-filtered dataset
+  const ibFirstFilteredPositions = useMemo(() => {
+    return filterByActiveIB(positions)
+  }, [positions, filterByActiveIB, selectedIB, ibMT5Accounts])
 
-  const ibFilteredPositions = useMemo(() => {
-    return filterByActiveIB(groupFilteredPositions)
-  }, [groupFilteredPositions, filterByActiveIB, selectedIB, ibMT5Accounts])
+  const ibThenGroupFilteredPositions = useMemo(() => {
+    return filterByActiveGroup(ibFirstFilteredPositions, 'login', 'positions')
+  }, [ibFirstFilteredPositions, filterByActiveGroup, activeGroupFilters])
+
+  // Preserve variable name used throughout the module
+  const ibFilteredPositions = ibThenGroupFilteredPositions
 
   // Defer heavy calculations to allow navigation to be responsive
   const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
