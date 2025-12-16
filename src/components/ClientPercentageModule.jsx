@@ -201,8 +201,22 @@ export default function ClientPercentageModule() {
     // Apply sorting
     if (sortColumn) {
       filtered.sort((a, b) => {
-        const aVal = a[sortColumn]
-        const bVal = b[sortColumn]
+        // Map column keys to actual data fields for sorting
+        let aVal, bVal
+        
+        if (sortColumn === 'login') {
+          aVal = a.client_login || a.login
+          bVal = b.client_login || b.login
+        } else if (sortColumn === 'updatedAt') {
+          aVal = a.updated_at
+          bVal = b.updated_at
+        } else if (sortColumn === 'type') {
+          aVal = a.is_custom ? 'Custom' : 'Default'
+          bVal = b.is_custom ? 'Custom' : 'Default'
+        } else {
+          aVal = a[sortColumn]
+          bVal = b[sortColumn]
+        }
         
         if (aVal == null && bVal == null) return 0
         if (aVal == null) return 1
