@@ -1200,6 +1200,12 @@ export default function PositionModule() {
                       </div>
                     ))}
                   </>
+                ) : filteredPositions.length === 0 ? (
+                  <div className="text-center py-8 text-[#6B7280] text-sm">
+                    {(filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('positions')) 
+                      ? 'No positions match the applied filters' 
+                      : 'No positions found'}
+                  </div>
                 ) : (
                   filteredPositions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((pos, idx) => (
                     <div 
