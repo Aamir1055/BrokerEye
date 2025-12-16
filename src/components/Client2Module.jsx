@@ -265,6 +265,12 @@ export default function Client2Module() {
           // Remove range params since we're using explicit account list
           delete payload.accountRangeMin
           delete payload.accountRangeMax
+          
+          // If no intersection, force empty result by using impossible account
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0'] // Use impossible account ID to force empty result
+            console.log('[Client2] No intersection - forcing empty result')
+          }
         } else if (groupAccountsSet) {
           // Manual selection group + IB filter: Intersect both sets
           const beforeCount = ibMT5Accounts.length
@@ -272,6 +278,12 @@ export default function Client2Module() {
             .filter(id => groupAccountsSet.has(String(id)))
             .map(id => String(id))
           console.log('[Client2] Manual group + IB intersection:', beforeCount, '→', payload.mt5Accounts.length, 'accounts')
+          
+          // If no intersection, force empty result by using impossible account
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0'] // Use impossible account ID to force empty result
+            console.log('[Client2] No intersection - forcing empty result')
+          }
         } else {
           // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
@@ -691,11 +703,17 @@ export default function Client2Module() {
             .map(id => String(id))
           delete payload.accountRangeMin
           delete payload.accountRangeMax
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0']
+          }
         } else if (groupAccountsSet) {
           // Manual selection group + IB filter: Intersect both sets
           payload.mt5Accounts = ibMT5Accounts
             .filter(id => groupAccountsSet.has(String(id)))
             .map(id => String(id))
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0']
+          }
         } else {
           // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
@@ -819,11 +837,17 @@ export default function Client2Module() {
             .map(id => String(id))
           delete payload.accountRangeMin
           delete payload.accountRangeMax
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0']
+          }
         } else if (groupAccountsSet) {
           // Manual selection group + IB filter: Intersect both sets
           payload.mt5Accounts = ibMT5Accounts
             .filter(id => groupAccountsSet.has(String(id)))
             .map(id => String(id))
+          if (payload.mt5Accounts.length === 0) {
+            payload.mt5Accounts = ['0']
+          }
         } else {
           // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
