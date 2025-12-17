@@ -22,7 +22,7 @@ const formatNum = (n) => {
 export default function Client2Module() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions: cachedPositions } = useData()
+  const { positions: cachedPositions, orders } = useData()
   const { selectedIB, ibMT5Accounts, selectIB, clearIBSelection } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [currentPage, setCurrentPage] = useState(1)
@@ -1767,6 +1767,9 @@ export default function Client2Module() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -2123,6 +2126,7 @@ export default function Client2Module() {
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           allPositionsCache={cachedPositions}
+          allOrdersCache={orders}
         />
       )}
     </div>

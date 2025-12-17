@@ -31,7 +31,7 @@ const getMarginLevelPercent = (obj) => {
 export default function MarginLevelModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { accounts, clients, loading } = useData()
+  const { accounts, clients, loading, positions, orders } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -914,6 +914,14 @@ export default function MarginLevelModule() {
           setIsLoginGroupModalOpen(false)
           setEditingGroup(null)
         }}
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -922,7 +930,8 @@ export default function MarginLevelModule() {
         <ClientDetailsMobileModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          allPositionsCache={accounts}
+          allPositionsCache={positions}
+          allOrdersCache={orders}
         />
       )}
     </div>

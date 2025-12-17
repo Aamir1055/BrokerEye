@@ -38,7 +38,7 @@ const formatTime = (timestamp) => {
 export default function LiveDealingModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions: cachedPositions, clients } = useData()
+  const { positions: cachedPositions, clients, orders } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -1534,6 +1534,9 @@ export default function LiveDealingModule() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -1616,6 +1619,7 @@ export default function LiveDealingModule() {
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           allPositionsCache={cachedPositions}
+          allOrdersCache={orders}
         />
       )}
     </div>

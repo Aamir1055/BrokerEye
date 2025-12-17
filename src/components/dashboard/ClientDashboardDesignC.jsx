@@ -1085,6 +1085,9 @@ export default function ClientDashboardDesignC() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 

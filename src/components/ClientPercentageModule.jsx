@@ -24,7 +24,7 @@ const formatNum = (n, decimals = 2) => {
 export default function ClientPercentageModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions: cachedPositions, clients: allClients } = useData()
+  const { positions: cachedPositions, clients: allClients, orders } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -1009,6 +1009,9 @@ export default function ClientPercentageModule() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -1184,6 +1187,7 @@ export default function ClientPercentageModule() {
           client={selectedClientForDetails}
           onClose={() => setSelectedClientForDetails(null)}
           allPositionsCache={cachedPositions}
+          allOrdersCache={orders}
         />
       )}
     </div>

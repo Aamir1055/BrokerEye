@@ -37,7 +37,7 @@ const formatTime = (ts) => {
 export default function PendingOrdersModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { orders, clients, loading } = useData()
+  const { orders, clients, loading, positions } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -953,6 +953,14 @@ export default function PendingOrdersModule() {
           setIsLoginGroupModalOpen(false)
           setEditingGroup(null)
         }}
+        onSave={() => {
+          setIsLoginGroupModalOpen(false)
+          setEditingGroup(null)
+          setIsLoginGroupsOpen(true)
+        }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -961,7 +969,8 @@ export default function PendingOrdersModule() {
         <ClientDetailsMobileModal
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          allPositionsCache={orders}
+          allPositionsCache={positions}
+          allOrdersCache={orders}
         />
       )}
     </div>

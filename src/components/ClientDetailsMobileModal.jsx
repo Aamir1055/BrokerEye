@@ -25,9 +25,10 @@ const formatDateToValue = (displayStr) => {
   return `${fullYear}-${month}-${day}`
 }
 
-const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
+const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
+  const [orders, setOrders] = useState([])
   const [netPositions, setNetPositions] = useState([])
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
@@ -101,11 +102,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     const totalNetVolume = netPositions.reduce((s, p) => s + (p.volume || 0), 0)
     let buyFloating = 0
     let sellFloating = 0
+    
+    // Calculate floating from positions only (orders don't have profit yet)
     positions.forEach(p => {
       const action = (p.action || p.type || '').toString().toLowerCase()
       if (action === 'buy' || p.action === 0 || p.type === 0) buyFloating += (p.profit || 0)
       else sellFloating += (p.profit || 0)
     })
+    
     return { symbols, totalNetVolume, buyFloating, sellFloating }
   }, [netPositions, positions])
 
@@ -161,12 +165,17 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     try {
       setLoading(true)
       
-      // Use cached positions
+      // Use cached positions and orders
       const positionsData = allPositionsCache ? allPositionsCache.filter(pos => pos.login === client.login) : []
       setPositions(positionsData)
+      
+      const ordersData = allOrdersCache ? allOrdersCache.filter(order => order.login === client.login) : []
+      setOrders(ordersData)
 
-      // Calculate net positions per symbol (desktop parity)
+      // Calculate net positions per symbol (desktop parity) - combine positions and orders
       const netPosMap = new Map()
+      
+      // Process regular positions
       positionsData.forEach(pos => {
         const symbol = pos.symbol
         if (!symbol) return
@@ -181,6 +190,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         const action = (pos.action || pos.type || '').toString().toLowerCase()
         if (action === 'buy' || pos.action === 0 || pos.type === 0) bucket.buyPositions.push(pos)
         else bucket.sellPositions.push(pos)
+      })
+      
+      // Process pending orders
+      ordersData.forEach(order => {
+        const symbol = order.symbol
+        if (!symbol) return
+        if (!netPosMap.has(symbol)) {
+          netPosMap.set(symbol, {
+            symbol,
+            buyPositions: [],
+            sellPositions: []
+          })
+        }
+        const bucket = netPosMap.get(symbol)
+        const action = (order.action || order.type || '').toString().toLowerCase()
+        // BUY_LIMIT, BUY_STOP are buy types
+        if (action.includes('buy')) bucket.buyPositions.push(order)
+        // SELL_LIMIT, SELL_STOP are sell types
+        else if (action.includes('sell')) bucket.sellPositions.push(order)
       })
 
       const computedNet = []
@@ -381,20 +409,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
     return Number(num).toFixed(decimals)
   }
 
+  // Combine positions and orders for display
+  const combinedPositions = useMemo(() => {
+    return [...positions, ...orders]
+  }, [positions, orders])
+  
   // Filter data based on search
   const filteredPositions = useMemo(() => {
-    let filtered = positions
+    let filtered = combinedPositions
     if (positionsSearch.trim()) {
       const query = positionsSearch.toLowerCase()
-      filtered = positions.filter(p => 
+      filtered = combinedPositions.filter(p => 
         (p.symbol || '').toLowerCase().includes(query) ||
-        (p.position || '').toString().includes(query) ||
+        (p.position || p.order || '').toString().includes(query) ||
         (p.action || '').toLowerCase().includes(query) ||
         (p.type || '').toLowerCase().includes(query)
       )
     }
     return sortData(filtered, sortConfig.key, sortConfig.direction)
-  }, [positions, positionsSearch, sortConfig])
+  }, [combinedPositions, positionsSearch, sortConfig])
 
   const filteredNetPositions = useMemo(() => {
     let filtered = netPositions
@@ -510,12 +543,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache }) => {
         <tbody className="divide-y divide-gray-200">
           {paginatedPositions.map((pos, idx) => (
             <tr key={idx} className="hover:bg-gray-50">
-              {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.ticket || '-'}</td>}
+              {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.order || pos.ticket || '-'}</td>}
               {positionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>}
               {positionColumns.action && (
                 <td className="px-3 py-2 text-xs">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    (pos.action || pos.type || '').toLowerCase() === 'buy' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                    (pos.action || pos.type || '').toLowerCase().includes('buy') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                   }`}>
                     {pos.action || pos.type || '-'}
                   </span>

@@ -1015,6 +1015,9 @@ export default function IBCommissionsModule() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 

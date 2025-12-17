@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useGroups } from '../contexts/GroupContext';
 import './LoginGroupModal.css';
 
-const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
+const LoginGroupModal = ({ isOpen, onClose, onSave, onBack, editGroup = null }) => {
   const { createGroup, createRangeGroup, updateGroup } = useGroups();
   const [activeTab, setActiveTab] = useState('myLogin');
   const [groupName, setGroupName] = useState('');
@@ -259,7 +259,10 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, editGroup = null }) => {
           }}
         >
           <button
-            onClick={handleClose}
+            onClick={() => {
+              handleClose()
+              if (onBack) onBack()
+            }}
             style={{
               background: 'none',
               border: 'none',

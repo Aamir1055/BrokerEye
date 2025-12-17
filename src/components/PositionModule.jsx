@@ -22,7 +22,7 @@ const formatNum = (n) => {
 export default function PositionModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions, clients, loading } = useData()
+  const { positions, clients, loading, orders } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -2065,6 +2065,9 @@ export default function PositionModule() {
           setEditingGroup(null)
           setIsLoginGroupsOpen(true)
         }}
+        onBack={() => {
+          setIsLoginGroupsOpen(true)
+        }}
         editGroup={editingGroup}
       />
 
@@ -2285,6 +2288,7 @@ export default function PositionModule() {
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           allPositionsCache={positions}
+          allOrdersCache={orders}
         />
       )}
     </div>
