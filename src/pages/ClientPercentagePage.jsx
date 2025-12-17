@@ -17,7 +17,7 @@ const ClientPercentagePage = () => {
   
   const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
-  const { positions: cachedPositions } = useData()
+  const { positions: cachedPositions, orders: cachedOrders } = useData()
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const v = localStorage.getItem('sidebarOpen')
@@ -1457,6 +1457,7 @@ const ClientPercentagePage = () => {
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
       )}

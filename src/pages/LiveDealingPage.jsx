@@ -19,7 +19,7 @@ const LiveDealingPage = () => {
   // Detect mobile device
   const [isMobile, setIsMobile] = useState(false)
   
-  const { positions: cachedPositions } = useData() // Get positions from DataContext
+  const { positions: cachedPositions, orders: cachedOrders } = useData() // Get positions and orders from DataContext
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   const getInitialSidebarOpen = () => {
@@ -2231,6 +2231,7 @@ const LiveDealingPage = () => {
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
       )}

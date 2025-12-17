@@ -28,7 +28,7 @@ const MarginLevelPage = () => {
   const [isMobile, setIsMobile] = useState(false)
 
   // Use cached data from DataContext - MUST be called before conditional return
-  const { accounts: cachedAccounts, positions: cachedPositions, fetchAccounts, loading, connectionState } = useData()
+  const { accounts: cachedAccounts, positions: cachedPositions, orders: cachedOrders, fetchAccounts, loading, connectionState } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   
@@ -1321,6 +1321,7 @@ const MarginLevelPage = () => {
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
       )}

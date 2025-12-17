@@ -6,9 +6,10 @@ import { formatTime } from '../utils/dateFormatter'
 // Max number of deals to request in one fetch. Increase if needed.
 const CLIENT_DEALS_FETCH_LIMIT = 1000
 
-const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, onCacheUpdate }) => {
+const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, allOrdersCache = [], onCacheUpdate }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
+  const [orders, setOrders] = useState([])
   const [deals, setDeals] = useState([])
   const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
@@ -255,16 +256,24 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     try { localStorage.setItem('positions_fixedCard_visibility', JSON.stringify(fixedCardVisibility)) } catch {}
   }, [fixedCardVisibility])
 
-  // Update positions when allPositionsCache changes (WebSocket updates)
+  // Update positions and orders when cache changes (WebSocket updates)
   useEffect(() => {
     if (allPositionsCache && allPositionsCache.length >= 0) {
       const clientPositions = allPositionsCache.filter(pos => pos.login === client.login)
       setPositions(clientPositions)
       
-      // Calculate net positions grouped by symbol
+      // Calculate net positions grouped by symbol (including positions only)
       calculateNetPositions(clientPositions)
     }
   }, [allPositionsCache, client.login])
+
+  // Update orders when allOrdersCache changes
+  useEffect(() => {
+    if (allOrdersCache && allOrdersCache.length >= 0) {
+      const clientOrders = allOrdersCache.filter(order => order.login === client.login)
+      setOrders(clientOrders)
+    }
+  }, [allOrdersCache, client.login])
 
   // Fetch aggregated deal stats for the client (GET endpoint per requirement)
   useEffect(() => {
@@ -1070,25 +1079,26 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       .slice(0, 8)
   }
 
-  // Apply search and filters to positions
+  // Apply search and filters to positions and orders combined
   const filteredPositions = useMemo(() => {
-    let filtered = [...positions]
+    // Combine positions and orders
+    let filtered = [...positions, ...orders]
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       // Strip # prefix if present for numeric field matching
       const numericQuery = query.startsWith('#') ? query.slice(1) : query
       
-      filtered = filtered.filter(pos => {
+      filtered = filtered.filter(item => {
         return (
-          pos.symbol?.toLowerCase().includes(query) ||
-          String(pos.position).includes(numericQuery) ||
-          String(pos.deal).includes(numericQuery) ||
-          getActionLabel(pos.action).toLowerCase().includes(query) ||
-          String(pos.volume).includes(query) ||
-          String(pos.priceOpen).includes(query) ||
-          String(pos.priceCurrent).includes(query) ||
-          pos.comment?.toLowerCase().includes(query)
+          item.symbol?.toLowerCase().includes(query) ||
+          String(item.position || item.order).includes(numericQuery) ||
+          String(item.deal).includes(numericQuery) ||
+          getActionLabel(item.action).toLowerCase().includes(query) ||
+          String(item.volume).includes(query) ||
+          String(item.priceOpen || item.priceOrder).includes(query) ||
+          String(item.priceCurrent).includes(query) ||
+          item.comment?.toLowerCase().includes(query)
         )
       })
     }
@@ -1184,13 +1194,39 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     }
 
     return filtered
-  }, [positions, searchQuery, columnFilters, positionsSortColumn, positionsSortDirection])
+  }, [positions, orders, searchQuery, columnFilters, positionsSortColumn, positionsSortDirection])
+
+  // Group filtered positions and orders separately
+  const groupedDisplayData = useMemo(() => {
+    const regularPositions = filteredPositions.filter(item => {
+      const type = (item.action || item.type || '').toString().toLowerCase()
+      return item.position && (type === 'buy' || type === 'sell' || type === '0' || type === '1')
+    })
+    
+    const pendingOrders = filteredPositions.filter(item => {
+      const type = (item.action || item.type || '').toString().toLowerCase()
+      return item.order && (type.includes('limit') || type.includes('stop'))
+    })
+    
+    return { regularPositions, pendingOrders }
+  }, [filteredPositions])
 
   // Pagination logic for positions
   const positionsTotalPages = Math.ceil(filteredPositions.length / positionsItemsPerPage)
   const positionsStartIndex = (positionsCurrentPage - 1) * positionsItemsPerPage
   const positionsEndIndex = positionsStartIndex + positionsItemsPerPage
   const displayedPositions = filteredPositions.slice(positionsStartIndex, positionsEndIndex)
+  
+  // Apply pagination to grouped data
+  const paginatedGroupedData = useMemo(() => {
+    const allItems = [...groupedDisplayData.regularPositions, ...groupedDisplayData.pendingOrders]
+    const paginatedItems = allItems.slice(positionsStartIndex, positionsEndIndex)
+    
+    return {
+      regularPositions: paginatedItems.filter(item => item.position),
+      pendingOrders: paginatedItems.filter(item => item.order)
+    }
+  }, [groupedDisplayData, positionsStartIndex, positionsEndIndex])
 
   // Reset to page 1 when positions filters change
   useEffect(() => {
@@ -2120,78 +2156,188 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         )}
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {displayedPositions.map((position) => (
-                        <tr key={position.position} className="hover:bg-blue-50 transition-colors">
-                          {positionsVisibleColumns.time && (
-                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                            {formatDate(position.timeCreate)}
+                    <tbody className="bg-white">
+                      {/* Regular Positions Section */}
+                      {paginatedGroupedData.regularPositions.length > 0 && (
+                        <>
+                          <tr className="bg-gray-100">
+                            <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-2">
+                              <div className="text-sm font-bold text-gray-700">Positions</div>
+                            </td>
+                          </tr>
+                          {paginatedGroupedData.regularPositions.map((position) => (
+                            <tr key={`pos-${position.position}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              {positionsVisibleColumns.time && (
+                              <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                                {formatDate(position.timeCreate)}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.position && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                #{position.position}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.symbol && (
+                              <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {position.symbol}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.action && (
+                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(position.action)}`}>
+                                  {getActionLabel(position.action)}
+                                </span>
+                              </td>
+                              )}
+                              {positionsVisibleColumns.volume && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {position.volume}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.priceOpen && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {typeof position.priceOpen === 'number' ? position.priceOpen.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.priceCurrent && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {typeof position.priceCurrent === 'number' ? position.priceCurrent.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.sl && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {position.priceSL > 0 ? position.priceSL.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.tp && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {position.priceTP > 0 ? position.priceTP.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.profit && (
+                              <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(position.profit)}`}>
+                                {formatCurrency(position.profit)}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.storage && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {typeof position.storage === 'number' ? formatCurrency(position.storage) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.commission && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {typeof position.commission === 'number' ? formatCurrency(position.commission) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.comment && (
+                              <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
+                                {position.comment || '-'}
+                              </td>
+                              )}
+                            </tr>
+                          ))}
+                        </>
+                      )}
+                      
+                      {/* Blue Divider */}
+                      {paginatedGroupedData.regularPositions.length > 0 && paginatedGroupedData.pendingOrders.length > 0 && (
+                        <tr>
+                          <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="p-0">
+                            <div className="h-0.5 bg-blue-500"></div>
                           </td>
-                          )}
-                          {positionsVisibleColumns.position && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            #{position.position}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.symbol && (
-                          <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
-                            {position.symbol}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.action && (
-                          <td className="px-3 py-2 text-sm whitespace-nowrap">
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(position.action)}`}>
-                              {getActionLabel(position.action)}
-                            </span>
-                          </td>
-                          )}
-                          {positionsVisibleColumns.volume && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {position.volume}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.priceOpen && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {typeof position.priceOpen === 'number' ? position.priceOpen.toFixed(5) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.priceCurrent && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {typeof position.priceCurrent === 'number' ? position.priceCurrent.toFixed(5) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.sl && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {position.priceSL > 0 ? position.priceSL.toFixed(5) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.tp && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {position.priceTP > 0 ? position.priceTP.toFixed(5) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.profit && (
-                          <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(position.profit)}`}>
-                            {formatCurrency(position.profit)}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.storage && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {typeof position.storage === 'number' ? formatCurrency(position.storage) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.commission && (
-                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {typeof position.commission === 'number' ? formatCurrency(position.commission) : '-'}
-                          </td>
-                          )}
-                          {positionsVisibleColumns.comment && (
-                          <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
-                            {position.comment || '-'}
-                          </td>
-                          )}
                         </tr>
-                      ))}
+                      )}
+                      
+                      {/* Pending Orders Section */}
+                      {paginatedGroupedData.pendingOrders.length > 0 && (
+                        <>
+                          <tr className="bg-gray-100">
+                            <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-2">
+                              <div className="text-sm font-bold text-gray-700">Pending Orders</div>
+                            </td>
+                          </tr>
+                          {paginatedGroupedData.pendingOrders.map((order) => (
+                            <tr key={`order-${order.order}`} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                              {positionsVisibleColumns.time && (
+                              <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
+                                {formatDate(order.timeSetup || order.timeCreate)}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.position && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                #{order.order}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.symbol && (
+                              <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {order.symbol}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.action && (
+                              <td className="px-3 py-2 text-sm whitespace-nowrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(order.action || order.type)}`}>
+                                  {order.action || order.type || '-'}
+                                </span>
+                              </td>
+                              )}
+                              {positionsVisibleColumns.volume && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {order.volume}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.priceOpen && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {typeof (order.priceOrder || order.price) === 'number' ? (order.priceOrder || order.price).toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.priceCurrent && (
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
+                              </td>
+                              )}
+                              {positionsVisibleColumns.sl && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {order.priceSL > 0 ? order.priceSL.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.tp && (
+                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                                {order.priceTP > 0 ? order.priceTP.toFixed(5) : '-'}
+                              </td>
+                              )}
+                              {positionsVisibleColumns.profit && (
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
+                              </td>
+                              )}
+                              {positionsVisibleColumns.storage && (
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
+                              </td>
+                              )}
+                              {positionsVisibleColumns.commission && (
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
+                              </td>
+                              )}
+                              {positionsVisibleColumns.comment && (
+                              <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
+                                {order.comment || '-'}
+                              </td>
+                              )}
+                            </tr>
+                          ))}
+                        </>
+                      )}
+                      
+                      {/* Empty State */}
+                      {paginatedGroupedData.regularPositions.length === 0 && paginatedGroupedData.pendingOrders.length === 0 && (
+                        <tr>
+                          <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-12 text-center text-gray-500">
+                            No positions or orders found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

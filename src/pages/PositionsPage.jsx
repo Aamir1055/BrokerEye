@@ -32,7 +32,7 @@ const PositionsPage = () => {
   }, [])
 
   // Use cached data from DataContext
-  const { positions: cachedPositions, fetchPositions, loading, connectionState } = useData()
+  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState } = useData()
   const { isAuthenticated } = useAuth()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
@@ -3769,6 +3769,7 @@ const PositionsPage = () => {
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
       )}

@@ -1442,6 +1442,7 @@ const PendingOrdersPage = () => {
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
       )}

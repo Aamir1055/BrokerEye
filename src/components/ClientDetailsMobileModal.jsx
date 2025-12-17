@@ -409,6 +409,21 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return Number(num).toFixed(decimals)
   }
 
+  // Separate positions and orders for grouped display
+  const groupedPositionsData = useMemo(() => {
+    const regularPositions = positions.filter(p => {
+      const type = (p.action || p.type || '').toString().toLowerCase()
+      return type === 'buy' || type === 'sell' || type === '0' || type === '1'
+    })
+    
+    const pendingOrders = orders.filter(o => {
+      const type = (o.action || o.type || '').toString().toLowerCase()
+      return type.includes('limit') || type.includes('stop')
+    })
+    
+    return { regularPositions, pendingOrders }
+  }, [positions, orders])
+  
   // Combine positions and orders for display
   const combinedPositions = useMemo(() => {
     return [...positions, ...orders]
@@ -428,6 +443,28 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     }
     return sortData(filtered, sortConfig.key, sortConfig.direction)
   }, [combinedPositions, positionsSearch, sortConfig])
+  
+  // Filter grouped data separately
+  const filteredGroupedPositions = useMemo(() => {
+    if (!positionsSearch.trim()) {
+      return groupedPositionsData
+    }
+    const query = positionsSearch.toLowerCase()
+    return {
+      regularPositions: groupedPositionsData.regularPositions.filter(p =>
+        (p.symbol || '').toLowerCase().includes(query) ||
+        (p.position || '').toString().includes(query) ||
+        (p.action || '').toLowerCase().includes(query) ||
+        (p.type || '').toLowerCase().includes(query)
+      ),
+      pendingOrders: groupedPositionsData.pendingOrders.filter(o =>
+        (o.symbol || '').toLowerCase().includes(query) ||
+        (o.order || '').toString().includes(query) ||
+        (o.action || '').toLowerCase().includes(query) ||
+        (o.type || '').toLowerCase().includes(query)
+      )
+    }
+  }, [groupedPositionsData, positionsSearch])
 
   const filteredNetPositions = useMemo(() => {
     let filtered = netPositions
@@ -462,6 +499,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return filteredPositions.slice(start, end)
   }, [filteredPositions, currentPage, itemsPerPage])
 
+  // Paginate grouped positions
+  const paginatedGroupedPositions = useMemo(() => {
+    const allItems = [...filteredGroupedPositions.regularPositions, ...filteredGroupedPositions.pendingOrders]
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    const paginatedItems = allItems.slice(start, end)
+    
+    return {
+      regularPositions: paginatedItems.filter(item => {
+        const type = (item.action || item.type || '').toString().toLowerCase()
+        return type === 'buy' || type === 'sell' || type === '0' || type === '1'
+      }),
+      pendingOrders: paginatedItems.filter(item => {
+        const type = (item.action || item.type || '').toString().toLowerCase()
+        return type.includes('limit') || type.includes('stop')
+      })
+    }
+  }, [filteredGroupedPositions, currentPage, itemsPerPage])
+
   const paginatedNetPositions = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
     const end = start + itemsPerPage
@@ -473,100 +529,166 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return filteredDeals
   }, [filteredDeals])
 
-  const renderPositions = () => (
-    <>
-      <table className="w-full">
-        <thead className="bg-blue-500 sticky top-0 z-20">
-          <tr>
-            {positionColumns.position && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
-                <div className="flex items-center gap-1">
-                  Position
-                  {sortConfig.key === 'position' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-            {positionColumns.symbol && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
-                <div className="flex items-center gap-1">
-                  Symbol
-                  {sortConfig.key === 'symbol' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-            {positionColumns.action && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
-                <div className="flex items-center gap-1">
-                  Type
-                  {sortConfig.key === 'action' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-            {positionColumns.volume && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
-                <div className="flex items-center gap-1">
-                  Volume
-                  {sortConfig.key === 'volume' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-            {positionColumns.priceOpen && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('priceOpen')}>
-                <div className="flex items-center gap-1">
-                  Price
-                  {sortConfig.key === 'priceOpen' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-            {positionColumns.profit && (
-              <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
-                <div className="flex items-center gap-1">
-                  Profit
-                  {sortConfig.key === 'profit' && (
-                    <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                  )}
-                </div>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {paginatedPositions.map((pos, idx) => (
-            <tr key={idx} className="hover:bg-gray-50">
-              {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.order || pos.ticket || '-'}</td>}
-              {positionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>}
-              {positionColumns.action && (
-                <td className="px-3 py-2 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    (pos.action || pos.type || '').toLowerCase().includes('buy') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                  }`}>
-                    {pos.action || pos.type || '-'}
-                  </span>
-                </td>
+  const renderPositions = () => {
+    const regularPositions = paginatedGroupedPositions.regularPositions
+    const pendingOrders = paginatedGroupedPositions.pendingOrders
+    
+    return (
+      <>
+        <table className="w-full">
+          <thead className="bg-blue-500 sticky top-0 z-20">
+            <tr>
+              {positionColumns.position && (
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('position')}>
+                  <div className="flex items-center gap-1">
+                    Position
+                    {sortConfig.key === 'position' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
               )}
-              {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.volume || 0)}</td>}
-              {positionColumns.priceOpen && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>}
+              {positionColumns.symbol && (
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('symbol')}>
+                  <div className="flex items-center gap-1">
+                    Symbol
+                    {sortConfig.key === 'symbol' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+              )}
+              {positionColumns.action && (
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('action')}>
+                  <div className="flex items-center gap-1">
+                    Type
+                    {sortConfig.key === 'action' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+              )}
+              {positionColumns.volume && (
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('volume')}>
+                  <div className="flex items-center gap-1">
+                    Volume
+                    {sortConfig.key === 'volume' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+              )}
+              {positionColumns.priceOpen && (
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('priceOpen')}>
+                  <div className="flex items-center gap-1">
+                    Price
+                    {sortConfig.key === 'priceOpen' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+              )}
               {positionColumns.profit && (
-                <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatNum(pos.profit || 0)}
-                </td>
+                <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
+                  <div className="flex items-center gap-1">
+                    Profit
+                    {sortConfig.key === 'profit' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
               )}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  )
+          </thead>
+          <tbody>
+            {/* Regular Positions Section */}
+            {regularPositions.length > 0 && (
+              <>
+                <tr className="bg-gray-100">
+                  <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-700">Positions</div>
+                  </td>
+                </tr>
+                {regularPositions.map((pos, idx) => (
+                  <tr key={`pos-${idx}`} className="hover:bg-gray-50 border-b border-gray-200">
+                    {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{pos.position || pos.ticket || '-'}</td>}
+                    {positionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{pos.symbol || '-'}</td>}
+                    {positionColumns.action && (
+                      <td className="px-3 py-2 text-xs">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          (pos.action || pos.type || '').toLowerCase().includes('buy') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {pos.action || pos.type || '-'}
+                        </span>
+                      </td>
+                    )}
+                    {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.volume || 0)}</td>}
+                    {positionColumns.priceOpen && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(pos.priceOpen || pos.price || 0, 5)}</td>}
+                    {positionColumns.profit && (
+                      <td className={`px-3 py-2 text-xs ${(pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatNum(pos.profit || 0)}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </>
+            )}
+            
+            {/* Blue Divider */}
+            {regularPositions.length > 0 && pendingOrders.length > 0 && (
+              <tr>
+                <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="p-0">
+                  <div className="h-0.5 bg-blue-500"></div>
+                </td>
+              </tr>
+            )}
+            
+            {/* Pending Orders Section */}
+            {pendingOrders.length > 0 && (
+              <>
+                <tr className="bg-gray-100">
+                  <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-700">Pending Orders</div>
+                  </td>
+                </tr>
+                {pendingOrders.map((order, idx) => (
+                  <tr key={`order-${idx}`} className="hover:bg-gray-50 border-b border-gray-200">
+                    {positionColumns.position && <td className="px-3 py-2 text-xs text-gray-900">{order.order || order.ticket || '-'}</td>}
+                    {positionColumns.symbol && <td className="px-3 py-2 text-xs font-medium text-gray-900">{order.symbol || '-'}</td>}
+                    {positionColumns.action && (
+                      <td className="px-3 py-2 text-xs">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                          (order.action || order.type || '').toLowerCase().includes('buy') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {order.action || order.type || '-'}
+                        </span>
+                      </td>
+                    )}
+                    {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(order.volume || 0)}</td>}
+                    {positionColumns.priceOpen && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(order.priceOrder || order.price || 0, 5)}</td>}
+                    {positionColumns.profit && (
+                      <td className="px-3 py-2 text-xs text-gray-400">
+                        -
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </>
+            )}
+            
+            {/* Empty State */}
+            {regularPositions.length === 0 && pendingOrders.length === 0 && (
+              <tr>
+                <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-4 text-center text-sm text-gray-500">
+                  No data available
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </>
+    )
+  }
 
   const renderNetPositions = () => (
     <>
