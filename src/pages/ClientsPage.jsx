@@ -21,7 +21,7 @@ const ClientsPage = () => {
     // Card filter search query for filter modal
     const [cardFilterSearchQuery, setCardFilterSearchQuery] = useState('');
   const navigate = useNavigate()
-  const { clients: cachedClients, rawClients, positions: cachedPositions, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
+  const { clients: cachedClients, rawClients, positions: cachedPositions, orders: cachedOrders, clientStats, latestServerTimestamp, lastWsReceiveAt, latestMeasuredLagMs, fetchClients, fetchPositions, loading, connectionState, statsDrift } = useData()
   
   // Always use rawClients (unnormalized) for Clients module - USC values are handled by backend
   // rawClients contains data without frontend USC normalization
@@ -2392,6 +2392,8 @@ const ClientsPage = () => {
           <ClientPositionsModal
             client={selectedClient}
             onClose={() => setSelectedClient(null)}
+            allPositionsCache={cachedPositions}
+            allOrdersCache={cachedOrders}
           />
         )}
       </div>
@@ -3992,6 +3994,7 @@ const ClientsPage = () => {
           onClose={() => setSelectedClient(null)}
           onClientUpdate={fetchClients}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={(newAllPositions) => {
             // Positions are managed by DataContext, no need to update local state
           }}

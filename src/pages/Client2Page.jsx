@@ -17,8 +17,8 @@ import { useIB } from '../contexts/IBContext'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 const Client2Page = () => {
-  // Get positions from DataContext for ClientPositionsModal
-  const { positions: cachedPositions } = useData()
+  // Get positions and orders from DataContext for ClientPositionsModal
+  const { positions: cachedPositions, orders: cachedOrders } = useData()
   
   // Mobile detection (initialize from window to avoid first-render desktop effects)
   const [isMobile, setIsMobile] = useState(() => {
@@ -3149,6 +3149,8 @@ const Client2Page = () => {
           <ClientPositionsModal
             client={selectedClient}
             onClose={() => setSelectedClient(null)}
+            allPositionsCache={cachedPositions}
+            allOrdersCache={cachedOrders}
           />
         )}
       </div>
@@ -5194,6 +5196,7 @@ const Client2Page = () => {
           // Use fetchClients for consistency with ClientsPage so modal-triggered updates refresh server-side dataset
           onClientUpdate={fetchClients}
           allPositionsCache={cachedPositions}
+          allOrdersCache={cachedOrders}
           onCacheUpdate={() => { /* Positions managed by DataContext; no local update needed */ }}
         />
       )}
