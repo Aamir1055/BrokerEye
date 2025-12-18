@@ -2284,7 +2284,42 @@ const Client2Page = () => {
 
   // Clear all filters
   const handleClearAllFilters = () => {
+    // Basic list filters
     setFilters([])
+    setSearchQuery('')
+    setSearchInput('')
+    setSortBy('')
+    setSortOrder('asc')
+    setColumnSortOrder({})
+
+    // Quick filters
+    setQuickFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+
+    // Account filters
+    setMt5Accounts([])
+    setAccountRangeMin('')
+    setAccountRangeMax('')
+    setAccountInputText('')
+    setTempAccountRangeMin('')
+    setTempAccountRangeMax('')
+
+    // Column filters and UI state
+    setColumnFilters({})
+    setSelectedColumnValues({})
+    setColumnValueSearch({})
+    setColumnValueSearchDebounce({})
+    setNumericFilterTemp({})
+    setTextFilterTemp({})
+    setShowFilterDropdown(null)
+    setFilterSearchQuery({})
+    setShowFilterMenu(false)
+    setShowCardFilterMenu(false)
+
+    // Context filters: IB and Group
+    try { clearIBSelection() } catch {}
+    try { setActiveGroupFilter('client2', null) } catch {}
+
+    // Reset pagination
     setCurrentPage(1)
   }
 
@@ -5050,13 +5085,7 @@ const Client2Page = () => {
                 <p className="text-gray-600 text-lg font-semibold mb-2">No clients found</p>
                 <p className="text-gray-500 text-sm mb-4">Try adjusting your filters or search criteria</p>
                 <button
-                  onClick={() => {
-                    // Clear all filters
-                    setFilters([])
-                    setQuickFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
-                    setSearchQuery('')
-                    setCurrentPage(1)
-                  }}
+                  onClick={handleClearAllFilters}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
