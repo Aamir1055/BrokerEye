@@ -69,14 +69,14 @@ const Client2Page = () => {
   }, [columnValuesBatchSize])
   
   // Group context
-  const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, groups } = useGroups()
+  const { filterByActiveGroup, activeGroupFilters, getActiveGroupFilter, setActiveGroupFilter, groups } = useGroups()
 
   // Get active group for this module
   const activeGroupName = getActiveGroupFilter('client2')
   const activeGroup = groups.find(g => g.name === activeGroupName)
 
   // IB context
-  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList, clearIBSelection } = useIB()
 
   const getInitialSidebarOpen = () => {
     try {
@@ -272,6 +272,14 @@ const Client2Page = () => {
       return {}
     }
   })
+
+  // Clear all filters on component mount (when navigating to this page or refreshing)
+  useEffect(() => {
+    setQuickFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+    clearIBSelection()
+    setActiveGroupFilter('client2', null)
+    setSearchInput('')
+  }, [])
 
   // useEffect to save columnWidths to localStorage
   useEffect(() => {
@@ -1048,27 +1056,10 @@ const Client2Page = () => {
         payload.accountRangeMax = parseInt(accountRangeMax.trim())
       }
 
-      // Add active group filter if present - use API filtering
-      if (activeGroup) {
-        if (activeGroup.range) {
-          // Range-based group
-          payload.accountRangeMin = activeGroup.range.from
-          payload.accountRangeMax = activeGroup.range.to
-          if (DEBUG_LOGS) console.log('[Client2] Applying range group filter:', activeGroup.range)
-        } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
-          // Manual selection group: merge/intersect with any existing list
-          const groupAccounts = activeGroup.loginIds.map(id => Number(id))
-          if (mt5AccountsFilter.length > 0) {
-            const set = new Set(groupAccounts)
-            mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a)) // intersection
-          } else {
-            mt5AccountsFilter = [...new Set(groupAccounts)]
-          }
-          if (DEBUG_LOGS) console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
-        }
-      }
+      // Check if we have any quick filters active (hasFloating, hasCredit, noDeposit)
+      const hasQuickFilters = quickFilters?.hasFloating || quickFilters?.hasCredit || quickFilters?.noDeposit
 
-      // Apply IB-selected MT5 accounts server-side
+      // Apply IB-selected MT5 accounts first (cumulative order: IB -> Group)
       if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
         const ibAccounts = ibMT5Accounts.map(Number)
         if (mt5AccountsFilter.length > 0) {
@@ -1077,12 +1068,38 @@ const Client2Page = () => {
         } else {
           mt5AccountsFilter = [...new Set(ibAccounts)]
         }
+        if (DEBUG_LOGS) console.log('[Client2] Applying IB filter:', ibAccounts.length, 'accounts')
       }
 
-      // Login checkbox now uses filters.in('login'), not mt5Accounts
+      // Add active group filter on top of IB filter - use API filtering
+      if (activeGroup) {
+        if (activeGroup.range) {
+          // Range-based group
+          payload.accountRangeMin = activeGroup.range.from
+          payload.accountRangeMax = activeGroup.range.to
+          if (DEBUG_LOGS) console.log('[Client2] Applying range group filter:', activeGroup.range)
+        } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
+          // Manual selection group: intersect with IB-filtered results
+          const groupAccounts = activeGroup.loginIds.map(id => Number(id))
+          if (mt5AccountsFilter.length > 0) {
+            const set = new Set(groupAccounts)
+            mt5AccountsFilter = mt5AccountsFilter.filter(a => set.has(a)) // intersection with IB results
+          } else {
+            mt5AccountsFilter = [...new Set(groupAccounts)]
+          }
+          if (DEBUG_LOGS) console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
+        }
+      }
 
-      // Assign final mt5Accounts if any
-      if (mt5AccountsFilter.length > 0) {
+      // When quick filters are active, add mt5Accounts as a filter (not as mt5Accounts parameter)
+      // This ensures proper intersection: quick filters AND login IN (accounts list)
+      if (hasQuickFilters && mt5AccountsFilter.length > 0) {
+        // Add login filter to combinedFilters for proper intersection with quick filters
+        combinedFilters.push({ field: 'login', operator: 'in', value: mt5AccountsFilter })
+        if (DEBUG_LOGS) console.log('[Client2] Adding mt5Accounts as login filter due to active quick filters:', mt5AccountsFilter.length, 'accounts')
+        // Don't send mt5Accounts separately when using it as a filter
+      } else if (mt5AccountsFilter.length > 0) {
+        // No quick filters, use mt5Accounts parameter as usual
         payload.mt5Accounts = mt5AccountsFilter
       }
 
@@ -1114,6 +1131,7 @@ const Client2Page = () => {
         const percentTotal = Number(percentData?.total || percentClients.length || 0)
         const pages = Math.max(1, Number(percentData?.pages || 1))
 
+        // Use server-side filtered results directly
         setClients(percentClients)
         setTotalClients(percentTotal)
         setTotalPages(pages)
@@ -1129,6 +1147,7 @@ const Client2Page = () => {
         const normalTotal = Number(normalData?.total || normalClients.length || 0)
         const pages = Math.max(1, Number(normalData?.pages || 1))
 
+        // Use server-side filtered results directly
         setClients(normalClients)
         setTotalClients(normalTotal)
         setTotalPages(pages)
