@@ -2393,6 +2393,41 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <p className="text-gray-400 text-xs mt-1">Open some positions to see NET position summary</p>
                 </div>
               ) : (
+                <>
+                {/* Search Bar (NET) - mirrors Positions style */}
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={netSearchQuery}
+                      onChange={(e) => setNetSearchQuery(e.target.value)}
+                      placeholder="Search by symbol, NET type, volume..."
+                      className="w-full pl-9 pr-10 py-2 text-sm text-gray-700 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                    />
+                    <svg 
+                      className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {netSearchQuery && (
+                      <button
+                        onClick={() => setNetSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {Math.min(10, filteredNetPositions.length)} of {filteredNetPositions.length} net positions
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative">
                   <table className="min-w-full table-fixed divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
