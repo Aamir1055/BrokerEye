@@ -1094,20 +1094,17 @@ const Client2Page = () => {
         }
       }
 
-      // When quick filters OR IB filter are active, add mt5Accounts as a login filter (not as mt5Accounts parameter)
-      // This ensures proper intersection: (quick filters AND/OR IB filter) AND login IN (accounts list)
-      if ((hasQuickFilters || hasIBFilter) && mt5AccountsFilter.length > 0) {
-        // Add login filter to combinedFilters for proper intersection
-        combinedFilters.push({ field: 'login', operator: 'in', value: mt5AccountsFilter })
-        if (DEBUG_LOGS) console.log('[Client2] Adding mt5Accounts as login filter for cumulative intersection:', mt5AccountsFilter.length, 'accounts')
-        // If no intersection, force empty result with impossible account
-        if (mt5AccountsFilter.length === 0) {
-          combinedFilters.push({ field: 'login', operator: 'in', value: [0] })
-          if (DEBUG_LOGS) console.log('[Client2] No intersection - forcing empty result')
+      // Always send mt5Accounts as a dedicated parameter (server-side intersection like mobile)
+      if (mt5AccountsFilter.length > 0) {
+        payload.mt5Accounts = mt5AccountsFilter.map(a => String(a))
+        if (DEBUG_LOGS) console.log('[Client2] Sending mt5Accounts to API:', payload.mt5Accounts.length)
+      } else {
+        // If IB or manual group was applied but intersection is empty, force empty result
+        const manualGroupApplied = !!(activeGroup && activeGroup.loginIds && activeGroup.loginIds.length > 0)
+        if (hasIBFilter || manualGroupApplied) {
+          payload.mt5Accounts = ['0']
+          if (DEBUG_LOGS) console.log('[Client2] Empty intersection; forcing empty result with mt5Accounts=["0"]')
         }
-      } else if (mt5AccountsFilter.length > 0) {
-        // No quick filters or IB filter, use mt5Accounts parameter as usual
-        payload.mt5Accounts = mt5AccountsFilter
       }
 
       // Add sorting if present
@@ -1840,7 +1837,15 @@ const Client2Page = () => {
         mt5AccountsFilter = [...new Set(ibAccounts)]
       }
     }
-    if (mt5AccountsFilter.length > 0) payload.mt5Accounts = mt5AccountsFilter
+    if (mt5AccountsFilter.length > 0) {
+      payload.mt5Accounts = mt5AccountsFilter.map(a => String(a))
+    } else {
+      const manualGroupApplied = !!(activeGroup && activeGroup.loginIds && activeGroup.loginIds.length > 0)
+      const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
+      if (hasIBFilter || manualGroupApplied) {
+        payload.mt5Accounts = ['0']
+      }
+    }
     return { payload, multiOrField, multiOrValues, multiOrConflict }
   }
 
@@ -2682,7 +2687,15 @@ const Client2Page = () => {
         mt5AccountsFilter = [...new Set(ibAccounts)]
       }
     }
-    if (mt5AccountsFilter.length > 0) base.mt5Accounts = mt5AccountsFilter
+    if (mt5AccountsFilter.length > 0) {
+      base.mt5Accounts = mt5AccountsFilter.map(a => String(a))
+    } else {
+      const manualGroupApplied = !!(activeGroup && activeGroup.loginIds && activeGroup.loginIds.length > 0)
+      const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
+      if (hasIBFilter || manualGroupApplied) {
+        base.mt5Accounts = ['0']
+      }
+    }
     if (sortBy) { base.sortBy = sortBy; base.sortOrder = sortOrder }
 
     // Build payload variants when needed (OR semantics)
