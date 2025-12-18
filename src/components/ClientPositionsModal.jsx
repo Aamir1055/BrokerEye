@@ -663,6 +663,36 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Sorting states for NET positions
   const [netSortColumn, setNetSortColumn] = useState(null)
   const [netSortDirection, setNetSortDirection] = useState('desc')
+  const [netCurrentPage, setNetCurrentPage] = useState(1)
+  const [netItemsPerPage, setNetItemsPerPage] = useState(10)
+
+  const netColumns = [
+    { key: 'symbol', label: 'Symbol' },
+    { key: 'netType', label: 'NET Type' },
+    { key: 'netVolume', label: 'NET Volume' },
+    { key: 'avgOpenPrice', label: 'Avg Open Price' },
+    { key: 'totalProfit', label: 'Total Profit' },
+    { key: 'positionCount', label: 'Positions' }
+  ]
+  const [netVisibleColumns, setNetVisibleColumns] = useState(() => ({
+    symbol: true,
+    netType: true,
+    netVolume: true,
+    avgOpenPrice: true,
+    totalProfit: true,
+    positionCount: true
+  }))
+  const [showNetColumnSelector, setShowNetColumnSelector] = useState(false)
+  const netColumnSelectorRef = useRef(null)
+  const toggleNetColumn = (key) => {
+    setNetVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  // NET tab face-card visibility (Card Filter)
+  const defaultNetCardVisibility = { net_symbols: true, net_totalVolume: true, net_buyPL: true, net_sellPL: true }
+  const [netCardVisibility, setNetCardVisibility] = useState(defaultNetCardVisibility)
+  const [showNetStatsFilter, setShowNetStatsFilter] = useState(false)
+  const netStatsFilterRef = useRef(null)
 
   const handleNetSort = (column) => {
     if (netSortColumn === column) {
@@ -690,6 +720,24 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       )
     })
   }, [netPositions, netSearchQuery])
+
+  // Pagination derived values for NET tab
+  const netTotalPages = Math.max(1, Math.ceil(filteredNetPositions.length / netItemsPerPage))
+  const netStartIndex = (netCurrentPage - 1) * netItemsPerPage
+  const netEndIndex = netStartIndex + netItemsPerPage
+
+  // Reset page on filter/search change and keep page-size sensible
+  useEffect(() => {
+    setNetCurrentPage(1)
+  }, [netSearchQuery])
+  useEffect(() => {
+    const total = filteredNetPositions.length
+    const options = getPositionsPageSizeOptions(total)
+    if (options.length > 0 && (!options.includes(netItemsPerPage) || netItemsPerPage > total)) {
+      setNetItemsPerPage(options[0] || 10)
+      setNetCurrentPage(1)
+    }
+  }, [filteredNetPositions.length])
 
   // Sort icon component
   const SortIcon = ({ column, currentColumn, direction }) => {
@@ -1742,6 +1790,127 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               </div>
             </div>
           )}
+
+          {/* Controls for NET Tab */}
+          {activeTab === 'netpositions' && (
+            <div className="flex items-center justify-between gap-1.5 py-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-600">Show:</span>
+                <select
+                  value={netItemsPerPage}
+                  onChange={(e) => setNetItemsPerPage(parseInt(e.target.value))}
+                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  {getPositionsPageSizeOptions(filteredNetPositions.length).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {/* Columns Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNetColumnSelector(!showNetColumnSelector)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Columns
+                  </button>
+                  {showNetColumnSelector && (
+                    <div
+                      ref={netColumnSelectorRef}
+                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
+                      style={{ maxHeight: '300px', overflowY: 'auto' }}
+                    >
+                      <div className="px-2 py-1 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                      </div>
+                      {netColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-2 py-1 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={netVisibleColumns[col.key] === true}
+                            onChange={() => toggleNetColumn(col.key)}
+                            className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-xs text-gray-700">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Filter Button */}
+                <div className="relative" ref={netStatsFilterRef}>
+                  <button
+                    onClick={() => setShowNetStatsFilter(v => !v)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 8h12M9 12h6M11 16h2"/></svg>
+                    Card Filter
+                  </button>
+                  {showNetStatsFilter && (
+                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 w-64 max-h-80 overflow-y-auto">
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">NET Summary</p>
+                      {[
+                        ['net_symbols','NET Symbols'],
+                        ['net_totalVolume','Total NET Volume'],
+                        ['net_buyPL','Buy Floating Profit'],
+                        ['net_sellPL','Sell Floating Profit']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={netCardVisibility[key]} onChange={() => setNetCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {filteredNetPositions.length > 0 && netItemsPerPage !== 'All' && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setNetCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={netCurrentPage === 1}
+                      className={`p-0.5 rounded transition-colors ${
+                        netCurrentPage === 1
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                      }`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    
+                    <span className="text-xs text-gray-700 font-medium px-1">
+                      {netCurrentPage}/{netTotalPages}
+                    </span>
+                    
+                    <button
+                      onClick={() => setNetCurrentPage(prev => Math.min(netTotalPages, prev + 1))}
+                      disabled={netCurrentPage === netTotalPages}
+                      className={`p-0.5 rounded transition-colors ${
+                        netCurrentPage === netTotalPages
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
+                      }`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tab Content - Scrollable */}
@@ -2424,7 +2593,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     )}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {Math.min(10, filteredNetPositions.length)} of {filteredNetPositions.length} net positions
+                    {Math.max(0, Math.min(netItemsPerPage, filteredNetPositions.length - netStartIndex))} of {filteredNetPositions.length} net positions
                   </div>
                 </div>
 
@@ -2432,24 +2601,36 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   <table className="min-w-full table-fixed divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
+                        {netVisibleColumns.symbol && (
                         <th onClick={() => handleNetSort('symbol')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">Symbol <SortIcon column="symbol" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
+                        {netVisibleColumns.netType && (
                         <th onClick={() => handleNetSort('netType')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">NET Type <SortIcon column="netType" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
+                        {netVisibleColumns.netVolume && (
                         <th onClick={() => handleNetSort('netVolume')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">NET Volume <SortIcon column="netVolume" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
+                        {netVisibleColumns.avgOpenPrice && (
                         <th onClick={() => handleNetSort('avgOpenPrice')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">Avg Open Price <SortIcon column="avgOpenPrice" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
+                        {netVisibleColumns.totalProfit && (
                         <th onClick={() => handleNetSort('totalProfit')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">Total Profit <SortIcon column="totalProfit" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
+                        {netVisibleColumns.positionCount && (
                         <th onClick={() => handleNetSort('positionCount')} className="px-3 py-3 text-left text-xs font-bold text-white uppercase cursor-pointer hover:bg-blue-700">
                           <div className="flex items-center gap-1.5">Positions <SortIcon column="positionCount" currentColumn={netSortColumn} direction={netSortDirection} /></div>
                         </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -2467,11 +2648,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         }
                         if(typeof av==='string') return netSortDirection==='asc'? av.localeCompare(bv): bv.localeCompare(av);
                         return netSortDirection==='asc'? av-bv: bv-av;
-                      })).slice(0,10).map((netPos, index) => (
+                      })).slice(netStartIndex, netEndIndex).map((netPos, index) => (
                         <tr key={`${netPos.symbol}-${index}`} className="hover:bg-blue-50 transition-colors">
+                          {netVisibleColumns.symbol && (
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {netPos.symbol}
                           </td>
+                          )}
+                          {netVisibleColumns.netType && (
                           <td className="px-3 py-2 text-sm whitespace-nowrap">
                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                               netPos.netType === 'Buy' 
@@ -2483,18 +2667,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               {netPos.netType}
                             </span>
                           </td>
+                          )}
+                          {netVisibleColumns.netVolume && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap font-semibold">
                             {netPos.netVolume.toFixed(2)}
                           </td>
+                          )}
+                          {netVisibleColumns.avgOpenPrice && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {netPos.avgOpenPrice > 0 ? netPos.avgOpenPrice.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {netVisibleColumns.totalProfit && (
                           <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(netPos.totalProfit)}`}>
                             {formatCurrency(netPos.totalProfit)}
                           </td>
+                          )}
+                          {netVisibleColumns.positionCount && (
                           <td className="px-3 py-2 text-sm text-gray-600 whitespace-nowrap">
                             {netPos.positionCount} {netPos.positionCount === 1 ? 'position' : 'positions'}
                           </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -3248,12 +3441,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             (() => {
               const buyTotal = netPositions.filter(p => p.netType === 'Buy').reduce((sum, p) => sum + p.totalProfit, 0)
               const sellTotal = netPositions.filter(p => p.netType === 'Sell').reduce((sum, p) => sum + p.totalProfit, 0)
-              const row = [
-                { label: 'NET Symbols', value: String(netPositions.length), labelClass: 'text-purple-700', accent: 'border-purple-300' },
-                { label: 'Total NET Volume', value: netPositions.reduce((sum, p) => sum + p.netVolume, 0).toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' },
-                { label: 'Buy Floating Profit', value: formatCurrency(buyTotal), labelClass: buyTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(buyTotal), accent: buyTotal >= 0 ? 'border-emerald-400' : 'border-red-400' },
-                { label: 'Sell Floating Profit', value: formatCurrency(sellTotal), labelClass: sellTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(sellTotal), accent: sellTotal >= 0 ? 'border-emerald-400' : 'border-red-400' },
-              ]
+              const row = []
+              if (netCardVisibility.net_symbols) row.push({ label: 'NET Symbols', value: String(netPositions.length), labelClass: 'text-purple-700', accent: 'border-purple-300' })
+              if (netCardVisibility.net_totalVolume) row.push({ label: 'Total NET Volume', value: netPositions.reduce((sum, p) => sum + p.netVolume, 0).toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
+              if (netCardVisibility.net_buyPL) row.push({ label: 'Buy Floating Profit', value: formatCurrency(buyTotal), labelClass: buyTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(buyTotal), accent: buyTotal >= 0 ? 'border-emerald-400' : 'border-red-400' })
+              if (netCardVisibility.net_sellPL) row.push({ label: 'Sell Floating Profit', value: formatCurrency(sellTotal), labelClass: sellTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(sellTotal), accent: sellTotal >= 0 ? 'border-emerald-400' : 'border-red-400' })
+              if (!row.length) return null
               return (
                 <div className="space-y-2">
                   <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
