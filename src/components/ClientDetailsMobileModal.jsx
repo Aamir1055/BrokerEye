@@ -129,16 +129,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     }
   }, [currentPage, activeTab])
 
-  // Handle column sorting
+  // Handle column sorting (toggle asc/desc; default desc on first click)
   const handleSort = (key) => {
-    let direction = 'asc'
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc'
+    if (sortConfig.key === key) {
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })
+    } else {
+      setSortConfig({ key, direction: 'desc' })
     }
-    setSortConfig({ key, direction })
   }
 
-  // Sort function
+  // Sort function for flat arrays
   const sortData = (data, key, direction) => {
     if (!key) return data
     
@@ -151,9 +151,23 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         return direction === 'asc' ? aVal - bVal : bVal - aVal
       }
       
-      // Handle string values
-      aVal = String(aVal || '').toLowerCase()
-      bVal = String(bVal || '').toLowerCase()
+      // Normalize derived keys for mobile schemas
+      if (key === 'action') {
+        aVal = getActionText(a)
+        bVal = getActionText(b)
+      }
+      if (key === 'priceOpen') {
+        aVal = a.priceOpen ?? a.priceOrder ?? a.price
+        bVal = b.priceOpen ?? b.priceOrder ?? b.price
+      }
+      if (key === 'position') {
+        aVal = a.position ?? a.order
+        bVal = b.position ?? b.order
+      }
+
+      // Handle string values uniformly
+      aVal = String(aVal ?? '').toLowerCase()
+      bVal = String(bVal ?? '').toLowerCase()
       
       if (aVal < bVal) return direction === 'asc' ? -1 : 1
       if (aVal > bVal) return direction === 'asc' ? 1 : -1
@@ -444,27 +458,74 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return sortData(filtered, sortConfig.key, sortConfig.direction)
   }, [combinedPositions, positionsSearch, sortConfig])
   
-  // Filter grouped data separately
-  const filteredGroupedPositions = useMemo(() => {
-    if (!positionsSearch.trim()) {
-      return groupedPositionsData
+  // Helper: normalize action label for positions/orders
+  const getActionText = (item) => {
+    const val = (item.action ?? item.type)
+    if (val === 0 || String(val).toLowerCase() === 'buy') return 'Buy'
+    if (val === 1 || String(val).toLowerCase() === 'sell') return 'Sell'
+    return String(val ?? '').toString()
+  }
+
+  // Helper: comparator for grouped arrays honoring header sort
+  const compareByKey = (a, b, key) => {
+    let av, bv
+    switch (key) {
+      case 'position':
+        av = Number(a.position ?? a.order ?? 0)
+        bv = Number(b.position ?? b.order ?? 0)
+        break
+      case 'symbol':
+        av = String(a.symbol || '').toLowerCase()
+        bv = String(b.symbol || '').toLowerCase()
+        break
+      case 'action':
+        av = getActionText(a).toLowerCase()
+        bv = getActionText(b).toLowerCase()
+        break
+      case 'volume':
+        av = Number(a.volume ?? 0)
+        bv = Number(b.volume ?? 0)
+        break
+      case 'priceOpen':
+        av = Number(a.priceOpen ?? a.priceOrder ?? a.price ?? 0)
+        bv = Number(b.priceOpen ?? b.priceOrder ?? b.price ?? 0)
+        break
+      case 'profit':
+        av = Number(a.profit ?? 0)
+        bv = Number(b.profit ?? 0)
+        break
+      default:
+        return 0
     }
-    const query = positionsSearch.toLowerCase()
-    return {
-      regularPositions: groupedPositionsData.regularPositions.filter(p =>
-        (p.symbol || '').toLowerCase().includes(query) ||
-        (p.position || '').toString().includes(query) ||
-        (p.action || '').toLowerCase().includes(query) ||
-        (p.type || '').toLowerCase().includes(query)
-      ),
-      pendingOrders: groupedPositionsData.pendingOrders.filter(o =>
-        (o.symbol || '').toLowerCase().includes(query) ||
-        (o.order || '').toString().includes(query) ||
-        (o.action || '').toLowerCase().includes(query) ||
-        (o.type || '').toLowerCase().includes(query)
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return sortConfig.direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+    }
+    return sortConfig.direction === 'asc' ? av - bv : bv - av
+  }
+
+  // Filter grouped data separately and apply sorting within each section
+  const filteredGroupedPositions = useMemo(() => {
+    const applySearch = (arr) => {
+      if (!positionsSearch.trim()) return arr
+      const q = positionsSearch.toLowerCase()
+      return arr.filter(it =>
+        (it.symbol || '').toLowerCase().includes(q) ||
+        String(it.position ?? it.order ?? '').includes(q) ||
+        String(it.action ?? it.type ?? '').toLowerCase().includes(q)
       )
     }
-  }, [groupedPositionsData, positionsSearch])
+
+    const regs = applySearch(groupedPositionsData.regularPositions)
+    const ords = applySearch(groupedPositionsData.pendingOrders)
+
+    // Apply sorting if a column is selected
+    if (sortConfig.key) {
+      regs.sort((a,b) => compareByKey(a,b, sortConfig.key))
+      ords.sort((a,b) => compareByKey(a,b, sortConfig.key))
+    }
+
+    return { regularPositions: regs, pendingOrders: ords }
+  }, [groupedPositionsData, positionsSearch, sortConfig])
 
   const filteredNetPositions = useMemo(() => {
     let filtered = netPositions
