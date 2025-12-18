@@ -435,11 +435,14 @@ const ClientPercentagePage = () => {
   const sortedClients = () => {
     const searched = searchClients(clients)
     
-    // Apply group filter if active (use 'client_login' as the login field and 'clientpercentage' as module name)
-    let groupFiltered = filterByActiveGroup(searched, 'client_login', 'clientpercentage')
+    // Apply IB filter first (cumulative order: IB -> Group)
+    let ibFiltered = filterByActiveIB(searched, 'client_login')
     
-    // Apply IB filter if active (use 'client_login' as the login field)
-    let ibFiltered = filterByActiveIB(groupFiltered, 'client_login')
+    // Apply group filter on top of IB filter
+    let groupFiltered = filterByActiveGroup(ibFiltered, 'client_login', 'clientpercentage')
+    
+    // Continue with groupFiltered as ibFiltered for consistency
+    ibFiltered = groupFiltered
     
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {

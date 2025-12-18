@@ -966,11 +966,14 @@ const PositionsPage = () => {
     
     const searchedPositions = searchPositions(deferredPositions)
     
-    // Apply group filter if active
-    let groupFilteredPositions = filterByActiveGroup(searchedPositions, 'login', 'positions')
+    // Apply IB filter first (cumulative order: IB -> Group)
+    let ibFiltered = filterByActiveIB(searchedPositions, 'login')
     
-    // Apply IB filter if active
-    let ibFiltered = filterByActiveIB(groupFilteredPositions, 'login')
+    // Apply group filter on top of IB filter
+    let groupFilteredPositions = filterByActiveGroup(ibFiltered, 'login', 'positions')
+    
+    // Continue with groupFilteredPositions as ibFiltered for consistency
+    ibFiltered = groupFilteredPositions
     
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {

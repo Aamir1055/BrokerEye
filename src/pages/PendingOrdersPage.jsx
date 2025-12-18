@@ -395,11 +395,14 @@ const PendingOrdersPage = () => {
   
   const searchedOrders = searchOrders(cachedOrders)
   
-  // Apply group filter if active
-  let groupFilteredOrders = filterByActiveGroup(searchedOrders, 'login', 'pendingorders')
+  // Apply IB filter first (cumulative order: IB -> Group)
+  let ibFilteredOrders = filterByActiveIB(searchedOrders, 'login')
   
-  // Apply IB filter if active
-  let ibFilteredOrders = filterByActiveIB(groupFilteredOrders, 'login')
+  // Apply group filter on top of IB filter
+  let groupFilteredOrders = filterByActiveGroup(ibFilteredOrders, 'login', 'pendingorders')
+  
+  // Continue with groupFilteredOrders as ibFilteredOrders for consistency
+  ibFilteredOrders = groupFilteredOrders
   
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {

@@ -26,8 +26,8 @@ const ClientsPage = () => {
   // Always use rawClients (unnormalized) for Clients module - USC values are handled by backend
   // rawClients contains data without frontend USC normalization
   const clients = rawClients.length > 0 ? rawClients : []
-  const { filterByActiveGroup, activeGroupFilters } = useGroups()
-  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList } = useIB()
+  const { filterByActiveGroup, activeGroupFilters, setActiveGroupFilter } = useGroups()
+  const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList, clearIBSelection } = useIB()
   
   // Mobile detection with redirect
   const [isMobile] = useState(false)
@@ -543,6 +543,16 @@ const ClientsPage = () => {
     }
     return baseWidth
   }, [visibleColumnsList, columnWidths, displayMode])
+
+  // Clear all filters on component mount (when navigating to this page)
+  useEffect(() => {
+    setFilterByPositions(false)
+    setFilterByCredit(false)
+    setFilterNoDeposit(false)
+    clearIBSelection()
+    setActiveGroupFilter('clients', null)
+    setSearchQuery('')
+  }, [])
 
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
@@ -1380,21 +1390,22 @@ const ClientsPage = () => {
         }, 0)
         if (canceled) return
         const list = Array.isArray(result?.clients) ? result.clients : []
-        // Apply group filter first
-        const grouped = filterByActiveGroup(list, 'login', 'clients')
-        // Apply IB filter on top of group filter
-        const ibFiltered = filterByActiveIB(grouped, 'login')
-        setFilteredClients(ibFiltered)
+        // Apply IB filter first (after quick filters from worker)
+        const ibFiltered = filterByActiveIB(list, 'login')
+        // Apply group filter on top of IB filter
+        const grouped = filterByActiveGroup(ibFiltered, 'login', 'clients')
+        setFilteredClients(grouped)
       } catch (err) {
         console.error('[ClientsPage] FILTER_SORT_DEDUP worker failed, falling back:', err?.message || err)
         // Fallback to previous synchronous pipeline
         try {
           const base = getFilteredClients()
           const searched = searchClients(base)
-          const grouped = filterByActiveGroup(searched, 'login', 'clients')
-          // Apply IB filter in fallback path as well
-          const ibFiltered = filterByActiveIB(grouped, 'login')
-          const sorted = sortClients(ibFiltered)
+          // Apply IB filter first in fallback path
+          const ibFiltered = filterByActiveIB(searched, 'login')
+          // Apply group filter on top of IB filter
+          const grouped = filterByActiveGroup(ibFiltered, 'login', 'clients')
+          const sorted = sortClients(grouped)
           const seen = new Set()
           const deduped = sorted.filter(client => {
             if (!client) return false

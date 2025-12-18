@@ -362,11 +362,14 @@ const MarginLevelPage = () => {
   
   const searchedAccounts = searchAccounts(filtered)
   
-  // Apply group filter if active
-  let groupFilteredAccounts = filterByActiveGroup(searchedAccounts, 'login', 'marginlevel')
+  // Apply IB filter first (cumulative order: IB -> Group)
+  let ibFilteredAccounts = filterByActiveIB(searchedAccounts, 'login')
   
-  // Apply IB filter if active
-  let ibFilteredAccounts = filterByActiveIB(groupFilteredAccounts, 'login')
+  // Apply group filter on top of IB filter
+  let groupFilteredAccounts = filterByActiveGroup(ibFilteredAccounts, 'login', 'marginlevel')
+  
+  // Continue with groupFilteredAccounts as ibFilteredAccounts for consistency
+  ibFilteredAccounts = groupFilteredAccounts
   
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {

@@ -935,11 +935,14 @@ const LiveDealingPage = () => {
   const moduleFiltered = filterByModule(trimmedDeals)
   const searchedDeals = searchDeals(moduleFiltered)
   
-  // Apply group filter if active
-  let groupFilteredDeals = filterByActiveGroup(searchedDeals, 'login', 'livedealing')
+  // Apply IB filter first (cumulative order: IB -> Group)
+  let ibFilteredDeals = filterByActiveIB(searchedDeals, 'login')
   
-  // Apply IB filter if active
-  let ibFilteredDeals = filterByActiveIB(groupFilteredDeals, 'login')
+  // Apply group filter on top of IB filter
+  let groupFilteredDeals = filterByActiveGroup(ibFilteredDeals, 'login', 'livedealing')
+  
+  // Continue with groupFilteredDeals as ibFilteredDeals for consistency
+  ibFilteredDeals = groupFilteredDeals
   
   // Apply column filters
   Object.entries(columnFilters).forEach(([columnKey, values]) => {

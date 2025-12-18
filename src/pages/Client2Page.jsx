@@ -1058,9 +1058,12 @@ const Client2Page = () => {
 
       // Check if we have any quick filters active (hasFloating, hasCredit, noDeposit)
       const hasQuickFilters = quickFilters?.hasFloating || quickFilters?.hasCredit || quickFilters?.noDeposit
+      
+      // Check if IB filter is active
+      const hasIBFilter = selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0
 
       // Apply IB-selected MT5 accounts first (cumulative order: IB -> Group)
-      if (selectedIB && Array.isArray(ibMT5Accounts) && ibMT5Accounts.length > 0) {
+      if (hasIBFilter) {
         const ibAccounts = ibMT5Accounts.map(Number)
         if (mt5AccountsFilter.length > 0) {
           const set = new Set(ibAccounts)
@@ -1091,15 +1094,19 @@ const Client2Page = () => {
         }
       }
 
-      // When quick filters are active, add mt5Accounts as a filter (not as mt5Accounts parameter)
-      // This ensures proper intersection: quick filters AND login IN (accounts list)
-      if (hasQuickFilters && mt5AccountsFilter.length > 0) {
-        // Add login filter to combinedFilters for proper intersection with quick filters
+      // When quick filters OR IB filter are active, add mt5Accounts as a login filter (not as mt5Accounts parameter)
+      // This ensures proper intersection: (quick filters AND/OR IB filter) AND login IN (accounts list)
+      if ((hasQuickFilters || hasIBFilter) && mt5AccountsFilter.length > 0) {
+        // Add login filter to combinedFilters for proper intersection
         combinedFilters.push({ field: 'login', operator: 'in', value: mt5AccountsFilter })
-        if (DEBUG_LOGS) console.log('[Client2] Adding mt5Accounts as login filter due to active quick filters:', mt5AccountsFilter.length, 'accounts')
-        // Don't send mt5Accounts separately when using it as a filter
+        if (DEBUG_LOGS) console.log('[Client2] Adding mt5Accounts as login filter for cumulative intersection:', mt5AccountsFilter.length, 'accounts')
+        // If no intersection, force empty result with impossible account
+        if (mt5AccountsFilter.length === 0) {
+          combinedFilters.push({ field: 'login', operator: 'in', value: [0] })
+          if (DEBUG_LOGS) console.log('[Client2] No intersection - forcing empty result')
+        }
       } else if (mt5AccountsFilter.length > 0) {
-        // No quick filters, use mt5Accounts parameter as usual
+        // No quick filters or IB filter, use mt5Accounts parameter as usual
         payload.mt5Accounts = mt5AccountsFilter
       }
 
