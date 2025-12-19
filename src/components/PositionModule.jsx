@@ -1257,44 +1257,44 @@ export default function PositionModule() {
         {showNetPositions && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 px-4">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+            <div className="pb-2 pl-5">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Symbols</span>
+                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET Symbols</span>
                     <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.length}</span>
+                  <div className="flex items-center gap-[4px] min-h-[16px]">
+                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{netPositions.length}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
+                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET Volume</span>
                     <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                  <div className="flex items-center gap-[4px] min-h-[16px]">
+                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
+                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET P/L</span>
                     <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="flex items-center gap-[4px] min-h-[16px]">
+                    <span className={`text-[13px] font-bold leading-[14px] tracking-[-0.01em] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
                     </span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
+                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
                   <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Total Logins</span>
+                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">Total Logins</span>
                     <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
+                  <div className="flex items-center gap-[4px] min-h-[16px]">
+                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
                   </div>
                 </div>
               </div>
