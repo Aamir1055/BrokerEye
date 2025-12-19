@@ -976,7 +976,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const getActionColor = (action) => {
     // Handle both numeric and string action values
     if (action === 0 || action === '0' || (typeof action === 'string' && action.toUpperCase() === 'BUY')) {
-      return 'text-blue-600 bg-blue-50' // Buy is blue
+      return 'text-red-600 bg-red-50' // Buy is red (symmetric with Deals)
     }
     return 'text-green-600 bg-green-50' // Sell is green
   }
