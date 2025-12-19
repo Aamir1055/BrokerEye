@@ -679,7 +679,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, onBack, editGroup = null }) 
               transition: 'all 0.2s ease',
             }}
           >
-            Reset
+            {editGroup ? 'Reset' : 'Cancel'}
           </button>
           <button
             onClick={handleSave}
@@ -697,7 +697,7 @@ const LoginGroupModal = ({ isOpen, onClose, onSave, onBack, editGroup = null }) 
               transition: 'all 0.2s ease',
             }}
           >
-            Apply
+            {editGroup ? 'Apply' : 'Create'}
           </button>
         </div>
       </div>
