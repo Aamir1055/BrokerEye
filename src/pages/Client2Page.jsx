@@ -4635,7 +4635,12 @@ const Client2Page = () => {
                                                       const allVals = columnValues[columnKey] || []
                                                       const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                       const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                      const selected = selectedColumnValues[columnKey] || []
+                                                      // Get selected values from selectedColumnValues, fallback to columnFilters if empty
+                                                      let selected = selectedColumnValues[columnKey] || []
+                                                      if (selected.length === 0) {
+                                                        const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                        selected = existingFilter?.values || []
+                                                      }
                                                       const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
                                                       const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                       return (
@@ -4701,7 +4706,12 @@ const Client2Page = () => {
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
-                                                    const selected = selectedColumnValues[columnKey] || []
+                                                    // Get selected values from selectedColumnValues, fallback to columnFilters if empty
+                                                    let selected = selectedColumnValues[columnKey] || []
+                                                    if (selected.length === 0) {
+                                                      const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                      selected = existingFilter?.values || []
+                                                    }
                                                     const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                     // Values are already filtered server-side
                                                     const filteredVals = allVals
