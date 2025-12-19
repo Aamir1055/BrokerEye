@@ -1,11 +1,15 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useGroups } from '../contexts/GroupContext'
+import { useIB } from '../contexts/IBContext'
 import { useState, useEffect } from 'react'
 
 const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { logout } = useAuth()
+  const { setActiveGroupFilter } = useGroups()
+  const { clearIBSelection } = useIB()
   const [storedMarginCount, setStoredMarginCount] = useState(0)
 
   // Read margin count from localStorage on mount and listen for changes
@@ -45,6 +49,13 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   ]
   
   const handleNavigate = (path) => {
+    // Clear cross-module filters on navigation (desktop parity with mobile)
+    try {
+      setActiveGroupFilter('client2', null)
+    } catch {}
+    try {
+      clearIBSelection()
+    } catch {}
     navigate(path)
     // Close sidebar after navigation to avoid layout thrash and speed up desktop transitions
     if (typeof onClose === 'function') {
