@@ -304,6 +304,20 @@ const PendingOrdersPage = () => {
     return 'text-gray-900'
   }
 
+  // Badge styles for type/state with tinted background
+  const getTypeBadgeClasses = (type) => {
+    const t = String(type || '').toUpperCase()
+    if (t.startsWith('BUY')) return 'text-green-700 bg-green-100'
+    if (t.startsWith('SELL')) return 'text-red-700 bg-red-100'
+    return 'text-gray-700 bg-gray-100'
+  }
+  const getStateBadgeClasses = (state) => {
+    const s = String(state || '').toUpperCase()
+    if (s === 'IN') return 'text-green-700 bg-green-100'
+    if (s === 'OUT') return 'text-red-700 bg-red-100'
+    return 'text-gray-700 bg-gray-100'
+  }
+
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
@@ -1242,10 +1256,18 @@ const PendingOrdersPage = () => {
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
                           )}
                           {visibleColumns.type && (
-                            <td className={`px-2 py-1.5 text-[13px] whitespace-nowrap ${getOrderTypeColor(o.type)}`}>{o.type ?? '-'}</td>
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-full font-medium ${getTypeBadgeClasses(o.type)}`}>
+                                {o.type ?? '-'}
+                              </span>
+                            </td>
                           )}
                           {visibleColumns.state && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-full font-medium ${getStateBadgeClasses(o.state)}`}>
+                                {o.state ?? '-'}
+                              </span>
+                            </td>
                           )}
                           {visibleColumns.volume && (
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>

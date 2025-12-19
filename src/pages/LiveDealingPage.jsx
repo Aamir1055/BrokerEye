@@ -466,6 +466,24 @@ const LiveDealingPage = () => {
     }
   }, [])
 
+  // Robust date parsing to support dd/mm/yyyy and yyyy-mm-dd
+  const parseDateInput = (val) => {
+    if (!val) return null
+    const s = String(val).trim().replace(/\s+/g, '')
+    // ISO yyyy-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [y, m, d] = s.split('-').map(Number)
+      return new Date(Date.UTC(y, m - 1, d, 0, 0, 0))
+    }
+    // dd/mm/yyyy (allow spaces around slashes handled above)
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+      const [d, m, y] = s.split('/').map(Number)
+      return new Date(Date.UTC(y, m - 1, d, 0, 0, 0))
+    }
+    const dt = new Date(val)
+    return isNaN(dt.getTime()) ? null : dt
+  }
+
   // Fetch ALL deals from API ONE TIME on initial load
   const fetchAllDealsOnce = async () => {
     try {
@@ -490,10 +508,12 @@ const LiveDealingPage = () => {
         // Subtract 7 days from current time for 'from'
         from = nowUTC - (7 * 24 * 60 * 60)
       } else if (timeFilter === 'custom' && appliedFromDate && appliedToDate) {
-        // Parse custom dates and convert to UTC epoch seconds
-        const fromDate = new Date(appliedFromDate)
-        const toDate = new Date(appliedToDate)
-        
+        // Parse custom dates and convert to UTC epoch seconds (robust)
+        const fromDate = parseDateInput(appliedFromDate)
+        const toDate = parseDateInput(appliedToDate)
+        if (!fromDate || !toDate) {
+          throw new Error('Invalid custom date range')
+        }
         from = Math.floor(fromDate.getTime() / 1000)
         // Add 12 hours to custom 'to' date as well
         to = Math.floor(toDate.getTime() / 1000) + (12 * 60 * 60)
@@ -811,10 +831,14 @@ const LiveDealingPage = () => {
     }
     
     // Validate that From date is not after To date
-    const fromDate = new Date(customFromDate)
-    const toDate = new Date(customToDate)
+    const fromDate = parseDateInput(customFromDate)
+    const toDate = parseDateInput(customToDate)
     
-    if (fromDate > toDate) {
+    if (!fromDate || !toDate) {
+      setCustomDateError('Invalid date format')
+      return
+    }
+    if (fromDate.getTime() > toDate.getTime()) {
       setCustomDateError('From Date cannot be after To Date')
       return
     }
@@ -823,6 +847,8 @@ const LiveDealingPage = () => {
     setAppliedFromDate(customFromDate)
     setAppliedToDate(customToDate)
     setCustomDateError('')
+    // Close the dropdown for better feedback
+    setShowFilterMenu(false)
   }
 
   const sortDeals = (dealsToSort) => {
