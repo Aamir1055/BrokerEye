@@ -476,7 +476,7 @@ const MarginLevelPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Below Under 50%': '/Desktop cards icons/Total Clients.svg',
+      'Below 50%': '/Desktop cards icons/Total Clients.svg',
       'Avg Margin Level': '/Desktop cards icons/Total Balance.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
     }
@@ -895,11 +895,11 @@ const MarginLevelPage = () => {
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Below Under 50%</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Below 50%</span>
                 <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                   <img 
-                    src={getCardIcon('Below Under 50%')} 
-                    alt="Below Under 50%"
+                    src={getCardIcon('Below 50%')} 
+                    alt="Below 50%"
                     style={{ width: '100%', height: '100%' }}
                     onError={(e) => {
                       e.target.style.display = 'none'
