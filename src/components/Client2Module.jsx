@@ -1646,8 +1646,16 @@ export default function Client2Module() {
         }}
         filters={filters}
         onPendingChange={(hasPending, draft) => {
-          setHasPendingFilterChanges(hasPending)
-          setPendingFilterDraft(draft)
+          setHasPendingFilterChanges(prev => (prev !== hasPending ? hasPending : prev))
+          setPendingFilterDraft(prev => {
+            if (!prev && !draft) return prev
+            if (prev && draft) {
+              try {
+                if (JSON.stringify(prev) === JSON.stringify(draft)) return prev
+              } catch (e) {}
+            }
+            return draft || null
+          })
         }}
       />
 
@@ -1667,8 +1675,15 @@ export default function Client2Module() {
         }}
         currentSelectedIB={selectedIB}
         onPendingChange={(hasPending, draft) => {
-          setHasPendingIBChanges(hasPending)
-          setPendingIBDraft(draft || null)
+          setHasPendingIBChanges(prev => (prev !== hasPending ? hasPending : prev))
+          setPendingIBDraft(prev => {
+            const next = draft || null
+            if (prev === next) return prev
+            try {
+              if (prev && next && JSON.stringify(prev) === JSON.stringify(next)) return prev
+            } catch (e) {}
+            return next
+          })
         }}
       />
 
@@ -1705,8 +1720,13 @@ export default function Client2Module() {
         }}
         onDeleteGroup={deleteGroup}
         onPendingChange={useCallback((hasPending, draftName) => {
-          setHasPendingGroupChanges(hasPending)
-          setPendingGroupDraft(draftName ? { name: draftName } : null)
+          setHasPendingGroupChanges(prev => (prev !== hasPending ? hasPending : prev))
+          setPendingGroupDraft(prev => {
+            const next = draftName ? { name: draftName } : null
+            if (!prev && !next) return prev
+            if (prev && next && prev.name === next.name) return prev
+            return next
+          })
         }, [])}
       />
 
@@ -1719,41 +1739,7 @@ export default function Client2Module() {
         displayField="name"
       />
 
-      {/* Login Groups Modal */}
-      <LoginGroupsModal
-        isOpen={isLoginGroupsOpen}
-        onClose={() => setIsLoginGroupsOpen(false)}
-        groups={groups.map(g => ({
-          ...g,
-          loginCount: g.range 
-            ? (g.range.to - g.range.from + 1) 
-            : g.loginIds.length
-        }))}
-        activeGroupName={getActiveGroupFilter('client2')}
-        onSelectGroup={(group) => {
-          if (group === null) {
-            setActiveGroupFilter('client2', null)
-          } else {
-            setActiveGroupFilter('client2', group.name)
-          }
-          setIsLoginGroupsOpen(false)
-        }}
-        onCreateGroup={() => {
-          setIsLoginGroupsOpen(false)
-          setEditingGroup(null)
-          setIsLoginGroupModalOpen(true)
-        }}
-        onEditGroup={(group) => {
-          setIsLoginGroupsOpen(false)
-          setEditingGroup(group)
-          setIsLoginGroupModalOpen(true)
-        }}
-        onDeleteGroup={(group) => {
-          if (window.confirm(`Delete group "${group.name}"?`)) {
-            deleteGroup(group.name)
-          }
-        }}
-      />
+      
 
       {/* Login Group Modal (Create/Edit) */}
       <LoginGroupModal

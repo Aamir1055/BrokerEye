@@ -138,6 +138,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     }
   }
 
+  // Helper: normalize action label for positions/orders (hoisted before usage)
+  function getActionText(item) {
+    const val = (item.action ?? item.type)
+    if (val === 0 || String(val).toLowerCase() === 'buy') return 'Buy'
+    if (val === 1 || String(val).toLowerCase() === 'sell') return 'Sell'
+    return String(val ?? '').toString()
+  }
+
   // Sort function for flat arrays
   const sortData = (data, key, direction) => {
     if (!key) return data
@@ -458,14 +466,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return sortData(filtered, sortConfig.key, sortConfig.direction)
   }, [combinedPositions, positionsSearch, sortConfig])
   
-  // Helper: normalize action label for positions/orders
-  const getActionText = (item) => {
-    const val = (item.action ?? item.type)
-    if (val === 0 || String(val).toLowerCase() === 'buy') return 'Buy'
-    if (val === 1 || String(val).toLowerCase() === 'sell') return 'Sell'
-    return String(val ?? '').toString()
-  }
-
   // Helper: comparator for grouped arrays honoring header sort
   const compareByKey = (a, b, key) => {
     let av, bv
