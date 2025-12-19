@@ -3464,38 +3464,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           )}
 
           {activeTab === 'deals' && displayedDeals.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-blue-600 uppercase mb-0.5">Total Deals</p>
-                <p className="text-base font-bold text-blue-900">{displayedDeals.length}</p>
-              </div>
-              <div className="bg-purple-50 rounded-lg border border-purple-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-purple-600 uppercase mb-0.5">Total Volume</p>
-                <p className="text-base font-bold text-purple-900">
-                  {displayedDeals.reduce((sum, d) => sum + d.volume, 0).toFixed(2)}
-                </p>
-              </div>
-              <div className="bg-amber-50 rounded-lg border border-amber-200 p-2 hover:shadow-sm transition-shadow">
-                <p className="text-[9px] font-semibold text-amber-600 uppercase mb-0.5">Total Commission</p>
-                <p className="text-base font-bold text-amber-900">
-                  {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.commission, 0))}
-                </p>
-              </div>
-              <div className={`rounded-lg border p-2 hover:shadow-sm transition-shadow ${
-                displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
-                  ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-red-50 border-red-200'
-              }`}>
-                <p className={`text-[9px] font-semibold uppercase mb-0.5 ${
-                  displayedDeals.reduce((sum, d) => sum + d.profit, 0) >= 0
-                    ? 'text-emerald-600'
-                    : 'text-red-600'
-                }`}>Floating Profit</p>
-                <p className={`text-base font-bold ${getProfitColor(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}`}>
-                  {formatCurrency(displayedDeals.reduce((sum, d) => sum + d.profit, 0))}
-                </p>
-              </div>
-            </div>
+            (() => {
+              const totalDeals = displayedDeals.length
+              const totalVolume = displayedDeals.reduce((sum, d) => sum + (d.volume || 0), 0)
+              const totalCommission = displayedDeals.reduce((sum, d) => sum + (d.commission || 0), 0)
+              const totalProfit = displayedDeals.reduce((sum, d) => sum + (d.profit || 0), 0)
+              const row = [
+                { label: 'Total Deals', value: String(totalDeals), labelClass: 'text-blue-700', valueClass: 'text-blue-900', accent: 'border-blue-300' },
+                { label: 'Total Volume', value: totalVolume.toFixed(2), labelClass: 'text-indigo-700', valueClass: 'text-indigo-900', accent: 'border-indigo-300' },
+                { label: 'Total Commission', value: formatCurrency(totalCommission), labelClass: 'text-amber-700', valueClass: 'text-amber-900', accent: 'border-amber-400' },
+                { label: 'Floating Profit', value: formatCurrency(totalProfit), labelClass: totalProfit >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalProfit), accent: totalProfit >= 0 ? 'border-emerald-400' : 'border-red-400' }
+              ]
+              return (
+                <div className="space-y-2">
+                  <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+                    {row.map((it, idx) => (
+                      <div key={`deals-r-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
+                        <p className={`text-[10px] sm:text-[11px] font-semibold ${it.labelClass}`}>{it.label}</p>
+                        <p className={`text-xs font-bold ${it.valueClass || 'text-gray-800'}`}>{it.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()
           )}
 
 
