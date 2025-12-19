@@ -1332,7 +1332,7 @@ export default function PositionModule() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
-                      {netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+                      {formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}
                     </span>
                   </div>
                 </div>
@@ -1767,7 +1767,7 @@ export default function PositionModule() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
-                      {clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0)))}
+                      {formatNum(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0))}
                     </span>
                   </div>
                 </div>
