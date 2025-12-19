@@ -1718,7 +1718,10 @@ export default function Client2Module() {
           setEditingGroup(group)
           setIsLoginGroupModalOpen(true)
         }}
-        onDeleteGroup={deleteGroup}
+        onDeleteGroup={(group) => {
+          deleteGroup(group.name)
+          setIsLoginGroupsOpen(false)
+        }}
         onPendingChange={useCallback((hasPending, draftName) => {
           setHasPendingGroupChanges(prev => (prev !== hasPending ? hasPending : prev))
           setPendingGroupDraft(prev => {

@@ -958,7 +958,10 @@ export default function PendingOrdersModule() {
           setEditingGroup(group)
           setIsLoginGroupModalOpen(true)
         }}
-        onDeleteGroup={deleteGroup}
+        onDeleteGroup={(group) => {
+          deleteGroup(group.name)
+          setIsLoginGroupsOpen(false)
+        }}
         onPendingChange={(hasPending, draftName) => {
           setHasPendingGroupChanges(hasPending)
           setPendingGroupDraft(draftName ? { name: draftName } : null)

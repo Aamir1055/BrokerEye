@@ -75,8 +75,7 @@ export default function LiveDealingModule() {
   const [customToDate, setCustomToDate] = useState('')
   const [appliedFromDate, setAppliedFromDate] = useState('')
   const [appliedToDate, setAppliedToDate] = useState('')
-  const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', 'both'
-  const [showDisplayModeModal, setShowDisplayModeModal] = useState(false)
+  const [displayMode, setDisplayMode] = useState('value') // 'value' or 'percentage'
 
   // Pending change tracking for Customize View Apply
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -932,9 +931,9 @@ export default function LiveDealingModule() {
                 })()}
               </button>
               <button 
-                onClick={() => setShowDisplayModeModal(true)}
+                onClick={() => setDisplayMode(prev => prev === 'percentage' ? 'value' : 'percentage')}
                 className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all ${
-                  displayMode === 'percentage' || displayMode === 'both' ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
+                  displayMode === 'percentage' ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
                 <span className="text-[#4B4B4B] text-[12px] font-medium font-outfit">%</span>
@@ -1515,7 +1514,10 @@ export default function LiveDealingModule() {
           setEditingGroup(group)
           setIsLoginGroupModalOpen(true)
         }}
-        onDeleteGroup={deleteGroup}
+        onDeleteGroup={(group) => {
+          deleteGroup(group.name)
+          setIsLoginGroupsOpen(false)
+        }}
         onPendingChange={(hasPending, draftName) => {
           setHasPendingGroupChanges(hasPending)
           setPendingGroupDraft(draftName ? { name: draftName } : null)
@@ -1540,78 +1542,7 @@ export default function LiveDealingModule() {
         editGroup={editingGroup}
       />
 
-      {/* Display Mode Modal */}
-      {showDisplayModeModal && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/50 z-[9998]"
-            onClick={() => setShowDisplayModeModal(false)}
-          />
-          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] z-[9999] max-h-[85vh] flex flex-col animate-slide-up">
-            <div className="flex-shrink-0 pt-3 pb-4 px-5 border-b border-[#F2F2F7]">
-              <div className="w-[47px] h-[2px] bg-[#E5E7EB] rounded-full mx-auto mb-4" />
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-[#000000] font-outfit">Percentage View</h2>
-                <button 
-                  onClick={() => setShowDisplayModeModal(false)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M15 5L5 15M5 5L15 15" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <div className="space-y-3">
-                <label className="flex items-center justify-between py-3 border-b border-[#F2F2F7] cursor-pointer hover:bg-gray-50 px-2 rounded">
-                  <span className="text-sm text-[#000000] font-outfit">Without Percentage</span>
-                  <input
-                    type="radio"
-                    name="displayMode"
-                    value="value"
-                    checked={displayMode === 'value'}
-                    onChange={(e) => {
-                      setDisplayMode(e.target.value)
-                      setShowDisplayModeModal(false)
-                    }}
-                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-                <label className="flex items-center justify-between py-3 border-b border-[#F2F2F7] cursor-pointer hover:bg-gray-50 px-2 rounded">
-                  <span className="text-sm text-[#000000] font-outfit">Show My Percentage</span>
-                  <input
-                    type="radio"
-                    name="displayMode"
-                    value="percentage"
-                    checked={displayMode === 'percentage'}
-                    onChange={(e) => {
-                      setDisplayMode(e.target.value)
-                      setShowDisplayModeModal(false)
-                    }}
-                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-                <label className="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 px-2 rounded">
-                  <span className="text-sm text-[#000000] font-outfit">Both</span>
-                  <input
-                    type="radio"
-                    name="displayMode"
-                    value="both"
-                    checked={displayMode === 'both'}
-                    onChange={(e) => {
-                      setDisplayMode(e.target.value)
-                      setShowDisplayModeModal(false)
-                    }}
-                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Percentage toggle uses top bar button; modal removed */}
 
       {/* Client Details Modal */}
       {selectedClient && (

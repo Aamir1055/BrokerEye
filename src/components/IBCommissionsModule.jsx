@@ -1001,6 +1001,10 @@ export default function IBCommissionsModule() {
           setEditingGroup(group)
           setIsLoginGroupModalOpen(true)
         }}
+        onDeleteGroup={(group) => {
+          deleteGroup(group.name)
+          setIsLoginGroupsOpen(false)
+        }}
       />
 
       {/* Login Group Modal (Create/Edit) */}
