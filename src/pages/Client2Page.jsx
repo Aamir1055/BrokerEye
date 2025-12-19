@@ -4635,14 +4635,13 @@ const Client2Page = () => {
                                                       const allVals = columnValues[columnKey] || []
                                                       const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                       const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                      // Always read from columnFilters first to ensure we show currently applied filters
+                                                      // Always read from columnFilters to show currently applied filters
                                                       const existingFilter = columnFilters[`${columnKey}_checkbox`]
                                                       const filterValues = existingFilter?.values || []
-                                                      // Use selectedColumnValues for interactive selection, fallback to applied filter
+                                                      // Use selectedColumnValues only if user has interacted (different from applied filter)
                                                       const interactiveSelected = selectedColumnValues[columnKey]
-                                                      const selected = (interactiveSelected !== undefined && interactiveSelected.length > 0) 
-                                                        ? interactiveSelected 
-                                                        : filterValues
+                                                      // Show filterValues by default, or interactiveSelected if it differs from filter
+                                                      const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
                                                       const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
                                                       const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                       return (
@@ -4708,14 +4707,13 @@ const Client2Page = () => {
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
-                                                    // Always read from columnFilters first to ensure we show currently applied filters
+                                                    // Always read from columnFilters to show currently applied filters
                                                     const existingFilter = columnFilters[`${columnKey}_checkbox`]
                                                     const filterValues = existingFilter?.values || []
-                                                    // Use selectedColumnValues for interactive selection, fallback to applied filter
+                                                    // Use selectedColumnValues only if user has interacted (different from applied filter)
                                                     const interactiveSelected = selectedColumnValues[columnKey]
-                                                    const selected = (interactiveSelected !== undefined && interactiveSelected.length > 0) 
-                                                      ? interactiveSelected 
-                                                      : filterValues
+                                                    // Show filterValues by default, or interactiveSelected if it differs from filter
+                                                    const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
                                                     const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                     // Values are already filtered server-side
                                                     const filteredVals = allVals
