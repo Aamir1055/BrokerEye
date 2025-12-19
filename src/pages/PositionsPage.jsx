@@ -2400,7 +2400,7 @@ const PositionsPage = () => {
               </div>
 
               {/* NET Position Table */}
-              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ height: '650px' }}>
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: '60vh' }}>
                 {/* NET module controls */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-shrink-0 flex items-center px-4 py-3">
                   <div className="flex flex-row items-center justify-between gap-3 w-full">
@@ -2964,7 +2964,7 @@ const PositionsPage = () => {
               </div>
 
               {/* Client NET Table */}
-              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ height: '650px' }}>
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ maxHeight: '60vh' }}>
                 {/* Controls: search and pagination left; actions right */}
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   {/* Left: search */}
