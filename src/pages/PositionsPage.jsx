@@ -2964,7 +2964,7 @@ const PositionsPage = () => {
               </div>
 
               {/* Client NET Table */}
-              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1">
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col" style={{ height: '650px' }}>
                 {/* Controls: search and pagination left; actions right */}
                 <div className="p-3 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   {/* Left: search */}
