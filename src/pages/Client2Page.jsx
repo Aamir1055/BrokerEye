@@ -3956,8 +3956,8 @@ const Client2Page = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Search and Controls Bar */}
-            {clients && clients.length > 0 && (
+            {/* Search and Controls Bar - Always show to allow search clearing */}
+            {!initialLoad && (
             <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 {/* Left: Search and Columns */}
