@@ -1592,7 +1592,7 @@ const LiveDealingPage = () => {
                     {showFilterMenu && (
                       <div
                         ref={filterMenuRef}
-                        className="absolute left-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-72"
+                        className="absolute right-0 top-full mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1.5 z-50 w-72"
                       >
                         <div className="px-3 py-1.5 border-b border-gray-200">
                           <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">Time Period</p>
