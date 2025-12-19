@@ -2309,10 +2309,10 @@ const PositionsPage = () => {
               {/* NET Position Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                 {netCardsVisible.netSymbols && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">NET Symbols</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">NET Symbols</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('NET Symbols')} 
                           alt="NET Symbols"
@@ -2321,17 +2321,17 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{netFilteredPositions.length}</span>
-                      <span className="text-xs font-normal text-[#6B7280]">SYM</span>
+                      <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
                     </div>
                   </div>
                 )}
                 {netCardsVisible.totalNetVolume && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET Volume</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET Volume</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total NET Volume')} 
                           alt="Total NET Volume"
@@ -2340,17 +2340,17 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{formatNumber(netFilteredPositions.reduce((s,p)=>s+p.netVolume,0),2)}</span>
-                      <span className="text-xs font-normal text-[#6B7280]">VOL</span>
+                      <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">VOL</span>
                     </div>
                   </div>
                 )}
                 {netCardsVisible.totalNetPL && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET P/L</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET P/L</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total NET P/L')} 
                           alt="Total NET P/L"
@@ -2359,29 +2359,29 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className={`text-lg font-bold flex items-center gap-2 ${
+                    <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                       netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                     }`}>
                       {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 && (
-                        <svg width="10" height="10" viewBox="0 0 10 10">
+                        <svg width="8" height="8" viewBox="0 0 10 10" className="md:w-[10px] md:h-[10px]">
                           <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
                         </svg>
                       )}
                       {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) < 0 && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}}>
+                        <svg width="8" height="8" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}} className="md:w-[10px] md:h-[10px]">
                           <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
                         </svg>
                       )}
                       <span>{formatNumber(Math.abs(netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)),2)}</span>
-                      <span className="text-xs font-normal text-[#6B7280]">USD</span>
+                      <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
                     </div>
                   </div>
                 )}
                 {netCardsVisible.totalLogins && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Logins</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Logins</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total Logins')} 
                           alt="Total Logins"
@@ -2390,9 +2390,9 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
-                      <span className="text-xs font-normal text-[#6B7280]">ACCT</span>
+                      <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
                     </div>
                   </div>
                 )}
