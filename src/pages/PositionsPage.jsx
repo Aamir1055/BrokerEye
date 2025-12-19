@@ -606,6 +606,7 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       if (event.key === 'Escape') {
         if (showDisplayMenu) setShowDisplayMenu(false)
+        if (showColumnSelector) setShowColumnSelector(false)
         if (netShowSuggestions) setNetShowSuggestions(false)
         if (clientNetShowSuggestions) setClientNetShowSuggestions(false)
         if (netCardFilterOpen) setNetCardFilterOpen(false)
@@ -615,7 +616,7 @@ const PositionsPage = () => {
       }
     }
 
-    if (showDisplayMenu || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
+    if (showDisplayMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside, true)
       document.addEventListener('keydown', handleKeyDown)
       return () => {
@@ -623,7 +624,7 @@ const PositionsPage = () => {
         document.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [showDisplayMenu, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
+  }, [showDisplayMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
