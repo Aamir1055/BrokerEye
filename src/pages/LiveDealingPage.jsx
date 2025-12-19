@@ -1643,6 +1643,7 @@ const LiveDealingPage = () => {
                                 type="date"
                                 value={customFromDate}
                                 onChange={(e) => setCustomFromDate(e.target.value)}
+                                lang="en-GB"
                                 className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>
@@ -1652,6 +1653,7 @@ const LiveDealingPage = () => {
                                 type="date"
                                 value={customToDate}
                                 onChange={(e) => setCustomToDate(e.target.value)}
+                                lang="en-GB"
                                 className="w-full px-2 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                             </div>

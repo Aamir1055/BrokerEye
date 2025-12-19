@@ -296,6 +296,14 @@ const PendingOrdersPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
+  // Color mapping for order `type` column
+  const getOrderTypeColor = (type) => {
+    const t = String(type || '').toUpperCase()
+    if (t.startsWith('BUY')) return 'text-green-600'
+    if (t.startsWith('SELL')) return 'text-red-600'
+    return 'text-gray-900'
+  }
+
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
@@ -1234,7 +1242,7 @@ const PendingOrdersPage = () => {
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
                           )}
                           {visibleColumns.type && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.type ?? '-'}</td>
+                            <td className={`px-2 py-1.5 text-[13px] whitespace-nowrap ${getOrderTypeColor(o.type)}`}>{o.type ?? '-'}</td>
                           )}
                           {visibleColumns.state && (
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.state ?? '-'}</td>
