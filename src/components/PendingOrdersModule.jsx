@@ -317,7 +317,7 @@ export default function PendingOrdersModule() {
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
           >
-            <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+            <span className={`px-2 py-0.5 text-[9px] font-semibold ${
               isBuy ? 'bg-green-100 text-green-700' : 
               isSell ? 'bg-red-100 text-red-700' : 
               'bg-gray-100 text-gray-700'
