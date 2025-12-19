@@ -4635,12 +4635,14 @@ const Client2Page = () => {
                                                       const allVals = columnValues[columnKey] || []
                                                       const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                       const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                      // Get selected values from selectedColumnValues, fallback to columnFilters if empty
-                                                      let selected = selectedColumnValues[columnKey] || []
-                                                      if (selected.length === 0) {
-                                                        const existingFilter = columnFilters[`${columnKey}_checkbox`]
-                                                        selected = existingFilter?.values || []
-                                                      }
+                                                      // Always read from columnFilters first to ensure we show currently applied filters
+                                                      const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                      const filterValues = existingFilter?.values || []
+                                                      // Use selectedColumnValues for interactive selection, fallback to applied filter
+                                                      const interactiveSelected = selectedColumnValues[columnKey]
+                                                      const selected = (interactiveSelected !== undefined && interactiveSelected.length > 0) 
+                                                        ? interactiveSelected 
+                                                        : filterValues
                                                       const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
                                                       const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                       return (
@@ -4706,12 +4708,14 @@ const Client2Page = () => {
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
-                                                    // Get selected values from selectedColumnValues, fallback to columnFilters if empty
-                                                    let selected = selectedColumnValues[columnKey] || []
-                                                    if (selected.length === 0) {
-                                                      const existingFilter = columnFilters[`${columnKey}_checkbox`]
-                                                      selected = existingFilter?.values || []
-                                                    }
+                                                    // Always read from columnFilters first to ensure we show currently applied filters
+                                                    const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                    const filterValues = existingFilter?.values || []
+                                                    // Use selectedColumnValues for interactive selection, fallback to applied filter
+                                                    const interactiveSelected = selectedColumnValues[columnKey]
+                                                    const selected = (interactiveSelected !== undefined && interactiveSelected.length > 0) 
+                                                      ? interactiveSelected 
+                                                      : filterValues
                                                     const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                     // Values are already filtered server-side
                                                     const filteredVals = allVals
