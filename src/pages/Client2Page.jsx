@@ -4400,10 +4400,8 @@ const Client2Page = () => {
                                         const columnType = getColumnType(col.key)
                                         // Always fetch values for checkbox filtering with forceRefresh=true to avoid "No values available"
                                         fetchColumnValues(col.key, true)
-                                        // Initialize selectedColumnValues: if there's an active checkbox filter, restore it; otherwise start empty
-                                        const existingCheckboxFilter = columnFilters[`${col.key}_checkbox`]
-                                        const initialSelection = existingCheckboxFilter?.values || []
-                                        setSelectedColumnValues(prev => ({ ...prev, [col.key]: initialSelection }))
+                                        // Don't initialize selectedColumnValues - let it stay undefined so we read from columnFilters
+                                        // This ensures checkboxes show the correct state immediately when dropdown opens
                                       }
                                     }}
                                     className={`p-0.5 transition-opacity hover:opacity-70 ${filterCount > 0 ? 'text-green-400' : 'text-white/60'}`}
