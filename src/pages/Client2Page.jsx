@@ -988,7 +988,7 @@ const Client2Page = () => {
           }
         }
       })
-      // Add checkbox filters - use smart optimization for OR semantics
+      // Add checkbox filters - default server-side IN filtering (works for up to backend limit)
       Object.keys(columnFilters).forEach(filterKey => {
         if (filterKey.endsWith('_checkbox')) {
           const columnKey = filterKey.replace('_checkbox', '')
@@ -1003,7 +1003,7 @@ const Client2Page = () => {
               return
             }
 
-            // Special-case: login filters should use mt5Accounts for proper OR semantics
+            // Special-case: login filters should use IN array semantics
             if (columnKey === 'login') {
               const vals = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
               if (vals.length > 0) {
@@ -1018,14 +1018,6 @@ const Client2Page = () => {
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              // If everything visible is selected, skip sending filter
-              if (!searchQ && visibleValues.length > 0 && selectedValues.length === visibleValues.length) {
-                console.log(`[Client2] 🔍 Checkbox ${columnKey}: all values selected, skipping filter`)
-                return
-              }
-
-              // Decide between in vs not_in based on which set is smaller
-              // Always send 'in' with the selected list (full set), per requirement
               combinedFilters.push({ field, operator: 'in', value: selectedValues })
               console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
             }
@@ -1111,6 +1103,174 @@ const Client2Page = () => {
       if (sortBy) {
         payload.sortBy = sortBy
         payload.sortOrder = sortOrder
+      }
+
+      // Detect large IN-filters that exceed backend limit and enable chunked merging
+      const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
+      const LARGE_IN_THRESHOLD = 50
+      const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
+
+      if (largeInFilters.length > 0) {
+        const primaryLargeFilter = largeInFilters[0]
+        const secondaryLargeFilters = largeInFilters.slice(1)
+        const baseFilters = (payload.filters || []).filter(f => f !== primaryLargeFilter)
+
+        const chunk = (arr, size) => {
+          const out = []
+          for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+          return out
+        }
+
+        const CHUNK_SIZE = LARGE_IN_THRESHOLD // stay within server cap
+        const chunks = chunk(primaryLargeFilter.value, CHUNK_SIZE)
+        const BIG_LIMIT = Math.max(1000, Number(itemsPerPage) || 100)
+        const mergedMap = new Map()
+
+        console.log(`[Client2] 🚚 Chunking '${primaryLargeFilter.field}' with ${primaryLargeFilter.value.length} values into ${chunks.length} chunks`)
+
+        // Fetch all chunks and merge
+        for (let ci = 0; ci < chunks.length; ci++) {
+          const part = chunks[ci]
+          const filtersForChunk = [...baseFilters, { field: primaryLargeFilter.field, operator: 'in', value: part }]
+          const chunkPayload = { ...payload, page: 1, limit: BIG_LIMIT, filters: filtersForChunk }
+          if (percentModeActive) chunkPayload.percentage = true
+
+          console.log(`[Client2] 📡 Chunk ${ci + 1}/${chunks.length} payload:`, JSON.stringify(chunkPayload))
+
+          // Page through this chunk if needed
+          let pageNum = 1
+          let totalPagesForChunk = 1
+          do {
+            chunkPayload.page = pageNum
+            const resp = await brokerAPI.searchClients(chunkPayload)
+            const data = extractData(resp)
+            const list = (data?.clients || []).filter(c => c != null && c.login != null)
+            list.forEach(row => {
+              if (!mergedMap.has(row.login)) mergedMap.set(row.login, row)
+            })
+            totalPagesForChunk = Math.max(1, Number(data?.pages || 1))
+            pageNum += 1
+          } while (pageNum <= totalPagesForChunk)
+        }
+
+        // Convert to array and apply any secondary large IN filters client-side (intersection)
+        let mergedRows = Array.from(mergedMap.values())
+        if (secondaryLargeFilters.length > 0) {
+          console.warn('[Client2] Multiple large IN filters detected; applying secondary filters client-side')
+          for (const f of secondaryLargeFilters) {
+            const allowed = new Set(f.value.map(v => String(v)))
+            mergedRows = mergedRows.filter(row => allowed.has(String(row[f.field])))
+          }
+        }
+
+        // Compute totals from merged rows so face cards remain populated
+        const sumField = (rows, key) => {
+          let s = 0
+          for (const r of rows) {
+            const v = r?.[key]
+            const n = typeof v === 'string' ? parseFloat(v) : (Number(v) || 0)
+            if (!Number.isNaN(n)) s += n
+          }
+          return s
+        }
+
+        const totalsFromRows = {
+          assets: sumField(mergedRows, 'assets'),
+          balance: sumField(mergedRows, 'balance'),
+          blockedCommission: sumField(mergedRows, 'blockedCommission'),
+          blockedProfit: sumField(mergedRows, 'blockedProfit'),
+          commission: sumField(mergedRows, 'commission'),
+          credit: sumField(mergedRows, 'credit'),
+          dailyBonusIn: sumField(mergedRows, 'dailyBonusIn'),
+          dailyBonusOut: sumField(mergedRows, 'dailyBonusOut'),
+          dailyCreditIn: sumField(mergedRows, 'dailyCreditIn'),
+          dailyCreditOut: sumField(mergedRows, 'dailyCreditOut'),
+          dailyDeposit: sumField(mergedRows, 'dailyDeposit'),
+          dailyPnL: sumField(mergedRows, 'dailyPnL'),
+          dailySOCompensationIn: sumField(mergedRows, 'dailySOCompensationIn'),
+          dailySOCompensationOut: sumField(mergedRows, 'dailySOCompensationOut'),
+          dailyWithdrawal: sumField(mergedRows, 'dailyWithdrawal'),
+          equity: sumField(mergedRows, 'equity'),
+          floating: sumField(mergedRows, 'floating'),
+          liabilities: sumField(mergedRows, 'liabilities'),
+          lifetimeBonusIn: sumField(mergedRows, 'lifetimeBonusIn'),
+          lifetimeBonusOut: sumField(mergedRows, 'lifetimeBonusOut'),
+          lifetimeCreditIn: sumField(mergedRows, 'lifetimeCreditIn'),
+          lifetimeCreditOut: sumField(mergedRows, 'lifetimeCreditOut'),
+          lifetimeDeposit: sumField(mergedRows, 'lifetimeDeposit'),
+          lifetimePnL: sumField(mergedRows, 'lifetimePnL'),
+          lifetimeSOCompensationIn: sumField(mergedRows, 'lifetimeSOCompensationIn'),
+          lifetimeSOCompensationOut: sumField(mergedRows, 'lifetimeSOCompensationOut'),
+          lifetimeWithdrawal: sumField(mergedRows, 'lifetimeWithdrawal'),
+          margin: sumField(mergedRows, 'margin'),
+          marginFree: sumField(mergedRows, 'marginFree'),
+          marginInitial: sumField(mergedRows, 'marginInitial'),
+          marginLevel: sumField(mergedRows, 'marginLevel'),
+          marginMaintenance: sumField(mergedRows, 'marginMaintenance'),
+          pnl: sumField(mergedRows, 'pnl'),
+          previousEquity: sumField(mergedRows, 'previousEquity'),
+          profit: sumField(mergedRows, 'profit'),
+          storage: sumField(mergedRows, 'storage'),
+          thisMonthBonusIn: sumField(mergedRows, 'thisMonthBonusIn'),
+          thisMonthBonusOut: sumField(mergedRows, 'thisMonthBonusOut'),
+          thisMonthCreditIn: sumField(mergedRows, 'thisMonthCreditIn'),
+          thisMonthCreditOut: sumField(mergedRows, 'thisMonthCreditOut'),
+          thisMonthDeposit: sumField(mergedRows, 'thisMonthDeposit'),
+          thisMonthPnL: sumField(mergedRows, 'thisMonthPnL'),
+          thisMonthSOCompensationIn: sumField(mergedRows, 'thisMonthSOCompensationIn'),
+          thisMonthSOCompensationOut: sumField(mergedRows, 'thisMonthSOCompensationOut'),
+          thisMonthWithdrawal: sumField(mergedRows, 'thisMonthWithdrawal'),
+          thisWeekBonusIn: sumField(mergedRows, 'thisWeekBonusIn'),
+          thisWeekBonusOut: sumField(mergedRows, 'thisWeekBonusOut'),
+          thisWeekCreditIn: sumField(mergedRows, 'thisWeekCreditIn'),
+          thisWeekCreditOut: sumField(mergedRows, 'thisWeekCreditOut'),
+          thisWeekDeposit: sumField(mergedRows, 'thisWeekDeposit'),
+          thisWeekPnL: sumField(mergedRows, 'thisWeekPnL'),
+          thisWeekSOCompensationIn: sumField(mergedRows, 'thisWeekSOCompensationIn'),
+          thisWeekSOCompensationOut: sumField(mergedRows, 'thisWeekSOCompensationOut'),
+          thisWeekWithdrawal: sumField(mergedRows, 'thisWeekWithdrawal')
+        }
+
+        // Percentage totals (only when percentage mode requested in chunk calls)
+        const totalsPercentFromRows = percentModeActive ? {
+          lifetimePnL: sumField(mergedRows, 'lifetimePnL_percentage'),
+          floating: sumField(mergedRows, 'floating_percentage')
+        } : {}
+
+        // Apply sort client-side to preserve UX
+        if (sortBy) {
+          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
+          mergedRows.sort((a, b) => {
+            const va = a?.[sortBy]
+            const vb = b?.[sortBy]
+            const na = Number(va), nb = Number(vb)
+            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
+            const sa = String(va ?? '').toLowerCase()
+            const sb = String(vb ?? '').toLowerCase()
+            if (sa < sb) return -1 * dir
+            if (sa > sb) return 1 * dir
+            return 0
+          })
+        }
+
+        // Client-side pagination
+        const totalMerged = mergedRows.length
+        const limit = Number(itemsPerPage) || 100
+        const page = Number(currentPage) || 1
+        const start = (page - 1) * limit
+        const end = start + limit
+        const paged = mergedRows.slice(start, end)
+        const pages = Math.max(1, Math.ceil(totalMerged / limit))
+
+        setClients(paged)
+        setTotalClients(totalMerged)
+        setTotalPages(pages)
+        setTotals(totalsFromRows)
+        setTotalsPercent(totalsPercentFromRows)
+        setError('')
+
+        // Done via chunked mode; skip single-request path
+        return
       }
 
       // ALWAYS fetch normal data for table display
@@ -2682,11 +2842,11 @@ const Client2Page = () => {
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
           const rawValues = cfg.values.map(v => String(v).trim()).filter(v => v.length > 0)
           if (rawValues.length === 0) return
+          // Prefer IN operator; if >50 we will chunk later in gatherExportDataset
           if (rawValues.length === 1) {
             combinedFilters.push({ field, operator: 'equal', value: rawValues[0] })
           } else {
-            if (multiOrField && multiOrField !== field) multiOrConflict = true
-            else { multiOrField = field; multiOrValues = rawValues }
+            combinedFilters.push({ field, operator: 'in', value: rawValues })
           }
         }
       })
@@ -2733,39 +2893,58 @@ const Client2Page = () => {
     }
     if (sortBy) { base.sortBy = sortBy; base.sortOrder = sortOrder }
 
-    // Build payload variants when needed (OR semantics)
-    const buildVariants = (b) => {
-      if (multiOrField && multiOrValues.length > 1 && !multiOrConflict) {
-        return multiOrValues.map(val => {
-          const f = Array.isArray(b.filters) ? [...b.filters] : []
-          f.push({ field: multiOrField, operator: 'equal', value: val })
-          const p = { ...b, filters: f }
-          if (percentageFlag && percentModeActive) p.percentage = true
-          return p
-        })
-      }
-      const p = { ...b }
-      if (percentageFlag && percentModeActive) p.percentage = true
-      return [p]
-    }
-    return buildVariants(base)
+    // Single variant; gatherExportDataset will handle chunking and merging
+    const p = { ...base }
+    if (percentageFlag && percentModeActive) p.percentage = true
+    return [p]
   }, [searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, activeGroup, sortBy, sortOrder])
 
   // Fetch all pages for a single payload
   const fetchAllPagesForPayload = useCallback(async (payload) => {
-    // First page
+    // If payload contains a large IN filter, chunk it and merge all pages
+    const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
+    const LARGE_IN_THRESHOLD = 50
+    const largeIn = inFilters.find(f => f.value.length > LARGE_IN_THRESHOLD)
+    if (largeIn) {
+      const baseFilters = (payload.filters || []).filter(f => f !== largeIn)
+      const chunk = (arr, size) => {
+        const out = []
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
+        return out
+      }
+      const CHUNK_SIZE = LARGE_IN_THRESHOLD
+      const chunks = chunk(largeIn.value, CHUNK_SIZE)
+      const merged = []
+      for (let ci = 0; ci < chunks.length; ci++) {
+        const part = chunks[ci]
+        const chunkPayload = { ...payload, page: 1, filters: [...baseFilters, { field: largeIn.field, operator: 'in', value: part }] }
+        const first = await brokerAPI.searchClients(chunkPayload)
+        const dataFirst = first?.data || first
+        const pages = Number(dataFirst?.pages || 1)
+        let list = dataFirst?.clients || []
+        if (pages > 1) {
+          for (let p = 2; p <= pages; p++) {
+            const resp = await brokerAPI.searchClients({ ...chunkPayload, page: p })
+            const d = resp?.data || resp
+            list = list.concat(d?.clients || [])
+          }
+        }
+        merged.push(...list)
+      }
+      return merged
+    }
+
+    // Normal path: fetch all pages for given payload
     const first = await brokerAPI.searchClients({ ...payload, page: 1 })
     const dataFirst = first?.data || first
     const pages = Number(dataFirst?.pages || 1)
     let list = dataFirst?.clients || []
     if (pages > 1) {
-      const rest = await Promise.all(
-        Array.from({ length: pages - 1 }, (_, i) => brokerAPI.searchClients({ ...payload, page: i + 2 }))
-      )
-      rest.forEach(resp => {
+      for (let p = 2; p <= pages; p++) {
+        const resp = await brokerAPI.searchClients({ ...payload, page: p })
         const d = resp?.data || resp
         list = list.concat(d?.clients || [])
-      })
+      }
     }
     return list
   }, [])
