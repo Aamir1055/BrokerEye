@@ -307,9 +307,10 @@ const PendingOrdersPage = () => {
   // Badge styles for type/state with tinted background
   const getTypeBadgeClasses = (type) => {
     const t = String(type || '').toUpperCase()
-    if (t.startsWith('BUY')) return 'text-green-700 bg-green-100'
-    if (t.startsWith('SELL')) return 'text-red-700 bg-red-100'
-    return 'text-gray-700 bg-gray-100'
+    // Mirror Live Dealing Action UI: BUY -> green, SELL -> red
+    if (t.startsWith('BUY')) return 'bg-green-100 text-green-800'
+    if (t.startsWith('SELL')) return 'bg-red-100 text-red-800'
+    return 'bg-gray-100 text-gray-700'
   }
   const getStateBadgeClasses = (state) => {
     const s = String(state || '').toUpperCase()
@@ -1206,7 +1207,7 @@ const PendingOrdersPage = () => {
               <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
                     <tr>
-                      {visibleColumns.time && renderHeaderCell('timeSetup', 'Setup', 'timeSetup')}
+                      {visibleColumns.time && renderHeaderCell('timeSetup', 'Time', 'timeSetup')}
                       {visibleColumns.login && renderHeaderCell('login', 'Login')}
                       {visibleColumns.order && renderHeaderCell('order', 'Order')}
                       {visibleColumns.symbol && renderHeaderCell('symbol', 'Symbol')}
@@ -1257,7 +1258,7 @@ const PendingOrdersPage = () => {
                           )}
                           {visibleColumns.type && (
                             <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded-full font-medium ${getTypeBadgeClasses(o.type)}`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getTypeBadgeClasses(o.type)}`}>
                                 {o.type ?? '-'}
                               </span>
                             </td>

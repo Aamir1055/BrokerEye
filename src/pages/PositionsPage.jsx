@@ -682,6 +682,21 @@ const PositionsPage = () => {
     }
   }
 
+  // Normalize action label and chip classes to match Live Dealing
+  const getActionLabel = (action) => {
+    if (action === 0 || action === '0') return 'Buy'
+    if (action === 1 || action === '1') return 'Sell'
+    const s = String(action || '').toLowerCase()
+    if (s.includes('buy')) return 'Buy'
+    if (s.includes('sell')) return 'Sell'
+    return String(action || '-')
+  }
+  const getActionChipClasses = (action) => {
+    const s = String(action ?? '').toLowerCase()
+    const isBuy = action === 0 || action === '0' || s.includes('buy')
+    return isBuy ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+  }
+
   // Calculate NET positions for all clients with reversed type display
   // Robust to multiple action encodings: 0/1, 'Buy'/'Sell', 'BUY'/'SELL', 'buy'/'sell'
   const calculateGlobalNetPositions = (positions) => {
@@ -1395,7 +1410,7 @@ const PositionsPage = () => {
       'time','login','position','symbol','action','volume','volumePercentage','priceOpen','priceCurrent','sl','tp','profit','profitPercentage','storage','storagePercentage','appliedPercentage','reason','comment','commission'
     ]
     const labelMap = {
-      time: 'Updated',
+      time: 'Time',
       login: 'Login',
       position: 'Position',
       symbol: 'Symbol',
@@ -3459,7 +3474,7 @@ const PositionsPage = () => {
                         const effectiveCols = getEffectiveVisibleColumns()
                         return (
                           <>
-                      {effectiveCols.time && renderHeaderCell('timeUpdate', 'Updated', 'timeUpdate')}
+                      {effectiveCols.time && renderHeaderCell('timeUpdate', 'Time', 'timeUpdate')}
                       {effectiveCols.login && renderHeaderCell('login', 'Login')}
                       {effectiveCols.position && renderHeaderCell('position', 'Position')}
                       {effectiveCols.symbol && renderHeaderCell('symbol', 'Symbol')}
@@ -3543,7 +3558,11 @@ const PositionsPage = () => {
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.symbol}</td>
                           )}
                           {effectiveCols.action && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{p.action}</td>
+                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getActionChipClasses(p.action)}`}>
+                                {getActionLabel(p.action)}
+                              </span>
+                            </td>
                           )}
                           {effectiveCols.volume && (
                             <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.volume, p.symbol), 2)}</td>

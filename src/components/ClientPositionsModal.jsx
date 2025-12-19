@@ -966,19 +966,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     const numericAction = typeof action === 'string' ? parseInt(action) : action
     const stringAction = typeof action === 'string' ? action.toLowerCase() : ''
     
-    // Deals tab: Buy -> Red, Sell -> Green
-    if (numericAction === 0 || stringAction === 'buy') return 'text-red-600 bg-red-50'
-    if (numericAction === 1 || stringAction === 'sell') return 'text-green-600 bg-green-50'
-    if (numericAction === 2 || numericAction === 3 || stringAction === 'balance' || stringAction === 'credit' || stringAction === 'deposit') return 'text-purple-600 bg-purple-50'
-    return 'text-gray-600 bg-gray-50'
+    // Mirror Live Dealing Action UI: BUY -> green, SELL -> red
+    if (numericAction === 0 || stringAction === 'buy') return 'bg-green-100 text-green-800'
+    if (numericAction === 1 || stringAction === 'sell') return 'bg-red-100 text-red-800'
+    if (numericAction === 2 || numericAction === 3 || stringAction === 'balance' || stringAction === 'credit' || stringAction === 'deposit') return 'bg-purple-100 text-purple-800'
+    return 'bg-gray-100 text-gray-700'
   }
 
   const getActionColor = (action) => {
-    // Handle both numeric and string action values
-    if (action === 0 || action === '0' || (typeof action === 'string' && action.toUpperCase() === 'BUY')) {
-      return 'text-red-600 bg-red-50' // Buy is red (symmetric with Deals)
-    }
-    return 'text-green-600 bg-green-50' // Sell is green
+    // Mirror Live Dealing Action UI: BUY -> green, SELL -> red
+    const isBuy = (
+      action === 0 ||
+      action === '0' ||
+      (typeof action === 'string' && action.trim().toLowerCase() === 'buy')
+    )
+    return isBuy ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
   }
 
   const getProfitColor = (profit) => {
@@ -2385,7 +2387,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                               {positionsVisibleColumns.action && (
                               <td className="px-3 py-2 text-sm whitespace-nowrap">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(position.action)}`}>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getActionColor(position.action)}`}>
                                   {getActionLabel(position.action)}
                                 </span>
                               </td>
@@ -2476,7 +2478,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                               {positionsVisibleColumns.action && (
                               <td className="px-3 py-2 text-sm whitespace-nowrap">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getActionColor(order.action || order.type)}`}>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getActionColor(order.action || order.type)}`}>
                                   {order.action || order.type || '-'}
                                 </span>
                               </td>
@@ -3311,7 +3313,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             {deal.symbol || '-'}
                           </td>
                           <td className="px-3 py-2 text-sm whitespace-nowrap">
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${getDealActionColor(deal.action)}`}>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getDealActionColor(deal.action)}`}>
                               {getDealActionLabel(deal.action)}
                             </span>
                           </td>
