@@ -2885,10 +2885,10 @@ const PositionsPage = () => {
               {/* Client NET Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
                 {clientNetCardsVisible.clientNetRows && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Client NET Rows</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Client NET Rows</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Client NET Rows')} 
                           alt="Client NET Rows"
@@ -2897,16 +2897,16 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{clientNetFilteredPositions.length}</span>
                     </div>
                   </div>
                 )}
                 {clientNetCardsVisible.totalNetVolume && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET Volume</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET Volume</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total NET Volume')} 
                           alt="Total NET Volume"
@@ -2915,16 +2915,16 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}</span>
                     </div>
                   </div>
                 )}
                 {clientNetCardsVisible.totalNetPL && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total NET P/L</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET P/L</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total NET P/L')} 
                           alt="Total NET P/L"
@@ -2933,7 +2933,7 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className={`text-lg font-bold flex items-center gap-2 ${
+                    <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                       clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
                       <span>
@@ -2944,10 +2944,10 @@ const PositionsPage = () => {
                   </div>
                 )}
                 {clientNetCardsVisible.totalLogins && (
-                  <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Total Logins</span>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Logins</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
                         <img 
                           src={getCardIcon('Total Logins')} 
                           alt="Total Logins"
@@ -2956,7 +2956,7 @@ const PositionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-[#1F2937] flex items-center gap-2">
+                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
                       <span>{new Set(clientNetFilteredPositions.map(r=>r.login)).size}</span>
                     </div>
                   </div>
