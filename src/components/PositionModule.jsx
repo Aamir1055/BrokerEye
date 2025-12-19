@@ -1259,42 +1259,106 @@ export default function PositionModule() {
             {/* Face Cards Carousel */}
             <div className="pb-2 pl-5">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
-                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET Symbols</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Symbols</span>
                     <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-center gap-[4px] min-h-[16px]">
-                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{netPositions.length}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.length}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET Volume</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-center gap-[4px] min-h-[16px]">
-                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">NET P/L</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-center gap-[4px] min-h-[16px]">
-                    <span className={`text-[13px] font-bold leading-[14px] tracking-[-0.01em] ${netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
                       {netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(netPositions.reduce((s,p)=>s+p.totalProfit,0)))}
                     </span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[60px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] p-2 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[9px] font-semibold leading-[12px] pr-1">Total Logins</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Total Logins</span>
                     <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-center gap-[4px] min-h-[16px]">
-                    <span className="text-[13px] font-bold leading-[14px] tracking-[-0.01em] text-[#000000]">{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
                   </div>
                 </div>
               </div>
@@ -1628,44 +1692,108 @@ export default function PositionModule() {
         {showClientNet && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 px-4">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Rows</span>
+            <div className="pb-2 pl-5">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Rows</span>
                     <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{clientNetPositions.length}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{clientNetPositions.length}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET Volume</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(clientNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">NET P/L</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className={`text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] ${clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
                       {clientNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '▲ ' : '▼ '}{formatNum(Math.abs(clientNetPositions.reduce((s,p)=>s+p.totalProfit,0)))}
                     </span>
                   </div>
                 </div>
-                <div className="min-w-[125px] w-[125px] h-[55px] bg-white rounded-[12px] shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] px-2 py-1 flex flex-col justify-between snap-start flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <span className="text-[#4B4B4B] text-[10px] font-semibold leading-[13px] pr-1">Logins</span>
+                <div style={{
+                  boxSizing: 'border-box',
+                  minWidth: '125px',
+                  width: '125px',
+                  height: '60px',
+                  background: '#FFFFFF',
+                  border: '1px solid #F2F2F7',
+                  boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  scrollSnapAlign: 'start',
+                  flexShrink: 0,
+                  flex: 'none'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Logins</span>
                     <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[15.5px] font-bold leading-[13px] tracking-[-0.01em] text-[#000000]">{new Set(clientNetPositions.map(r=>r.login)).size}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{new Set(clientNetPositions.map(r=>r.login)).size}</span>
                   </div>
                 </div>
               </div>
