@@ -1378,6 +1378,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             aValue = a.deal || 0
             bValue = b.deal || 0
             break
+          case 'order':
+            aValue = a.order || 0
+            bValue = b.order || 0
+            break
           case 'position':
             aValue = a.position || 0
             bValue = b.position || 0
@@ -3073,10 +3077,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           />
                         </th>
                         <th 
-                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative" 
+                          className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700" 
                           style={{ width: dealsColumnWidths['order'] || 'auto', minWidth: '80px' }}
+                          onClick={() => handleDealsSort('order')}
                         >
-                          Order
+                          <div className="flex items-center gap-1.5">
+                            Order
+                            <SortIcon column="order" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
+                          </div>
                           <div
                             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
                             onMouseDown={(e) => handleDealsResizeStart(e, 'order')}
