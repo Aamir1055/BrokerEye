@@ -966,7 +966,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     const numericAction = typeof action === 'string' ? parseInt(action) : action
     const stringAction = typeof action === 'string' ? action.toLowerCase() : ''
     
-    if (numericAction === 0 || stringAction === 'buy') return 'text-green-600 bg-green-50'
+    // Deals tab: Buy -> Red, Sell -> Green
+    if (numericAction === 0 || stringAction === 'buy') return 'text-red-600 bg-red-50'
     if (numericAction === 1 || stringAction === 'sell') return 'text-green-600 bg-green-50'
     if (numericAction === 2 || numericAction === 3 || stringAction === 'balance' || stringAction === 'credit' || stringAction === 'deposit') return 'text-purple-600 bg-purple-50'
     return 'text-gray-600 bg-gray-50'

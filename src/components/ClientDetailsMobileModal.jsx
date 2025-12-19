@@ -910,11 +910,19 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {dealColumns.symbol && <td className="px-3 py-2 text-xs text-gray-900">{deal.symbol}</td>}
               {dealColumns.action && (
                 <td className="px-3 py-2 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    deal.action === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {deal.action}
-                  </span>
+                  {(() => {
+                    const actionStr = String(deal.action || '').toLowerCase()
+                    const cls = actionStr === 'buy'
+                      ? 'bg-red-100 text-red-700'
+                      : actionStr === 'sell'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                    return (
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${cls}`}>
+                        {deal.action}
+                      </span>
+                    )
+                  })()}
                 </td>
               )}
               {dealColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(deal.volume)}</td>}
