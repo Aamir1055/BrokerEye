@@ -250,7 +250,7 @@ const GroupModal = ({
   const filteredItems = getFilteredItems()
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex z-50 p-4 transition-all duration-300 ${isSearchFocused ? 'items-start pt-5' : 'items-center justify-center'}`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 transition-all duration-300">
       <style>{`
         @media (max-width: 768px) {
           .group-modal-container-focused {
