@@ -641,11 +641,11 @@ const PositionsPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Positions': '/Desktop cards icons/Total Clients.svg',
+      'Total Positions': '/Desktop cards icons/Total Balance.svg',
       'Floating Profit': '/Desktop cards icons/Floating Profit.svg',
       'Floating Profit %': '/Desktop cards icons/Floating Profit.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
-      'Symbols': '/Desktop cards icons/Total Clients.svg',
+      'Symbols': '/Desktop cards icons/Total Equity.svg',
       // NET Position cards
       'NET Symbols': '/Desktop cards icons/Total Clients.svg',
       'Total NET Volume': '/Desktop cards icons/Total Balance.svg',
