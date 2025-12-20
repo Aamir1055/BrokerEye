@@ -1223,7 +1223,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       const getVal = (row) => {
         switch (positionsSortColumn) {
           case 'time':
-            return row.timeCreate || 0
+            // Pending orders use timeSetup; positions use timeCreate
+            return (row.timeSetup != null ? row.timeSetup : row.timeCreate) || 0
           case 'position':
             return (row.order != null ? row.order : row.position) || 0
           case 'symbol':
@@ -1233,7 +1234,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           case 'volume':
             return row.volume || 0
           case 'priceOpen':
-            return row.priceOpen || 0
+            // Positions: priceOpen; Pending orders: priceOrder or price
+            if (row.priceOpen != null) return row.priceOpen
+            if (row.priceOrder != null) return row.priceOrder
+            if (row.price != null) return row.price
+            return 0
           case 'priceCurrent':
             return row.priceCurrent || 0
           case 'sl':
