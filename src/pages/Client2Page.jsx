@@ -3319,10 +3319,16 @@ const Client2Page = () => {
 
   const getAccountTypeChipClasses = (type) => {
     const t = String(type || '').toUpperCase()
+    // Account tier types
+    if (t === 'PLATINUM') return 'bg-cyan-100 text-cyan-800'
+    if (t === 'GOLD') return 'bg-yellow-100 text-yellow-800'
+    if (t === 'SILVER') return 'bg-gray-200 text-gray-700'
+    if (t === 'STANDARD') return 'bg-blue-100 text-blue-800'
+    // Account category types
     if (t.includes('LIVE') || t === 'LIVE' || t === 'REAL') return 'bg-green-100 text-green-800'
     if (t.includes('DEMO')) return 'bg-orange-100 text-orange-800'
-    if (t.includes('CONTEST')) return 'bg-yellow-100 text-yellow-800'
-    return 'bg-gray-100 text-gray-700'
+    if (t.includes('CONTEST')) return 'bg-purple-100 text-purple-800'
+    return 'bg-indigo-100 text-indigo-700'
   }
 
   // Format numbers in Indian style
