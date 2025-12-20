@@ -3237,6 +3237,23 @@ const Client2Page = () => {
     return ''
   }
 
+  // Chip styling for processorType and accountType
+  const getProcessorTypeChipClasses = (type) => {
+    const t = String(type || '').toUpperCase()
+    if (t.includes('MT4') || t === 'MT4') return 'bg-blue-100 text-blue-800'
+    if (t.includes('MT5') || t === 'MT5') return 'bg-purple-100 text-purple-800'
+    if (t.includes('CTRADER') || t === 'CTRADER') return 'bg-indigo-100 text-indigo-800'
+    return 'bg-gray-100 text-gray-700'
+  }
+
+  const getAccountTypeChipClasses = (type) => {
+    const t = String(type || '').toUpperCase()
+    if (t.includes('LIVE') || t === 'LIVE' || t === 'REAL') return 'bg-green-100 text-green-800'
+    if (t.includes('DEMO')) return 'bg-orange-100 text-orange-800'
+    if (t.includes('CONTEST')) return 'bg-yellow-100 text-yellow-800'
+    return 'bg-gray-100 text-gray-700'
+  }
+
   // Format numbers in Indian style
   const formatIndianNumber = (num) => {
     const numStr = num.toString()
@@ -5210,7 +5227,18 @@ const Client2Page = () => {
                                 }}
                                 title={cellValue}
                               >
-                                {cellValue}
+                                {/* Chip formatting for processorType and accountType */}
+                                {col.key === 'processorType' ? (
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getProcessorTypeChipClasses(cellValue)}`}>
+                                    {cellValue}
+                                  </span>
+                                ) : col.key === 'accountType' ? (
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getAccountTypeChipClasses(cellValue)}`}>
+                                    {cellValue}
+                                  </span>
+                                ) : (
+                                  cellValue
+                                )}
                               </td>
                             )
                           })}
