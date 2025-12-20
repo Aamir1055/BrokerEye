@@ -908,11 +908,29 @@ const LiveDealingPage = () => {
     
     const query = searchQuery.toLowerCase().trim()
     return dealsToSearch.filter(deal => {
-      const login = String(deal.login || '').toLowerCase()
-      const symbol = String(deal.rawData?.symbol || '').toLowerCase()
-      const dealId = String(deal.id || '').toLowerCase()
-      
-      return login.includes(query) || symbol.includes(query) || dealId.includes(query)
+      // Search across common fields
+      const fields = ['login', 'id', 'dealer', 'action']
+      for (const key of fields) {
+        const val = deal[key]
+        if (val !== null && val !== undefined && String(val).toLowerCase().includes(query)) return true
+      }
+      // Search in rawData
+      if (deal.rawData) {
+        const rawFields = ['symbol', 'deal', 'action', 'comment', 'entry']
+        for (const key of rawFields) {
+          const val = deal.rawData[key]
+          if (val !== null && val !== undefined && String(val).toLowerCase().includes(query)) return true
+        }
+        // Fallback: scan all primitives in rawData
+        for (const v of Object.values(deal.rawData)) {
+          if (v === null || v === undefined) continue
+          const t = typeof v
+          if (t === 'string' || t === 'number' || t === 'boolean') {
+            if (String(v).toLowerCase().includes(query)) return true
+          }
+        }
+      }
+      return false
     })
   }
   
