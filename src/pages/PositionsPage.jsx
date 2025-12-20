@@ -932,7 +932,14 @@ const PositionsPage = () => {
       const symbol = String(position.symbol || '').toLowerCase()
       const positionId = String(position.position || '').toLowerCase()
       
-      return login.includes(query) || symbol.includes(query) || positionId.includes(query)
+      // Get action as text (Buy/Sell)
+      const action = position.action
+      let actionText = ''
+      if (action === 0 || action === '0') actionText = 'buy'
+      else if (action === 1 || action === '1') actionText = 'sell'
+      else actionText = String(action || '').toLowerCase()
+      
+      return login.includes(query) || symbol.includes(query) || positionId.includes(query) || actionText.includes(query)
     })
   }
   
@@ -3333,6 +3340,7 @@ const PositionsPage = () => {
                       setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
