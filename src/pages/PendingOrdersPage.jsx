@@ -322,9 +322,9 @@ const PendingOrdersPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Orders': '/Desktop cards icons/Total Clients.svg',
+      'Total Orders': '/Desktop cards icons/Total Balance.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
-      'Symbols': '/Desktop cards icons/Total Clients.svg',
+      'Symbols': '/Desktop cards icons/Total Equity.svg',
     }
     return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
