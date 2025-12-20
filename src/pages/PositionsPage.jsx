@@ -2223,22 +2223,26 @@ const PositionsPage = () => {
               </div>
             )}
             
-            {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode */}
+            {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode (matches normal card UI) */}
             {(displayMode === 'percentage' || displayMode === 'both') && (
-              <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Floating Profit %</span>
-                  <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="white" strokeWidth="1.2" fill="none"/>
-                      <rect x="5.5" y="5.5" width="7" height="7" rx="1" fill="white" stroke="white" strokeWidth="1.2"/>
-                    </svg>
+              <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-1.5">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Floating Profit %</span>
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <img 
+                      src={getCardIcon('Floating Profit %')} 
+                      alt="Floating Profit %"
+                      style={{ width: '100%', height: '100%' }}
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                      }}
+                    />
                   </div>
                 </div>
                 {isInitialPositionsLoading ? (
                   <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <div className={`text-lg font-bold flex items-center gap-2 ${
+                  <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
                     {summaryStats.totalFloatingProfitPercentage >= 0 && (
@@ -2251,9 +2255,11 @@ const PositionsPage = () => {
                         <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
                       </svg>
                     )}
-                    <span>{Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}%</span>
+                    <span>{Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}</span>
+                    <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">%</span>
                   </div>
-                )}\n              </div>
+                )}
+              </div>
             )}
             
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
