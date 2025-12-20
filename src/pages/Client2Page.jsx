@@ -1095,10 +1095,19 @@ const Client2Page = () => {
         }
       }
 
-      // Add sorting if present
-      if (sortBy) {
-        payload.sortBy = sortBy
-        payload.sortOrder = sortOrder
+      // Sorting Strategy: When sorting is active, fetch ALL data and sort client-side
+      // This ensures sorting works across entire dataset, not just current page
+      const shouldFetchAllForSorting = sortBy && sortBy.trim() !== ''
+      
+      // Store original pagination for later client-side pagination
+      const originalPage = payload.page
+      const originalLimit = payload.limit
+      
+      if (shouldFetchAllForSorting) {
+        // Fetch all data for proper sorting
+        payload.page = 1
+        payload.limit = 10000 // Large limit to get all data
+        // Don't send sortBy/sortOrder to backend - we'll sort client-side
       }
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
@@ -1286,34 +1295,94 @@ const Client2Page = () => {
         // Fetch only percentage data
         const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
         const percentData = extractData(percentResponse)
-        const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
+        let percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
-        const percentTotal = Number(percentData?.total || percentClients.length || 0)
-        const pages = Math.max(1, Number(percentData?.pages || 1))
+        let percentTotal = Number(percentData?.total || percentClients.length || 0)
 
-        // Use server-side filtered results directly
-        setClients(percentClients)
-        setTotalClients(percentTotal)
-        setTotalPages(pages)
-        setTotals({}) // Clear normal totals
-        setTotalsPercent(percentTotals)
-        setError('')
+        // Apply client-side sorting if sorting is active
+        if (shouldFetchAllForSorting) {
+          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
+          percentClients.sort((a, b) => {
+            const va = a?.[sortBy]
+            const vb = b?.[sortBy]
+            const na = Number(va), nb = Number(vb)
+            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
+            const sa = String(va ?? '').toLowerCase()
+            const sb = String(vb ?? '').toLowerCase()
+            if (sa < sb) return -1 * dir
+            if (sa > sb) return 1 * dir
+            return 0
+          })
+          
+          // Apply client-side pagination
+          percentTotal = percentClients.length
+          const start = (originalPage - 1) * originalLimit
+          const end = start + originalLimit
+          percentClients = percentClients.slice(start, end)
+          const pages = Math.max(1, Math.ceil(percentTotal / originalLimit))
+          
+          setClients(percentClients)
+          setTotalClients(percentTotal)
+          setTotalPages(pages)
+          setTotals({}) // Clear normal totals
+          setTotalsPercent(percentTotals)
+          setError('')
+        } else {
+          // Use server-side filtered results directly
+          const pages = Math.max(1, Number(percentData?.pages || 1))
+          setClients(percentClients)
+          setTotalClients(percentTotal)
+          setTotalPages(pages)
+          setTotals({}) // Clear normal totals
+          setTotalsPercent(percentTotals)
+          setError('')
+        }
       } else {
         // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload)
         const normalData = extractData(normalResponse)
-        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
+        let normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
-        const normalTotal = Number(normalData?.total || normalClients.length || 0)
-        const pages = Math.max(1, Number(normalData?.pages || 1))
+        let normalTotal = Number(normalData?.total || normalClients.length || 0)
 
-        // Use server-side filtered results directly
-        setClients(normalClients)
-        setTotalClients(normalTotal)
-        setTotalPages(pages)
-        setTotals(normalTotals)
-        setTotalsPercent({})
-        setError('')
+        // Apply client-side sorting if sorting is active
+        if (shouldFetchAllForSorting) {
+          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
+          normalClients.sort((a, b) => {
+            const va = a?.[sortBy]
+            const vb = b?.[sortBy]
+            const na = Number(va), nb = Number(vb)
+            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
+            const sa = String(va ?? '').toLowerCase()
+            const sb = String(vb ?? '').toLowerCase()
+            if (sa < sb) return -1 * dir
+            if (sa > sb) return 1 * dir
+            return 0
+          })
+          
+          // Apply client-side pagination
+          normalTotal = normalClients.length
+          const start = (originalPage - 1) * originalLimit
+          const end = start + originalLimit
+          normalClients = normalClients.slice(start, end)
+          const pages = Math.max(1, Math.ceil(normalTotal / originalLimit))
+          
+          setClients(normalClients)
+          setTotalClients(normalTotal)
+          setTotalPages(pages)
+          setTotals(normalTotals)
+          setTotalsPercent({})
+          setError('')
+        } else {
+          // Use server-side filtered results directly
+          const pages = Math.max(1, Number(normalData?.pages || 1))
+          setClients(normalClients)
+          setTotalClients(normalTotal)
+          setTotalPages(pages)
+          setTotals(normalTotals)
+          setTotalsPercent({})
+          setError('')
+        }
       }
     } catch (err) {
       // Ignore request cancellations caused by in-flight aborts
