@@ -2206,16 +2206,6 @@ const PositionsPage = () => {
                   <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
-                    {summaryStats.totalFloatingProfit >= 0 && (
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
-                      </svg>
-                    )}
-                    {summaryStats.totalFloatingProfit < 0 && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}}>
-                        <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
-                      </svg>
-                    )}
                     <span>{formatNumber(Math.abs(summaryStats.totalFloatingProfit))}</span>
                     <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
                   </div>
