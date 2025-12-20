@@ -2081,7 +2081,7 @@ const PositionsPage = () => {
                           name="displayModeToggle"
                           value="value"
                           checked={displayMode === 'value'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
+                          onChange={(e) => { setDisplayMode(e.target.value); setShowDisplayMenu(false); }}
                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
                         />
                         <span>Without Percentage</span>
@@ -2092,7 +2092,7 @@ const PositionsPage = () => {
                           name="displayModeToggle"
                           value="percentage"
                           checked={displayMode === 'percentage'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
+                          onChange={(e) => { setDisplayMode(e.target.value); setShowDisplayMenu(false); }}
                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
                         />
                         <span>Show My Percentage</span>
@@ -2103,7 +2103,7 @@ const PositionsPage = () => {
                           name="displayModeToggle"
                           value="both"
                           checked={displayMode === 'both'}
-                          onChange={(e) => setDisplayMode(e.target.value)}
+                          onChange={(e) => { setDisplayMode(e.target.value); setShowDisplayMenu(false); }}
                           className="w-3.5 h-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
                         />
                         <span>Both</span>
