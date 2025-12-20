@@ -638,6 +638,22 @@ const PositionsPage = () => {
     return num.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   }
 
+  // Indian numbering format (12,34,567.89)
+  const formatIndianNumber = (n, digits = 2) => {
+    const num = Number(n)
+    if (Number.isNaN(num)) return '-'
+    try {
+      return num.toLocaleString('en-IN', { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    } catch {
+      // Fallback if locale unsupported
+      const [intPart, decPart = ''] = Math.abs(num).toFixed(digits).split('.')
+      const lastThree = intPart.slice(-3)
+      const otherNumbers = intPart.slice(0, -3)
+      const formatted = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (otherNumbers ? ',' : '') + lastThree
+      return decPart ? `${formatted}.${decPart}` : formatted
+    }
+  }
+
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
@@ -2235,17 +2251,7 @@ const PositionsPage = () => {
                   <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
-                    {summaryStats.totalFloatingProfitPercentage >= 0 && (
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
-                      </svg>
-                    )}
-                    {summaryStats.totalFloatingProfitPercentage < 0 && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}}>
-                        <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
-                      </svg>
-                    )}
-                    <span>{Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}</span>
+                    <span>{formatIndianNumber(Math.abs(summaryStats.totalFloatingProfitPercentage), 2)}</span>
                   </div>
                 )}
               </div>
