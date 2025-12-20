@@ -634,7 +634,6 @@ const Client2Page = () => {
     { key: 'soLevel', label: 'SO Level', type: 'float' },
     { key: 'soMargin', label: 'SO Margin', type: 'float' },
     { key: 'dailyPnL', label: 'Daily PnL', type: 'float' },
-    { key: 'dailyPnL_percentage', label: 'Daily PnL %', type: 'float' },
     { key: 'dailyDeposit', label: 'Daily Deposit', type: 'float' },
     { key: 'dailyWithdrawal', label: 'Daily Withdrawal', type: 'float' },
     { key: 'dailyCreditIn', label: 'Daily Credit In', type: 'float' },
