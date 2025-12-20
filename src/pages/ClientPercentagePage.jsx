@@ -372,24 +372,34 @@ const ClientPercentagePage = () => {
   // Search filtering
   const searchClients = () => {
     if (!searchQuery.trim()) return clients
-    
-    const query = searchQuery.toLowerCase()
+
+    const query = searchQuery.toLowerCase().trim()
+
+    // Special-case: if user types an explicit type keyword, filter strictly by type
+    if (query === 'default' || query === 'custom') {
+      const wantCustom = query === 'custom'
+      return clients.filter(c => {
+        const isCustom = c.is_custom === true || c.is_custom === 1 || c.is_custom === '1'
+        return wantCustom ? isCustom : !isCustom
+      })
+    }
+
+    // Otherwise, search across all visible/primitive fields
     return clients.filter(client => {
-      // Search through all primitive fields
       for (const key in client) {
-        if (client.hasOwnProperty(key)) {
-          const value = client[key]
-          
-          // Handle is_custom field specially (boolean displayed as Custom/Default)
-          if (key === 'is_custom') {
-            const typeText = value ? 'custom' : 'default'
-            if (typeText.includes(query)) return true
-          }
-          // Check primitive values (string, number)
-          else if (value !== null && value !== undefined) {
-            const strValue = String(value).toLowerCase()
-            if (strValue.includes(query)) return true
-          }
+        if (!Object.prototype.hasOwnProperty.call(client, key)) continue
+        const value = client[key]
+
+        // Map type for better fuzzy matching
+        if (key === 'is_custom') {
+          const typeText = (value === true || value === 1 || value === '1') ? 'custom' : 'default'
+          if (typeText.includes(query)) return true
+          continue
+        }
+
+        if (value !== null && value !== undefined) {
+          const strValue = String(value).toLowerCase()
+          if (strValue.includes(query)) return true
         }
       }
       return false
