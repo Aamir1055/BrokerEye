@@ -362,11 +362,24 @@ const PendingOrdersPage = () => {
     
     const query = searchQuery.toLowerCase().trim()
     return ordersToSearch.filter(order => {
-      const login = String(order.login || '').toLowerCase()
-      const symbol = String(order.symbol || '').toLowerCase()
-      const orderId = String(order.order || order.ticket || '').toLowerCase()
-      
-      return login.includes(query) || symbol.includes(query) || orderId.includes(query)
+      // Search through all primitive fields
+      for (const key in order) {
+        if (order.hasOwnProperty(key)) {
+          const value = order[key]
+          
+          // Handle type field specially (BUY LIMIT, SELL STOP, etc.)
+          if (key === 'type') {
+            const typeStr = String(value || '').toLowerCase()
+            if (typeStr.includes(query)) return true
+          }
+          // Check primitive values (string, number)
+          else if (value !== null && value !== undefined) {
+            const strValue = String(value).toLowerCase()
+            if (strValue.includes(query)) return true
+          }
+        }
+      }
+      return false
     })
   }
   
@@ -1083,6 +1096,7 @@ const PendingOrdersPage = () => {
                       setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
