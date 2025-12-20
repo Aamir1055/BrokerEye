@@ -476,7 +476,7 @@ const MarginLevelPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Below 50%': '/Desktop cards icons/Total Clients.svg',
+      'Below 50%': '/Desktop cards icons/Total Equity.svg',
       'Avg Margin Level': '/Desktop cards icons/Total Balance.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
     }
