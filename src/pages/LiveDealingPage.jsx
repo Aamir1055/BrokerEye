@@ -789,12 +789,12 @@ const LiveDealingPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'DEALS (24H)': '/Desktop cards icons/Total Clients.svg',
-      'DEALS (7D)': '/Desktop cards icons/Total Clients.svg',
-      'FILTERED DEALS': '/Desktop cards icons/Total Clients.svg',
-      'CONNECTION STATUS': '/Desktop cards icons/Balance.svg',
+      'DEALS (24H)': '/Desktop cards icons/Total Balance.svg',
+      'DEALS (7D)': '/Desktop cards icons/Total Balance.svg',
+      'FILTERED DEALS': '/Desktop cards icons/Total Balance.svg',
+      'CONNECTION STATUS': '/Desktop cards icons/Total Credit.svg',
       'UNIQUE LOGINS': '/Desktop cards icons/Total Clients.svg',
-      'SYMBOLS': '/Desktop cards icons/Total Clients.svg',
+      'SYMBOLS': '/Desktop cards icons/Total Equity.svg',
     }
     return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
