@@ -375,14 +375,16 @@ const ClientPercentagePage = () => {
     
     const query = searchQuery.toLowerCase()
     return clients.filter(client => {
-      // Special handling for type field (is_custom boolean displayed as Custom/Default)
-      if (client.is_custom && 'custom'.includes(query)) return true
-      if (!client.is_custom && 'default'.includes(query)) return true
+      // Check the display value of type field (is_custom boolean displayed as Custom/Default)
+      const typeDisplay = client.is_custom ? 'custom' : 'default'
+      if (typeDisplay.includes(query)) return true
       
       // Search through all primitive fields
       for (const key in client) {
         if (client.hasOwnProperty(key)) {
           const value = client[key]
+          // Skip the is_custom field since we already checked its display representation
+          if (key === 'is_custom') continue
           // Check primitive values (string, number)
           if (value !== null && value !== undefined) {
             const strValue = String(value).toLowerCase()
