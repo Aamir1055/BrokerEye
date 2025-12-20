@@ -2256,7 +2256,6 @@ const PositionsPage = () => {
                       </svg>
                     )}
                     <span>{Math.abs(summaryStats.totalFloatingProfitPercentage).toFixed(2)}</span>
-                    <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">%</span>
                   </div>
                 )}
               </div>
