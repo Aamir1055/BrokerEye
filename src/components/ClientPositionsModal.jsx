@@ -633,7 +633,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const formatCurrency = (value) => {
-    return `$${parseFloat(value || 0).toFixed(2)}`
+    return parseFloat(value || 0).toFixed(2)
   }
 
   // Sorting handler for positions
