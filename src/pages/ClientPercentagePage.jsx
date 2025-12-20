@@ -374,11 +374,20 @@ const ClientPercentagePage = () => {
     if (!searchQuery.trim()) return clients
     
     const query = searchQuery.toLowerCase()
-    return clients.filter(client => 
-      client.client_login?.toString().includes(query) ||
-      client.comment?.toLowerCase().includes(query) ||
-      client.percentage?.toString().includes(query)
-    )
+    return clients.filter(client => {
+      // Search through all primitive fields
+      for (const key in client) {
+        if (client.hasOwnProperty(key)) {
+          const value = client[key]
+          // Check primitive values (string, number)
+          if (value !== null && value !== undefined) {
+            const strValue = String(value).toLowerCase()
+            if (strValue.includes(query)) return true
+          }
+        }
+      }
+      return false
+    })
   }
 
   // Get autocomplete suggestions
@@ -965,6 +974,7 @@ const ClientPercentagePage = () => {
                       setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
                     placeholder="Search"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -1157,6 +1167,8 @@ const ClientPercentagePage = () => {
                             onClick={() => {
                               setColumnFilters({})
                               setFilterSearchQuery({})
+                              setSearchQuery('')
+                              setShowSuggestions(false)
                             }}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
                           >
