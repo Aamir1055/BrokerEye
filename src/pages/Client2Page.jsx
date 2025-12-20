@@ -3239,10 +3239,12 @@ const Client2Page = () => {
 
   // Chip styling for processorType and accountType
   const getProcessorTypeChipClasses = (type) => {
-    const t = String(type || '').toUpperCase()
-    if (t.includes('MT4') || t === 'MT4') return 'bg-blue-100 text-blue-800'
-    if (t.includes('MT5') || t === 'MT5') return 'bg-purple-100 text-purple-800'
-    if (t.includes('CTRADER') || t === 'CTRADER') return 'bg-indigo-100 text-indigo-800'
+    const t = String(type || '').toLowerCase()
+    if (t.includes('connected') && !t.includes('not')) return 'bg-green-100 text-green-800'
+    if (t.includes('not connected')) return 'bg-red-100 text-red-800'
+    if (t.includes('mt4') || t === 'mt4') return 'bg-blue-100 text-blue-800'
+    if (t.includes('mt5') || t === 'mt5') return 'bg-purple-100 text-purple-800'
+    if (t.includes('ctrader')) return 'bg-indigo-100 text-indigo-800'
     return 'bg-gray-100 text-gray-700'
   }
 
