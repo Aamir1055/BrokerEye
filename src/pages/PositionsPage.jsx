@@ -928,18 +928,28 @@ const PositionsPage = () => {
     
     const query = searchQuery.toLowerCase().trim()
     return positionsToSearch.filter(position => {
-      const login = String(position.login || '').toLowerCase()
-      const symbol = String(position.symbol || '').toLowerCase()
-      const positionId = String(position.position || '').toLowerCase()
-      
-      // Get action as text (Buy/Sell)
-      const action = position.action
-      let actionText = ''
-      if (action === 0 || action === '0') actionText = 'buy'
-      else if (action === 1 || action === '1') actionText = 'sell'
-      else actionText = String(action || '').toLowerCase()
-      
-      return login.includes(query) || symbol.includes(query) || positionId.includes(query) || actionText.includes(query)
+      // Search through all primitive fields
+      for (const key in position) {
+        if (position.hasOwnProperty(key)) {
+          const value = position[key]
+          
+          // Handle action field specially (0=Buy, 1=Sell)
+          if (key === 'action') {
+            let actionText = ''
+            if (value === 0 || value === '0') actionText = 'buy'
+            else if (value === 1 || value === '1') actionText = 'sell'
+            else actionText = String(value || '').toLowerCase()
+            
+            if (actionText.includes(query)) return true
+          }
+          // Check primitive values (string, number)
+          else if (value !== null && value !== undefined) {
+            const strValue = String(value).toLowerCase()
+            if (strValue.includes(query)) return true
+          }
+        }
+      }
+      return false
     })
   }
   
