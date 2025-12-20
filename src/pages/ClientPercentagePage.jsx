@@ -375,6 +375,10 @@ const ClientPercentagePage = () => {
     
     const query = searchQuery.toLowerCase()
     return clients.filter(client => {
+      // Special handling for type field (is_custom boolean displayed as Custom/Default)
+      if (client.is_custom && 'custom'.includes(query)) return true
+      if (!client.is_custom && 'default'.includes(query)) return true
+      
       // Search through all primitive fields
       for (const key in client) {
         if (client.hasOwnProperty(key)) {
@@ -396,6 +400,10 @@ const ClientPercentagePage = () => {
     
     const query = searchQuery.toLowerCase()
     const suggestions = new Set()
+    
+    // Add type suggestions (Custom/Default)
+    if ('custom'.includes(query)) suggestions.add('Custom')
+    if ('default'.includes(query)) suggestions.add('Default')
     
     clients.forEach(client => {
       if (client.client_login?.toString().includes(query)) {
