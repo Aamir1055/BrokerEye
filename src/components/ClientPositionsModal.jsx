@@ -1201,79 +1201,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       }
     })
 
-    // Apply sorting
-    if (positionsSortColumn) {
-      filtered.sort((a, b) => {
-        let aValue, bValue
-        
-        switch (positionsSortColumn) {
-          case 'time':
-            aValue = a.timeCreate || 0
-            bValue = b.timeCreate || 0
-            break
-          case 'position':
-            aValue = a.position || 0
-            bValue = b.position || 0
-            break
-          case 'symbol':
-            aValue = (a.symbol || '').toLowerCase()
-            bValue = (b.symbol || '').toLowerCase()
-            break
-          case 'action':
-            aValue = getActionLabel(a.action)
-            bValue = getActionLabel(b.action)
-            break
-          case 'volume':
-            aValue = a.volume || 0
-            bValue = b.volume || 0
-            break
-          case 'priceOpen':
-            aValue = a.priceOpen || 0
-            bValue = b.priceOpen || 0
-            break
-          case 'priceCurrent':
-            aValue = a.priceCurrent || 0
-            bValue = b.priceCurrent || 0
-            break
-          case 'sl':
-            aValue = a.priceSL || 0
-            bValue = b.priceSL || 0
-            break
-          case 'tp':
-            aValue = a.priceTP || 0
-            bValue = b.priceTP || 0
-            break
-          case 'profit':
-            aValue = a.profit || 0
-            bValue = b.profit || 0
-            break
-          case 'storage':
-            aValue = a.storage || 0
-            bValue = b.storage || 0
-            break
-          case 'commission':
-            aValue = a.commission || 0
-            bValue = b.commission || 0
-            break
-          case 'comment':
-            aValue = (a.comment || '').toLowerCase()
-            bValue = (b.comment || '').toLowerCase()
-            break
-          default:
-            return 0
-        }
-
-        if (typeof aValue === 'string') {
-          return positionsSortDirection === 'asc' 
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue)
-        } else {
-          return positionsSortDirection === 'asc'
-            ? aValue - bValue
-            : bValue - aValue
-        }
-      })
-    }
+    // Do not sort the combined list here; sorting happens per-section
 
     return filtered
   }, [positions, orders, searchQuery, columnFilters, positionsSortColumn, positionsSortDirection])
@@ -1290,8 +1218,54 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       return item.order && (type.includes('limit') || type.includes('stop'))
     })
     
+    // Sort each section independently so Pending Orders sorts correctly
+    if (positionsSortColumn) {
+      const getVal = (row) => {
+        switch (positionsSortColumn) {
+          case 'time':
+            return row.timeCreate || 0
+          case 'position':
+            return (row.order != null ? row.order : row.position) || 0
+          case 'symbol':
+            return String(row.symbol || '').toLowerCase()
+          case 'action':
+            return getActionLabel(row.action)
+          case 'volume':
+            return row.volume || 0
+          case 'priceOpen':
+            return row.priceOpen || 0
+          case 'priceCurrent':
+            return row.priceCurrent || 0
+          case 'sl':
+            return row.priceSL || 0
+          case 'tp':
+            return row.priceTP || 0
+          case 'profit':
+            return row.profit || 0
+          case 'storage':
+            return row.storage || 0
+          case 'commission':
+            return row.commission || 0
+          case 'comment':
+            return String(row.comment || '').toLowerCase()
+          default:
+            return 0
+        }
+      }
+      const cmp = (a, b) => {
+        const av = getVal(a)
+        const bv = getVal(b)
+        if (typeof av === 'string') {
+          return positionsSortDirection === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+        }
+        return positionsSortDirection === 'asc' ? av - bv : bv - av
+      }
+      regularPositions.sort(cmp)
+      pendingOrders.sort(cmp)
+    }
+    
     return { regularPositions, pendingOrders }
-  }, [filteredPositions])
+  }, [filteredPositions, positionsSortColumn, positionsSortDirection])
 
   // Pagination logic for positions
   const positionsTotalPages = Math.ceil(filteredPositions.length / positionsItemsPerPage)
