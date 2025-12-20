@@ -642,8 +642,8 @@ const PositionsPage = () => {
   const getCardIcon = (cardTitle) => {
     const iconMap = {
       'Total Positions': '/Desktop cards icons/Total Clients.svg',
-      'Floating Profit': '/Desktop cards icons/Floating.svg',
-      'Floating Profit %': '/Desktop cards icons/Floating.svg',
+      'Floating Profit': '/Desktop cards icons/Floating Profit.svg',
+      'Floating Profit %': '/Desktop cards icons/Floating Profit.svg',
       'Unique Logins': '/Desktop cards icons/Total Clients.svg',
       'Symbols': '/Desktop cards icons/Total Clients.svg',
       // NET Position cards
