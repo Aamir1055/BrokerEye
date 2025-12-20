@@ -3376,7 +3376,7 @@ const PositionsPage = () => {
                 </div>
                 
                 {/* Columns Button (icon only) */}
-                <div className="relative">
+                <div className="relative" ref={columnSelectorRef}>
                   <button
                     onClick={() => setShowColumnSelector(!showColumnSelector)}
                     className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -3389,7 +3389,6 @@ const PositionsPage = () => {
                   </button>
                   {showColumnSelector && (
                     <div
-                      ref={columnSelectorRef}
                       className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
                       style={{ maxHeight: '400px', overflowY: 'auto' }}
                     >
