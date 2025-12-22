@@ -1461,11 +1461,26 @@ const Client2Page = () => {
     fetchClients(false)
   }, [percentModeActive, fetchClients, isMobile, isAuthenticated, unauthorized])
 
-  // Pass-through - filtering done by API (like ClientsPage)
+  // Client-side filtering for search across common text fields (including country)
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    return clients.filter(c => c != null && c.login != null)
-  }, [clients])
+    const base = clients.filter(c => c != null && c.login != null)
+    const q = String(searchQuery || '').trim().toLowerCase()
+    if (!q) return base
+    const fields = [
+      'login', 'name', 'middleName', 'lastName', 'email', 'phone', 'group', 'accountType', 'status', 'currency',
+      'country', 'city', 'state', 'address', 'zipCode', 'company', 'comment'
+    ]
+    return base.filter(c => {
+      for (const f of fields) {
+        const v = c?.[f]
+        if (v === null || v === undefined) continue
+        const s = String(v).toLowerCase()
+        if (s.includes(q)) return true
+      }
+      return false
+    })
+  }, [clients, searchQuery])
 
   // Compute percentage totals by summing percentage columns from client data
   const computedPercentageTotals = useMemo(() => {
