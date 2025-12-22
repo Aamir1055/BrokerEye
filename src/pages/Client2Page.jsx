@@ -2076,8 +2076,19 @@ const Client2Page = () => {
 
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
-    // Only allow API calls for specific columns
-    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone', 'country', 'currency']
+    // Allow API calls for a broader set of text columns to ensure filtering works across more fields
+    const allowedColumns = [
+      // Identifiers
+      'login', 'id',
+      // Names & contact
+      'name', 'lastName', 'middleName', 'email', 'phone',
+      // Account metadata
+      'group', 'accountType', 'status', 'currency', 'leverage', 'comment',
+      // Location
+      'country', 'city', 'state', 'address', 'zipCode', 'company',
+      // Leads & processing
+      'leadSource', 'leadCampaign', 'processorType'
+    ]
     if (!allowedColumns.includes(columnKey)) {
       console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
       // Initialize states to prevent undefined values
@@ -2167,8 +2178,19 @@ const Client2Page = () => {
 
   // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
-    // Only allow API calls for specific columns
-    const allowedColumns = ['login', 'name', 'lastName', 'email', 'phone', 'country', 'currency']
+    // Allow API calls for a broader set of text columns to ensure filtering works across more fields
+    const allowedColumns = [
+      // Identifiers
+      'login', 'id',
+      // Names & contact
+      'name', 'lastName', 'middleName', 'email', 'phone',
+      // Account metadata
+      'group', 'accountType', 'status', 'currency', 'leverage', 'comment',
+      // Location
+      'country', 'city', 'state', 'address', 'zipCode', 'company',
+      // Leads & processing
+      'leadSource', 'leadCampaign', 'processorType'
+    ]
     if (!allowedColumns.includes(columnKey)) {
       console.log(`[Client2] Skipping API call for non-whitelisted column: ${columnKey}`)
       // Initialize states to prevent undefined values
