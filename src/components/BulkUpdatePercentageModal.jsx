@@ -36,12 +36,12 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all">
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 rounded-t-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3">
+      <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full transform transition-all">
+        {/* Modal Header (Blue theme to match column headers) */}
+        <div className="bg-blue-500 px-4 py-3 rounded-t-xl">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -52,7 +52,7 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
                 onClose()
                 setPercentage('')
               }}
-              className="text-white hover:text-gray-200 transition-colors"
+              className="text-white/90 hover:text-white transition-colors"
               disabled={isUpdating}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,41 +62,41 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-4">
+        {/* Modal Body (compact for mobile) */}
+        <div className="p-4 space-y-3">
           {/* Info Message */}
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-            <p className="text-sm text-blue-800">
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+            <p className="text-xs text-blue-800">
               <strong>Note:</strong> Please check the IDs you want to update using the checkboxes in the table, then enter the percentage value to apply.
             </p>
           </div>
 
           {/* Selected IDs Field */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               Selected IB IDs ({selectedIBs.length})
             </label>
-            <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
+            <div className="p-2.5 bg-gray-50 border border-gray-300 rounded-lg min-h-[52px] max-h-[110px] overflow-y-auto">
               {selectedIBs.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {selectedIBs.map(id => (
                     <span
                       key={id}
-                      className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
+                      className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded"
                     >
                       #{id}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                <p className="text-gray-400 text-xs italic">No IDs selected</p>
               )}
             </div>
           </div>
 
           {/* Percentage Input Field */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               Percentage Value (%)
             </label>
             <input
@@ -107,24 +107,24 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
               min="0"
               max="100"
               step="0.01"
-              className="w-full px-4 py-3 text-base border-2 border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               disabled={isUpdating}
               autoFocus
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-[11px] text-gray-500 mt-1">
               This percentage will be applied to all {selectedIBs.length} selected IB(s)
             </p>
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex items-center justify-end gap-3">
+        {/* Modal Footer (compact) */}
+        <div className="bg-gray-50 px-4 py-3 rounded-b-xl flex items-center justify-end gap-2">
           <button
             onClick={() => {
               onClose()
               setPercentage('')
             }}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
             disabled={isUpdating}
           >
             Cancel
@@ -132,7 +132,7 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
           <button
             onClick={handleUpdate}
             disabled={isUpdating || !percentage || selectedIBs.length === 0}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
           >
             {isUpdating ? (
               <>
