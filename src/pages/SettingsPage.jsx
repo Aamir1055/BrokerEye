@@ -17,6 +17,16 @@ const SettingsPage = () => {
     }
   })
   const { user } = useAuth()
+  // Mobile detection to hide sidebar on small screens
+  const [isMobile, setIsMobile] = useState(() => {
+    try { return typeof window !== 'undefined' ? window.innerWidth <= 768 : false } catch { return false }
+  })
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const navigate = useNavigate()
   
   // 2FA States
@@ -174,11 +184,13 @@ const SettingsPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
-          onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
-        />
+        {!isMobile && (
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
+            onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+          />
+        )}
         <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
           <div className="max-w-4xl mx-auto">
             {/* Shimmer Loading Cards */}
@@ -215,11 +227,13 @@ const SettingsPage = () => {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Sidebar */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
-        onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
-      />
+      {!isMobile && (
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
+          onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+        />
+      )}
       
       {/* Main Content */}
       <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
@@ -236,14 +250,17 @@ const SettingsPage = () => {
                 </svg>
                 Back
               </button>
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+              {/* Hide sidebar toggle on mobile for settings page */}
+              {false && (
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              )}
             </div>
             <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
             <p className="text-sm text-gray-500 mt-0.5">Manage your account security</p>
