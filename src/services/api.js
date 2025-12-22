@@ -106,7 +106,10 @@ api.interceptors.response.use(
 
     if (shouldAttemptRefresh) {
       originalRequest._retry = true
-      console.warn('[API] 401 detected. Attempting token refresh. url=', originalRequest?.url)
+      // Only log once per refresh sequence to avoid noisy consoles when multiple requests 401 at once
+      if (!isRefreshing) {
+        console.warn('[API] 401 detected. Attempting token refresh. url=', originalRequest?.url)
+      }
 
       try {
         if (!isRefreshing) {

@@ -12,6 +12,7 @@ import IBSelector from '../components/IBSelector'
 import api, { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
+import { useAuth } from '../contexts/AuthContext'
 
 // Gate verbose logs behind env flag to keep console clean in production
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
@@ -77,6 +78,10 @@ const Client2Page = () => {
 
   // IB context
   const { filterByActiveIB, selectedIB, ibMT5Accounts, refreshIBList, clearIBSelection } = useIB()
+  // Auth context
+  const { isAuthenticated } = useAuth()
+  // Suspend auto-refresh when unauthorized
+  const [unauthorized, setUnauthorized] = useState(false)
 
   const getInitialSidebarOpen = () => {
     try {
@@ -1399,6 +1404,10 @@ const Client2Page = () => {
         status: err.response?.status,
         url: err.config?.url
       })
+      // If unauthorized, pause auto-refresh until token is refreshed
+      if (err?.response?.status === 401) {
+        setUnauthorized(true)
+      }
       if (!silent) {
         let errorMessage = 'Failed to fetch clients'
         if (err.code === 'ERR_NETWORK') {
@@ -1427,6 +1436,18 @@ const Client2Page = () => {
     }
   }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
 
+  // Resume after successful token refresh
+  useEffect(() => {
+    const onRefreshed = () => setUnauthorized(false)
+    const onLogout = () => setUnauthorized(true)
+    window.addEventListener('auth:token_refreshed', onRefreshed)
+    window.addEventListener('auth:logout', onLogout)
+    return () => {
+      window.removeEventListener('auth:token_refreshed', onRefreshed)
+      window.removeEventListener('auth:logout', onLogout)
+    }
+  }, [])
+
   // Clear cached column values when filters change (IB, group, accounts, filters, search)
   // This ensures column value dropdowns always fetch fresh data from API
   useEffect(() => {
@@ -1436,9 +1457,9 @@ const Client2Page = () => {
 
   // Refetch when any percent face card visibility toggles (desktop only)
   useEffect(() => {
-    if (isMobile) return
+    if (isMobile || !isAuthenticated || unauthorized) return
     fetchClients(false)
-  }, [percentModeActive, fetchClients, isMobile])
+  }, [percentModeActive, fetchClients, isMobile, isAuthenticated, unauthorized])
 
   // Pass-through - filtering done by API (like ClientsPage)
   const sortedClients = useMemo(() => {
@@ -1485,12 +1506,12 @@ const Client2Page = () => {
 
   // Initial fetch and refetch on dependency changes (desktop only)
   useEffect(() => {
-    if (isMobile) return
+    if (isMobile || !isAuthenticated || unauthorized) return
     console.log('[Client2] ⚡ useEffect triggered - fetchClients dependency changed')
     console.log('[Client2] Current columnFilters:', JSON.stringify(columnFilters, null, 2))
     fetchClients()
     fetchRebateTotals()
-  }, [fetchClients, fetchRebateTotals, isMobile])
+  }, [fetchClients, fetchRebateTotals, isMobile, isAuthenticated, unauthorized])
 
   // Auto-refresh rebate totals every 1 hour (desktop only)
   useEffect(() => {
@@ -1507,12 +1528,14 @@ const Client2Page = () => {
 
   // Auto-refresh every 2 seconds to keep data updated (including filtered data) - desktop only
   useEffect(() => {
-    if (isMobile) return
+    if (isMobile || !isAuthenticated || unauthorized) return
+    // Avoid polling when tab is hidden
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     const intervalId = setInterval(() => {
       fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
-    }, 2000) // 2 second refresh for real-time updates
+    }, 2000)
     return () => clearInterval(intervalId)
-  }, [fetchClients, isMobile])
+  }, [fetchClients, isMobile, isAuthenticated, unauthorized])
 
   // Handle search
   const handleSearch = () => {
