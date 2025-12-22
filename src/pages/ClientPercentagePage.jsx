@@ -3,6 +3,7 @@ import { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
 import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
 import Sidebar from '../components/Sidebar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import WebSocketIndicator from '../components/WebSocketIndicator'
@@ -29,6 +30,8 @@ const ClientPercentagePage = () => {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const { isAuthenticated } = useAuth()
+  const [unauthorized, setUnauthorized] = useState(false)
   const [selectedLogin, setSelectedLogin] = useState(null)
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
@@ -276,15 +279,30 @@ const ClientPercentagePage = () => {
   // Module filter removed (belongs to Live Dealing)
 
   useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
     fetchAllClientPercentages(1)
-  }, [])
+  }, [isAuthenticated, unauthorized])
 
   // Fetch data when page changes
   useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
     if (currentPage > 1) {
       fetchAllClientPercentages(currentPage)
     }
-  }, [currentPage])
+  }, [currentPage, isAuthenticated, unauthorized])
+
+  useEffect(() => {
+    const onRefreshed = () => setUnauthorized(false)
+    const onLogout = () => setUnauthorized(true)
+    window.addEventListener('auth:token_refreshed', onRefreshed)
+    window.addEventListener('auth:logout', onLogout)
+    return () => {
+      window.removeEventListener('auth:token_refreshed', onRefreshed)
+      window.removeEventListener('auth:logout', onLogout)
+    }
+  }, [])
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -319,6 +337,7 @@ const ClientPercentagePage = () => {
     } catch (err) {
       console.error('Error fetching client percentages:', err)
       setError('Failed to load client percentages')
+      if (err?.response?.status === 401) setUnauthorized(true)
       setLoading(false)
     }
   }

@@ -4,6 +4,7 @@ import { brokerAPI } from '../services/api'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
+import { useAuth } from '../contexts/AuthContext'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -40,6 +41,8 @@ const LiveDealingPage = () => {
   const [connectionState, setConnectionState] = useState('disconnected')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const { isAuthenticated } = useAuth()
+  const [unauthorized, setUnauthorized] = useState(false)
   const hasInitialLoad = useRef(false)
   const isInitialMount = useRef(true)
   
@@ -424,16 +427,14 @@ const LiveDealingPage = () => {
   useEffect(() => {
     if (!hasInitialLoad.current) {
       hasInitialLoad.current = true
-      
       console.log('[LiveDealing] 🚀 Initial load started')
       const cachedDeals = loadWsCache()
       console.log('[LiveDealing] 💾 Loaded', cachedDeals.length, 'deals from cache')
-      
-      // Step 1: Load ALL deals from API ONCE
-      fetchAllDealsOnce()
-      
-      // Step 2: Connect WebSocket for real-time updates
-      websocketService.connect()
+      const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+      if (isAuthenticated && !unauthorized && !hidden) {
+        fetchAllDealsOnce()
+        websocketService.connect()
+      }
     }
 
     // Subscribe to connection state changes
@@ -464,7 +465,31 @@ const LiveDealingPage = () => {
       unsubscribeDealDeleted()
       unsubscribeDealDelete()
     }
+  }, [isAuthenticated, unauthorized])
+
+  useEffect(() => {
+    const onRefreshed = () => setUnauthorized(false)
+    const onLogout = () => setUnauthorized(true)
+    window.addEventListener('auth:token_refreshed', onRefreshed)
+    window.addEventListener('auth:logout', onLogout)
+    return () => {
+      window.removeEventListener('auth:token_refreshed', onRefreshed)
+      window.removeEventListener('auth:logout', onLogout)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated || unauthorized) return
+    if (!hasInitialLoad.current) return
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (hidden) return
+    // Resume data refresh and WS on auth restored
+    fetchAllDealsOnce()
+    if (connectionState !== 'connected') {
+      websocketService.connect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unauthorized, isAuthenticated])
 
   // Robust date parsing to support dd/mm/yyyy and yyyy-mm-dd
   const parseDateInput = (val) => {
@@ -590,6 +615,7 @@ const LiveDealingPage = () => {
       setLoading(false)
     } catch (error) {
       console.error('[LiveDealing] ❌ Error loading deals:', error)
+      if (error?.response?.status === 401) setUnauthorized(true)
       setError('Failed to load deals')
       setLoading(false)
     }

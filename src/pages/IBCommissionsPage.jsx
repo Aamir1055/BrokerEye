@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import EditPercentageModal from '../components/EditPercentageModal'
 import BulkSyncModal from '../components/BulkSyncModal'
 import BulkUpdatePercentageModal from '../components/BulkUpdatePercentageModal'
@@ -43,6 +44,8 @@ const IBCommissionsPage = () => {
   const [bulkPercentage, setBulkPercentage] = useState('')
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const [unauthorized, setUnauthorized] = useState(false)
   
   // Sorting states - default to created_at desc as per API
   const [sortColumn, setSortColumn] = useState('created_at')
@@ -67,17 +70,28 @@ const IBCommissionsPage = () => {
   const searchTimeoutRef = useRef(null)
 
   useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
     fetchCommissions()
     fetchCommissionTotals()
     
-    // Set up hourly interval for fetching commission totals
     const intervalId = setInterval(() => {
-      fetchCommissionTotals()
-    }, 60 * 60 * 1000) // 1 hour in milliseconds
-    
-    // Cleanup interval on unmount
+      const hiddenNow = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+      if (!hiddenNow) fetchCommissionTotals()
+    }, 60 * 60 * 1000)
     return () => clearInterval(intervalId)
-  }, [currentPage, itemsPerPage, sortColumn, sortDirection])
+  }, [currentPage, itemsPerPage, sortColumn, sortDirection, isAuthenticated, unauthorized])
+
+  useEffect(() => {
+    const onRefreshed = () => setUnauthorized(false)
+    const onLogout = () => setUnauthorized(true)
+    window.addEventListener('auth:token_refreshed', onRefreshed)
+    window.addEventListener('auth:logout', onLogout)
+    return () => {
+      window.removeEventListener('auth:token_refreshed', onRefreshed)
+      window.removeEventListener('auth:logout', onLogout)
+    }
+  }, [])
 
   // Fetch commission totals for face cards
   const fetchCommissionTotals = async () => {
@@ -94,6 +108,7 @@ const IBCommissionsPage = () => {
       }
     } catch (error) {
       console.error('Error fetching commission totals:', error)
+      if (error?.response?.status === 401) setUnauthorized(true)
     } finally {
       setTotalsLoading(false)
     }
@@ -137,6 +152,7 @@ const IBCommissionsPage = () => {
     } catch (error) {
       console.error('Error fetching IB commissions:', error)
       setError(error.response?.data?.message || 'Failed to load IB commissions')
+      if (error?.response?.status === 401) setUnauthorized(true)
     } finally {
       setLoading(false)
     }
