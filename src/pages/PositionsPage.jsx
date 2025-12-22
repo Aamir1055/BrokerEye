@@ -2515,9 +2515,22 @@ const PositionsPage = () => {
                               <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </button>
-                          <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
-                            <span className="text-[#1F2937] font-semibold">{netCurrentPage}</span>
-                            <span className="text-[#9CA3AF] mx-1">/</span>
+                          <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={1}
+                              max={netTotalPages}
+                              value={netCurrentPage}
+                              onChange={(e) => {
+                                const n = Number(e.target.value)
+                                if (!isNaN(n) && n >= 1 && n <= netTotalPages) {
+                                  handleNetPageChange(n)
+                                }
+                              }}
+                              className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                              aria-label="Current page"
+                            />
+                            <span className="text-[#9CA3AF]">/</span>
                             <span className="text-[#6B7280]">{netTotalPages}</span>
                           </div>
                           <button
@@ -3087,9 +3100,22 @@ const PositionsPage = () => {
                         </svg>
                       </button>
 
-                      <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
-                        <span className="text-[#1F2937] font-semibold">{clientNetCurrentPage}</span>
-                        <span className="text-[#9CA3AF] mx-1">/</span>
+                      <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={1}
+                          max={clientNetTotalPages}
+                          value={clientNetCurrentPage}
+                          onChange={(e) => {
+                            const n = Number(e.target.value)
+                            if (!isNaN(n) && n >= 1 && n <= clientNetTotalPages) {
+                              handleClientNetPageChange(n)
+                            }
+                          }}
+                          className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                          aria-label="Current page"
+                        />
+                        <span className="text-[#9CA3AF]">/</span>
                         <span className="text-[#6B7280]">{clientNetTotalPages}</span>
                       </div>
 
@@ -3448,9 +3474,22 @@ const PositionsPage = () => {
                   </svg>
                 </button>
 
-                <div className="px-3 py-1.5 text-sm font-medium text-[#374151]">
-                  <span className="text-[#1F2937] font-semibold">{currentPage}</span>
-                  <span className="text-[#9CA3AF] mx-1">/</span>
+                <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalPages}
+                    value={currentPage}
+                    onChange={(e) => {
+                      const n = Number(e.target.value)
+                      if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                        handlePageChange(n)
+                      }
+                    }}
+                    className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                    aria-label="Current page"
+                  />
+                  <span className="text-[#9CA3AF]">/</span>
                   <span className="text-[#6B7280]">{totalPages}</span>
                 </div>
 

@@ -1087,9 +1087,23 @@ export default function PositionModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
-              <span className="font-semibold">{currentPage}</span>
-              <span className="text-[#9CA3AF] mx-1">/</span>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={Math.ceil(filteredPositions.length / itemsPerPage)}
+                value={currentPage}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  const maxPage = Math.ceil(filteredPositions.length / itemsPerPage)
+                  if (!isNaN(n) && n >= 1 && n <= maxPage) {
+                    setCurrentPage(n)
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
               <span>{Math.ceil(filteredPositions.length / itemsPerPage)}</span>
             </div>
             <button 
@@ -1430,9 +1444,22 @@ export default function PositionModule() {
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700">
-                  <span className="font-semibold">{netCurrentPage}</span>
-                  <span className="text-gray-400 mx-1">/</span>
+                <div className="text-[10px] font-medium text-gray-700 flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={netTotalPages}
+                    value={netCurrentPage}
+                    onChange={(e) => {
+                      const n = Number(e.target.value)
+                      if (!isNaN(n) && n >= 1 && n <= netTotalPages) {
+                        setNetCurrentPage(n)
+                      }
+                    }}
+                    className="w-10 h-6 border border-gray-300 rounded-lg text-center text-[10px]"
+                    aria-label="Current page"
+                  />
+                  <span className="text-gray-400">/</span>
                   <span>{netTotalPages}</span>
                 </div>
                 <button
@@ -1889,9 +1916,22 @@ export default function PositionModule() {
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700 flex-shrink-0">
-                  <span className="font-semibold">{clientNetCurrentPage}</span>
-                  <span className="text-gray-400 mx-1">/</span>
+                <div className="text-[10px] font-medium text-gray-700 flex-shrink-0 flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={clientNetTotalPages}
+                    value={clientNetCurrentPage}
+                    onChange={(e) => {
+                      const n = Number(e.target.value)
+                      if (!isNaN(n) && n >= 1 && n <= clientNetTotalPages) {
+                        setClientNetCurrentPage(n)
+                      }
+                    }}
+                    className="w-10 h-6 border border-gray-300 rounded-lg text-center text-[10px]"
+                    aria-label="Current page"
+                  />
+                  <span className="text-gray-400">/</span>
                   <span>{clientNetTotalPages}</span>
                 </div>
                 <button
