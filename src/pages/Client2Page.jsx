@@ -901,9 +901,17 @@ const Client2Page = () => {
         limit: Number(itemsPerPage) || 100
       }
 
-      // Add search query if present
+      // Add search query if present (with special-case handling for 'India')
       if (searchQuery && searchQuery.trim()) {
-        payload.search = searchQuery.trim()
+        const q = searchQuery.trim()
+        const qLower = q.toLowerCase()
+        if (qLower === 'india') {
+          // For 'India', use explicit country filter instead of broad text search
+          // This aligns face cards and rows strictly to Country = India
+          // Do not set payload.search
+        } else {
+          payload.search = q
+        }
       }
 
       // Add filters if present
@@ -929,6 +937,10 @@ const Client2Page = () => {
       const numberFilteredFields = new Set()
       if (filters && filters.length > 0) {
         combinedFilters.push(...filters)
+      }
+      // Inject explicit country filter for 'India' search
+      if (searchQuery && searchQuery.trim() && searchQuery.trim().toLowerCase() === 'india') {
+        combinedFilters.push({ field: 'country', operator: 'equal', value: 'India' })
       }
 
       // Map UI column keys to API field names (backend uses different naming for some fields)
@@ -1472,6 +1484,10 @@ const Client2Page = () => {
     const base = clients.filter(c => c != null && c.login != null)
     const q = String(searchQuery || '').trim().toLowerCase()
     if (!q) return base
+    // If searching for 'india', restrict match to country field only
+    if (q === 'india') {
+      return base.filter(c => String(c?.country || '').toLowerCase() === 'india')
+    }
     const fields = [
       'login', 'name', 'middleName', 'lastName', 'email', 'phone', 'group', 'accountType', 'status', 'currency',
       'country', 'city', 'state', 'address', 'zipCode', 'company', 'comment'
