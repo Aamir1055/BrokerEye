@@ -1380,9 +1380,22 @@ export default function Client2Module() {
             </button>
 
             {/* Page indicator */}
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
-              <span className="font-semibold">{currentPage}</span>
-              <span className="text-[#9CA3AF] mx-1">/</span>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={currentPage}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                    setCurrentPage(n)
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
               <span>{totalPages}</span>
             </div>
 
