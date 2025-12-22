@@ -397,6 +397,37 @@ const GroupModal = ({
                       </div>
                     )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between px-2.5 py-2 border-t border-gray-200 bg-white">
+                    <span className="text-[11px] text-gray-600">
+                      {totalLogins > 0 ? (
+                        <>Total {totalLogins} logins • Page {currentPage} of {Math.max(1, totalPages)}</>
+                      ) : (
+                        <>Page {currentPage} of {Math.max(1, totalPages)}</>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage <= 1 || loading}
+                        className={`px-2 py-1 rounded border text-xs ${currentPage <= 1 || loading ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        title="Previous page"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.min(Math.max(1, totalPages), p + 1))}
+                        disabled={currentPage >= Math.max(1, totalPages) || loading}
+                        className={`px-2 py-1 rounded border text-xs ${currentPage >= Math.max(1, totalPages) || loading ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        title="Next page"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
