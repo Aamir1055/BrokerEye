@@ -264,9 +264,9 @@ export default function ClientPercentageModule() {
   const getCardIcon = (label) => {
     const iconMap = {
       'TOTAL CLIENTS': '/Desktop cards icons/Total Clients.svg',
-      'CUSTOM %': '/Desktop cards icons/AVAILABLE Commision%.svg',
+      'CUSTOM %': '/Desktop cards icons/AVAILABLE Commision%25.svg',
       'DEFAULT': '/Desktop cards icons/Total Balance.svg',
-      'AVG %': '/Desktop cards icons/AVAILABLE Commision%.svg'
+      'AVG %': '/Desktop cards icons/AVAILABLE Commision%25.svg'
     }
     return iconMap[label] || '/Desktop cards icons/Total Clients.svg'
   }
