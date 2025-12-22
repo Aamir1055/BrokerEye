@@ -1100,16 +1100,21 @@ const Client2Page = () => {
         }
       }
 
-      // Sorting Strategy: When sorting is active, fetch ALL data and sort client-side
-      // This ensures sorting works across entire dataset, not just current page
-      const shouldFetchAllForSorting = sortBy && sortBy.trim() !== ''
+      // Sorting Strategy: fetch ALL only when no search/filters are active
+      // Avoid huge limit=10000 during active search or filters; keep normal pagination
+      const hasSearch = !!(searchQuery && searchQuery.trim())
+      const hasAnyFilters = !!(payload.filters && payload.filters.length > 0)
+      const hasAccountsFilter = mt5AccountsFilter.length > 0
+      const hasGroupFilter = !!(activeGroup && (activeGroup.range || (activeGroup.loginIds && activeGroup.loginIds.length > 0)))
+      const hasQuick = !!(quickFilters?.hasFloating || quickFilters?.hasCredit || quickFilters?.noDeposit)
+      const shouldFetchAllForSorting = (sortBy && sortBy.trim() !== '') && !hasSearch && !hasAnyFilters && !hasAccountsFilter && !hasGroupFilter && !hasQuick
       
       // Store original pagination for later client-side pagination
       const originalPage = payload.page
       const originalLimit = payload.limit
       
       if (shouldFetchAllForSorting) {
-        // Fetch all data for proper sorting
+        // Fetch all data for proper sorting when dataset is unfiltered
         payload.page = 1
         payload.limit = 10000 // Large limit to get all data
         // Don't send sortBy/sortOrder to backend - we'll sort client-side
