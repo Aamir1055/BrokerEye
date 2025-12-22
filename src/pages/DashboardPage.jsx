@@ -9,6 +9,20 @@ import MiniDataTable from '../components/dashboard/MiniDataTable'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import DashboardMobileView from '../components/DashboardMobileView'
 
+// Local numeric parser aligned with Client2 normalization
+const toNum = (v) => {
+  if (v == null || v === '') return 0
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0
+  if (typeof v === 'string') {
+    const cleaned = v.replace(/,/g, '').trim()
+    if (cleaned === '' || cleaned === '-') return 0
+    const n = Number(cleaned)
+    return Number.isFinite(n) ? n : 0
+  }
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
 const DashboardPage = () => {
   // Initialize sidebar state from localStorage
   const getInitialSidebarOpen = () => {
