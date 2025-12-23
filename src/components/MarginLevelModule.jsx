@@ -547,6 +547,25 @@ export default function MarginLevelModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={Math.ceil(sortedAccounts.length / itemsPerPage)}
+                value={currentPage}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  const maxPage = Math.ceil(sortedAccounts.length / itemsPerPage)
+                  if (!isNaN(n) && n >= 1 && n <= maxPage) {
+                    setCurrentPage(n)
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
+              <span>{Math.ceil(sortedAccounts.length / itemsPerPage)}</span>
+            </div>
             <button 
               onClick={() => setCurrentPage(prev => Math.min(Math.ceil(sortedAccounts.length / itemsPerPage), prev + 1))}
               disabled={currentPage >= Math.ceil(sortedAccounts.length / itemsPerPage)}
