@@ -622,9 +622,23 @@ export default function PendingOrdersModule() {
                 <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
-              <span className="font-semibold">{currentPage}</span>
-              <span className="text-[#9CA3AF] mx-1">/</span>
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={Math.ceil(filteredOrders.length / itemsPerPage)}
+                value={currentPage}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  const maxPage = Math.ceil(filteredOrders.length / itemsPerPage)
+                  if (!isNaN(n) && n >= 1 && n <= maxPage) {
+                    setCurrentPage(n)
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
               <span>{Math.ceil(filteredOrders.length / itemsPerPage)}</span>
             </div>
             <button 
