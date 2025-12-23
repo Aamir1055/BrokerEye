@@ -758,9 +758,21 @@ export default function IBCommissionsModule() {
             </button>
 
             {/* Page indicator */}
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B]">
-              <span className="font-semibold">{currentPage}</span>
-              <span className="text-[#9CA3AF] mx-1">/</span>
+            <div className="flex items-center gap-[4px] px-2 text-[10px] font-medium text-[#4B4B4B]">
+              <input
+                type="number"
+                min="1"
+                max={Math.ceil(filteredData.length / itemsPerPage)}
+                value={currentPage}
+                onChange={(e) => {
+                  const page = Number(e.target.value);
+                  if (!isNaN(page) && page >= 1 && page <= Math.ceil(filteredData.length / itemsPerPage)) {
+                    setCurrentPage(page);
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px] font-semibold"
+              />
+              <span className="text-[#9CA3AF]">/</span>
               <span>{Math.ceil(filteredData.length / itemsPerPage)}</span>
             </div>
 
