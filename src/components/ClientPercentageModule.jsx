@@ -304,10 +304,10 @@ export default function ClientPercentageModule() {
   // Get visible columns
   const allColumns = [
     { key: 'login', label: 'Login', width: '100px', sticky: true },
+    { key: 'updatedAt', label: 'Last Updated', width: '150px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
     { key: 'type', label: 'Type', width: '100px' },
     { key: 'comment', label: 'Comment', width: '200px' },
-    { key: 'updatedAt', label: 'Last Updated', width: '150px' },
     { key: 'actions', label: 'Actions', width: '80px' }
   ]
 
