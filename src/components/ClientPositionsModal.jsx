@@ -396,14 +396,17 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         }
       }
       
+      // Get volume from available fields (volumeCurrent, volume, or volumeInitial)
+      const volume = Number(pos.volumeCurrent ?? pos.volume ?? pos.volumeInitial ?? 0)
+      
       // Normalize action using helper to handle numeric and string variants
       const actionLabel = getActionLabel(pos.action)
       if (actionLabel === 'Buy') {
-        grouped[symbol].buyVolume += pos.volume
-        grouped[symbol].buyPrices.push({ price: pos.priceOpen, volume: pos.volume })
+        grouped[symbol].buyVolume += volume
+        grouped[symbol].buyPrices.push({ price: pos.priceOpen, volume: volume })
       } else if (actionLabel === 'Sell') {
-        grouped[symbol].sellVolume += pos.volume
-        grouped[symbol].sellPrices.push({ price: pos.priceOpen, volume: pos.volume })
+        grouped[symbol].sellVolume += volume
+        grouped[symbol].sellPrices.push({ price: pos.priceOpen, volume: volume })
       }
       
       grouped[symbol].totalProfit += pos.profit
