@@ -1271,7 +1271,7 @@ const ClientPercentagePage = () => {
                       )}
                       {visibleColumns.updatedAt && (
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {client.updated_at ? new Date(client.updated_at).toLocaleString() : '-'}
+                          {client.updated_at ? new Date(client.updated_at).toLocaleString('en-GB') : '-'}
                         </td>
                       )}
                       {visibleColumns.actions && (

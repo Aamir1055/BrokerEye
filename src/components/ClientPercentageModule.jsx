@@ -346,7 +346,7 @@ export default function ClientPercentageModule() {
         value = item.comment || '-'
         break
       case 'updatedAt':
-        value = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'
+        value = item.updated_at ? new Date(item.updated_at).toLocaleDateString('en-GB') : '-'
         break
       case 'actions':
         return (
@@ -407,7 +407,7 @@ export default function ClientPercentageModule() {
               value = item.comment || '-'
               break
             case 'updatedAt':
-              value = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : '-'
+              value = item.updated_at ? new Date(item.updated_at).toLocaleDateString('en-GB') : '-'
               break
             case 'actions':
               value = 'N/A'
