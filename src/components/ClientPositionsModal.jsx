@@ -419,12 +419,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       // Calculate net volume (buy - sell)
       const netVolume = group.buyVolume - group.sellVolume
       
-      // Skip if net volume is zero
-      if (Math.abs(netVolume) < 0.00001) return
+      // Determine if net position is Buy or Sell (or Flat if zero)
+      let netType = 'Flat'
+      let absNetVolume = Math.abs(netVolume)
       
-      // Determine if net position is Buy or Sell
-      const netType = netVolume > 0 ? 'Buy' : 'Sell'
-      const absNetVolume = Math.abs(netVolume)
+      if (Math.abs(netVolume) >= 0.00001) {
+        netType = netVolume > 0 ? 'Buy' : 'Sell'
+      } else {
+        // If perfectly hedged, show as Flat but still display it
+        absNetVolume = 0
+      }
       
       // Calculate weighted average price for the net position
       let avgOpenPrice = 0
@@ -436,6 +440,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         // Net short: use sell prices
         const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
         avgOpenPrice = totalWeightedPrice / group.sellVolume
+      } else {
+        // Flat position: use average of both buy and sell prices
+        const allPrices = [...group.buyPrices, ...group.sellPrices]
+        if (allPrices.length > 0) {
+          const totalWeightedPrice = allPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
+          const totalVolume = allPrices.reduce((sum, item) => sum + item.volume, 0)
+          avgOpenPrice = totalVolume > 0 ? totalWeightedPrice / totalVolume : 0
+        }
       }
       
       netPos.push({
