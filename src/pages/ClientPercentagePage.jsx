@@ -610,7 +610,10 @@ const ClientPercentagePage = () => {
     const actualSortKey = sortKey || columnKey
     
     return (
-      <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider hover:bg-blue-700 transition-colors select-none group border-b border-blue-500">
+      <th 
+        className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider hover:bg-blue-700 transition-colors select-none group border-b border-blue-500"
+        style={{ backgroundColor: '#2563eb' }}
+      >
         <div className="flex items-center gap-2 justify-between">
           <div 
             className="flex items-center gap-1 cursor-pointer flex-1 text-white"
@@ -1151,19 +1154,19 @@ const ClientPercentagePage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col flex-1">
               <div className="overflow-y-auto flex-1">
                 <table className="min-w-full divide-y divide-[#E5E7EB]">
-                <thead className="bg-blue-600 sticky top-0 z-10">
+                <thead className="bg-blue-600 sticky top-0 z-10" style={{ backgroundColor: '#2563eb' }}>
                   <tr>
                     {visibleColumns.login && renderHeaderCell('client_login', 'Client Login', 'client_login')}
                     {visibleColumns.updatedAt && renderHeaderCell('updated_at', 'Last Updated', 'updated_at')}
                     {visibleColumns.percentage && renderHeaderCell('percentage', 'Percentage')}
                     {visibleColumns.type && renderHeaderCell('is_custom', 'Type', 'is_custom')}
                     {visibleColumns.comment && (
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider" style={{ backgroundColor: '#2563eb' }}>
                         Comment
                       </th>
                     )}
                     {visibleColumns.actions && (
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider" style={{ backgroundColor: '#2563eb' }}>
                         Actions
                       </th>
                     )}
