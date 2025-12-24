@@ -4489,9 +4489,8 @@ const Client2Page = () => {
                             <th
                               key={col.key}
                               ref={(el) => { if (!headerRefs.current) headerRefs.current = {}; headerRefs.current[col.key] = el }}
-                              className={`px-2 py-2 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative cursor-pointer ${isDragging ? 'opacity-50' : ''
+                              className={`px-2 py-2 text-left text-xs font-bold text-white uppercase tracking-wider bg-blue-600 hover:bg-blue-700 transition-all select-none relative ${isDragging ? 'opacity-50' : ''
                                 } ${isDragOver ? 'border-l-4 border-yellow-400' : ''} ${isResizing ? 'bg-blue-700 ring-2 ring-yellow-400' : ''}`}
-                              onClick={() => handleSort(col.key)}
                               onDragOver={(e) => handleColumnDragOver(e, col.key)}
                               onDragLeave={handleColumnDragLeave}
                               onDrop={(e) => handleColumnDrop(e, col.key)}
@@ -4526,17 +4525,22 @@ const Client2Page = () => {
                                       <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
                                     </svg>
                                   </div>
-                                  <span
-                                    className="truncate"
-                                    title={col.label}
+                                  <div
+                                    className="flex items-center gap-1 cursor-pointer flex-1"
+                                    onClick={() => handleSort(col.key)}
                                   >
-                                    {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'].includes(col.key) ? ' %' : ''}
-                                  </span>
-                                  {sortBy === col.key && (
-                                    <span className="text-white">
-                                      {sortOrder === 'asc' ? '↑' : '↓'}
+                                    <span
+                                      className="truncate"
+                                      title={col.label}
+                                    >
+                                      {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'].includes(col.key) ? ' %' : ''}
                                     </span>
-                                  )}
+                                    {sortBy === col.key && (
+                                      <span className="text-white">
+                                        {sortOrder === 'asc' ? '↑' : '↓'}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 {/* Header sorting loader - show only for active sorted column while isSorting */}
                                 {isSorting && sortBy === col.key && (
