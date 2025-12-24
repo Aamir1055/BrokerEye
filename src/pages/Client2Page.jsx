@@ -1130,6 +1130,10 @@ const Client2Page = () => {
         payload.page = 1
         payload.limit = 10000 // Large limit to get all data
         // Don't send sortBy/sortOrder to backend - we'll sort client-side
+      } else if (sortBy && sortBy.trim() !== '') {
+        // When filters are active, send sort params to backend
+        payload.sortBy = sortBy
+        payload.sortOrder = sortOrder
       }
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
