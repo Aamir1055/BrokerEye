@@ -400,8 +400,16 @@ const PendingOrdersPage = () => {
     if (!sortColumn) return ordersToSort
     
     const sorted = [...ordersToSort].sort((a, b) => {
-      const aVal = a[sortColumn]
-      const bVal = b[sortColumn]
+      let aVal, bVal
+      
+      // Handle volume field which can have multiple property names
+      if (sortColumn === 'volume') {
+        aVal = a.volumeCurrent ?? a.volume ?? a.volumeInitial
+        bVal = b.volumeCurrent ?? b.volume ?? b.volumeInitial
+      } else {
+        aVal = a[sortColumn]
+        bVal = b[sortColumn]
+      }
       
       // Handle null/undefined values
       if (aVal == null && bVal == null) return 0
