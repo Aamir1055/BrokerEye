@@ -3441,9 +3441,15 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             (() => {
               const buyTotal = netPositions.filter(p => p.netType === 'Buy').reduce((sum, p) => sum + p.totalProfit, 0)
               const sellTotal = netPositions.filter(p => p.netType === 'Sell').reduce((sum, p) => sum + p.totalProfit, 0)
+              // Calculate total net volume with sign: positive for Buy, negative for Sell
+              const totalNetVolume = netPositions.reduce((sum, p) => {
+                if (p.netType === 'Buy') return sum + p.netVolume
+                if (p.netType === 'Sell') return sum - p.netVolume
+                return sum // Flat positions contribute 0
+              }, 0)
               const row = []
               if (netCardVisibility.net_symbols) row.push({ label: 'NET Symbols', value: String(netPositions.length), labelClass: 'text-purple-700', accent: 'border-purple-300' })
-              if (netCardVisibility.net_totalVolume) row.push({ label: 'Total NET Volume', value: netPositions.reduce((sum, p) => sum + p.netVolume, 0).toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
+              if (netCardVisibility.net_totalVolume) row.push({ label: 'Total NET Volume', value: totalNetVolume.toFixed(2), labelClass: 'text-indigo-700', accent: 'border-indigo-300' })
               if (netCardVisibility.net_buyPL) row.push({ label: 'Buy Floating Profit', value: formatCurrency(buyTotal), labelClass: buyTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(buyTotal), accent: buyTotal >= 0 ? 'border-emerald-400' : 'border-red-400' })
               if (netCardVisibility.net_sellPL) row.push({ label: 'Sell Floating Profit', value: formatCurrency(sellTotal), labelClass: sellTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(sellTotal), accent: sellTotal >= 0 ? 'border-emerald-400' : 'border-red-400' })
               if (!row.length) return null
