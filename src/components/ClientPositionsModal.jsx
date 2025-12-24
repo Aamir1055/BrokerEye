@@ -413,44 +413,39 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       grouped[symbol].positions.push(pos)
     })
     
-    // Calculate net positions - create separate entries for buy and sell
+    // Calculate net positions - show actual NET (difference between buy and sell)
     const netPos = []
     Object.values(grouped).forEach(group => {
-      // Add buy entry if there are buys
-      if (group.buyVolume > 0) {
+      // Calculate net volume (buy - sell)
+      const netVolume = group.buyVolume - group.sellVolume
+      
+      // Skip if net volume is zero
+      if (Math.abs(netVolume) < 0.00001) return
+      
+      // Determine if net position is Buy or Sell
+      const netType = netVolume > 0 ? 'Buy' : 'Sell'
+      const absNetVolume = Math.abs(netVolume)
+      
+      // Calculate weighted average price for the net position
+      let avgOpenPrice = 0
+      if (netVolume > 0 && group.buyPrices.length > 0) {
+        // Net long: use buy prices
         const totalWeightedPrice = group.buyPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
-        const avgBuyPrice = totalWeightedPrice / group.buyVolume
-        const buyProfit = group.positions
-          .filter(p => getActionLabel(p.action) === 'Buy')
-          .reduce((sum, p) => sum + Number(p.profit || 0), 0)
-        
-        netPos.push({
-          symbol: group.symbol,
-          netVolume: group.buyVolume,
-          netType: 'Buy',
-          avgOpenPrice: avgBuyPrice,
-          totalProfit: buyProfit,
-          positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Buy').length
-        })
+        avgOpenPrice = totalWeightedPrice / group.buyVolume
+      } else if (netVolume < 0 && group.sellPrices.length > 0) {
+        // Net short: use sell prices
+        const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
+        avgOpenPrice = totalWeightedPrice / group.sellVolume
       }
       
-      // Add sell entry if there are sells
-      if (group.sellVolume > 0) {
-        const totalWeightedPrice = group.sellPrices.reduce((sum, item) => sum + (item.price * item.volume), 0)
-        const avgSellPrice = totalWeightedPrice / group.sellVolume
-        const sellProfit = group.positions
-          .filter(p => getActionLabel(p.action) === 'Sell')
-          .reduce((sum, p) => sum + Number(p.profit || 0), 0)
-        
-        netPos.push({
-          symbol: group.symbol,
-          netVolume: group.sellVolume,
-          netType: 'Sell',
-          avgOpenPrice: avgSellPrice,
-          totalProfit: sellProfit,
-          positionCount: group.positions.filter(p => getActionLabel(p.action) === 'Sell').length
-        })
-      }
+      netPos.push({
+        symbol: group.symbol,
+        netVolume: absNetVolume,
+        netType: netType,
+        avgOpenPrice: avgOpenPrice,
+        totalProfit: group.totalProfit,
+        positionCount: group.positions.length
+      })
     })
     
     setNetPositions(netPos)
