@@ -2657,7 +2657,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               netPos.netType === 'Buy' 
                                 ? 'text-green-600 bg-green-50' 
                                 : netPos.netType === 'Sell'
-                                ? 'text-blue-600 bg-blue-50'
+                                ? 'text-red-600 bg-red-50'
                                 : 'text-gray-600 bg-gray-50'
                             }`}>
                               {netPos.netType}
