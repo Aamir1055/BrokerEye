@@ -1215,12 +1215,22 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-lg p-2">
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{stats.positionsCount}</p>
+              <p className="text-sm font-bold text-gray-900 truncate">
+                {activeTab === 'netPositions' ? netPositions.length : stats.positionsCount}
+              </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
-              <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.totalPnL)}
+              <p className={`text-sm font-bold truncate ${
+                (activeTab === 'netPositions' 
+                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  : stats.totalPnL
+                ) >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {formatNum(activeTab === 'netPositions' 
+                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  : stats.totalPnL
+                )}
               </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
