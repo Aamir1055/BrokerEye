@@ -198,10 +198,22 @@ export default function ClientPercentageModule() {
     let filtered = ibFilteredData.filter(item => {
       if (!searchInput.trim()) return true
       const query = searchInput.toLowerCase()
+      
+      // Special handling for Type column search
+      if (query === 'default') {
+        return item.is_custom === false
+      }
+      if (query === 'custom') {
+        return item.is_custom === true
+      }
+      
+      // Search across all primitive fields
       return (
         String(item.client_login || item.login || '').toLowerCase().includes(query) ||
         String(item.percentage || '').toLowerCase().includes(query) ||
-        String(item.comment || '').toLowerCase().includes(query)
+        String(item.comment || '').toLowerCase().includes(query) ||
+        (item.is_custom ? 'custom' : 'default').includes(query) ||
+        String(item.updated_at || '').toLowerCase().includes(query)
       )
     })
 
