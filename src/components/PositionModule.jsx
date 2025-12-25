@@ -675,7 +675,7 @@ export default function PositionModule() {
       case 'updated':
         const timeValue = pos.timeUpdate || pos.timeCreate
         const formattedTime = timeValue ? new Date(timeValue * 1000).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '-'
-        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -684,9 +684,9 @@ export default function PositionModule() {
       case 'position':
       case 'reason':
       case 'comment':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{pos[columnKey] || '-'}</div>
       default:
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${cellBorderClass} ${stickyClass}`} style={stickyStyle}>-</div>
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>-</div>
     }
   }
 
