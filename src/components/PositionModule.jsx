@@ -1915,7 +1915,7 @@ export default function PositionModule() {
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700 flex-shrink-0 flex items-center gap-1">
+                <div className="text-[10px] font-medium text-gray-700 flex items-center gap-1">
                   <input
                     type="number"
                     min={1}
