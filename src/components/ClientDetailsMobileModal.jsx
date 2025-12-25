@@ -238,41 +238,69 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         const buyVol = group.buyPositions.reduce((s, p) => s + (p.volume || 0), 0)
         const sellVol = group.sellPositions.reduce((s, p) => s + (p.volume || 0), 0)
 
-        if (buyVol > 0) {
-          let twB = 0, tpB = 0
+        // Calculate net volume (buy - sell) like desktop does
+        const netVolume = buyVol - sellVol
+        const absNetVolume = Math.abs(netVolume)
+
+        // Determine net type based on net volume
+        let netType = 'Flat'
+        if (Math.abs(netVolume) >= 0.00001) {
+          netType = netVolume > 0 ? 'Buy' : 'Sell'
+        }
+
+        // Calculate weighted average price for the net position
+        let avgOpenPrice = 0
+        if (netVolume > 0 && group.buyPositions.length > 0) {
+          // Net long: use buy prices
+          let twB = 0
           group.buyPositions.forEach(p => {
             const v = p.volume || 0
             const pr = p.priceOpen || p.price || 0
             twB += pr * v
-            tpB += p.profit || 0
           })
-          const avgB = buyVol > 0 ? twB / buyVol : 0
-          computedNet.push({
-            symbol: group.symbol,
-            netType: 'Buy',
-            volume: buyVol,
-            avgPrice: avgB,
-            profit: tpB,
-            positions: group.buyPositions.length
-          })
-        }
-
-        if (sellVol > 0) {
-          let twS = 0, tpS = 0
+          avgOpenPrice = buyVol > 0 ? twB / buyVol : 0
+        } else if (netVolume < 0 && group.sellPositions.length > 0) {
+          // Net short: use sell prices
+          let twS = 0
           group.sellPositions.forEach(p => {
             const v = p.volume || 0
             const pr = p.priceOpen || p.price || 0
             twS += pr * v
-            tpS += p.profit || 0
           })
-          const avgS = sellVol > 0 ? twS / sellVol : 0
+          avgOpenPrice = sellVol > 0 ? twS / sellVol : 0
+        } else {
+          // Flat position: use average of both buy and sell prices
+          let totalWeightedPrice = 0
+          let totalVolume = 0
+          group.buyPositions.forEach(p => {
+            const v = p.volume || 0
+            const pr = p.priceOpen || p.price || 0
+            totalWeightedPrice += pr * v
+            totalVolume += v
+          })
+          group.sellPositions.forEach(p => {
+            const v = p.volume || 0
+            const pr = p.priceOpen || p.price || 0
+            totalWeightedPrice += pr * v
+            totalVolume += v
+          })
+          avgOpenPrice = totalVolume > 0 ? totalWeightedPrice / totalVolume : 0
+        }
+
+        // Calculate total profit for all positions in this symbol
+        let totalProfit = 0
+        group.buyPositions.forEach(p => totalProfit += p.profit || 0)
+        group.sellPositions.forEach(p => totalProfit += p.profit || 0)
+
+        // Only push if there's a net position (or it's flat but has positions)
+        if (absNetVolume > 0 || (buyVol > 0 || sellVol > 0)) {
           computedNet.push({
             symbol: group.symbol,
-            netType: 'Sell',
-            volume: sellVol,
-            avgPrice: avgS,
-            profit: tpS,
-            positions: group.sellPositions.length
+            netType: netType,
+            volume: absNetVolume,
+            avgPrice: avgOpenPrice,
+            profit: totalProfit,
+            positions: group.buyPositions.length + group.sellPositions.length
           })
         }
       })
