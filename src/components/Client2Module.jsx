@@ -1415,7 +1415,7 @@ export default function Client2Module() {
         </div>
 
         {/* Table area */}
-        <div className="table-no-borders relative">
+        <div className="relative">
           <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
