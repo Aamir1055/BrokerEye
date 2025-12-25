@@ -1909,9 +1909,9 @@ export default function PositionModule() {
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={clientNetCurrentPage === 1}
-                  className={`w-6.5 h-6.5 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
@@ -1936,9 +1936,9 @@ export default function PositionModule() {
                 <button
                   onClick={() => setClientNetCurrentPage(p => Math.min(clientNetTotalPages, p + 1))}
                   disabled={clientNetCurrentPage === clientNetTotalPages}
-                  className={`w-6.5 h-6.5 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
                 >
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
                     <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
