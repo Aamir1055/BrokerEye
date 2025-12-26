@@ -37,7 +37,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
   
   const navigationItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { name: 'Client 2', path: '/client2', icon: 'client2' },
+    { name: 'Clients', path: '/client2', icon: 'client2' },
     { name: 'Positions', path: '/positions', icon: 'positions' },
     { name: 'Pending Orders', path: '/pending-orders', icon: 'orders' },
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
