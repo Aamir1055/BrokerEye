@@ -9,8 +9,6 @@ import LoadingSpinner from './components/LoadingSpinner'
 
 // Lazy load heavy components for code splitting and faster navigation
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-const ClientsPage = lazy(() => import('./pages/ClientsPage'))
-const Client2Page = lazy(() => import('./pages/Client2Page'))
 const PositionsPage = lazy(() => import('./pages/PositionsPage'))
 const PendingOrdersPage = lazy(() => import('./pages/PendingOrdersPage'))
 const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
@@ -47,8 +45,6 @@ const AppContent = () => {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/login" element={<DashboardPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/client2" element={<Client2Page />} />
         <Route path="/positions" element={<PositionsPage />} />
         <Route path="/pending-orders" element={<PendingOrdersPage />} />
         <Route path="/margin-level" element={<MarginLevelPage />} />
@@ -71,8 +67,6 @@ function PreloadRoutes() {
     const preload = () => {
       try {
         // Preload commonly navigated pages
-        import('./pages/ClientsPage')
-        import('./pages/Client2Page')
         import('./pages/PendingOrdersPage')
         import('./pages/MarginLevelPage')
         import('./pages/LiveDealingPage')
