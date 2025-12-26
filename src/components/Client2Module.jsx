@@ -1042,7 +1042,7 @@ export default function Client2Module() {
               <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-          <h1 className="text-xl font-semibold text-black">Client 2</h1>
+          <h1 className="text-xl font-semibold text-black">Clients</h1>
           <div className="w-9 h-9"></div>
         </div>
       </div>
