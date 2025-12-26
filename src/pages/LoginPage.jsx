@@ -195,10 +195,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1200px',
-            height: '1200px',
-            right: '-600px',
-            top: 'calc(54% - 600px)',
+            width: '1400px',
+            height: '1400px',
+            right: '-700px',
+            top: 'calc(55% - 700px)',
             background: '#4471D6'
            }}
          />
@@ -207,10 +207,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1150px',
-            height: '1150px',
-            right: '-575px',
-            top: 'calc(54% - 575px)',
+            width: '1350px',
+            height: '1350px',
+            right: '-675px',
+            top: 'calc(55% - 675px)',
             background: '#3B65C5'
            }}
          />
@@ -219,10 +219,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1100px',
-            height: '1100px',
-            right: '-550px',
-            top: 'calc(54% - 550px)',
+            width: '1300px',
+            height: '1300px',
+            right: '-650px',
+            top: 'calc(55% - 650px)',
             background: '#1641A2'
            }}
          />
