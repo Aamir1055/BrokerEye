@@ -59,39 +59,46 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="h-screen overflow-hidden bg-white relative flex">
       {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-32">
-        <div className={`w-full max-w-md transition-all duration-1000 transform ${
+      <div className="flex-1 flex items-center justify-center px-6 relative z-10">
+        <div className={`w-[372px] transition-all duration-1000 transform lg:-translate-x-40 xl:-translate-x-64 2xl:-translate-x-80 ${
           isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
         }`}>
           {/* Logo and Header */}
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 bg-[#5B8DEF] rounded-2xl flex items-center justify-center shadow-lg">
-                <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              {/* Gradient square + eye icon per Figma */}
+              <div
+                className="w-10 h-10 rounded-lg relative flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(26, 99, 188, 0.6) 0%, #1A63BC 100%)'
+                }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5c-4.477 0-8.268 2.943-9.542 7 1.274 4.057 5.064 7 9.542 7 4.478 0 8.268-2.943 9.542-7C20.268 7.943 16.478 5 12 5Z" fill="#FFFFFF"/>
+                  <circle cx="12" cy="12" r="3" fill="#1A63BC"/>
                 </svg>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-[#2D3748]">Broker Eyes</h1>
-                <p className="text-sm text-[#718096]">Trading Platform</p>
+              <div className="flex flex-col justify-center">
+                <h1 className="text-[16px] leading-5 font-semibold text-[#404040]">Broker Eyes</h1>
+                <p className="text-[12px] leading-5 font-medium text-[#64748B]">Trading Platform</p>
               </div>
             </div>
-            
-            <h2 className="text-3xl font-bold text-[#2D3748] mb-2">Welcome Back</h2>
-            <p className="text-[#718096]">Welcome back to access your account. Make sure you use correct information</p>
+
+            <h2 className="text-[20px] leading-[25px] font-semibold text-[#333333] mb-2">Welcome Back</h2>
+            <p className="text-[#8C8C8C] text-[12px] leading-[15px]">Welcome back to access your account. Make sure you use correct information</p>
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="mt-[24px] space-y-[24px]">
             {/* Email Field */}
             <div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-[#A0AEC0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 6h20v12H2z" stroke="#999999" strokeWidth="1.5"/>
+                    <path d="M2 6l10 7 10-7" stroke="#999999" strokeWidth="1.5"/>
                   </svg>
                 </div>
                 <input
@@ -99,7 +106,7 @@ const LoginPage = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-12 pr-4 py-4 text-gray-900 bg-white border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#A0AEC0]"
+                  className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
                   placeholder="Email"
                   disabled={isLoading}
                   required
@@ -111,8 +118,9 @@ const LoginPage = () => {
             <div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-[#A0AEC0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="9" width="16" height="11" rx="2" stroke="#999999" strokeWidth="1.5"/>
+                    <path d="M8 9V7a4 4 0 118 0v2" stroke="#999999" strokeWidth="1.5"/>
                   </svg>
                 </div>
                 <input
@@ -120,7 +128,7 @@ const LoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-12 pr-12 py-4 text-gray-900 bg-white border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#A0AEC0]"
+                  className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
                   placeholder="Password"
                   disabled={isLoading}
                   required
@@ -128,7 +136,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#A0AEC0] hover:text-[#5B8DEF] transition-colors duration-200"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#999999] hover:text-[#5B8DEF] transition-colors duration-200"
                   disabled={isLoading}
                 >
                   {showPassword ? (
@@ -143,6 +151,7 @@ const LoginPage = () => {
                   )}
                 </button>
               </div>
+              {/* Reset Password link removed as requested */}
             </div>
 
             {/* Error Message */}
@@ -163,7 +172,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#5B8DEF] hover:bg-[#4A7DD8] disabled:bg-gray-400 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-lg"
+              className="w-full h-[55px] bg-[#2563EB] hover:bg-[#1E55D0] disabled:bg-gray-400 text-white font-bold rounded-[12px] transition-all duration-300 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-[16px]"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -175,56 +184,58 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          {/* Footer icons & links panel removed as requested */}
         </div>
       </div>
-
-      {/* Right Side - Blue Wave Design */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden bg-white">
+      
+      {/* Right Side - Blue Wave Design (true semicircle, absolute overlay) */}
+      <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
         {/* Ellipse 49 */}
-        <div 
-          className="absolute rounded-full" 
-          style={{
-            width: '1549px',
-            height: '1490px',
-            left: '-850px',
-            top: '-372px',
+         <div 
+           className="absolute rounded-full" 
+           style={{
+            width: '1400px',
+            height: '1400px',
+            right: '-700px',
+            top: 'calc(55% - 700px)',
             background: '#4471D6'
-          }}
-        />
+           }}
+         />
         
         {/* Ellipse 51 */}
-        <div 
-          className="absolute rounded-full" 
-          style={{
-            width: '1549px',
-            height: '1490px',
-            left: '-800px',
-            top: '-377px',
+         <div 
+           className="absolute rounded-full" 
+           style={{
+            width: '1350px',
+            height: '1350px',
+            right: '-675px',
+            top: 'calc(55% - 675px)',
             background: '#3B65C5'
-          }}
-        />
+           }}
+         />
         
         {/* Ellipse 50 */}
-        <div 
-          className="absolute rounded-full" 
-          style={{
-            width: '1549px',
-            height: '1456px',
-            left: '-752px',
-            top: '-359px',
+         <div 
+           className="absolute rounded-full" 
+           style={{
+            width: '1300px',
+            height: '1300px',
+            right: '-650px',
+            top: 'calc(55% - 650px)',
             background: '#1641A2'
-          }}
-        />
+           }}
+         />
         
         {/* Ellipse 29 - Border Circle */}
         <div 
           className="absolute rounded-full box-border" 
           style={{
-            width: '412px',
-            height: '412px',
-            left: '150px',
-            top: '-296px',
-            border: '100px solid rgba(220, 240, 153, 0.06)',
+            width: '320px',
+            height: '320px',
+            right: '-160px',
+            top: 'calc(20% - 160px)',
+            border: '80px solid rgba(220, 240, 153, 0.06)',
             background: 'transparent'
           }}
         />
