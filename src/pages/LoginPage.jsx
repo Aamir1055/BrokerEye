@@ -179,19 +179,55 @@ const LoginPage = () => {
       </div>
 
       {/* Right Side - Blue Wave Design */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden bg-[#4A7DD8]">
-        {/* Main Large Semi-Circle from Right */}
-        <div className="absolute -right-[50%] top-1/2 -translate-y-1/2 w-[1400px] h-[1400px] bg-[#5B8DEF] rounded-full opacity-80"></div>
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden bg-white">
+        {/* Ellipse 49 */}
+        <div 
+          className="absolute rounded-full" 
+          style={{
+            width: '1549px',
+            height: '1490px',
+            left: '-850px',
+            top: '-372px',
+            background: '#4471D6'
+          }}
+        />
         
-        {/* Second Layer Semi-Circle */}
-        <div className="absolute -right-[45%] top-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-[#6B9EFF] rounded-full opacity-60"></div>
+        {/* Ellipse 51 */}
+        <div 
+          className="absolute rounded-full" 
+          style={{
+            width: '1549px',
+            height: '1490px',
+            left: '-800px',
+            top: '-377px',
+            background: '#3B65C5'
+          }}
+        />
         
-        {/* Third Layer Semi-Circle */}
-        <div className="absolute -right-[40%] top-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[#5B8DEF] rounded-full opacity-50"></div>
+        {/* Ellipse 50 */}
+        <div 
+          className="absolute rounded-full" 
+          style={{
+            width: '1549px',
+            height: '1456px',
+            left: '-752px',
+            top: '-359px',
+            background: '#1641A2'
+          }}
+        />
         
-        {/* Accent Circles */}
-        <div className="absolute right-[10%] top-[15%] w-[300px] h-[300px] bg-[#6B9EFF] rounded-full opacity-30"></div>
-        <div className="absolute right-[15%] bottom-[15%] w-[250px] h-[250px] bg-[#5B8DEF] rounded-full opacity-40"></div>
+        {/* Ellipse 29 - Border Circle */}
+        <div 
+          className="absolute rounded-full box-border" 
+          style={{
+            width: '412px',
+            height: '412px',
+            left: '150px',
+            top: '-296px',
+            border: '100px solid rgba(220, 240, 153, 0.06)',
+            background: 'transparent'
+          }}
+        />
       </div>
     </div>
   )
