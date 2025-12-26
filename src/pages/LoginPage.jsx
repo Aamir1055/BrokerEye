@@ -198,7 +198,7 @@ const LoginPage = () => {
             width: '1400px',
             height: '1400px',
             right: '-700px',
-            top: 'calc(55% - 700px)',
+            top: 'calc(54% - 700px)',
             background: '#4471D6'
            }}
          />
@@ -210,7 +210,7 @@ const LoginPage = () => {
             width: '1350px',
             height: '1350px',
             right: '-675px',
-            top: 'calc(55% - 675px)',
+            top: 'calc(58% - 675px)',
             background: '#3B65C5'
            }}
          />
@@ -222,7 +222,7 @@ const LoginPage = () => {
             width: '1300px',
             height: '1300px',
             right: '-650px',
-            top: 'calc(55% - 650px)',
+            top: 'calc(62% - 650px)',
             background: '#1641A2'
            }}
          />
@@ -245,9 +245,9 @@ const LoginPage = () => {
           className="absolute text-white font-bold text-2xl lg:text-3xl xl:text-4xl"
           style={{
             right: '200px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            maxWidth: '400px',
+            top: '12%',
+            transform: 'none',
+            maxWidth: '460px',
             lineHeight: '1.3',
             textShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
