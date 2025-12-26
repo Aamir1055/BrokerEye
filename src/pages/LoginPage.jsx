@@ -239,6 +239,21 @@ const LoginPage = () => {
             background: 'transparent'
           }}
         />
+
+        {/* Text inside dark blue semicircle */}
+        <div 
+          className="absolute text-white font-bold text-2xl lg:text-3xl xl:text-4xl"
+          style={{
+            right: '200px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            maxWidth: '400px',
+            lineHeight: '1.3',
+            textShadow: '0 2px 8px rgba(0,0,0,0.2)'
+          }}
+        >
+          Volatility's calling.<br />Pick up.
+        </div>
       </div>
     </div>
   )
