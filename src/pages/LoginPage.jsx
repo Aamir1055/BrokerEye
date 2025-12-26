@@ -179,22 +179,17 @@ const LoginPage = () => {
       </div>
 
       {/* Right Side - Blue Wave Design */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
-        {/* Blue Wave Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5B8DEF] via-[#4A7DD8] to-[#3D6FC7]">
-          {/* Large Circle Wave */}
-          <div className="absolute -right-64 -top-64 w-[800px] h-[800px] bg-[#6B9EFF] rounded-full opacity-30"></div>
-          <div className="absolute -right-32 -top-32 w-[600px] h-[600px] bg-[#5B8DEF] rounded-full opacity-40"></div>
-          
-          {/* Bottom Left Wave */}
-          <div className="absolute -left-48 -bottom-48 w-[600px] h-[600px] bg-[#4A7DD8] rounded-full opacity-30"></div>
-          <div className="absolute -left-24 -bottom-24 w-[400px] h-[400px] bg-[#6B9EFF] rounded-full opacity-40"></div>
-          
-          {/* Right Side Large Wave */}
-          <div className="absolute right-0 top-0 bottom-0 w-1/2">
-            <div className="absolute inset-0 bg-gradient-to-l from-[#3D6FC7] to-transparent opacity-50"></div>
-          </div>
-        </div>
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden bg-gradient-to-br from-[#5B8DEF] via-[#4A7DD8] to-[#3D6FC7]">
+        {/* Large Semi-Circle Wave from Right */}
+        <div className="absolute -right-[400px] top-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-[#6B9EFF] rounded-full opacity-40"></div>
+        <div className="absolute -right-[300px] top-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[#5B8DEF] rounded-full opacity-30"></div>
+        <div className="absolute -right-[200px] top-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#4A7DD8] rounded-full opacity-40"></div>
+        
+        {/* Top Circle */}
+        <div className="absolute -top-32 right-64 w-[400px] h-[400px] bg-[#6B9EFF] rounded-full opacity-25"></div>
+        
+        {/* Bottom Circle */}
+        <div className="absolute -bottom-32 right-64 w-[400px] h-[400px] bg-[#6B9EFF] rounded-full opacity-25"></div>
       </div>
     </div>
   )
