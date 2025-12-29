@@ -4047,9 +4047,9 @@ const Client2Page = () => {
 
           {/* Face Cards Section */}
           {showFaceCards && ((totals && Object.keys(totals).length > 0) || (totalsPercent && Object.keys(totalsPercent).length > 0)) && (
-            <div className="mb-12 lg:mb-14 w-full relative z-10 pb-6 lg:pb-8 xl:pb-10" ref={faceCardsRef}>
+            <div className="" ref={faceCardsRef}>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 w-full select-none overflow-x-hidden pb-2" style={{ touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none' }}>
-                {faceCardOrder.map((cardKey) => {
+              {faceCardOrder.map((cardKey) => {
                   // Determine which card variant to show based on percentage mode
                   let displayCardKey = cardKey
 
