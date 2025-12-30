@@ -111,45 +111,47 @@ const LoginMobile = () => {
           </div>
         </div>
 
-        {/* Email field */}
+        {/* Username field */}
         <div className="absolute" style={{ left: 20, top: 615, width: 372, height: 55 }}>
-          <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px]">
-            <div className="flex items-center gap-[15px]">
-              {/* Tiny envelope glyph */}
-              <svg width="11" height="9" viewBox="0 0 24 24">
-                <rect x="4" y="8" width="16" height="8" rx="2" fill="none" stroke="#999999" strokeWidth="1" />
-                <path d="M4 8l8 6 8-6" fill="none" stroke="#999999" strokeWidth="1" />
-              </svg>
-              <span className="font-montserrat font-medium text-[14px] leading-[17px] text-[#999999]">Email</span>
-            </div>
+          <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
+            {/* User icon */}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="#999999">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="#999999" strokeWidth="2" fill="none" />
+            </svg>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-[#333333] placeholder-[#999999] font-montserrat font-medium text-[14px]"
+              placeholder="Username"
+            />
           </div>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="absolute top-0 left-[90px] w-[260px] h-full bg-transparent outline-none text-[#333333] placeholder-[#999999] text-[14px]"
-            placeholder="Enter your email"
-          />
         </div>
 
         {/* Password field */}
         <div className="absolute" style={{ left: 20, top: 687, width: 372, height: 55 }}>
-          <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center justify-between px-[17px]">
-            <div className="flex items-center gap-[15px]">
-              {/* Tiny lock glyph */}
-              <svg width="11" height="13" viewBox="0 0 24 24">
-                <rect x="6" y="10" width="12" height="9" rx="2" fill="#999999" />
-              </svg>
-              <span className="font-montserrat font-medium text-[14px] leading-[17px] text-[#999999]">Password</span>
-            </div>
+          <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
+            {/* Lock icon */}
+            <svg width="11" height="13" viewBox="0 0 24 24" fill="#999999">
+              <rect x="6" y="10" width="12" height="9" rx="2" />
+              <path d="M8 10V7a4 4 0 118 0v3" stroke="#999999" strokeWidth="1.5" fill="none" />
+            </svg>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-[#333333] placeholder-[#999999] font-montserrat font-medium text-[14px]"
+              placeholder="Password"
+            />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="flex items-center"
+              className="flex items-center flex-shrink-0"
             >
               <svg width="16" height="13" viewBox="0 0 24 24" fill="#999999">
                 {showPassword ? (
-                  <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" stroke="#999999" strokeWidth="1.5" fill="none" />
                 ) : (
                   <>
                     <path d="M12 5c-4.477 0-8.268 2.943-9.542 7 1.274 4.057 5.064 7 9.542 7 4.478 0 8.268-2.943 9.542-7C20.268 7.943 16.478 5 12 5Z" />
@@ -159,13 +161,6 @@ const LoginMobile = () => {
               </svg>
             </button>
           </div>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="absolute top-0 left-[132px] w-[200px] h-full bg-transparent outline-none text-[#333333] placeholder-[#999999] text-[14px]"
-            placeholder="Enter password"
-          />
         </div>
 
         {/* Reset Password */}
