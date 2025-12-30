@@ -49,16 +49,16 @@ const LoginMobile = () => {
         {/* Brand row (center top) */}
         <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: 24, width: 149, height: 42 }}>
           <div className="w-full h-full flex flex-row items-center justify-center gap-[6.4px]">
-            {/* Brand icon - gradient square with eye */}
+            {/* Brand icon - white square with blue eye */}
             <div
               className="w-[33.07px] h-[33.07px] rounded-[8px] relative flex items-center justify-center"
               style={{
-                background: 'linear-gradient(180deg, rgba(26, 99, 188, 0.6) 0%, #1A63BC 100%)'
+                background: '#FFFFFF'
               }}
             >
               <svg className="w-[17.08px] h-[17.08px]" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5c-4.477 0-8.268 2.943-9.542 7 1.274 4.057 5.064 7 9.542 7 4.478 0 8.268-2.943 9.542-7C20.268 7.943 16.478 5 12 5Z" fill="#FFFFFF"/>
-                <circle cx="12" cy="12" r="3" fill="#1A63BC"/>
+                <path d="M12 5c-4.477 0-8.268 2.943-9.542 7 1.274 4.057 5.064 7 9.542 7 4.478 0 8.268-2.943 9.542-7C20.268 7.943 16.478 5 12 5Z" fill="#1A63BC"/>
+                <circle cx="12" cy="12" r="3" fill="#FFFFFF"/>
               </svg>
             </div>
             <div className="flex flex-col justify-center items-start gap-[5px]" style={{ width: 97, height: 50 }}>
