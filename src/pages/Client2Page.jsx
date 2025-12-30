@@ -5330,7 +5330,7 @@ const Client2Page = () => {
                       </thead>
                     )}
 
-                    <tbody className="bg-white divide-y divide-slate-100 text-sm md:text-[15px]" key={`tbody-${animationKey}`}>
+                    <tbody className="bg-white divide-y divide-slate-100 text-sm" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
@@ -5373,7 +5373,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-2 py-1.5 text-sm md:text-[15px] text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all bg-white"
+                                  className="px-2 py-1.5 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all bg-white"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -5397,7 +5397,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-2 py-1.5 text-sm md:text-[15px] ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
+                                className={`px-2 py-1.5 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
