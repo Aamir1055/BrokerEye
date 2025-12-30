@@ -109,7 +109,7 @@ const LoginPage = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
+                  className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#3B65C5] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-[#5B8DEF] transition-all duration-200 placeholder-[#8A93A6]"
                   placeholder="Email"
                   disabled={isLoading}
                   required
@@ -131,7 +131,7 @@ const LoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
+                  className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#3B65C5] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-[#5B8DEF] transition-all duration-200 placeholder-[#8A93A6]"
                   placeholder="Password"
                   disabled={isLoading}
                   required
