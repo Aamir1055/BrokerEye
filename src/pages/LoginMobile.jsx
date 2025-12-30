@@ -103,7 +103,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[12px] leading-[19px] text-white text-center capitalize" style={{ width: 303, left: '50%', transform: 'translateX(-50%)', top: 260 }}>
+        <div className="absolute font-outfit font-medium text-[12px] leading-[19px] text-white text capitalize" style={{ width: 303, left: '45%', transform: 'translateX(-50%)', top: 260 }}>
           A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
