@@ -649,17 +649,17 @@ const LiveDealingPage = () => {
           return prevDeals
         }
         
-        // Mark this deal as new for blinking effect
+        // Mark this deal as new for highlight effect
         setNewDealIds(prev => new Set(prev).add(dealEntry.id))
         
-        // Remove the blink effect after 3 seconds
+        // Remove the highlight effect after 6 seconds (matching animation duration)
         setTimeout(() => {
           setNewDealIds(prev => {
             const updated = new Set(prev)
             updated.delete(dealEntry.id)
             return updated
           })
-        }, 3000)
+        }, 6000)
         
         // Add new deal at the beginning (newest first)
         const newDeals = [dealEntry, ...prevDeals]
@@ -2045,15 +2045,16 @@ const LiveDealingPage = () => {
           {/* Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1">
             <div className="overflow-y-auto flex-1">
-              {/* Blink animation styles should always be present */}
+              {/* Smooth fade animation for new deals */}
               <style>{`
-                @keyframes dealBlink {
-                  0%, 100% { background-color: #ffffff; }
-                  25%, 75% { background-color: #dbeafe; }
-                  50% { background-color: #93c5fd; }
+                @keyframes dealFadeOut {
+                  0% { background-color: #60a5fa; }
+                  30% { background-color: #93c5fd; }
+                  60% { background-color: #dbeafe; }
+                  100% { background-color: #ffffff; }
                 }
                 .new-deal-blink {
-                  animation: dealBlink 0.6s ease-in-out 4;
+                  animation: dealFadeOut 6s ease-out forwards !important;
                 }
               `}</style>
               <table className="min-w-full divide-y divide-gray-200 text-xs">
