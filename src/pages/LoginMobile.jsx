@@ -37,8 +37,8 @@ const LoginMobile = () => {
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="relative w-full max-w-[412px] h-[923px] bg-white rounded-[20px] overflow-hidden shadow-2xl mx-4">
+    <div className="w-full min-h-screen bg-white overflow-hidden">
+      <div className="relative w-full h-screen bg-white overflow-hidden">
         {/* Background Ellipses (blue layers) */}
         <div className="absolute rounded-full" style={{ width: 651, height: 651, left: -40, top: -158, background: '#4471D6' }} />
         <div className="absolute rounded-full" style={{ width: 651, height: 652, left: -32, top: -178, background: '#3B65C5' }} />
