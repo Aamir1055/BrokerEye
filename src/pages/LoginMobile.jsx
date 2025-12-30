@@ -69,7 +69,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Hero heading (center top) */}
-        <div className="absolute text-white font-outfit font-extrabold text-[32px] leading-[41px] text-center capitalize" style={{ width: 298, left: '50%', transform: 'translateX(-50%)', top: 80 }}>
+        <div className="absolute text-white font-outfit font-extrabold text-[32px] leading-[41px] capitalize" style={{ width: 298, left: '30%', top: 80 }}>
           Your Path To Financial Recovery!
         </div>
 
