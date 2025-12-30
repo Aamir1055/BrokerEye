@@ -188,7 +188,10 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Footer icons & links panel removed as requested */}
+          {/* Footer */}
+          <div className="mt-10 text-center text-[#64748B] text-[12px]">
+            Copyright © 2025 Brokers Eye Platform
+          </div>
         </div>
       </div>
       
