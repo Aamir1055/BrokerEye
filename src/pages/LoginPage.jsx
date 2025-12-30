@@ -188,10 +188,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Footer */}
-          <div className="mt-10 text-center text-[#64748B] text-[12px]">
-            Copyright © 2025 Brokers Eye Platform
-          </div>
+          {/* Footer removed; copyright moved to hero side */}
         </div>
       </div>
       
@@ -201,10 +198,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1400px',
-            height: '1400px',
-            right: '-700px',
-            top: 'calc(54% - 700px)',
+            width: '1600px',
+            height: '1600px',
+            right: '-800px',
+            top: 'calc(54% - 800px)',
             background: '#4471D6'
            }}
          />
@@ -213,10 +210,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1350px',
-            height: '1350px',
-            right: '-675px',
-            top: 'calc(58% - 675px)',
+            width: '1550px',
+            height: '1550px',
+            right: '-775px',
+            top: 'calc(58% - 775px)',
             background: '#3B65C5'
            }}
          />
@@ -225,10 +222,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1300px',
-            height: '1300px',
-            right: '-650px',
-            top: 'calc(62% - 650px)',
+            width: '1500px',
+            height: '1500px',
+            right: '-750px',
+            top: 'calc(62% - 750px)',
             background: '#1641A2'
            }}
          />
@@ -245,6 +242,18 @@ const LoginPage = () => {
             background: 'transparent'
           }}
         />
+
+        {/* Copyright below inner circle */}
+        <div
+          className="absolute text-white text-[12px]"
+          style={{
+            right: '-160px',
+            top: 'calc(20% + 180px)',
+            opacity: 0.85
+          }}
+        >
+          Copyright © 2025 Brokers Eye Platform
+        </div>
 
         {/* Content inside dark blue semicircle */}
         <div 
