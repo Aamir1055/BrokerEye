@@ -49,12 +49,12 @@ const LoginMobile = () => {
 
         {/* Brand row (center top) */}
         <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: 24, width: 149, height: 42 }}>
-          <div className="w-full h-full flex flex-col items-center justify-center gap-0">
+          <div className="w-full h-full flex flex-row items-center justify-center gap-[6.4px]">
             {/* Brand icon from assets */}
-            <img src={BrandGroup} alt="Broker Eyes" className="w-[33.07px] h-[33.07px] rounded-[8px] mb-1" />
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="font-outfit font-semibold text-[18px] leading-[24px] text-white">Broker Eyes</div>
-              <div className="font-outfit font-normal text-[10px] leading-[16px] tracking-[0.14em] text-[#F2F2F7]">Trading Platform</div>
+            <img src={BrandGroup} alt="Broker Eyes" className="w-[33.07px] h-[33.07px] rounded-[8px]" />
+            <div className="flex flex-col justify-center items-start gap-[5px]" style={{ width: 97, height: 50 }}>
+              <div className="font-outfit font-semibold text-[18px] leading-[24px] text-white flex items-center">Broker Eyes</div>
+              <div className="font-outfit font-normal text-[10px] leading-[16px] tracking-[0.14em] text-[#F2F2F7] flex items-center self-stretch">Trading Platform</div>
             </div>
           </div>
         </div>
