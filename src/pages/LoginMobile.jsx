@@ -68,7 +68,7 @@ const LoginMobile = () => {
         {/* Left */}
         <div className="absolute" style={{ left: 54, top: 191, width: 54, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] rounded-[8px] bg-[#3C61D6] flex items-center justify-center p-[9px]">
+            <div className="w-[42px] h-[42px] rounded-[8px] bg-[#3C61D6] flex items-center justify-center p-[20px]">
               <img src={Group8} alt="Secure Trading Infrastructure" className="w-[24px] h-[24px] select-none" />
             </div>
             <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Secure Trading Infrastructure</div>
