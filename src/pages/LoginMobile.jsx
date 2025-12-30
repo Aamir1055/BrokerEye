@@ -77,28 +77,28 @@ const LoginMobile = () => {
         {/* Left */}
         <div className="absolute" style={{ left: 54, top: 175, width: 54, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] bg-white rounded-[8px] flex items-center justify-center">
-              <img src={Group8} alt="Secure Trading Infrastructure" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
             </div>
-            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-left capitalize w-full">Secure Trading Infrastructure</div>
+            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Secure Trading Infrastructure</div>
           </div>
         </div>
         {/* Middle */}
         <div className="absolute" style={{ left: 128, top: 175, width: 62, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] bg-white rounded-[8px] flex items-center justify-center">
-              <img src={Group9} alt="Fast and reliable execution" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
             </div>
-            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-left capitalize w-full">Fast And Reliable Execution</div>
+            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Fast And Reliable Execution</div>
           </div>
         </div>
         {/* Right */}
         <div className="absolute" style={{ left: 210, top: 175, width: 64, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] bg-white rounded-[8px] flex items-center justify-center">
-              <img src={Group10} alt="Real-time market insights" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
             </div>
-            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-left capitalize w-full">Real-Time Market Insights</div>
+            <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Real-Time Market Insights</div>
           </div>
         </div>
 
