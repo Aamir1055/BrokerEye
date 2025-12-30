@@ -265,14 +265,15 @@ export default function LiveDealingModule() {
         // Mark this deal as new for highlight effect
         setNewDealIds(prev => new Set(prev).add(dealEntry.id))
         
-        // Remove the highlight effect after 6 seconds
+        // Trigger the fade immediately after initial paint (desktop)
+        // Remove the highlight class shortly to let CSS transition handle the fade
         setTimeout(() => {
           setNewDealIds(prev => {
             const updated = new Set(prev)
             updated.delete(dealEntry.id)
             return updated
           })
-        }, 6000)
+        }, 200)
         
         const updated = [dealEntry, ...prevDeals].slice(0, 1000)
         saveWsCache(updated.slice(0, 200))
@@ -1107,19 +1108,12 @@ export default function LiveDealingModule() {
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 <style>{`
-                  @keyframes dealFadeOut {
-                    0% { background-color: #60a5fa; }
-                    40% { background-color: #93c5fd; }
-                    80% { background-color: #e0f2fe; }
-                    100% { background-color: #ffffff; }
-                  }
+                  /* Desktop: use a single-state class; fade is handled via CSS transition on the row */
                   .new-deal-blink {
-                    animation: dealFadeOut 6s ease-out forwards;
-                    animation-iteration-count: 1;
-                    animation-fill-mode: forwards;
+                    background-color: #60a5fa !important;
                   }
                   .new-deal-blink:hover {
-                    background-color: inherit !important;
+                    background-color: #60a5fa !important;
                   }
                 `}</style>
                 {/* Table Header */}
@@ -1193,13 +1187,14 @@ export default function LiveDealingModule() {
                   sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal) => (
                     <div 
                       key={deal.id} 
-                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] transition-colors ${newDealIds.has(deal.id) ? 'new-deal-blink' : 'hover:bg-[#F8FAFC]'}`}
+                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] ${newDealIds.has(deal.id) ? 'new-deal-blink' : 'hover:bg-[#F8FAFC]'} `}
                       style={{
                         gap: '0px', 
                         gridGap: '0px', 
                         columnGap: '0px',
                         gridTemplateColumns,
-                        willChange: 'background-color'
+                        willChange: 'background-color',
+                        transition: 'background-color 6s ease-out'
                       }}
                     >
                       {activeColumns.map(col => (
