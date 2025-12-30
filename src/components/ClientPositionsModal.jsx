@@ -1641,6 +1641,26 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({totalDealsCount || deals.length})
             </button>
+            <button
+              onClick={() => setActiveTab('funds')}
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                activeTab === 'funds'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              Money Transactions
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                activeTab === 'rules'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              Broker Rules ({clientRules.filter(r => r.is_active === true).length})
+            </button>
           </div>
 
           {/* Controls for Positions Tab */}
@@ -3340,6 +3360,205 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </>
                   )}
                 </>
+              )}
+            </div>
+          )}
+
+          {/* Money Transactions Tab */}
+          {activeTab === 'funds' && (
+            <div>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
+                
+                {/* Success Message */}
+                {operationSuccess && (
+                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-green-700 text-xs">{operationSuccess}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {operationError && (
+                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-red-700 text-xs">{operationError}</span>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleFundsOperation} className="space-y-3">
+                  {/* Operation Type */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Operation Type
+                    </label>
+                    <select
+                      value={operationType}
+                      onChange={(e) => {
+                        setOperationType(e.target.value)
+                        setOperationSuccess('')
+                        setOperationError('')
+                      }}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                    >
+                      <option value="deposit" className="text-gray-900">Deposit Funds</option>
+                      <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
+                      <option value="credit_in" className="text-gray-900">Credit In</option>
+                      <option value="credit_out" className="text-gray-900">Credit Out</option>
+                    </select>
+                  </div>
+
+                  {/* Amount */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Amount ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="Enter amount"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                      required
+                    />
+                  </div>
+
+                  {/* Comment */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Comment (Optional)
+                    </label>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Add a comment for this transaction"
+                      rows="2"
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAmount('')
+                        setComment('')
+                        setOperationSuccess('')
+                        setOperationError('')
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={operationLoading}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 transition-all inline-flex items-center gap-1.5"
+                    >
+                      {operationLoading ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Execute Operation
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Broker Rules Tab */}
+          {activeTab === 'rules' && (
+            <div>
+              {rulesLoading ? (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Toggle</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {availableRules.filter(r => r.is_active).map((rule) => {
+                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          const isApplied = clientRule && clientRule.is_active === true
+                          const requiresTimeParam = rule.requires_time_parameter
+                          const timeOptions = rule.available_time_parameters || []
+                          const currentTimeParam = clientRule?.time_parameter || ''
+                          
+                          return (
+                            <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
+                              <td className="px-4 py-3">
+                                {requiresTimeParam ? (
+                                  <select
+                                    value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
+                                    onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="">Select time</option>
+                                    {timeOptions.map((time) => (
+                                      <option key={time} value={time}>{time}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className="text-sm text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center">
+                                  <button
+                                    onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
+                                    disabled={rulesLoading}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      isApplied ? 'bg-blue-600' : 'bg-gray-300'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        isApplied ? 'translate-x-6' : 'translate-x-1'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
           )}
