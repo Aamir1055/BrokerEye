@@ -212,10 +212,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1550px',
-            height: '1550px',
-            right: '-775px',
-            top: 'calc(58% - 775px)',
+            width: '1500px',
+            height: '1500px',
+            right: '-750px',
+            top: 'calc(58% - 750px)',
             background: '#3B65C5',
             transform: 'scaleY(0.75)',
             transformOrigin: 'right top'
@@ -226,10 +226,10 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1500px',
-            height: '1500px',
-            right: '-750px',
-            top: 'calc(62% - 750px)',
+            width: '1400px',
+            height: '1400px',
+            right: '-700px',
+            top: 'calc(62% - 700px)',
             background: '#1641A2',
             transform: 'scaleY(0.70)',
             transformOrigin: 'right top'
