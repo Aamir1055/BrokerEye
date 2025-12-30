@@ -2817,12 +2817,12 @@ const PositionsPage = () => {
                         </thead>
                       )}
 
-                      <tbody className="bg-white divide-y divide-gray-100">
+                      <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {netDisplayedPositions.map((netPos, idx) => (
                           <Fragment key={netPos.symbol || idx}>
                           <tr className="hover:bg-blue-50 transition-all duration-300">
                             {netVisibleColumns.symbol && (
-                              <td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-sm font-medium text-gray-900 whitespace-nowrap">
                                 {netPos.symbol}
                                 {groupByBaseSymbol && netPos.variantCount > 1 && (
                                   <span className="ml-2 text-[11px] text-gray-500">(+{netPos.variantCount - 1} variants)</span>
@@ -2830,32 +2830,32 @@ const PositionsPage = () => {
                               </td>
                             )}
                             {netVisibleColumns.netType && (
-                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{netPos.netType}</span>
                               </td>
                             )}
                             {netVisibleColumns.netVolume && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.netVolume, 2)}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.netVolume, 2)}</td>
                             )}
                             {netVisibleColumns.avgPrice && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.avgPrice, 5)}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.avgPrice, 5)}</td>
                             )}
                             {netVisibleColumns.totalProfit && (
-                              <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                              <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                                 <span className={`px-2 py-0.5 text-xs font-medium rounded ${netPos.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(netPos.totalProfit, 2)}</span>
                               </td>
                             )}
                             {netVisibleColumns.totalStorage && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.totalStorage ?? 0, 2)}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.totalStorage ?? 0, 2)}</td>
                             )}
                             {netVisibleColumns.totalCommission && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.totalCommission ?? 0, 2)}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(netPos.totalCommission ?? 0, 2)}</td>
                             )}
                             {netVisibleColumns.loginCount && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{netPos.loginCount}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{netPos.loginCount}</td>
                             )}
                             {netVisibleColumns.totalPositions && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
                                 {netPos.totalPositions}
                                 {groupByBaseSymbol && netPos.variantCount > 1 && netVisibleColumns.symbol && (
                                   <button
@@ -2872,7 +2872,7 @@ const PositionsPage = () => {
                               </td>
                             )}
                             {netVisibleColumns.variantCount && (
-                              <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{netPos.variantCount || 1}</td>
+                              <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{netPos.variantCount || 1}</td>
                             )}
                           </tr>
                           {groupByBaseSymbol && expandedNetKeys.has(netPos.symbol) && netPos.variants && netPos.variants.length > 0 && (
@@ -3273,7 +3273,7 @@ const PositionsPage = () => {
                         </thead>
                       )}
 
-                      <tbody className="bg-white divide-y divide-gray-100">
+                      <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {clientNetDisplayedPositions.map((row, idx) => {
                           const key = `${row.login}|${row.symbol}`
                           return (
@@ -3281,7 +3281,7 @@ const PositionsPage = () => {
                               <tr className="hover:bg-blue-50 transition-all duration-300">
                                 {clientNetVisibleColumns.login && (
                                   <td 
-                                    className="px-2 py-1.5 text-[13px] font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap cursor-pointer hover:underline sticky left-0 z-10 bg-white"
+                                    className="px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap cursor-pointer hover:underline sticky left-0 z-10 bg-white"
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       setSelectedLogin(row.login)
@@ -3291,21 +3291,21 @@ const PositionsPage = () => {
                                     {row.login}
                                   </td>
                                 )}
-                                {clientNetVisibleColumns.symbol && (<td className="px-2 py-1.5 text-[13px] font-medium text-gray-900 whitespace-nowrap">
+                                {clientNetVisibleColumns.symbol && (<td className="px-2 py-1.5 text-sm font-medium text-gray-900 whitespace-nowrap">
                                   {row.symbol}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <span className="ml-2 text-[11px] text-gray-500">(+{row.variantCount - 1} variants)</span>
                                   )}
                                 </td>)}
-                                {clientNetVisibleColumns.netType && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                                {clientNetVisibleColumns.netType && (<td className="px-2 py-1.5 text-sm whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.netVolume && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.netVolume, 2)}</td>)}
-                                {clientNetVisibleColumns.avgPrice && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.avgPrice, 5)}</td>)}
-                                {clientNetVisibleColumns.totalProfit && (<td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                                {clientNetVisibleColumns.netVolume && (<td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.netVolume, 2)}</td>)}
+                                {clientNetVisibleColumns.avgPrice && (<td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(row.avgPrice, 5)}</td>)}
+                                {clientNetVisibleColumns.totalProfit && (<td className="px-2 py-1.5 text-sm whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.totalProfit >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{formatNumber(row.totalProfit, 2)}</span>
                                 </td>)}
-                                {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap tabular-nums">
+                                {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
                                   {row.totalPositions ?? '-'}
                                   {groupByBaseSymbol && row.variantCount > 1 && (
                                     <button
