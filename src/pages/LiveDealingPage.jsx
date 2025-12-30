@@ -2106,7 +2106,7 @@ const LiveDealingPage = () => {
                 </thead>
               )}
 
-              <tbody className="bg-white divide-y-2 divide-gray-200">
+              <tbody className="bg-white divide-y-2 divide-gray-200 text-sm">
                 {loading ? (
                   // Show empty state while loading to avoid layout shift
                   <tr>
@@ -2156,18 +2156,18 @@ const LiveDealingPage = () => {
                       className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${newDealIds.has(deal.id) ? 'new-deal-blink' : ''}`}
                     >
                       {visibleColumns.time && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {formatTime(deal.time)}
                         </td>
                       )}
                       {visibleColumns.deal && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-900">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-900">
                           {deal.rawData?.deal || deal.id}
                         </td>
                       )}
                       {visibleColumns.login && (
                         <td 
-                          className="px-3 py-2.5 whitespace-nowrap text-[12px] text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
+                          className="px-3 py-2.5 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800 cursor-pointer hover:underline"
                           onClick={(e) => {
                             e.stopPropagation()
                             setSelectedLogin(deal.login)
@@ -2178,7 +2178,7 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.action && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                             deal.rawData?.action === 'BUY' 
                               ? 'bg-green-100 text-green-800' 
@@ -2189,12 +2189,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.symbol && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-900">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-900">
                           {deal.rawData?.symbol || '-'}
                         </td>
                       )}
                       {visibleColumns.volume && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.volume_percentage != null
                                 ? formatIndianNumber(deal.rawData.volume_percentage, 2)
@@ -2203,17 +2203,17 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.volumePercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.volume_percentage != null ? formatIndianNumber(deal.rawData.volume_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.price && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {formatIndianNumber(deal.rawData?.price, 5)}
                         </td>
                       )}
                       {visibleColumns.profit && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-sm ${
                           (deal.rawData?.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {displayMode === 'percentage'
@@ -2224,14 +2224,14 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.profitPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${
+                        <td className={`px-3 py-2.5 whitespace-nowrap text-sm ${
                           (deal.rawData?.profit_percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {deal.rawData?.profit_percentage != null ? formatIndianNumber(deal.rawData.profit_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.commission && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.commission_percentage != null
                                 ? formatIndianNumber(deal.rawData.commission_percentage, 2)
@@ -2240,12 +2240,12 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.commissionPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.commission_percentage != null ? formatIndianNumber(deal.rawData.commission_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.storage && (displayMode === 'value' || displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {displayMode === 'percentage'
                             ? (deal.rawData?.storage_percentage != null
                                 ? formatIndianNumber(deal.rawData.storage_percentage, 2)
@@ -2254,34 +2254,34 @@ const LiveDealingPage = () => {
                         </td>
                       )}
                       {visibleColumns.storagePercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.storage_percentage != null ? formatIndianNumber(deal.rawData.storage_percentage, 2) : '0.00'}
                         </td>
                       )}
                       {visibleColumns.appliedPercentage && (displayMode === 'percentage' || displayMode === 'both') && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           <span className={deal.rawData?.applied_percentage_is_custom ? 'text-blue-600 font-semibold' : ''}>
                             {deal.rawData?.applied_percentage != null ? formatIndianNumber(deal.rawData.applied_percentage, 1) : '0.0'}
                           </span>
                         </td>
                       )}
                       {visibleColumns.entry && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.entry || 0}
                         </td>
                       )}
                       {visibleColumns.order && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.order || '-'}
                         </td>
                       )}
                       {visibleColumns.position && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-700">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-700">
                           {deal.rawData?.position || '-'}
                         </td>
                       )}
                       {visibleColumns.reason && (
-                        <td className="px-3 py-2.5 whitespace-nowrap text-[12px] text-gray-600">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-sm text-gray-600">
                           {deal.rawData?.reason || '-'}
                         </td>
                       )}
