@@ -203,7 +203,7 @@ const LoginPage = () => {
             right: '-800px',
             top: 'calc(54% - 800px)',
             background: '#4471D6',
-            transform: 'scaleY(0.85)',
+            transform: 'scaleY(0.80)',
             transformOrigin: 'right top'
            }}
          />
@@ -217,7 +217,7 @@ const LoginPage = () => {
             right: '-775px',
             top: 'calc(58% - 775px)',
             background: '#3B65C5',
-            transform: 'scaleY(0.80)',
+            transform: 'scaleY(0.75)',
             transformOrigin: 'right top'
            }}
          />
@@ -231,7 +231,7 @@ const LoginPage = () => {
             right: '-750px',
             top: 'calc(62% - 750px)',
             background: '#1641A2',
-            transform: 'scaleY(0.75)',
+            transform: 'scaleY(0.70)',
             transformOrigin: 'right top'
            }}
          />
