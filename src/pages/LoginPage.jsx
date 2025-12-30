@@ -240,19 +240,76 @@ const LoginPage = () => {
           }}
         />
 
-        {/* Text inside dark blue semicircle */}
+        {/* Content inside dark blue semicircle */}
         <div 
-          className="absolute text-white font-bold text-2xl lg:text-3xl xl:text-4xl"
+          className="absolute text-white"
           style={{
-            right: '200px',
-            top: '12%',
-            transform: 'none',
-            maxWidth: '460px',
-            lineHeight: '1.3',
-            textShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            right: '120px',
+            top: '10%',
+            maxWidth: '540px',
           }}
         >
-          Volatility's calling.<br />Pick up.
+          {/* Main Heading */}
+          <h1 
+            className="font-bold text-3xl lg:text-4xl xl:text-5xl mb-12"
+            style={{
+              lineHeight: '1.2',
+              textShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}
+          >
+            Your Path To Financial<br />Recovery!
+          </h1>
+
+          {/* Feature Icons */}
+          <div className="flex gap-8 mb-8">
+            {/* Secure Trading Infrastructure */}
+            <div className="flex flex-col items-center text-center" style={{ width: '140px' }}>
+              <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <path d="M32 8L12 18V30C12 42 19.5 53 32 56C44.5 53 52 42 52 30V18L32 8Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round"/>
+                  <path d="M32 24C28.7 24 26 26.7 26 30C26 33.3 28.7 36 32 36C35.3 36 38 33.3 38 30C38 26.7 35.3 24 32 24Z" stroke="white" strokeWidth="2.5"/>
+                  <path d="M32 36V44" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Secure Trading<br />Infrastructure</span>
+            </div>
+
+            {/* Fast And Reliable Execution */}
+            <div className="flex flex-col items-center text-center" style={{ width: '140px' }}>
+              <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <path d="M32 12L20 32H32L32 52L44 32H32L32 12Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" fill="white"/>
+                </svg>
+              </div>
+              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Fast And Reliable<br />Execution</span>
+            </div>
+
+            {/* Real-Time Market Insights */}
+            <div className="flex flex-col items-center text-center" style={{ width: '140px' }}>
+              <div className="w-16 h-16 mb-3 flex items-center justify-center">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <rect x="14" y="38" width="8" height="16" rx="1" fill="white"/>
+                  <rect x="28" y="28" width="8" height="26" rx="1" fill="white"/>
+                  <rect x="42" y="18" width="8" height="36" rx="1" fill="white"/>
+                  <circle cx="32" cy="16" r="10" stroke="white" strokeWidth="2.5" fill="none"/>
+                  <path d="M32 12V16L34 18" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Real-Time Market<br />Insights</span>
+            </div>
+          </div>
+
+          {/* Subtitle */}
+          <p 
+            className="text-white text-base"
+            style={{
+              lineHeight: '1.5',
+              opacity: 0.95,
+              maxWidth: '500px'
+            }}
+          >
+            A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
+          </p>
         </div>
       </div>
     </div>
