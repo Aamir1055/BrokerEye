@@ -69,13 +69,13 @@ const LoginMobile = () => {
         </div>
 
         {/* Hero heading (center top) */}
-        <div className="absolute text-white font-outfit font-extrabold text-[32px] leading-[41px] text-center capitalize" style={{ width: 298, left: '50%', transform: 'translateX(-50%)', top: 90 }}>
+        <div className="absolute text-white font-outfit font-extrabold text-[32px] leading-[41px] text-center capitalize" style={{ width: 298, left: '50%', transform: 'translateX(-50%)', top: 80 }}>
           Your Path To Financial Recovery!
         </div>
 
         {/* Three feature boxes */}
         {/* Left */}
-        <div className="absolute" style={{ left: 54, top: 191, width: 54, height: 66 }}>
+        <div className="absolute" style={{ left: 54, top: 175, width: 54, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
@@ -84,7 +84,7 @@ const LoginMobile = () => {
           </div>
         </div>
         {/* Middle */}
-        <div className="absolute" style={{ left: 128, top: 191, width: 62, height: 66 }}>
+        <div className="absolute" style={{ left: 128, top: 175, width: 62, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
@@ -93,7 +93,7 @@ const LoginMobile = () => {
           </div>
         </div>
         {/* Right */}
-        <div className="absolute" style={{ left: 210, top: 191, width: 64, height: 66 }}>
+        <div className="absolute" style={{ left: 210, top: 175, width: 64, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
@@ -103,7 +103,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[12px] leading-[19px] text-white text-center capitalize" style={{ width: 303, left: '50%', transform: 'translateX(-50%)', top: 277 }}>
+        <div className="absolute font-outfit font-medium text-[12px] leading-[19px] text-white text-center capitalize" style={{ width: 303, left: '50%', transform: 'translateX(-50%)', top: 260 }}>
           A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
@@ -170,11 +170,6 @@ const LoginMobile = () => {
               </svg>
             </button>
           </div>
-        </div>
-
-        {/* Reset Password */}
-        <div className="absolute font-montserrat font-medium text-[14px] leading-[17px] text-center text-[#999999]" style={{ left: 279, top: 752, width: 113, height: 17 }}>
-          Reset Password
         </div>
 
         {/* Submit button */}
