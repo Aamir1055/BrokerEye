@@ -108,9 +108,9 @@ const LoginMobile = () => {
         </div>
 
         {/* Decorative shapes near center-right */}
-        <div className="absolute rounded-full" style={{ width: 21, height: 22, left: 286, top: 356, background: 'rgba(220, 240, 153, 0.06)' }} />
         <div className="absolute rounded-[100px]" style={{ width: 109.5, height: 37.55, left: 174.96, top: 374.92, background: 'rgba(220, 240, 153, 0.06)', transform: 'rotate(-32deg)' }} />
-        <div className="absolute rounded-[100px]" style={{ width: 186.38, height: 63.91, left: 174, top: 397.9, background: 'rgba(220, 240, 153, 0.06)', transform: 'rotate(-32deg)' }} />
+        <div className="absolute rounded-[100px]" style={{ width: 186.38, height: 63.91, left: 174, top: 410, background: 'rgba(220, 240, 153, 0.06)', transform: 'rotate(-32deg)' }} />
+        <div className="absolute rounded-full" style={{ width: 21, height: 22, left: 223, top: 418, background: 'rgba(220, 240, 153, 0.06)' }} />
 
         {/* Form header: Welcome Back + note */}
         <div className="absolute" style={{ left: 20, top: 533, width: 324, height: 62 }}>
