@@ -347,9 +347,6 @@ export default function DashboardMobileView({
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#404040"/><path d="M12 7v10M8 10h8" stroke="#404040"/></svg>
-                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -574,69 +571,6 @@ export default function DashboardMobileView({
                       <td className="px-3 py-2 text-gray-900">{row[1]}</td>
                       <td className="px-3 py-2 text-gray-700">{row[2]}</td>
                       <td className="px-3 py-2 text-right">{row[4]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Top IB Commissions Table */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-900">Top IB Commissions</h2>
-          <button
-            onClick={() => navigate('/ib-commissions')}
-            className="text-xs text-blue-600 font-medium hover:text-blue-700"
-          >
-            View All
-          </button>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {ibCommissionsLoading ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-3 py-2 text-left font-semibold">Name</th>
-                    <th className="px-3 py-2 text-right font-semibold">%</th>
-                    <th className="px-3 py-2 text-right font-semibold">Available</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <tr key={`skeleton-ib-${i}`}>
-                      <td className="px-3 py-2"><div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div></td>
-                      <td className="px-3 py-2 text-right"><div className="h-4 w-12 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
-                      <td className="px-3 py-2 text-right"><div className="h-4 w-16 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : topIBCommissions.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-sm text-gray-500">No IB commission data available</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-3 py-2 text-left font-semibold">Name</th>
-                    <th className="px-3 py-2 text-right font-semibold">%</th>
-                    <th className="px-3 py-2 text-right font-semibold">Available</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {topIBCommissions.slice(0, 5).map((ib, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-900">{ib.name || '-'}</td>
-                      <td className="px-3 py-2 text-right text-gray-700">{parseFloat(ib.percentage || 0).toFixed(2)}%</td>
-                      <td className="px-3 py-2 text-right text-green-600 font-semibold">${formatNum(ib.available_commission || 0)}</td>
                     </tr>
                   ))}
                 </tbody>
