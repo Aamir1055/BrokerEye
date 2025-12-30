@@ -5,6 +5,7 @@ import { DataProvider } from './contexts/DataContext'
 import { GroupProvider } from './contexts/GroupContext'
 import { IBProvider } from './contexts/IBContext'
 import LoginPage from './pages/LoginPage'
+import LoginMobile from './pages/LoginMobile'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Lazy load heavy components for code splitting and faster navigation
@@ -28,11 +29,16 @@ const AppContent = () => {
     return <LoadingSpinner />
   }
 
+  // Check if mobile viewport (tablets and phones)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<LoginPage />} />
+        <Route path="/login" element={isMobile ? <LoginMobile /> : <LoginPage />} />
+        <Route path="/m/login" element={<LoginMobile />} />
+        <Route path="/d/login" element={<LoginPage />} />
+        <Route path="*" element={isMobile ? <LoginMobile /> : <LoginPage />} />
       </Routes>
     )
   }

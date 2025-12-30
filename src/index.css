@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -124,6 +126,17 @@ body {
     color: #9CA3AF !important; /* gray-400 */
     opacity: 1 !important;
   }
+}
+
+/* Utility font classes for Figma parity */
+.font-outfit {
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+}
+.font-montserrat {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+.font-roboto {
+  font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Hide native scrollbars utility */
