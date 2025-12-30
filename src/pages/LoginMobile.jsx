@@ -75,7 +75,7 @@ const LoginMobile = () => {
 
         {/* Three feature boxes */}
         {/* Left */}
-        <div className="absolute" style={{ left: 54, top: 175, width: 54, height: 66 }}>
+        <div className="absolute" style={{ left: 41, top: 175, width: 54, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
@@ -84,7 +84,7 @@ const LoginMobile = () => {
           </div>
         </div>
         {/* Middle */}
-        <div className="absolute" style={{ left: 128, top: 175, width: 62, height: 66 }}>
+        <div className="absolute" style={{ left: 115, top: 175, width: 62, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
@@ -93,7 +93,7 @@ const LoginMobile = () => {
           </div>
         </div>
         {/* Right */}
-        <div className="absolute" style={{ left: 210, top: 175, width: 64, height: 66 }}>
+        <div className="absolute" style={{ left: 197, top: 175, width: 64, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
             <div className="relative w-[42px] h-[42px]">
               <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
