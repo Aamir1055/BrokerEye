@@ -244,7 +244,7 @@ const LoginPage = () => {
         <div 
           className="absolute text-white text-center"
           style={{
-            right: '200px',
+            right: '280px',
             top: '10%',
             maxWidth: '540px',
           }}
