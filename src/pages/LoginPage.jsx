@@ -70,7 +70,7 @@ const LoginPage = () => {
         }`}>
           {/* Logo and Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center justify-center gap-4 mb-8">
               {/* Gradient square + eye icon per Figma */}
               <div
                 className="w-10 h-10 rounded-lg relative flex items-center justify-center"
@@ -83,7 +83,7 @@ const LoginPage = () => {
                   <circle cx="12" cy="12" r="3" fill="#1A63BC"/>
                 </svg>
               </div>
-              <div className="flex flex-col justify-center">
+              <div className="flex flex-col justify-center items-center text-center">
                 <h1 className="text-[16px] leading-5 font-semibold text-[#404040]">Broker Eyes</h1>
                 <p className="text-[12px] leading-5 font-medium text-[#64748B]">Trading Platform</p>
               </div>
