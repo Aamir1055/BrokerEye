@@ -5397,7 +5397,7 @@ const Client2Page = () => {
                             return (
                               <td
                                 key={col.key}
-                                className={`px-2 py-1.5 text-sm ${getValueColorClass(col.key, rawValue) || 'text-slate-700'}`}
+                                className={`px-2 py-1.5 text-sm ${getValueColorClass(col.key, rawValue) || 'text-gray-900'}`}
                                 data-col={col.key}
                                 style={{
                                   overflow: 'hidden',
