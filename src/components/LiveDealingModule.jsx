@@ -262,17 +262,17 @@ export default function LiveDealingModule() {
       setDeals(prevDeals => {
         if (prevDeals.some(d => d.id === dealEntry.id)) return prevDeals
         
-        // Mark this deal as new for blinking effect
+        // Mark this deal as new for highlight effect
         setNewDealIds(prev => new Set(prev).add(dealEntry.id))
         
-        // Remove the blink effect after 3 seconds
+        // Remove the highlight effect after 5 seconds
         setTimeout(() => {
           setNewDealIds(prev => {
             const updated = new Set(prev)
             updated.delete(dealEntry.id)
             return updated
           })
-        }, 3000)
+        }, 5000)
         
         const updated = [dealEntry, ...prevDeals].slice(0, 1000)
         saveWsCache(updated.slice(0, 200))
@@ -1107,13 +1107,14 @@ export default function LiveDealingModule() {
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 <style>{`
-                  @keyframes dealBlink {
-                    0%, 100% { background-color: #ffffff; }
-                    25%, 75% { background-color: #dbeafe; }
-                    50% { background-color: #93c5fd; }
+                  @keyframes dealFadeOut {
+                    0% { background-color: #eff6ff; }
+                    100% { background-color: #ffffff; }
                   }
                   .new-deal-blink {
-                    animation: dealBlink 0.6s ease-in-out 4;
+                    animation: dealFadeOut 5s linear forwards;
+                    animation-iteration-count: 1;
+                    animation-fill-mode: forwards;
                   }
                 `}</style>
                 {/* Table Header */}
@@ -1184,15 +1185,16 @@ export default function LiveDealingModule() {
                     ))}
                   </>
                 ) : (
-                  sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal, idx) => (
+                  sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal) => (
                     <div 
-                      key={idx} 
+                      key={deal.id} 
                       className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors ${newDealIds.has(deal.id) ? 'new-deal-blink' : ''}`}
                       style={{
                         gap: '0px', 
                         gridGap: '0px', 
                         columnGap: '0px',
-                        gridTemplateColumns
+                        gridTemplateColumns,
+                        willChange: 'background-color'
                       }}
                     >
                       {activeColumns.map(col => (
