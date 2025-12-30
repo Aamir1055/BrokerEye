@@ -242,7 +242,7 @@ const LoginPage = () => {
 
         {/* Content inside dark blue semicircle */}
         <div 
-          className="absolute text-white"
+          className="absolute text-white text-center"
           style={{
             right: '120px',
             top: '10%',
@@ -261,7 +261,7 @@ const LoginPage = () => {
           </h1>
 
           {/* Feature Icons */}
-          <div className="flex gap-8 mb-8">
+          <div className="flex gap-8 mb-8 justify-center">
             {/* Secure Trading Infrastructure */}
             <div className="flex flex-col items-center text-center" style={{ width: '140px' }}>
               <div className="w-16 h-16 mb-3 flex items-center justify-center">
