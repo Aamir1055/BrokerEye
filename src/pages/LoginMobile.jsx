@@ -124,9 +124,9 @@ const LoginMobile = () => {
         <div className="absolute" style={{ left: 20, top: 615, width: 372, height: 55 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* User icon */}
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="#999999">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="#999999" strokeWidth="2" fill="none" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
             <input
               type="text"
@@ -142,9 +142,9 @@ const LoginMobile = () => {
         <div className="absolute" style={{ left: 20, top: 687, width: 372, height: 55 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* Lock icon */}
-            <svg width="11" height="13" viewBox="0 0 24 24" fill="#999999">
-              <rect x="6" y="10" width="12" height="9" rx="2" />
-              <path d="M8 10V7a4 4 0 118 0v3" stroke="#999999" strokeWidth="1.5" fill="none" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="11" width="14" height="10" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <input
               type={showPassword ? 'text' : 'password'}
