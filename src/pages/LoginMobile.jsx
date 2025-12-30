@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import Group8 from '../../Login Desktop Icons/Group 8.svg'
 import Group9 from '../../Login Desktop Icons/Group 9.svg'
 import Group10 from '../../Login Desktop Icons/Group 10.svg'
-import BrandGroup from '../../Mobile cards icons/Brokers Eye Platform/Group.svg'
 
 // Mobile-specific Login Page designed per Figma specs
 // Container: 412x923, rounded corners, layered ellipses, centered brand, hero + features, and form
@@ -50,8 +49,18 @@ const LoginMobile = () => {
         {/* Brand row (center top) */}
         <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: 24, width: 149, height: 42 }}>
           <div className="w-full h-full flex flex-row items-center justify-center gap-[6.4px]">
-            {/* Brand icon from assets */}
-            <img src={BrandGroup} alt="Broker Eyes" className="w-[33.07px] h-[33.07px] rounded-[8px]" />
+            {/* Brand icon - gradient square with eye */}
+            <div
+              className="w-[33.07px] h-[33.07px] rounded-[8px] relative flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(180deg, rgba(26, 99, 188, 0.6) 0%, #1A63BC 100%)'
+              }}
+            >
+              <svg className="w-[17.08px] h-[17.08px]" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5c-4.477 0-8.268 2.943-9.542 7 1.274 4.057 5.064 7 9.542 7 4.478 0 8.268-2.943 9.542-7C20.268 7.943 16.478 5 12 5Z" fill="#FFFFFF"/>
+                <circle cx="12" cy="12" r="3" fill="#1A63BC"/>
+              </svg>
+            </div>
             <div className="flex flex-col justify-center items-start gap-[5px]" style={{ width: 97, height: 50 }}>
               <div className="font-outfit font-semibold text-[18px] leading-[24px] text-white flex items-center">Broker Eyes</div>
               <div className="font-outfit font-normal text-[10px] leading-[16px] tracking-[0.14em] text-[#F2F2F7] flex items-center self-stretch">Trading Platform</div>
@@ -68,8 +77,8 @@ const LoginMobile = () => {
         {/* Left */}
         <div className="absolute" style={{ left: 54, top: 191, width: 54, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] rounded-[8px] bg-[#3C61D6] flex items-center justify-center p-[20px]">
-              <img src={Group8} alt="Secure Trading Infrastructure" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
             </div>
             <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Secure Trading Infrastructure</div>
           </div>
@@ -77,8 +86,8 @@ const LoginMobile = () => {
         {/* Middle */}
         <div className="absolute" style={{ left: 128, top: 191, width: 62, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] rounded-[8px] bg-[#3C61D6] flex items-center justify-center p-[9px]">
-              <img src={Group9} alt="Fast and reliable execution" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
             </div>
             <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Fast And Reliable Execution</div>
           </div>
@@ -86,8 +95,8 @@ const LoginMobile = () => {
         {/* Right */}
         <div className="absolute" style={{ left: 210, top: 191, width: 64, height: 66 }}>
           <div className="flex flex-col items-center gap-[6px]">
-            <div className="w-[42px] h-[42px] rounded-[8px] bg-[#3C61D6] flex items-center justify-center p-[9px]">
-              <img src={Group10} alt="Real-time market insights" className="w-[24px] h-[24px] select-none" />
+            <div className="relative w-[42px] h-[42px]">
+              <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
             </div>
             <div className="font-outfit font-medium text-[8px] leading-[9px] text-white text-center capitalize">Real-Time Market Insights</div>
           </div>
