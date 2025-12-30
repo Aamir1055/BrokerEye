@@ -267,14 +267,14 @@ const LoginPage = () => {
         <div 
           className="absolute text-white text-left"
           style={{
-            right: '20px',
+            right: '60px',
             top: '10%',
             maxWidth: '540px',
           }}
         >
           {/* Main Heading */}
           <h1 
-            className="font-bold text-3xl lg:text-4xl xl:text-5xl mb-12"
+            className="font-bold text-3xl lg:text-4xl xl:text-5xl mb-10"
             style={{
               lineHeight: '1.2',
               textShadow: '0 2px 8px rgba(0,0,0,0.2)'
@@ -284,7 +284,7 @@ const LoginPage = () => {
           </h1>
 
           {/* Feature Icons */}
-          <div className="flex gap-8 mb-8 justify-start">
+          <div className="flex gap-8 mb-10 justify-start">
             {/* Secure Trading Infrastructure */}
             <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
