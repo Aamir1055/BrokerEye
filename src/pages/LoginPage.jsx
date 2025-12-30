@@ -202,9 +202,9 @@ const LoginPage = () => {
             height: '1600px',
             right: '-800px',
             top: 'calc(54% - 800px)',
-             background: '#4471D6',
-             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+            background: '#4471D6',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -216,9 +216,9 @@ const LoginPage = () => {
             height: '1550px',
             right: '-775px',
             top: 'calc(58% - 775px)',
-             background: '#3B65C5',
-             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
+            background: '#3B65C5',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -230,9 +230,9 @@ const LoginPage = () => {
             height: '1500px',
             right: '-750px',
             top: 'calc(62% - 750px)',
-             background: '#1641A2',
-             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
+            background: '#1641A2',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 65%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 65%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -251,12 +251,12 @@ const LoginPage = () => {
           }}
         />
 
-        {/* Copyright below inner circle */}
+        {/* Copyright at page bottom inside the dark inner circle */}
         <div
           className="absolute text-white text-[12px]"
           style={{
-            right: '-160px',
-            top: 'calc(20% + 180px)',
+            right: '40px',
+            bottom: '24px',
             opacity: 0.85
           }}
         >
