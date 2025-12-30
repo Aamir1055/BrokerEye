@@ -95,13 +95,13 @@ const LoginPage = () => {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="mt-[24px] space-y-[24px]">
-            {/* Email Field */}
+            {/* Username Field */}
             <div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none">
-                    <path d="M2 6h20v12H2z" stroke="#999999" strokeWidth="1.5"/>
-                    <path d="M2 6l10 7 10-7" stroke="#999999" strokeWidth="1.5"/>
+                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
                 </div>
                 <input
@@ -110,7 +110,7 @@ const LoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#9CA3AF] rounded-[9px] focus:ring-2 focus:ring-[#9CA3AF] focus:border-[#9CA3AF] transition-all duration-200 placeholder-[#8A93A6]"
-                  placeholder="Email"
+                  placeholder="Username"
                   disabled={isLoading}
                   required
                 />
