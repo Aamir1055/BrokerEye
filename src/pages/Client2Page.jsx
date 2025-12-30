@@ -5330,7 +5330,7 @@ const Client2Page = () => {
                       </thead>
                     )}
 
-                    <tbody className="bg-white divide-y divide-slate-100" key={`tbody-${animationKey}`}>
+                    <tbody className="bg-white divide-y divide-slate-100 text-sm" key={`tbody-${animationKey}`}>
                       {/* Always show actual data rows with staggered fade-in */}
                       {/* Guard: filter out null/undefined clients */}
                       {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (

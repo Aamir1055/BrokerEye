@@ -694,7 +694,7 @@ const IBCommissionsPage = () => {
                       </thead>
                     )}
 
-                    <tbody className="bg-white divide-y divide-gray-100">
+                    <tbody className="bg-white divide-y divide-gray-100 text-sm">
                       {loading ? (
                         <tr>
                           <td colSpan="9" className="px-6 py-8 text-center text-sm text-gray-400">
