@@ -265,14 +265,14 @@ export default function LiveDealingModule() {
         // Mark this deal as new for highlight effect
         setNewDealIds(prev => new Set(prev).add(dealEntry.id))
         
-        // Remove the highlight effect after 5 seconds
+        // Remove the highlight effect after 6 seconds
         setTimeout(() => {
           setNewDealIds(prev => {
             const updated = new Set(prev)
             updated.delete(dealEntry.id)
             return updated
           })
-        }, 5000)
+        }, 6000)
         
         const updated = [dealEntry, ...prevDeals].slice(0, 1000)
         saveWsCache(updated.slice(0, 200))
@@ -1108,13 +1108,18 @@ export default function LiveDealingModule() {
               <div className="relative" style={{ minWidth: 'max-content' }}>
                 <style>{`
                   @keyframes dealFadeOut {
-                    0% { background-color: #eff6ff; }
+                    0% { background-color: #60a5fa; }
+                    40% { background-color: #93c5fd; }
+                    80% { background-color: #e0f2fe; }
                     100% { background-color: #ffffff; }
                   }
                   .new-deal-blink {
-                    animation: dealFadeOut 5s linear forwards;
+                    animation: dealFadeOut 6s ease-out forwards;
                     animation-iteration-count: 1;
                     animation-fill-mode: forwards;
+                  }
+                  .new-deal-blink:hover {
+                    background-color: inherit !important;
                   }
                 `}</style>
                 {/* Table Header */}
@@ -1188,7 +1193,7 @@ export default function LiveDealingModule() {
                   sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal) => (
                     <div 
                       key={deal.id} 
-                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] hover:bg-[#F8FAFC] transition-colors ${newDealIds.has(deal.id) ? 'new-deal-blink' : ''}`}
+                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] transition-colors ${newDealIds.has(deal.id) ? 'new-deal-blink' : 'hover:bg-[#F8FAFC]'}`}
                       style={{
                         gap: '0px', 
                         gridGap: '0px', 
