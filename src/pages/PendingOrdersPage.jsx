@@ -1271,11 +1271,11 @@ const PendingOrdersPage = () => {
                       return (
                         <tr key={id ?? index} className={`hover:bg-blue-50 transition-colors`}>
                           {visibleColumns.time && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">{formatTime(o.timeSetup || o.timeUpdate || o.timeCreate || o.updated_at)}</td>
                           )}
                           {visibleColumns.login && (
                             <td 
-                              className="px-2 py-1.5 text-[13px] text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
+                              className="px-2 py-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap cursor-pointer hover:underline"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setSelectedLogin(o.login)
@@ -1286,30 +1286,30 @@ const PendingOrdersPage = () => {
                             </td>
                           )}
                           {visibleColumns.order && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{id}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">{id}</td>
                           )}
                           {visibleColumns.symbol && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{o.symbol}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">{o.symbol}</td>
                           )}
                           {visibleColumns.type && (
-                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                               <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getTypeBadgeClasses(o.type)}`}>
                                 {o.type ?? '-'}
                               </span>
                             </td>
                           )}
                           {visibleColumns.state && (
-                            <td className="px-2 py-1.5 text-[13px] whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded-full font-medium ${getStateBadgeClasses(o.state)}`}>
                                 {o.state ?? '-'}
                               </span>
                             </td>
                           )}
                           {visibleColumns.volume && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">{formatNumber(o.volumeCurrent ?? o.volume ?? o.volumeInitial, 3)}</td>
                           )}
                           {visibleColumns.priceOrder && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
                                 {priceDelta !== undefined && priceDelta !== 0 ? (
@@ -1321,10 +1321,10 @@ const PendingOrdersPage = () => {
                             </td>
                           )}
                           {visibleColumns.priceCurrent && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 3)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">{formatNumber(o.priceTrigger ?? o.trigger ?? 0, 3)}</td>
                           )}
                           {visibleColumns.sl && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
                                 {slDelta !== undefined && slDelta !== 0 ? (
@@ -1336,7 +1336,7 @@ const PendingOrdersPage = () => {
                             </td>
                           )}
                           {visibleColumns.tp && (
-                            <td className="px-2 py-1.5 text-[13px] text-gray-900 whitespace-nowrap">
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
                                 {tpDelta !== undefined && tpDelta !== 0 ? (
