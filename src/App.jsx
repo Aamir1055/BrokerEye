@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { GroupProvider } from './contexts/GroupContext'
@@ -24,13 +24,25 @@ const ClientDashboardDesignCPage = lazy(() => import('./pages/ClientDashboardDes
 // Main App Content Component
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    // Check on mount
+    checkMobile()
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   if (loading) {
     return <LoadingSpinner />
   }
-
-  // Check if mobile viewport (tablets and phones)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
 
   if (!isAuthenticated) {
     return (
