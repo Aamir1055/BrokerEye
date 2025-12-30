@@ -63,7 +63,7 @@ const LoginMobile = () => {
             </div>
             <div className="flex flex-col justify-center items-start gap-[5px]" style={{ width: 97, height: 50 }}>
               <div className="font-outfit font-semibold text-[18px] leading-[24px] text-white flex items-center">Broker Eyes</div>
-              <div className="font-outfit font-normal text-[10px] leading-[16px] tracking-[0.14em] text-[#F2F2F7] flex items-center self-stretch">Trading Platform</div>
+              <div className="font-outfit font-normal text-[10px] leading-[16px] tracking-[0.14em] text-[#F2F2F7] flex items-center whitespace-nowrap">Trading Platform</div>
             </div>
           </div>
         </div>
