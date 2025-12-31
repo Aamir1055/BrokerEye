@@ -194,42 +194,42 @@ const LoginPage = () => {
       
       {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
-        {/* Ellipse 49 (match Figma center/size, true circle) */}
+        {/* Ellipse 49 (Figma props) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
-            height: '1549px',
-            left: `${1372.5 - (1549/2)}px`,
-            top: `${373 - (1549/2)}px`,
+            height: '1490px',
+            left: '598px',
+            top: '-372px',
             background: '#4471D6',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 51 (outer - 65px) */}
+        {/* Ellipse 51 (Figma props) */}
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1484px',
-            height: '1484px',
-            left: `${1372.5 - (1484/2)}px`,
-            top: `${373 - (1484/2)}px`,
+            width: '1549px',
+            height: '1490px',
+            left: '648px',
+            top: '-377px',
             background: '#3B65C5',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 50 (outer - 130px) */}
+        {/* Ellipse 50 (Figma props) */}
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1419px',
-            height: '1419px',
-            left: `${1372.5 - (1419/2)}px`,
-            top: `${373 - (1419/2)}px`,
+            width: '1549px',
+            height: '1456px',
+            left: '696px',
+            top: '-359px',
             background: '#1641A2',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
