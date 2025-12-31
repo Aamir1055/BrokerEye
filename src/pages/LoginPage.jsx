@@ -203,8 +203,8 @@ const LoginPage = () => {
             right: '-800px',
             top: 'calc(60% - 800px)',
             background: '#4471D6',
-            transform: 'scaleY(0.75)',
-            transformOrigin: 'right top'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -212,13 +212,13 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1500px',
-            height: '1500px',
-            right: '-750px',
-            top: 'calc(60% - 750px)',
+            width: '1550px',
+            height: '1550px',
+            right: '-775px',
+            top: 'calc(60% - 775px)',
             background: '#3B65C5',
-            transform: 'scaleY(0.75)',
-            transformOrigin: 'right top'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -226,13 +226,13 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1400px',
-            height: '1400px',
-            right: '-700px',
-            top: 'calc(60% - 700px)',
+            width: '1500px',
+            height: '1500px',
+            right: '-750px',
+            top: 'calc(60% - 750px)',
             background: '#1641A2',
-            transform: 'scaleY(0.75)',
-            transformOrigin: 'right top'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 78%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 78%, rgba(0,0,0,0) 100%)'
            }}
          />
         
