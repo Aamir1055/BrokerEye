@@ -230,7 +230,7 @@ const LoginPage = () => {
            }}
          />
         
-        {/* Ellipse 29 - Border Circle */}
+        {/* Ellipse 29 - Border Circle (no mask per Figma) */}
         <div 
           className="absolute rounded-full box-border" 
           style={{
@@ -239,9 +239,7 @@ const LoginPage = () => {
             right: '-160px',
             top: 'calc(20% - 160px)',
             border: '80px solid rgba(220, 240, 153, 0.06)',
-            background: 'transparent',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
+            background: 'transparent'
           }}
         />
 
