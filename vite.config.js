@@ -4,9 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/Amari Capital/',
+  base: '/amari-capital/',
   build: {
-    outDir: 'C:/xampp/htdocs/Amari Capital',
+    outDir: 'C:/xampp/htdocs/amari-capital',
     assetsDir: 'assets',
     emptyOutDir: true,
     rollupOptions: {

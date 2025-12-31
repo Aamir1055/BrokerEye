@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /v2/
+  RewriteBase /amari-capital/
   
   # Don't rewrite files or directories
   RewriteCond %{REQUEST_FILENAME} !-f

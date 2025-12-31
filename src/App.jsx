@@ -112,7 +112,7 @@ function PreloadRoutes() {
 
 function App() {
   return (
-    <Router>
+    <Router basename="/amari-capital">
       <AuthProvider>
         <DataProvider>
           <GroupProvider>
