@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
     { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
     { name: 'Client Percentage', path: '/client-percentage', icon: 'percentage' },
-    { name: 'IB Commissions', path: '/ib-commissions', icon: 'percentage' },
+    { name: 'IB Commissions', path: '/ib-commissions', icon: 'rebate' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   
@@ -173,6 +173,11 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
                 {item.icon === 'percentage' && (
                   <svg className={`w-5 h-5 ${isOpen ? 'mr-3' : ''} transition-transform duration-200 ${isActivePath(item.path) ? '' : 'group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                )}
+                {item.icon === 'rebate' && (
+                  <svg className={`w-5 h-5 ${isOpen ? 'mr-3' : ''} transition-transform duration-200 ${isActivePath(item.path) ? '' : 'group-hover:scale-110'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4-3.134-4-7-4zm0 0V5m0 11v3m-5-6h10" />
                   </svg>
                 )}
                 {item.icon === 'settings' && (
