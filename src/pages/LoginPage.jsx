@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import TwoFactorVerification from '../components/TwoFactorVerification'
-import Group8 from '../../Login Desktop Icons/Group 8.svg'
-import Group9 from '../../Login Desktop Icons/Group 9.svg'
-import Group10 from '../../Login Desktop Icons/Group 10.svg'
 
 const LoginPage = () => {
   const [username, setUsername] = useState('')
@@ -70,7 +67,7 @@ const LoginPage = () => {
         }`}>
           {/* Logo and Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="flex items-center gap-4 mb-8">
               {/* Gradient square + eye icon per Figma */}
               <div
                 className="w-10 h-10 rounded-lg relative flex items-center justify-center"
@@ -83,7 +80,7 @@ const LoginPage = () => {
                   <circle cx="12" cy="12" r="3" fill="#1A63BC"/>
                 </svg>
               </div>
-              <div className="flex flex-col justify-center items-center text-center">
+              <div className="flex flex-col justify-center">
                 <h1 className="text-[16px] leading-5 font-semibold text-[#404040]">Broker Eyes</h1>
                 <p className="text-[12px] leading-5 font-medium text-[#64748B]">Trading Platform</p>
               </div>
@@ -95,13 +92,13 @@ const LoginPage = () => {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="mt-[24px] space-y-[24px]">
-            {/* Username Field */}
+            {/* Email Field */}
             <div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
+                  <svg className="h-4 w-4 text-[#999999]" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 6h20v12H2z" stroke="#999999" strokeWidth="1.5"/>
+                    <path d="M2 6l10 7 10-7" stroke="#999999" strokeWidth="1.5"/>
                   </svg>
                 </div>
                 <input
@@ -109,8 +106,8 @@ const LoginPage = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#9CA3AF] rounded-[9px] focus:ring-2 focus:ring-[#9CA3AF] focus:border-[#9CA3AF] transition-all duration-200 placeholder-[#8A93A6]"
-                  placeholder="Username"
+                  className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
+                  placeholder="Email"
                   disabled={isLoading}
                   required
                 />
@@ -131,7 +128,7 @@ const LoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#9CA3AF] rounded-[9px] focus:ring-2 focus:ring-[#9CA3AF] focus:border-[#9CA3AF] transition-all duration-200 placeholder-[#8A93A6]"
+                  className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] rounded-[9px] focus:ring-2 focus:ring-[#5B8DEF] focus:border-transparent transition-all duration-200 placeholder-[#999999]"
                   placeholder="Password"
                   disabled={isLoading}
                   required
@@ -188,55 +185,49 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Footer removed; copyright moved to hero side */}
+          {/* Footer icons & links panel removed as requested */}
         </div>
       </div>
       
-      {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
+      {/* Right Side - Blue Wave Design (true semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
-        {/* Ellipse 49 (shifted right with stronger bottom-right taper) */}
+        {/* Ellipse 49 */}
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1549px',
-            height: '1490px',
-            left: '758px',
-            top: '-372px',
-             background: '#4471D6',
-             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
+            width: '1400px',
+            height: '1400px',
+            right: '-700px',
+            top: 'calc(54% - 700px)',
+            background: '#4471D6'
            }}
          />
         
-        {/* Ellipse 51 (shifted right with stronger bottom-right taper) */}
+        {/* Ellipse 51 */}
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1549px',
-            height: '1490px',
-            left: '808px',
-            top: '-377px',
-             background: '#3B65C5',
-             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
+            width: '1350px',
+            height: '1350px',
+            right: '-675px',
+            top: 'calc(58% - 675px)',
+            background: '#3B65C5'
            }}
          />
         
-        {/* Ellipse 50 (shifted right with stronger bottom-right taper) */}
+        {/* Ellipse 50 */}
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1549px',
-            height: '1456px',
-            left: '856px',
-            top: '-359px',
-             background: '#1641A2',
-             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
+            width: '1300px',
+            height: '1300px',
+            right: '-650px',
+            top: 'calc(62% - 650px)',
+            background: '#1641A2'
            }}
          />
         
-        {/* Ellipse 29 - Border Circle (no mask per Figma) */}
+        {/* Ellipse 29 - Border Circle */}
         <div 
           className="absolute rounded-full box-border" 
           style={{
@@ -249,76 +240,19 @@ const LoginPage = () => {
           }}
         />
 
-        {/* Copyright at page bottom inside the dark inner circle */}
-        <div
-          className="absolute text-white text-[12px]"
-          style={{
-            right: '40px',
-            bottom: '24px',
-            opacity: 0.85
-          }}
-        >
-          Copyright © 2025 Brokers Eye Platform
-        </div>
-
-        {/* Content inside dark blue semicircle */}
+        {/* Text inside dark blue semicircle */}
         <div 
-          className="absolute text-white text-left"
+          className="absolute text-white font-bold text-2xl lg:text-3xl xl:text-4xl"
           style={{
-            right: '60px',
-            top: '10%',
-            maxWidth: '540px',
+            right: '200px',
+            top: '12%',
+            transform: 'none',
+            maxWidth: '460px',
+            lineHeight: '1.3',
+            textShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
         >
-          {/* Main Heading */}
-          <h1 
-            className="font-bold text-3xl lg:text-4xl xl:text-5xl mb-10"
-            style={{
-              lineHeight: '1.2',
-              textShadow: '0 2px 8px rgba(0,0,0,0.2)'
-            }}
-          >
-            Your Path To Financial<br />Recovery!
-          </h1>
-
-          {/* Feature Icons */}
-          <div className="flex gap-8 mb-10 justify-start">
-            {/* Secure Trading Infrastructure */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
-              <div className="relative w-20 h-20 mb-3">
-                <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
-              </div>
-              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Secure Trading<br />Infrastructure</span>
-            </div>
-
-            {/* Fast And Reliable Execution */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
-              <div className="relative w-20 h-20 mb-3">
-                <img src={Group9} alt="Fast And Reliable Execution" className="absolute inset-0 w-full h-full select-none" />
-              </div>
-              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Fast And Reliable<br />Execution</span>
-            </div>
-
-            {/* Real-Time Market Insights */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
-              <div className="relative w-20 h-20 mb-3">
-                <img src={Group10} alt="Real-Time Market Insights" className="absolute inset-0 w-full h-full select-none" />
-              </div>
-              <span className="text-sm font-semibold" style={{ lineHeight: '1.3' }}>Real-Time Market<br />Insights</span>
-            </div>
-          </div>
-
-          {/* Subtitle */}
-          <p 
-            className="text-white text-base"
-            style={{
-              lineHeight: '1.5',
-              opacity: 0.95,
-              maxWidth: '500px'
-            }}
-          >
-            A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
-          </p>
+          Volatility's calling.<br />Pick up.
         </div>
       </div>
     </div>
