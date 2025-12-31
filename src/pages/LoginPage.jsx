@@ -194,37 +194,37 @@ const LoginPage = () => {
       
       {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
-        {/* Ellipse 49 (Figma props) */}
+        {/* Ellipse 49 (Figma props, shifted right) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1490px',
-            left: '598px',
+            left: '698px',
             top: '-372px',
             background: '#4471D6'
            }}
          />
         
-        {/* Ellipse 51 (Figma props) */}
+        {/* Ellipse 51 (Figma props, shifted right) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1490px',
-            left: '648px',
+            left: '748px',
             top: '-377px',
             background: '#3B65C5'
            }}
          />
         
-        {/* Ellipse 50 (Figma props) */}
+        {/* Ellipse 50 (Figma props, shifted right) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1456px',
-            left: '696px',
+            left: '796px',
             top: '-359px',
             background: '#1641A2'
            }}
