@@ -192,7 +192,7 @@ const LoginPage = () => {
         </div>
       </div>
       
-      {/* Right Side - Blue Wave Design (true circles, slightly beyond semicircle, absolute overlay) */}
+      {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
         {/* Ellipse 49 */}
          <div 
@@ -201,10 +201,10 @@ const LoginPage = () => {
             width: '1600px',
             height: '1600px',
             right: '-700px',
-            top: 'calc(62% - 800px)',
+            top: 'calc(75% - 800px)',
             background: '#4471D6',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -212,13 +212,13 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1520px',
-            height: '1520px',
-            right: '-660px',
-            top: 'calc(62% - 760px)',
+            width: '1535px',
+            height: '1535px',
+            right: '-667.5px',
+            top: 'calc(75% - 767.5px)',
             background: '#3B65C5',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
@@ -226,13 +226,13 @@ const LoginPage = () => {
          <div 
            className="absolute rounded-full" 
            style={{
-            width: '1440px',
-            height: '1440px',
-            right: '-620px',
-            top: 'calc(62% - 720px)',
+            width: '1470px',
+            height: '1470px',
+            right: '-635px',
+            top: 'calc(75% - 735px)',
             background: '#1641A2',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
