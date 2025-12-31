@@ -15,6 +15,7 @@ const PendingOrdersPage = lazy(() => import('./pages/PendingOrdersPage'))
 const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
 const LiveDealingPage = lazy(() => import('./pages/LiveDealingPage'))
 const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
+const IBCommissionsPage = lazy(() => import('./pages/IBCommissionsPage'))
 const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
@@ -51,6 +52,7 @@ const AppContent = () => {
         <Route path="/margin-level" element={<MarginLevelPage />} />
         <Route path="/live-dealing" element={<LiveDealingPage />} />
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
+        <Route path="/ib-commissions" element={<IBCommissionsPage />} />
         <Route path="/broker-rules" element={<BrokerRulePage />} />
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />

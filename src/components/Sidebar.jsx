@@ -43,6 +43,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
     { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
     { name: 'Client Percentage', path: '/client-percentage', icon: 'percentage' },
+    { name: 'IB Commissions', path: '/ib-commissions', icon: 'percentage' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   
