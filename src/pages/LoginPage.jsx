@@ -194,7 +194,7 @@ const LoginPage = () => {
       
       {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
-        {/* Ellipse 49 (Figma props, shifted right) */}
+        {/* Ellipse 49 (Figma props, shifted right with bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
@@ -202,11 +202,13 @@ const LoginPage = () => {
             height: '1490px',
             left: '698px',
             top: '-372px',
-            background: '#4471D6'
+             background: '#4471D6',
+             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 51 (Figma props, shifted right) */}
+        {/* Ellipse 51 (Figma props, shifted right with bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
@@ -214,11 +216,13 @@ const LoginPage = () => {
             height: '1490px',
             left: '748px',
             top: '-377px',
-            background: '#3B65C5'
+             background: '#3B65C5',
+             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 50 (Figma props, shifted right) */}
+        {/* Ellipse 50 (Figma props, shifted right with bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
@@ -226,7 +230,9 @@ const LoginPage = () => {
             height: '1456px',
             left: '796px',
             top: '-359px',
-            background: '#1641A2'
+             background: '#1641A2',
+             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
            }}
          />
         
