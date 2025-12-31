@@ -192,7 +192,7 @@ const LoginPage = () => {
         </div>
       </div>
       
-      {/* Right Side - Blue Wave Design (true semicircle, absolute overlay) */}
+      {/* Right Side - Blue Wave Design (true circles, slightly beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
         {/* Ellipse 49 */}
          <div 
@@ -200,8 +200,8 @@ const LoginPage = () => {
            style={{
             width: '1600px',
             height: '1600px',
-            right: '-800px',
-            top: 'calc(60% - 800px)',
+            right: '-700px',
+            top: 'calc(62% - 800px)',
             background: '#4471D6',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
@@ -214,8 +214,8 @@ const LoginPage = () => {
            style={{
             width: '1520px',
             height: '1520px',
-            right: '-760px',
-            top: 'calc(60% - 760px)',
+            right: '-660px',
+            top: 'calc(62% - 760px)',
             background: '#3B65C5',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
@@ -228,8 +228,8 @@ const LoginPage = () => {
            style={{
             width: '1440px',
             height: '1440px',
-            right: '-720px',
-            top: 'calc(60% - 720px)',
+            right: '-620px',
+            top: 'calc(62% - 720px)',
             background: '#1641A2',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)',
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 100%)'
