@@ -202,9 +202,7 @@ const LoginPage = () => {
             height: '1490px',
             left: '598px',
             top: '-372px',
-            background: '#4471D6',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+            background: '#4471D6'
            }}
          />
         
@@ -216,9 +214,7 @@ const LoginPage = () => {
             height: '1490px',
             left: '648px',
             top: '-377px',
-            background: '#3B65C5',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+            background: '#3B65C5'
            }}
          />
         
@@ -230,9 +226,7 @@ const LoginPage = () => {
             height: '1456px',
             left: '696px',
             top: '-359px',
-            background: '#1641A2',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+            background: '#1641A2'
            }}
          />
         
