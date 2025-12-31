@@ -194,45 +194,45 @@ const LoginPage = () => {
       
       {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
-        {/* Ellipse 49 (Figma props, shifted right with bottom-right taper) */}
+        {/* Ellipse 49 (shifted right with stronger bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1490px',
-            left: '698px',
+            left: '758px',
             top: '-372px',
              background: '#4471D6',
-             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 51 (Figma props, shifted right with bottom-right taper) */}
+        {/* Ellipse 51 (shifted right with stronger bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1490px',
-            left: '748px',
+            left: '808px',
             top: '-377px',
              background: '#3B65C5',
-             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
         
-        {/* Ellipse 50 (Figma props, shifted right with bottom-right taper) */}
+        {/* Ellipse 50 (shifted right with stronger bottom-right taper) */}
          <div 
            className="absolute rounded-full" 
            style={{
             width: '1549px',
             height: '1456px',
-            left: '796px',
+            left: '856px',
             top: '-359px',
              background: '#1641A2',
-             WebkitMaskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-             maskImage: 'linear-gradient(to bottom right, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+             WebkitMaskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)',
+             maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
         
