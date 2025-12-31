@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { GroupProvider } from './contexts/GroupContext'
 import { IBProvider } from './contexts/IBContext'
 import LoginPage from './pages/LoginPage'
+import LoginMobile from './pages/LoginMobile'
 import LoadingSpinner from './components/LoadingSpinner'
 
 // Lazy load heavy components for code splitting and faster navigation
@@ -23,6 +24,21 @@ const ClientDashboardDesignCPage = lazy(() => import('./pages/ClientDashboardDes
 // Main App Content Component
 const AppContent = () => {
   const { isAuthenticated, loading } = useAuth()
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    // Check on mount
+    checkMobile()
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   if (loading) {
     return <LoadingSpinner />
@@ -31,8 +47,10 @@ const AppContent = () => {
   if (!isAuthenticated) {
     return (
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<LoginPage />} />
+        <Route path="/login" element={isMobile ? <LoginMobile /> : <LoginPage />} />
+        <Route path="/m/login" element={<LoginMobile />} />
+        <Route path="/d/login" element={<LoginPage />} />
+        <Route path="*" element={isMobile ? <LoginMobile /> : <LoginPage />} />
       </Routes>
     )
   }
