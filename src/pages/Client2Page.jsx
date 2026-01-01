@@ -618,7 +618,6 @@ const Client2Page = () => {
     { key: 'leverage', label: 'Leverage', type: 'integer' },
     { key: 'profit', label: 'Floating Profit', type: 'float' },
     { key: 'floating', label: 'Floating', type: 'float' },
-    { key: 'pnl', label: 'PnL', type: 'float' },
     { key: 'previousEquity', label: 'Previous Equity', type: 'float' },
     { key: 'currency', label: 'Currency', type: 'text' },
     { key: 'company', label: 'Company', type: 'text' },
