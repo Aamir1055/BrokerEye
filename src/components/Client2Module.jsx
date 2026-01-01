@@ -370,7 +370,6 @@ export default function Client2Module() {
       clearInterval(rebateInterval)
     }
   }, [fetchClients, fetchRebateTotals])
-  }, [fetchClients])
 
   // Apply client-side search filtering (like Positions module)
   const filteredClients = useMemo(() => {
