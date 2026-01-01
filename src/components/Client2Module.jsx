@@ -337,7 +337,7 @@ export default function Client2Module() {
         setIsLoading(false)
       }
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, searchInput])
 
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
