@@ -121,6 +121,7 @@ export default function Client2Module() {
   // API data state (restored)
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
+  const [rebateTotals, setRebateTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [isLoading, setIsLoading] = useState(true)
@@ -335,7 +336,23 @@ export default function Client2Module() {
         setIsLoading(false)
       }
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, searchInput])
+
+  // Fetch rebate totals from API
+  const fetchRebateTotals = useCallback(async () => {
+    try {
+      const response = await brokerAPI.getIBCommissionTotals()
+      const data = response?.data?.data || response?.data || {}
+      setRebateTotals({
+        totalRebate: data.total_commission || 0,
+        totalRebatePercent: data.total_commission_percentage || 0,
+        availableRebate: data.total_available_commission || 0,
+        availableRebatePercent: data.total_available_commission_percentage || 0
+      })
+    } catch (err) {
+      console.error('[Client2Module] Error fetching rebate totals:', err)
+    }
+  }, [])
 
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
@@ -345,8 +362,14 @@ export default function Client2Module() {
   // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
     fetchClients(null, true) // Initial load with loading state
+    fetchRebateTotals() // Fetch rebate totals on mount
     const interval = setInterval(() => fetchClients(null, false), 1000) // Periodic refresh without loading state
-    return () => clearInterval(interval)
+    const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000) // Refresh rebate every 1 hour
+    return () => {
+      clearInterval(interval)
+      clearInterval(rebateInterval)
+    }
+  }, [fetchClients, fetchRebateTotals])
   }, [fetchClients])
 
   // Apply client-side search filtering (like Positions module)
@@ -383,7 +406,7 @@ export default function Client2Module() {
       { label: 'Total Clients', value: formatNum(clientCount), unit: 'Count', numericValue: clientCount },
       { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
-      { label: addPercent('Total Rebate'), value: formatNum(t.totalRebate || 0), unit: 'USD', numericValue: t.totalRebate || 0 },
+      { label: 'Total Rebate', value: formatNum(rebateTotals.totalRebate || 0), unit: 'USD', numericValue: rebateTotals.totalRebate || 0 },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
       { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
       { label: addPercent('Blocked Commission'), value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
@@ -450,7 +473,7 @@ export default function Client2Module() {
       { label: addPercent('NET Credit'), value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
       { label: addPercent('Book PnL'), value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
     ]
-  }, [filteredClients, totals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent])
+  }, [filteredClients, totals, rebateTotals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent])
 
   // Initialize and reconcile saved card order whenever cards change
   useEffect(() => {
