@@ -47,6 +47,7 @@ const AppContent = () => {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/" element={isMobile ? <LoginMobile /> : <LoginPage />} />
         <Route path="/login" element={isMobile ? <LoginMobile /> : <LoginPage />} />
         <Route path="/m/login" element={<LoginMobile />} />
         <Route path="/d/login" element={<LoginPage />} />
