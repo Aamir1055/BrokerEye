@@ -1641,26 +1641,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({totalDealsCount || deals.length})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'funds'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Money Transactions
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'rules'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Broker Rules ({clientRules.filter(r => r.is_active === true).length})
-            </button>
           </div>
 
           {/* Controls for Positions Tab */}

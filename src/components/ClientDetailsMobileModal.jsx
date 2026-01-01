@@ -1194,26 +1194,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             >
               Deals ({hasAppliedFilter ? totalDealsCount : 0})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'funds'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Money
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'rules'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Rules ({clientRules.filter(r => r.is_active === true).length})
-            </button>
           </div>
         </div>
 
