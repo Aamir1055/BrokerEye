@@ -383,6 +383,7 @@ export default function Client2Module() {
       { label: 'Total Clients', value: formatNum(clientCount), unit: 'Count', numericValue: clientCount },
       { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
+      { label: addPercent('Total Rebate'), value: formatNum(t.totalRebate || 0), unit: 'USD', numericValue: t.totalRebate || 0 },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
       { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
       { label: addPercent('Blocked Commission'), value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
@@ -464,8 +465,8 @@ export default function Client2Module() {
     let order = Array.isArray(saved) && saved.length > 0
       ? saved.filter(l => labels.includes(l))
       : (() => {
-          // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW first
-          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW']
+          // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW, Total Rebate first
+          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
           const priorityOrder = priority.filter(l => labels.includes(l))
           const remaining = labels.filter(l => !priority.includes(l))
           return [...priorityOrder, ...remaining]
@@ -499,6 +500,7 @@ export default function Client2Module() {
       'Total Clients': '/Desktop cards icons/Total Clients.svg',
       'Lifetime P&L': '/Desktop cards icons/LIFETIME PNL.svg',
       'NET Lifetime DW': '/Desktop cards icons/NET WD.svg',
+      'Total Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
       'Assets': '/Desktop cards icons/Total Balance.svg',
       'Balance': '/Desktop cards icons/Total Balance.svg',
       'Blocked Commission': '/Desktop cards icons/Blocked commision.svg',
