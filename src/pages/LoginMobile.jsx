@@ -39,12 +39,12 @@ const LoginMobile = () => {
     <div className="w-full min-h-screen bg-white overflow-hidden">
       <div className="relative w-full h-screen bg-white overflow-hidden">
         {/* Background Ellipses (blue layers) */}
-        <div className="absolute rounded-full" style={{ width: 651, height: 651, left: -40, top: -158, background: '#4471D6' }} />
-        <div className="absolute rounded-full" style={{ width: 651, height: 652, left: -32, top: -178, background: '#3B65C5' }} />
-        <div className="absolute rounded-full" style={{ width: 651, height: 651, left: -22, top: -204, background: '#1641A2' }} />
+        <div className="absolute rounded-full" style={{ width: 651, height: 651, left: -40, top: -250, background: '#4471D6' }} />
+        <div className="absolute rounded-full" style={{ width: 651, height: 652, left: -32, top: -270, background: '#3B65C5' }} />
+        <div className="absolute rounded-full" style={{ width: 651, height: 651, left: -22, top: -296, background: '#1641A2' }} />
 
         {/* Upper-right subtle border circle */}
-        <div className="absolute rounded-full box-border" style={{ width: 243, height: 256, left: 286, top: -142, border: '30px solid rgba(220, 240, 153, 0.06)' }} />
+        <div className="absolute rounded-full box-border" style={{ width: 243, height: 256, left: 286, top: -200, border: '30px solid rgba(220, 240, 153, 0.06)' }} />
 
         {/* Brand row (center top) */}
         <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: 24, width: 149, height: 42 }}>
@@ -108,15 +108,15 @@ const LoginMobile = () => {
         </div>
 
         {/* Form header: Welcome Back + note */}
-        <div className="absolute" style={{ left: 20, top: 420, width: 324, height: 55 }}>
+        <div className="absolute" style={{ left: 20, top: 330, width: 324, height: 55 }}>
           <div className="flex flex-col items-start gap-[5px]">
             <div className="font-outfit font-semibold text-[18px] leading-[23px] text-[#333333]">Welcome Back</div>
-            <div className="font-outfit font-normal text-[11px] leading-[14px] text-[#8C8C8C]">Welcome back to access your account. Make sure you use correct information</div>
+            <div className="font-outfit font-normal text-[11px] leading-[14px] text-[#8C8C8C]"></div>
           </div>
         </div>
 
         {/* Username field */}
-        <div className="absolute" style={{ left: 20, top: 490, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 400, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* User icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -134,7 +134,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Password field */}
-        <div className="absolute" style={{ left: 20, top: 555, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 465, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* Lock icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -169,7 +169,7 @@ const LoginMobile = () => {
 
         {/* Error message */}
         {errorMessage && (
-          <div className="absolute left-[20px] right-[20px]" style={{ top: 615 }}>
+          <div className="absolute left-[20px] right-[20px]" style={{ top: 525 }}>
             <div className="bg-red-50 border border-red-200 rounded-xl p-2.5 text-xs text-red-800">{errorMessage}</div>
           </div>
         )}
@@ -180,7 +180,7 @@ const LoginMobile = () => {
             type="submit"
             disabled={isLoading}
             className="absolute flex items-center justify-center gap-[10px] text-white font-montserrat font-bold text-[16px]"
-            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 665 : 625, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
+            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 575 : 535, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
           >
             {isLoading ? 'Signing in…' : 'Log In'}
           </button>
