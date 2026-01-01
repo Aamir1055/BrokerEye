@@ -1018,8 +1018,8 @@ export default function Client2Module() {
     { key: 'lifetimePnL', label: 'Lifetime PnL', width: '100px' },
     { key: 'thisMonthPnL', label: 'This Month PnL', width: '110px' },
     { key: 'thisWeekPnL', label: 'This Week PnL', width: '110px' },
-    { key: 'processorType', label: 'Processor Type', width: '120px' },
-    { key: 'accountType', label: 'Account Type', width: '100px' }
+    { key: 'accountType', label: 'Account Type', width: '100px' },
+    { key: 'processorType', label: 'Processor Type', width: '120px' }
   ]
 
   // Helper function to format value based on percentage mode  
