@@ -4,6 +4,7 @@ import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import CustomizeViewModal from './CustomizeViewModal'
 import FilterModal from './FilterModal'
+import DateFilterModal from './DateFilterModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
@@ -36,6 +37,10 @@ export default function PositionModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
+  const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
+  const [pendingDateDraft, setPendingDateDraft] = useState(null)
   const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
     // Pending apply tracking for Customize View
     const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -464,6 +469,18 @@ export default function PositionModule() {
     // Apply search filter
     let filtered = applySearchFilter(deferredIbFilteredPositions, searchInput, ['symbol', 'login'])
     
+    // Apply date filter if selected
+    if (dateFilter) {
+      const now = Date.now() / 1000 // Current time in seconds
+      const daysInSeconds = dateFilter * 24 * 60 * 60
+      const cutoffTime = now - daysInSeconds
+      
+      filtered = filtered.filter(pos => {
+        const timeValue = pos.timeUpdate || pos.timeCreate
+        return timeValue && timeValue >= cutoffTime
+      })
+    }
+    
     // Map column keys to actual data fields for sorting
     const columnKeyMapping = {
       'updated': 'timeUpdate',
@@ -478,7 +495,7 @@ export default function PositionModule() {
     filtered = applySorting(filtered, sortKey, sortDirection)
     
     return filtered
-  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection])
+  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection, dateFilter])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -695,27 +712,33 @@ export default function PositionModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'POSITIONS': '/Mobile cards icons/Total Balance.svg',
-      'FLOATING': '/Mobile cards icons/Floating Profit.svg',
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
-      'SYMBOLS': '/Mobile cards icons/Total Equity.svg'
+      'POSITIONS': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'FLOATING': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'UNIQUE LOGINS': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Mobile cards icons/Total Equity.svg`
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
   
-  // Update cards when summary stats change
+  // Update cards when filtered positions change (includes date filter)
   useEffect(() => {
+    const totalPositions = filteredPositions.length
+    const totalFloatingProfit = filteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const uniqueLogins = new Set(filteredPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(filteredPositions.map(p => p.symbol)).size
+    
     const newCards = [
-      { label: 'POSITIONS', value: String(summaryStats.totalPositions) },
+      { label: 'POSITIONS', value: String(totalPositions) },
       { 
         label: 'FLOATING', 
-        value: formatNum(Math.abs(summaryStats.totalFloatingProfit)),
+        value: formatNum(Math.abs(totalFloatingProfit)),
         isProfit: true,
-        profitValue: summaryStats.totalFloatingProfit
+        profitValue: totalFloatingProfit
       },
-      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
-      { label: 'SYMBOLS', value: String(summaryStats.uniqueSymbols) }
+      { label: 'UNIQUE LOGINS', value: String(uniqueLogins) },
+      { label: 'SYMBOLS', value: String(uniqueSymbols) }
     ]
     
     // Only update if cards length is different (initial load) or keep existing order
@@ -730,7 +753,7 @@ export default function PositionModule() {
         })
       })
     }
-  }, [summaryStats])
+  }, [filteredPositions])
 
   // Card carousel scroll tracking
   useEffect(() => {
@@ -1293,7 +1316,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Symbols</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Equity.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1324,7 +1347,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Balance.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1355,7 +1378,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/PNL.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1388,7 +1411,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Total Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Clients.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1765,7 +1788,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Rows</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Equity.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1796,7 +1819,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Balance.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1827,7 +1850,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/PNL.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1860,7 +1883,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Clients.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -2151,6 +2174,10 @@ export default function PositionModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
+        onDateFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsDateFilterOpen(true)
+        }}
         onIBFilterClick={() => {
           setIsCustomizeOpen(false)
           setIsIBFilterOpen(true)
@@ -2161,12 +2188,15 @@ export default function PositionModule() {
         }}
         onReset={() => {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+          setDateFilter(null)
           clearIBSelection()
           setActiveGroupFilter('positions', null)
           setHasPendingIBChanges(false)
           setHasPendingGroupChanges(false)
+          setHasPendingDateChanges(false)
           setPendingIBDraft(null)
           setPendingGroupDraft(null)
+          setPendingDateDraft(null)
         }}
         onApply={() => {
           if (hasPendingIBChanges) {
@@ -2175,13 +2205,18 @@ export default function PositionModule() {
           if (hasPendingGroupChanges) {
             setActiveGroupFilter('positions', pendingGroupDraft ? pendingGroupDraft.name : null)
           }
+          if (hasPendingDateChanges) {
+            setDateFilter(pendingDateDraft)
+          }
           setIsCustomizeOpen(false)
           setHasPendingIBChanges(false)
           setHasPendingGroupChanges(false)
+          setHasPendingDateChanges(false)
           setPendingIBDraft(null)
           setPendingGroupDraft(null)
+          setPendingDateDraft(null)
         }}
-        hasPendingChanges={hasPendingIBChanges || hasPendingGroupChanges}
+        hasPendingChanges={hasPendingIBChanges || hasPendingGroupChanges || hasPendingDateChanges}
       />
 
       {/* Filter Modal */}
@@ -2193,6 +2228,21 @@ export default function PositionModule() {
           setIsFilterOpen(false)
         }}
         filters={filters}
+      />
+
+      {/* Date Filter Modal */}
+      <DateFilterModal
+        isOpen={isDateFilterOpen}
+        onClose={() => setIsDateFilterOpen(false)}
+        onApply={(days) => {
+          setDateFilter(days)
+          setIsDateFilterOpen(false)
+        }}
+        currentFilter={dateFilter}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingDateChanges(hasPending)
+          setPendingDateDraft(draft)
+        }}
       />
 
       {/* IB Filter Modal */}

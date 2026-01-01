@@ -321,12 +321,13 @@ const PendingOrdersPage = () => {
 
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Orders': '/Desktop cards icons/Total Balance.svg',
-      'Unique Logins': '/Desktop cards icons/Total Clients.svg',
-      'Symbols': '/Desktop cards icons/Total Equity.svg',
+      'Total Orders': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Unique Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'Symbols': `${baseUrl}Desktop cards icons/Total Equity.svg`,
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
 
   const formatTime = (ts) => {
@@ -1026,9 +1027,9 @@ const PendingOrdersPage = () => {
           {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Orders</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Orders</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Total Orders')} 
                     alt="Total Orders"
@@ -1045,9 +1046,9 @@ const PendingOrdersPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Unique Logins')} 
                     alt="Unique Logins"
@@ -1064,9 +1065,9 @@ const PendingOrdersPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Symbols</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Symbols</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Symbols')} 
                     alt="Symbols"

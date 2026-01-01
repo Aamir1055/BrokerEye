@@ -262,12 +262,13 @@ const IBCommissionsPage = () => {
 
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Rebate': '/Desktop cards icons/TOTAL COMMISION.svg',
-      'Available Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
-      'Disbursed Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
-      'Total Rebate %': '/Desktop cards icons/TOTAL COMMISION%25.svg',
-      'Available Rebate %': '/Desktop cards icons/AVAILABLE Commision%25.svg',
+      'Total Rebate': `${baseUrl}Desktop cards icons/TOTAL COMMISION.svg`,
+      'Available Rebate': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
+      'Disbursed Rebate': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
+      'Total Rebate %': `${baseUrl}Desktop cards icons/TOTAL COMMISION%25.svg`,
+      'Available Rebate %': `${baseUrl}Desktop cards icons/AVAILABLE Commision%25.svg`,
     }
     return iconMap[cardTitle] || '/Desktop cards icons/TOTAL COMMISION.svg'
   }
@@ -386,9 +387,9 @@ const IBCommissionsPage = () => {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start gap-1.5 mb-1.5">
+              <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate</p>
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight mb-1.5">Total Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
                     {totalsLoading ? (
                       <span className="text-[#9CA3AF]">...</span>
@@ -397,7 +398,7 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Total Rebate')} 
                     alt="Total Rebate"
@@ -407,9 +408,9 @@ const IBCommissionsPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start gap-1.5 mb-1.5">
+              <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate</p>
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight mb-1.5">Available Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
                     {totalsLoading ? (
                       <span className="text-[#9CA3AF]">...</span>
@@ -418,7 +419,7 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Available Rebate')} 
                     alt="Available Rebate"
@@ -428,9 +429,9 @@ const IBCommissionsPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start gap-1.5 mb-1.5">
+              <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Disbursed Rebate</p>
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight mb-1.5">Disbursed Rebate</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
                     {totalsLoading ? (
                       <span className="text-[#9CA3AF]">...</span>
@@ -439,7 +440,7 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Disbursed Rebate')} 
                     alt="Disbursed Rebate"
@@ -449,9 +450,9 @@ const IBCommissionsPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start gap-1.5 mb-1.5">
+              <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Total Rebate %</p>
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight mb-1.5">Total Rebate %</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
                     {totalsLoading ? (
                       <span className="text-[#9CA3AF]">...</span>
@@ -460,7 +461,7 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Total Rebate %')} 
                     alt="Total Rebate %"
@@ -470,9 +471,9 @@ const IBCommissionsPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start gap-1.5 mb-1.5">
+              <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none mb-1.5">Available Rebate %</p>
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight mb-1.5">Available Rebate %</p>
                   <p className="text-sm md:text-base font-bold text-[#000000] leading-none">
                     {totalsLoading ? (
                       <span className="text-[#9CA3AF]">...</span>
@@ -481,7 +482,7 @@ const IBCommissionsPage = () => {
                     )}
                   </p>
                 </div>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Available Rebate %')} 
                     alt="Available Rebate %"

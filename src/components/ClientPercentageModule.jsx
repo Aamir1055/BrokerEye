@@ -274,13 +274,14 @@ export default function ClientPercentageModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'TOTAL CLIENTS': '/Desktop cards icons/Total Clients.svg',
-      'CUSTOM %': '/Desktop cards icons/AVAILABLE Commision%25.svg',
-      'DEFAULT': '/Desktop cards icons/Total Balance.svg',
-      'AVG %': '/Desktop cards icons/AVAILABLE Commision%25.svg'
+      'TOTAL CLIENTS': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'CUSTOM %': `${baseUrl}Desktop cards icons/AVAILABLE Commision%25.svg`,
+      'DEFAULT': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'AVG %': `${baseUrl}Desktop cards icons/AVAILABLE Commision%25.svg`
     }
-    return iconMap[label] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[label] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
   
   useEffect(() => {

@@ -652,21 +652,22 @@ const PositionsPage = () => {
 
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Positions': '/Desktop cards icons/Total Balance.svg',
-      'Floating Profit': '/Desktop cards icons/Floating Profit.svg',
-      'Floating Profit %': '/Desktop cards icons/Floating Profit.svg',
-      'Unique Logins': '/Desktop cards icons/Total Clients.svg',
-      'Symbols': '/Desktop cards icons/Total Equity.svg',
+      'Total Positions': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Floating Profit': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
+      'Floating Profit %': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
+      'Unique Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'Symbols': `${baseUrl}Desktop cards icons/Total Equity.svg`,
       // NET Position cards
-      'NET Symbols': '/Desktop cards icons/Total Clients.svg',
-      'Total NET Volume': '/Desktop cards icons/Total Balance.svg',
-      'Total NET P/L': '/Desktop cards icons/PNL.svg',
-      'Total Logins': '/Desktop cards icons/Total Clients.svg',
+      'NET Symbols': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'Total NET Volume': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Total NET P/L': `${baseUrl}Desktop cards icons/PNL.svg`,
+      'Total Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
       // Client NET cards
-      'Client NET Rows': '/Desktop cards icons/Total Clients.svg',
+      'Client NET Rows': `${baseUrl}Desktop cards icons/Total Clients.svg`,
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
 
   // Helper function to adjust value for USC symbols (divide by 100)
@@ -2190,9 +2191,9 @@ const PositionsPage = () => {
           {/* Stats Summary - Client2 Face Card Design */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Positions</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Positions</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Total Positions')} 
                     alt="Total Positions"
@@ -2216,9 +2217,9 @@ const PositionsPage = () => {
             {/* Total Floating Profit - shown in 'value' mode or 'both' mode */}
             {(displayMode === 'value' || displayMode === 'both') && (
               <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-1.5">
-                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Floating Profit</span>
-                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Floating Profit</span>
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                     <img 
                       src={getCardIcon('Floating Profit')} 
                       alt="Floating Profit"
@@ -2245,9 +2246,9 @@ const PositionsPage = () => {
             {/* Total Floating Profit Percentage - shown in 'percentage' mode or 'both' mode (matches normal card UI) */}
             {(displayMode === 'percentage' || displayMode === 'both') && (
               <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-1.5">
-                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Floating Profit %</span>
-                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                  <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Floating Profit %</span>
+                  <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                     <img 
                       src={getCardIcon('Floating Profit %')} 
                       alt="Floating Profit %"
@@ -2271,9 +2272,9 @@ const PositionsPage = () => {
             )}
             
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Unique Logins')} 
                     alt="Unique Logins"
@@ -2294,9 +2295,9 @@ const PositionsPage = () => {
               )}
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Symbols</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Symbols</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Symbols')} 
                     alt="Symbols"
@@ -2325,9 +2326,9 @@ const PositionsPage = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
                 {netCardsVisible.netSymbols && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">NET Symbols</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">NET Symbols</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('NET Symbols')} 
                           alt="NET Symbols"
@@ -2344,9 +2345,9 @@ const PositionsPage = () => {
                 )}
                 {netCardsVisible.totalNetVolume && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET Volume</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total NET Volume</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total NET Volume')} 
                           alt="Total NET Volume"
@@ -2363,9 +2364,9 @@ const PositionsPage = () => {
                 )}
                 {netCardsVisible.totalNetPL && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET P/L</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total NET P/L</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total NET P/L')} 
                           alt="Total NET P/L"
@@ -2394,9 +2395,9 @@ const PositionsPage = () => {
                 )}
                 {netCardsVisible.totalLogins && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Logins</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Logins</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total Logins')} 
                           alt="Total Logins"
@@ -2911,9 +2912,9 @@ const PositionsPage = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
                 {clientNetCardsVisible.clientNetRows && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Client NET Rows</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Client NET Rows</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Client NET Rows')} 
                           alt="Client NET Rows"
@@ -2929,9 +2930,9 @@ const PositionsPage = () => {
                 )}
                 {clientNetCardsVisible.totalNetVolume && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET Volume</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total NET Volume</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total NET Volume')} 
                           alt="Total NET Volume"
@@ -2947,9 +2948,9 @@ const PositionsPage = () => {
                 )}
                 {clientNetCardsVisible.totalNetPL && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total NET P/L</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total NET P/L</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total NET P/L')} 
                           alt="Total NET P/L"
@@ -2970,9 +2971,9 @@ const PositionsPage = () => {
                 )}
                 {clientNetCardsVisible.totalLogins && (
                   <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-1.5">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Logins</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Logins</span>
+                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                         <img 
                           src={getCardIcon('Total Logins')} 
                           alt="Total Logins"

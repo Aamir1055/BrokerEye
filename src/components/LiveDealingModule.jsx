@@ -504,12 +504,13 @@ export default function LiveDealingModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
-    if (label.includes('DEALS')) return '/Mobile cards icons/Brokers Eye Platform/Daily PNL.svg'
+    const baseUrl = import.meta.env.BASE_URL || '/'
+    if (label.includes('DEALS')) return `${baseUrl}Mobile cards icons/Brokers Eye Platform/Daily PNL.svg`
     const iconMap = {
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
-      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg'
+      'UNIQUE LOGINS': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Group.svg`
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
 
   // Face cards data - use useMemo to avoid infinite loop

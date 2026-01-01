@@ -814,15 +814,16 @@ const LiveDealingPage = () => {
 
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'DEALS (24H)': '/Desktop cards icons/Total Balance.svg',
-      'DEALS (7D)': '/Desktop cards icons/Total Balance.svg',
-      'FILTERED DEALS': '/Desktop cards icons/Total Balance.svg',
-      'CONNECTION STATUS': '/Desktop cards icons/Total Credit.svg',
-      'UNIQUE LOGINS': '/Desktop cards icons/Total Clients.svg',
-      'SYMBOLS': '/Desktop cards icons/Total Equity.svg',
+      'DEALS (24H)': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'DEALS (7D)': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'FILTERED DEALS': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'CONNECTION STATUS': `${baseUrl}Desktop cards icons/Total Credit.svg`,
+      'UNIQUE LOGINS': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Desktop cards icons/Total Equity.svg`,
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
 
   const handleRefresh = () => {
@@ -1806,11 +1807,11 @@ const LiveDealingPage = () => {
           {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">
                   {timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS'}
                 </span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon(timeFilter === '24h' ? 'DEALS (24H)' : timeFilter === '7d' ? 'DEALS (7D)' : 'FILTERED DEALS')} 
                     alt="Deals"
@@ -1830,9 +1831,9 @@ const LiveDealingPage = () => {
               )}
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">CONNECTION STATUS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">CONNECTION STATUS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('CONNECTION STATUS')} 
                     alt="Connection Status"
@@ -1854,9 +1855,9 @@ const LiveDealingPage = () => {
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">UNIQUE LOGINS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">UNIQUE LOGINS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('UNIQUE LOGINS')} 
                     alt="Unique Logins"
@@ -1876,9 +1877,9 @@ const LiveDealingPage = () => {
               )}
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">SYMBOLS</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">SYMBOLS</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('SYMBOLS')} 
                     alt="Symbols"

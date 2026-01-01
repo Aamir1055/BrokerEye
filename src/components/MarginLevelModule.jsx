@@ -183,11 +183,12 @@ export default function MarginLevelModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'BELOW 50%': '/Mobile cards icons/Brokers Eye Platform/Total Balance.svg',
-      'AVG MARGIN LEVEL': '/Mobile cards icons/Total Equity.svg'
+      'BELOW 50%': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Total Balance.svg`,
+      'AVG MARGIN LEVEL': `${baseUrl}Mobile cards icons/Total Equity.svg`
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
   
   useEffect(() => {

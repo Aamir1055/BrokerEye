@@ -132,7 +132,7 @@ export default function Client2Module() {
     lastName: false,
     middleName: false,
     email: false,
-    phone: true,
+    phone: false,
     group: false,
     country: false,
     city: false,
@@ -141,10 +141,10 @@ export default function Client2Module() {
     zipCode: false,
     clientID: false,
     balance: false,
-    credit: true,
+    credit: false,
     equity: true,
     margin: false,
-    marginFree: true,
+    marginFree: false,
     marginLevel: false,
     marginInitial: false,
     marginMaintenance: false,
@@ -184,11 +184,11 @@ export default function Client2Module() {
     rightsMask: false,
     dailyDeposit: false,
     dailyWithdrawal: false,
-    lifetimePnL: false,
+    lifetimePnL: true,
     thisMonthPnL: false,
     thisWeekPnL: false,
-    processorType: false,
-    accountType: false
+    processorType: true,
+    accountType: true
   })
 
   // Fetch clients data via API
@@ -485,7 +485,27 @@ export default function Client2Module() {
     } catch {}
 
     let order = Array.isArray(saved) && saved.length > 0
-      ? saved.filter(l => labels.includes(l))
+      ? (() => {
+          // Start with saved order but ensure priority cards are in correct positions
+          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
+          let result = [...saved.filter(l => labels.includes(l))]
+          
+          // Insert priority cards that are missing or out of order
+          priority.reverse().forEach(priorityLabel => {
+            if (labels.includes(priorityLabel)) {
+              // Remove from current position if exists
+              const currentIndex = result.indexOf(priorityLabel)
+              if (currentIndex !== -1) {
+                result.splice(currentIndex, 1)
+              }
+              // Insert at the beginning (since we're iterating in reverse)
+              result.unshift(priorityLabel)
+            }
+          })
+          
+          // Remove duplicates (shouldn't happen but just in case)
+          return Array.from(new Set(result))
+        })()
       : (() => {
           // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW, Total Rebate first
           const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
@@ -518,69 +538,70 @@ export default function Client2Module() {
   const getCardIcon = (cardLabel) => {
     // Remove % suffix if present for matching
     const cleanLabel = cardLabel.replace(' %', '')
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Clients': '/Mobile cards icons/Total Clients.svg',
-      'Lifetime P&L': '/Mobile cards icons/LIFETIME PNL.svg',
-      'NET Lifetime DW': '/Mobile cards icons/NET WD.svg',
-      'Total Rebate': '/Mobile cards icons/AVAILABLE Commision.svg',
-      'Assets': '/Mobile cards icons/Total Balance.svg',
-      'Balance': '/Mobile cards icons/Total Balance.svg',
-      'Blocked Commission': '/Mobile cards icons/Blocked commision.svg',
-      'Blocked Profit': '/Mobile cards icons/Floating Profit.svg',
-      'Commission': '/Mobile cards icons/AVAILABLE Commision.svg',
-      'Credit': '/Mobile cards icons/Total Credit.svg',
-      'Daily Bonus In': '/Mobile cards icons/Daily BONUS IN.svg',
-      'Daily Bonus Out': '/Mobile cards icons/Daily BONUS OUT.svg',
-      'Daily Credit In': '/Mobile cards icons/LIFETIME CREDIT IN.svg',
-      'Daily Credit Out': '/Mobile cards icons/LIFETIME CREDIT OUT.svg',
-      'Daily Deposit': '/Mobile cards icons/Daily Deposite.svg',
-      'Daily P&L': '/Mobile cards icons/Daily PNL.svg',
-      'Daily SO Compensation In': '/Mobile cards icons/Daily BONUS IN.svg',
-      'Daily SO Compensation Out': '/Mobile cards icons/Daily BONUS OUT.svg',
-      'Daily Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
-      'Daily Net D/W': '/Mobile cards icons/NET WD.svg',
-      'NET Daily Bonus': '/Mobile cards icons/Net Daily Bonus.svg',
-      'Equity': '/Mobile cards icons/Total Equity.svg',
-      'Floating P/L': '/Mobile cards icons/Floating Profit.svg',
-      'Liabilities': '/Mobile cards icons/Total Balance.svg',
-      'Lifetime Bonus In': '/Mobile cards icons/LIFETIME BONUS IN.svg',
-      'Lifetime Bonus Out': '/Mobile cards icons/LIFETIME BONUS OUT.svg',
-      'Lifetime Credit In': '/Mobile cards icons/LIFETIME CREDIT IN.svg',
-      'Lifetime Credit Out': '/Mobile cards icons/LIFETIME CREDIT OUT.svg',
-      'Lifetime Deposit': '/Mobile cards icons/Daily Deposite.svg',
-      'Lifetime SO Compensation In': '/Mobile cards icons/LIFETIME BONUS IN.svg',
-      'Lifetime SO Compensation Out': '/Mobile cards icons/LIFETIME BONUS OUT.svg',
-      'Lifetime Withdrawal': '/Mobile cards icons/Daily WITHDRAWL.svg',
-      'Margin': '/Mobile cards icons/Total Balance.svg',
-      'Margin Free': '/Mobile cards icons/Total Balance.svg',
-      'Month Bonus In': '/Mobile cards icons/MONTHLY BONUS IN.svg',
-      'Month Bonus Out': '/Mobile cards icons/MONTHLY BONUS OUt.svg',
-      'Month Credit In': '/Mobile cards icons/MONTHLY CREDIT IN.svg',
-      'Month Credit Out': '/Mobile cards icons/MOnthly CREDIT OUT.svg',
-      'Month Deposit': '/Mobile cards icons/MONTLY DEPOSITE.svg',
-      'Month P&L': '/Mobile cards icons/THIS MONTH PNL.svg',
-      'Month SO Compensation In': '/Mobile cards icons/MONTHLY BONUS IN.svg',
-      'Month SO Compensation Out': '/Mobile cards icons/MONTHLY BONUS OUt.svg',
-      'Month Withdrawal': '/Mobile cards icons/MONTLY WITHDRAWL.svg',
-      'NET Month Bonus': '/Mobile cards icons/NET MONTHLY BONUS.svg',
-      'NET Month D/W': '/Mobile cards icons/NET MONTHLY DW.svg',
-      'Profit': '/Mobile cards icons/Floating Profit.svg',
-      'Storage': '/Mobile cards icons/Total Balance.svg',
-      'This Month PnL': '/Mobile cards icons/THIS MONTH PNL.svg',
-      'Week Bonus In': '/Mobile cards icons/Weekly bonus in.svg',
-      'Week Bonus Out': '/Mobile cards icons/WEEK BONUS OUT.svg',
-      'Week Credit In': '/Mobile cards icons/WEEKLY Credit IN.svg',
-      'Week Credit Out': '/Mobile cards icons/WEEKLY CREDIT OUT.svg',
-      'Week Deposit': '/Mobile cards icons/WEEK DEPOSITE.svg',
-      'Week P&L': '/Mobile cards icons/This week pnl.svg',
-      'Week SO Compensation In': '/Mobile cards icons/Weekly bonus in.svg',
-      'Week SO Compensation Out': '/Mobile cards icons/WEEK BONUS OUT.svg',
-      'Week Withdrawal': '/Mobile cards icons/WEEK WITHDRAWL.svg',
-      'NET Week Bonus': '/Mobile cards icons/NET WEEK BONUS.svg',
-      'NET Week D/W': '/Mobile cards icons/NET WEEK DAY.svg',
-      'Book PnL': '/Mobile cards icons/PNL.svg',
+      'Total Clients': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'Lifetime P&L': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
+      'NET Lifetime DW': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'Total Rebate': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'Assets': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Balance': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Blocked Commission': `${baseUrl}Mobile cards icons/Blocked commision.svg`,
+      'Blocked Profit': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Commission': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'Credit': `${baseUrl}Mobile cards icons/Total Credit.svg`,
+      'Daily Bonus In': `${baseUrl}Mobile cards icons/Daily BONUS IN.svg`,
+      'Daily Bonus Out': `${baseUrl}Mobile cards icons/Daily BONUS OUT.svg`,
+      'Daily Credit In': `${baseUrl}Mobile cards icons/LIFETIME CREDIT IN.svg`,
+      'Daily Credit Out': `${baseUrl}Mobile cards icons/LIFETIME CREDIT OUT.svg`,
+      'Daily Deposit': `${baseUrl}Mobile cards icons/Daily Deposite.svg`,
+      'Daily P&L': `${baseUrl}Mobile cards icons/Daily PNL.svg`,
+      'Daily SO Compensation In': `${baseUrl}Mobile cards icons/Daily BONUS IN.svg`,
+      'Daily SO Compensation Out': `${baseUrl}Mobile cards icons/Daily BONUS OUT.svg`,
+      'Daily Withdrawal': `${baseUrl}Mobile cards icons/Daily WITHDRAWL.svg`,
+      'Daily Net D/W': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'NET Daily Bonus': `${baseUrl}Mobile cards icons/Net Daily Bonus.svg`,
+      'Equity': `${baseUrl}Mobile cards icons/Total Equity.svg`,
+      'Floating P/L': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Liabilities': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Lifetime Bonus In': `${baseUrl}Mobile cards icons/LIFETIME BONUS IN.svg`,
+      'Lifetime Bonus Out': `${baseUrl}Mobile cards icons/LIFETIME BONUS OUT.svg`,
+      'Lifetime Credit In': `${baseUrl}Mobile cards icons/LIFETIME CREDIT IN.svg`,
+      'Lifetime Credit Out': `${baseUrl}Mobile cards icons/LIFETIME CREDIT OUT.svg`,
+      'Lifetime Deposit': `${baseUrl}Mobile cards icons/Daily Deposite.svg`,
+      'Lifetime SO Compensation In': `${baseUrl}Mobile cards icons/LIFETIME BONUS IN.svg`,
+      'Lifetime SO Compensation Out': `${baseUrl}Mobile cards icons/LIFETIME BONUS OUT.svg`,
+      'Lifetime Withdrawal': `${baseUrl}Mobile cards icons/Daily WITHDRAWL.svg`,
+      'Margin': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Margin Free': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Month Bonus In': `${baseUrl}Mobile cards icons/MONTHLY BONUS IN.svg`,
+      'Month Bonus Out': `${baseUrl}Mobile cards icons/MONTHLY BONUS OUt.svg`,
+      'Month Credit In': `${baseUrl}Mobile cards icons/MONTHLY CREDIT IN.svg`,
+      'Month Credit Out': `${baseUrl}Mobile cards icons/MOnthly CREDIT OUT.svg`,
+      'Month Deposit': `${baseUrl}Mobile cards icons/MONTLY DEPOSITE.svg`,
+      'Month P&L': `${baseUrl}Mobile cards icons/THIS MONTH PNL.svg`,
+      'Month SO Compensation In': `${baseUrl}Mobile cards icons/MONTHLY BONUS IN.svg`,
+      'Month SO Compensation Out': `${baseUrl}Mobile cards icons/MONTHLY BONUS OUt.svg`,
+      'Month Withdrawal': `${baseUrl}Mobile cards icons/MONTLY WITHDRAWL.svg`,
+      'NET Month Bonus': `${baseUrl}Mobile cards icons/NET MONTHLY BONUS.svg`,
+      'NET Month D/W': `${baseUrl}Mobile cards icons/NET MONTHLY DW.svg`,
+      'Profit': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Storage': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'This Month PnL': `${baseUrl}Mobile cards icons/THIS MONTH PNL.svg`,
+      'Week Bonus In': `${baseUrl}Mobile cards icons/Weekly bonus in.svg`,
+      'Week Bonus Out': `${baseUrl}Mobile cards icons/WEEK BONUS OUT.svg`,
+      'Week Credit In': `${baseUrl}Mobile cards icons/WEEKLY Credit IN.svg`,
+      'Week Credit Out': `${baseUrl}Mobile cards icons/WEEKLY CREDIT OUT.svg`,
+      'Week Deposit': `${baseUrl}Mobile cards icons/WEEK DEPOSITE.svg`,
+      'Week P&L': `${baseUrl}Mobile cards icons/This week pnl.svg`,
+      'Week SO Compensation In': `${baseUrl}Mobile cards icons/Weekly bonus in.svg`,
+      'Week SO Compensation Out': `${baseUrl}Mobile cards icons/WEEK BONUS OUT.svg`,
+      'Week Withdrawal': `${baseUrl}Mobile cards icons/WEEK WITHDRAWL.svg`,
+      'NET Week Bonus': `${baseUrl}Mobile cards icons/NET WEEK BONUS.svg`,
+      'NET Week D/W': `${baseUrl}Mobile cards icons/NET WEEK DAY.svg`,
+      'Book PnL': `${baseUrl}Mobile cards icons/PNL.svg`,
     }
-    return iconMap[cleanLabel] || '/Mobile cards icons/Total Clients.svg' // Default icon
+    return iconMap[cleanLabel] || `${baseUrl}Mobile cards icons/Total Clients.svg` // Default icon
   }
 
   // Calculate totals for table footer

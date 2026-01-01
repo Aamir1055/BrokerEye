@@ -226,13 +226,14 @@ export default function PendingOrdersModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'PENDING ORDERS': '/Mobile cards icons/Brokers Eye Platform/Group.svg',
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
-      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg',
-      'TOTAL VOLUME': '/Mobile cards icons/Total Balance.svg'
+      'PENDING ORDERS': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Group.svg`,
+      'UNIQUE LOGINS': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Group.svg`,
+      'TOTAL VOLUME': `${baseUrl}Mobile cards icons/Total Balance.svg`
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
   
   // Update cards when summary stats change
