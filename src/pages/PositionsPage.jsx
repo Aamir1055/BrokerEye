@@ -12,6 +12,7 @@ import GroupSelector from '../components/GroupSelector'
 import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
 import PositionModule from '../components/PositionModule'
+import DateFilterModal from '../components/DateFilterModal'
 
 const PositionsPage = () => {
   // Mobile detection - initialize with actual window width to prevent flash
@@ -229,6 +230,12 @@ const PositionsPage = () => {
   const filterRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  
+  // Date filter states
+  const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
+  const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
+  const [pendingDateDraft, setPendingDateDraft] = useState(null)
   
   // Sorting states for ALL positions view
   const [sortColumn, setSortColumn] = useState(null)
@@ -1021,6 +1028,18 @@ const PositionsPage = () => {
     // Continue with groupFilteredPositions as ibFiltered for consistency
     ibFiltered = groupFilteredPositions
     
+    // Apply date filter if selected
+    if (dateFilter) {
+      const now = Date.now() / 1000 // Current time in seconds
+      const daysInSeconds = dateFilter * 24 * 60 * 60
+      const cutoffTime = now - daysInSeconds
+      
+      ibFiltered = ibFiltered.filter(pos => {
+        const timeValue = pos.timeUpdate || pos.timeCreate
+        return timeValue && timeValue >= cutoffTime
+      })
+    }
+    
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (columnKey.endsWith('_number')) {
@@ -1051,7 +1070,7 @@ const PositionsPage = () => {
     const sorted = sortPositions(ibFiltered)
     
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
-  }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
+  }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
 
   // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
@@ -2081,6 +2100,22 @@ const PositionsPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-5m0 5l-5-5M7 4h10a2 2 0 012 2v6H5V6a2 2 0 012-2zm0 0V2m0 2v2" />
                 </svg>
                 Client Net
+              </button>
+
+              {/* Date Filter Button */}
+              <button
+                onClick={() => setIsDateFilterOpen(true)}
+                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                  dateFilter 
+                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
+                }`}
+                title="Filter by Date Range"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
               </button>
 
               {/* Percentage View Dropdown */}
@@ -3847,6 +3882,21 @@ const PositionsPage = () => {
           onCacheUpdate={() => {}}
         />
       )}
+
+      {/* Date Filter Modal */}
+      <DateFilterModal
+        isOpen={isDateFilterOpen}
+        onClose={() => setIsDateFilterOpen(false)}
+        onApply={(days) => {
+          setDateFilter(days)
+          setIsDateFilterOpen(false)
+        }}
+        currentFilter={dateFilter}
+        onPendingChange={(pendingValue) => {
+          setPendingDateDraft(pendingValue)
+          setHasPendingDateChanges(pendingValue !== dateFilter)
+        }}
+      />
     </div>
   )
 }
