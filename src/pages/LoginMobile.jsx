@@ -69,41 +69,37 @@ const LoginMobile = () => {
         </div>
 
         {/* Hero heading (center top) */}
-        <div className="absolute text-white font-outfit font-extrabold text-[26px] leading-[32px] capitalize" style={{ width: 290, left: '10%', top: 75 }}>
+        <div className="absolute text-white font-outfit font-extrabold text-[26px] leading-[32px] capitalize text-center" style={{ width: 340, left: '50%', transform: 'translateX(-50%)', top: 75 }}>
           Your Path To Financial Recovery!
         </div>
 
-        {/* Three feature boxes */}
-        {/* Left */}
-        <div className="absolute" style={{ left: 41, top: 145, width: 54, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
+        {/* Three feature boxes - centered as a group */}
+        <div className="absolute flex justify-center items-start gap-[20px]" style={{ left: '50%', transform: 'translateX(-50%)', top: 145, width: 320 }}>
+          {/* Left */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group8} alt="Secure Trading Infrastructure" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Secure Trading Infrastructure</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Secure Trading<br />Infrastructure</div>
           </div>
-        </div>
-        {/* Middle */}
-        <div className="absolute" style={{ left: 115, top: 145, width: 62, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
+          {/* Middle */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group9} alt="Fast and reliable execution" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Fast And Reliable Execution</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Fast And Reliable<br />Execution</div>
           </div>
-        </div>
-        {/* Right */}
-        <div className="absolute" style={{ left: 197, top: 145, width: 64, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
+          {/* Right */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group10} alt="Real-time market insights" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Real-Time Market Insights</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Real-Time Market<br />Insights</div>
           </div>
         </div>
 
         {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text capitalize" style={{ width: 295, left: '45%', transform: 'translateX(-50%)', top: 220 }}>
+        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text-center" style={{ width: 340, left: '50%', transform: 'translateX(-50%)', top: 230 }}>
           A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
