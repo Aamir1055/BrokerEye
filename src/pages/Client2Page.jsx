@@ -900,17 +900,9 @@ const Client2Page = () => {
         limit: Number(itemsPerPage) || 100
       }
 
-      // Add search query if present (with special-case handling for 'India')
+      // Add search query if present - API will handle searching across all fields
       if (searchQuery && searchQuery.trim()) {
-        const q = searchQuery.trim()
-        const qLower = q.toLowerCase()
-        if (qLower === 'india') {
-          // For 'India', use explicit country filter instead of broad text search
-          // This aligns face cards and rows strictly to Country = India
-          // Do not set payload.search
-        } else {
-          payload.search = q
-        }
+        payload.search = searchQuery.trim()
       }
 
       // Add filters if present
@@ -936,10 +928,6 @@ const Client2Page = () => {
       const numberFilteredFields = new Set()
       if (filters && filters.length > 0) {
         combinedFilters.push(...filters)
-      }
-      // Inject explicit country filter for 'India' search
-      if (searchQuery && searchQuery.trim() && searchQuery.trim().toLowerCase() === 'india') {
-        combinedFilters.push({ field: 'country', operator: 'equal', value: 'India' })
       }
 
       // Map UI column keys to API field names (backend uses different naming for some fields)
@@ -1041,9 +1029,6 @@ const Client2Page = () => {
         payload.filters = combinedFilters
         console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
-
-      // Email, name, and phone filters are now applied client-side in sortedClients useMemo
-      // This allows filtering the current page data without additional API calls
 
       // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
       let mt5AccountsFilter = []
@@ -1484,27 +1469,10 @@ const Client2Page = () => {
   // Client-side filtering for search across common text fields (including country)
   const sortedClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    const base = clients.filter(c => c != null && c.login != null)
-    const q = String(searchQuery || '').trim().toLowerCase()
-    if (!q) return base
-    // If searching for 'india', restrict match to country field only
-    if (q === 'india') {
-      return base.filter(c => String(c?.country || '').toLowerCase() === 'india')
-    }
-    const fields = [
-      'login', 'name', 'middleName', 'lastName', 'email', 'phone', 'group', 'accountType', 'status', 'currency',
-      'country', 'city', 'state', 'address', 'zipCode', 'company', 'comment'
-    ]
-    return base.filter(c => {
-      for (const f of fields) {
-        const v = c?.[f]
-        if (v === null || v === undefined) continue
-        const s = String(v).toLowerCase()
-        if (s.includes(q)) return true
-      }
-      return false
-    })
-  }, [clients, searchQuery])
+    // Return clients as-is since search is already handled by the API
+    // The searchQuery is sent to the API in fetchClients, so no need for client-side filtering
+    return clients.filter(c => c != null && c.login != null)
+  }, [clients])
 
   // Compute percentage totals by summing percentage columns from client data
   const computedPercentageTotals = useMemo(() => {
