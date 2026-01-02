@@ -1187,7 +1187,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1197,7 +1197,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1207,7 +1207,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1217,7 +1217,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('funds')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'funds'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1227,7 +1227,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('rules')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'rules'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
