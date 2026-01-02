@@ -1311,7 +1311,7 @@ export default function PositionModule() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.length}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{filteredNetPositions.length}</span>
                   </div>
                 </div>
                 <div style={{
@@ -1342,7 +1342,7 @@ export default function PositionModule() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(filteredNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
                   </div>
                 </div>
                 <div style={{
@@ -1373,8 +1373,8 @@ export default function PositionModule() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
-                      {formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: filteredNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
+                      {formatNum(filteredNetPositions.reduce((s,p)=>s+p.totalProfit,0))}
                     </span>
                   </div>
                 </div>
@@ -1406,7 +1406,7 @@ export default function PositionModule() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{filteredNetPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
                   </div>
                 </div>
               </div>
