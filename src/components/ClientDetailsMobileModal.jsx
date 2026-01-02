@@ -1223,7 +1223,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Money Transactions
+              Transactions
             </button>
             <button
               onClick={() => setActiveTab('rules')}
@@ -1233,7 +1233,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Broker Rules
+              Rules
             </button>
           </div>
         </div>
