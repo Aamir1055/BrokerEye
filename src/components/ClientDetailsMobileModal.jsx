@@ -774,10 +774,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   }, [filteredGroupedPositions])
 
   const paginatedNetPositions = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filteredNetPositions.slice(start, end)
-  }, [filteredNetPositions, currentPage, itemsPerPage])
+    // Show all net positions without pagination
+    return filteredNetPositions
+  }, [filteredNetPositions])
 
   // For deals, use filteredDeals directly (already paginated from server)
   const paginatedDeals = useMemo(() => {
@@ -1253,8 +1252,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
-            {/* Pagination Buttons - Hidden for positions tab */}
-            {activeTab !== 'positions' && (
+            {/* Pagination Buttons - Hidden for positions and netPositions tabs */}
+            {activeTab !== 'positions' && activeTab !== 'netPositions' && (
               <>
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
