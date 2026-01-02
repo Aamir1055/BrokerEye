@@ -99,20 +99,20 @@ const LoginMobile = () => {
         </div>
 
         {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text-center" style={{ width: 340, left: '50%', transform: 'translateX(-50%)', top: 230 }}>
+        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text-center" style={{ width: 340, left: '57%', transform: 'translateX(-50%)', top: 230 }}>
           A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
         {/* Form header: Welcome Back + note */}
-        <div className="absolute" style={{ left: 20, top: 370, width: 324, height: 55 }}>
+        <div className="absolute" style={{ left: 20, top: 390, width: 324, height: 55 }}>
           <div className="flex flex-col items-start gap-[5px]">
-            <div className="font-outfit font-semibold text-[18px] leading-[23px] text-[#333333]">Welcome Back</div>
+            <div className="font-outfit font-semibold text-[22px] leading-[28px] text-[#2563EB]">Welcome Back</div>
             <div className="font-outfit font-normal text-[11px] leading-[14px] text-[#8C8C8C]"></div>
           </div>
         </div>
 
         {/* Username field */}
-        <div className="absolute" style={{ left: 20, top: 445, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 465, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* User icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -130,7 +130,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Password field */}
-        <div className="absolute" style={{ left: 20, top: 515, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 535, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* Lock icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
