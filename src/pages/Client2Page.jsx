@@ -530,17 +530,17 @@ const Client2Page = () => {
     return {
       login: true,
       name: true,
-      email: true,
-      group: true,
-      balance: true,
+      email: false,
+      group: false,
+      balance: false,
       equity: true,
-      credit: true,
-      margin: true,
-      marginLevel: true,
+      credit: false,
+      margin: false,
+      marginLevel: false,
       profit: true,
-      currency: true,
-      leverage: true,
-      country: true,
+      currency: false,
+      leverage: false,
+      country: false,
       phone: false,
       city: false,
       state: false,
@@ -555,7 +555,9 @@ const Client2Page = () => {
       dailyPnL: false,
       thisWeekPnL: false,
       thisMonthPnL: false,
-      lifetimePnL: false
+      lifetimePnL: true,
+      accountType: true,
+      processorType: true
     }
   }
 
