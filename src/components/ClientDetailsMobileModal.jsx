@@ -26,7 +26,7 @@ const formatDateToValue = (displayStr) => {
 }
 
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
-  const [activeTab, setActiveTab] = useState('positions')
+  const [activeTab, setActiveTab] = useState('funds')
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
   const [netPositions, setNetPositions] = useState([])
@@ -322,19 +322,37 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       })
       setNetPositions(computedNet)
 
+      // Calculate and set stats immediately with positions data
+      const totalPnL = positionsData.reduce((sum, p) => sum + (p.profit || 0), 0)
+      const lifetimePnL = client.lifetimePnL || 0
+      const bookPnL = lifetimePnL + totalPnL
+      
+      setStats({
+        positionsCount: positionsData.length,
+        totalPnL,
+        lifetimePnL,
+        bookPnL,
+        balance: client.balance || 0,
+        credit: client.credit || 0,
+        equity: client.equity || 0,
+        totalVolume: 0,
+        totalDeals: 0,
+        winRate: 0
+      })
+
       // Set default date range to Today
       const today = new Date()
       const todayStr = today.toISOString().split('T')[0]
       setFromDate(formatDateToDisplay(todayStr))
       setToDate(formatDateToDisplay(todayStr))
       
-      // Fetch deals for today by default
+      // Fetch deals for today by default, passing positionsData so it can calculate stats correctly
       const startOfDay = new Date(today)
       startOfDay.setHours(0, 0, 0, 0)
       const endOfDay = new Date(today)
       endOfDay.setHours(23, 59, 59, 999)
       
-      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1)
+      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1, positionsData)
       
       setLoading(false)
     } catch (error) {
@@ -343,7 +361,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     }
   }
 
-  const fetchDealsWithDateFilter = async (fromTimestamp, toTimestamp, page = 1) => {
+  const fetchDealsWithDateFilter = async (fromTimestamp, toTimestamp, page = 1, positionsArray = null) => {
     try {
       setDealsLoading(true)
       
@@ -360,7 +378,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       setHasAppliedFilter(true)
 
       // Calculate stats with positions and deals data
-      const totalPnL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
+      // Use provided positionsArray or fall back to state
+      const positionsToUse = positionsArray !== null ? positionsArray : positions
+      const totalPnL = positionsToUse.reduce((sum, p) => sum + (p.profit || 0), 0)
       const lifetimePnL = client.lifetimePnL || 0
       const bookPnL = lifetimePnL + totalPnL
       const totalVolume = dealsData.reduce((sum, d) => sum + (d.volume || 0), 0)
@@ -369,7 +389,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       const winRate = dealsData.length > 0 ? (profitableDeals / dealsData.length) * 100 : 0
 
       setStats({
-        positionsCount: positions.length,
+        positionsCount: positionsToUse.length,
         totalPnL,
         lifetimePnL,
         bookPnL,
@@ -600,7 +620,23 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
   const formatNum = (num, decimals = 2) => {
     if (num == null || isNaN(num)) return '0.00'
-    return Number(num).toFixed(decimals)
+    const value = Number(num).toFixed(decimals)
+    const [integerPart, decimalPart] = value.split('.')
+    
+    // Indian number format: first comma after 3 digits from right, then every 2 digits
+    const isNegative = integerPart.startsWith('-')
+    const absInteger = isNegative ? integerPart.slice(1) : integerPart
+    
+    if (absInteger.length <= 3) {
+      return value
+    }
+    
+    const lastThree = absInteger.slice(-3)
+    const remaining = absInteger.slice(0, -3)
+    const formattedRemaining = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
+    const formattedInteger = formattedRemaining + ',' + lastThree
+    
+    return (isNegative ? '-' : '') + formattedInteger + '.' + decimalPart
   }
 
   // Separate positions and orders for grouped display
@@ -727,35 +763,20 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
   // Paginate data (positions and netPositions only - deals are paginated from server)
   const paginatedPositions = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filteredPositions.slice(start, end)
-  }, [filteredPositions, currentPage, itemsPerPage])
+    // Show all positions without pagination
+    return filteredPositions
+  }, [filteredPositions])
 
   // Paginate grouped positions
   const paginatedGroupedPositions = useMemo(() => {
-    const allItems = [...filteredGroupedPositions.regularPositions, ...filteredGroupedPositions.pendingOrders]
-    const start = (currentPage - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    const paginatedItems = allItems.slice(start, end)
-    
-    return {
-      regularPositions: paginatedItems.filter(item => {
-        const type = (item.action || item.type || '').toString().toLowerCase()
-        return type === 'buy' || type === 'sell' || type === '0' || type === '1'
-      }),
-      pendingOrders: paginatedItems.filter(item => {
-        const type = (item.action || item.type || '').toString().toLowerCase()
-        return type.includes('limit') || type.includes('stop')
-      })
-    }
-  }, [filteredGroupedPositions, currentPage, itemsPerPage])
+    // Show all positions without pagination
+    return filteredGroupedPositions
+  }, [filteredGroupedPositions])
 
   const paginatedNetPositions = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    const end = start + itemsPerPage
-    return filteredNetPositions.slice(start, end)
-  }, [filteredNetPositions, currentPage, itemsPerPage])
+    // Show all net positions without pagination
+    return filteredNetPositions
+  }, [filteredNetPositions])
 
   // For deals, use filteredDeals directly (already paginated from server)
   const paginatedDeals = useMemo(() => {
@@ -1165,36 +1186,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           {/* Tabs */}
           <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'positions'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Positions ({filteredPositions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'netPositions'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Net Positions ({filteredNetPositions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'deals'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Deals ({hasAppliedFilter ? totalDealsCount : 0})
-            </button>
-            <button
               onClick={() => setActiveTab('funds')}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'funds'
@@ -1202,7 +1193,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Money
+              Money Transactions
             </button>
             <button
               onClick={() => setActiveTab('rules')}
@@ -1212,12 +1203,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Rules ({clientRules.filter(r => r.is_active === true).length})
+              Broker Rules
             </button>
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search - Only show for positions, netPositions, and deals tabs */}
+        {(activeTab === 'positions' || activeTab === 'netPositions' || activeTab === 'deals') && (
         <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
@@ -1251,43 +1243,44 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
-            {/* Pagination Buttons */}
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <span className="text-[10px] font-semibold text-[#000000] font-outfit">
-              {activeTab === 'positions' && `${currentPage} / ${Math.ceil(filteredPositions.length / itemsPerPage)}`}
-              {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)}`}
-              {activeTab === 'deals' && `${currentPage} / ${Math.ceil(totalDealsCount / itemsPerPage)}`}
-            </span>
-            <button
-              onClick={() => setCurrentPage(prev => {
-                const maxPage = activeTab === 'positions' 
-                  ? Math.ceil(filteredPositions.length / itemsPerPage)
-                  : activeTab === 'netPositions'
-                  ? Math.ceil(filteredNetPositions.length / itemsPerPage)
-                  : Math.ceil(totalDealsCount / itemsPerPage)
-                return prev < maxPage ? prev + 1 : prev
-              })}
-              disabled={
-                (activeTab === 'positions' && currentPage >= Math.ceil(filteredPositions.length / itemsPerPage)) ||
-                (activeTab === 'netPositions' && currentPage >= Math.ceil(filteredNetPositions.length / itemsPerPage)) ||
-                (activeTab === 'deals' && currentPage >= Math.ceil(totalDealsCount / itemsPerPage))
-              }
-              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            {/* Pagination Buttons - Hidden for positions and netPositions tabs */}
+            {activeTab !== 'positions' && activeTab !== 'netPositions' && (
+              <>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <span className="text-[10px] font-semibold text-[#000000] font-outfit">
+                  {activeTab === 'netPositions' && `${currentPage} / ${Math.ceil(filteredNetPositions.length / itemsPerPage)}`}
+                  {activeTab === 'deals' && `${currentPage} / ${Math.ceil(totalDealsCount / itemsPerPage)}`}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => {
+                    const maxPage = activeTab === 'netPositions'
+                      ? Math.ceil(filteredNetPositions.length / itemsPerPage)
+                      : Math.ceil(totalDealsCount / itemsPerPage)
+                    return prev < maxPage ? prev + 1 : prev
+                  })}
+                  disabled={
+                    (activeTab === 'netPositions' && currentPage >= Math.ceil(filteredNetPositions.length / itemsPerPage)) ||
+                    (activeTab === 'deals' && currentPage >= Math.ceil(totalDealsCount / itemsPerPage))
+                  }
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
+        )}
 
         {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
@@ -1395,10 +1388,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </div>
           ) : (
             <div className="bg-white relative min-w-full">
-              {activeTab === 'positions' && renderPositions()}
-              {activeTab === 'netPositions' && renderNetPositions()}
-              {activeTab === 'deals' && renderDeals()}
-              
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
                 <div className="p-4">
@@ -1593,13 +1582,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Positions</p>
-              <p className="text-sm font-bold text-gray-900 truncate">
-                {activeTab === 'netPositions' ? netPositions.length : stats.positionsCount}
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime PnL</p>
+              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(stats.lifetimePnL)}
               </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Total P/L</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Floating Profit</p>
               <p className={`text-sm font-bold truncate ${
                 (activeTab === 'netPositions' 
                   ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
@@ -1613,27 +1602,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               </p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime</p>
-              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.lifetimePnL)}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PNL</p>
-              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.bookPnL)}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
               <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
             </div>
           </div>
 
@@ -1643,12 +1613,14 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Deals</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{stats.totalDeals}</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Win Rate</p>
-              <p className="text-sm font-bold text-green-600 truncate">{formatNum(stats.winRate)}%</p>
+              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PnL</p>
+              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatNum(stats.bookPnL)}
+              </p>
             </div>
           </div>
         </div>
