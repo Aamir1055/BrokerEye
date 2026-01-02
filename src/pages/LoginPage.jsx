@@ -282,9 +282,9 @@ const LoginPage = () => {
           </h1>
 
           {/* Feature Icons */}
-          <div className="flex gap-8 mb-10 justify-start">
+          <div className="flex gap-8 mb-6 justify-center">
             {/* Secure Trading Infrastructure */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -292,7 +292,7 @@ const LoginPage = () => {
             </div>
 
             {/* Fast And Reliable Execution */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group9} alt="Fast And Reliable Execution" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -300,7 +300,7 @@ const LoginPage = () => {
             </div>
 
             {/* Real-Time Market Insights */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group10} alt="Real-Time Market Insights" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -309,7 +309,7 @@ const LoginPage = () => {
           </div>
 
           {/* Subtitle */}
-          <p className="text-sm" style={{ lineHeight: '1.6', opacity: 0.9 }}>
+          <p className="text-sm text-center" style={{ lineHeight: '1.6', opacity: 0.9, paddingLeft: '40px' }}>
             A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
           </p>
         </div>
