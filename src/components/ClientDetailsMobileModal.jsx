@@ -1193,7 +1193,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Positions
+              Positions ({filteredPositions.length})
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
@@ -1203,7 +1203,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Net Positions
+              Net Positions ({filteredNetPositions.length})
             </button>
             <button
               onClick={() => setActiveTab('deals')}
@@ -1213,7 +1213,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Deals
+              Deals ({hasAppliedFilter ? totalDealsCount : 0})
             </button>
             <button
               onClick={() => setActiveTab('funds')}
