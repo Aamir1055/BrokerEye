@@ -1424,7 +1424,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
-                <div className="p-4">
+                <div className="">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                     

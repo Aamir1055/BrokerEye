@@ -4,6 +4,7 @@ import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import CustomizeViewModal from './CustomizeViewModal'
 import FilterModal from './FilterModal'
+import DateFilterModal from './DateFilterModal'
 import IBFilterModal from './IBFilterModal'
 import GroupModal from './GroupModal'
 import LoginGroupsModal from './LoginGroupsModal'
@@ -36,12 +37,16 @@ export default function PositionModule() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
+  const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
     // Pending apply tracking for Customize View
     const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
     const [pendingIBDraft, setPendingIBDraft] = useState(null)
     const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
     const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
+    const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
+    const [pendingDateDraft, setPendingDateDraft] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
@@ -464,6 +469,18 @@ export default function PositionModule() {
     // Apply search filter
     let filtered = applySearchFilter(deferredIbFilteredPositions, searchInput, ['symbol', 'login'])
     
+    // Apply date filter if selected
+    if (dateFilter) {
+      const now = Date.now() / 1000 // Current time in seconds
+      const daysInSeconds = dateFilter * 24 * 60 * 60
+      const cutoffTime = now - daysInSeconds
+      
+      filtered = filtered.filter(pos => {
+        const timeValue = pos.timeUpdate || pos.timeCreate
+        return timeValue && timeValue >= cutoffTime
+      })
+    }
+    
     // Map column keys to actual data fields for sorting
     const columnKeyMapping = {
       'updated': 'timeUpdate',
@@ -478,7 +495,7 @@ export default function PositionModule() {
     filtered = applySorting(filtered, sortKey, sortDirection)
     
     return filtered
-  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection])
+  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection, dateFilter])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -2148,6 +2165,10 @@ export default function PositionModule() {
       <CustomizeViewModal
         isOpen={isCustomizeOpen}
         onClose={() => setIsCustomizeOpen(false)}
+        onDateFilterClick={() => {
+          setIsCustomizeOpen(false)
+          setIsDateFilterOpen(true)
+        }}
         onIBFilterClick={() => {
           setIsCustomizeOpen(false)
           setIsIBFilterOpen(true)
@@ -2158,12 +2179,15 @@ export default function PositionModule() {
         }}
         onReset={() => {
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
+          setDateFilter(null)
           clearIBSelection()
           setActiveGroupFilter('positions', null)
           setHasPendingIBChanges(false)
           setHasPendingGroupChanges(false)
+          setHasPendingDateChanges(false)
           setPendingIBDraft(null)
           setPendingGroupDraft(null)
+          setPendingDateDraft(null)
         }}
         onApply={() => {
           if (hasPendingIBChanges) {
@@ -2172,13 +2196,18 @@ export default function PositionModule() {
           if (hasPendingGroupChanges) {
             setActiveGroupFilter('positions', pendingGroupDraft ? pendingGroupDraft.name : null)
           }
+          if (hasPendingDateChanges) {
+            setDateFilter(pendingDateDraft)
+          }
           setIsCustomizeOpen(false)
           setHasPendingIBChanges(false)
           setHasPendingGroupChanges(false)
+          setHasPendingDateChanges(false)
           setPendingIBDraft(null)
           setPendingGroupDraft(null)
+          setPendingDateDraft(null)
         }}
-        hasPendingChanges={hasPendingIBChanges || hasPendingGroupChanges}
+        hasPendingChanges={hasPendingIBChanges || hasPendingGroupChanges || hasPendingDateChanges}
       />
 
       {/* Filter Modal */}
@@ -2190,6 +2219,21 @@ export default function PositionModule() {
           setIsFilterOpen(false)
         }}
         filters={filters}
+      />
+
+      {/* Date Filter Modal */}
+      <DateFilterModal
+        isOpen={isDateFilterOpen}
+        onClose={() => setIsDateFilterOpen(false)}
+        onApply={(days) => {
+          setDateFilter(days)
+          setIsDateFilterOpen(false)
+        }}
+        currentFilter={dateFilter}
+        onPendingChange={(hasPending, draft) => {
+          setHasPendingDateChanges(hasPending)
+          setPendingDateDraft(draft)
+        }}
       />
 
       {/* IB Filter Modal */}
