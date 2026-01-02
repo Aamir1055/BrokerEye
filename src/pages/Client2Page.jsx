@@ -522,11 +522,24 @@ const Client2Page = () => {
     const saved = localStorage.getItem('client2PageVisibleColumns')
     if (saved) {
       try {
-        return JSON.parse(saved)
+        const parsed = JSON.parse(saved)
+        // Check if saved columns have the required new columns (accountType, processorType, lifetimePnL)
+        // If they're missing, use new defaults instead
+        if (!parsed.hasOwnProperty('accountType') || !parsed.hasOwnProperty('processorType') || !parsed.hasOwnProperty('lifetimePnL')) {
+          console.log('[Client2] Saved columns missing new fields, resetting to defaults')
+          localStorage.removeItem('client2PageVisibleColumns')
+          return getDefaultColumns()
+        }
+        return parsed
       } catch (e) {
         console.error('Failed to parse saved columns:', e)
+        localStorage.removeItem('client2PageVisibleColumns')
       }
     }
+    return getDefaultColumns()
+  }
+
+  const getDefaultColumns = () => {
     return {
       login: true,
       name: true,
