@@ -26,7 +26,7 @@ const formatDateToValue = (displayStr) => {
 }
 
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
-  const [activeTab, setActiveTab] = useState('funds')
+  const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
   const [netPositions, setNetPositions] = useState([])
@@ -1186,6 +1186,36 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           {/* Tabs */}
           <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button
+              onClick={() => setActiveTab('positions')}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'positions'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Positions
+            </button>
+            <button
+              onClick={() => setActiveTab('netPositions')}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'netPositions'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Net Positions
+            </button>
+            <button
+              onClick={() => setActiveTab('deals')}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'deals'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Deals
+            </button>
+            <button
               onClick={() => setActiveTab('funds')}
               className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'funds'
@@ -1388,6 +1418,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </div>
           ) : (
             <div className="bg-white relative min-w-full">
+              {activeTab === 'positions' && renderPositions()}
+              {activeTab === 'netPositions' && renderNetPositions()}
+              {activeTab === 'deals' && renderDeals()}
+
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
                 <div className="p-4">

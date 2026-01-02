@@ -131,7 +131,7 @@ export default function Client2Module() {
     lastName: false,
     middleName: false,
     email: false,
-    phone: true,
+    phone: false,
     group: false,
     country: false,
     city: false,
@@ -140,10 +140,10 @@ export default function Client2Module() {
     zipCode: false,
     clientID: false,
     balance: false,
-    credit: true,
+    credit: false,
     equity: true,
     margin: false,
-    marginFree: true,
+    marginFree: false,
     marginLevel: false,
     marginInitial: false,
     marginMaintenance: false,
@@ -183,11 +183,11 @@ export default function Client2Module() {
     rightsMask: false,
     dailyDeposit: false,
     dailyWithdrawal: false,
-    lifetimePnL: false,
+    lifetimePnL: true,
     thisMonthPnL: false,
     thisWeekPnL: false,
-    processorType: false,
-    accountType: false
+    processorType: true,
+    accountType: true
   })
 
   // Fetch clients data via API
