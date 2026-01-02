@@ -222,8 +222,10 @@ export default function Client2Module() {
         payload.filters = apiFilters
       }
 
-      // Note: Search is now handled client-side like Positions module
-      // Do not add searchQuery to payload
+      // Add search query to payload for server-side filtering (like desktop)
+      if (searchInput && searchInput.trim()) {
+        payload.search = searchInput.trim()
+      }
 
       // Add group filter to payload if active
       const activeGroupName = getActiveGroupFilter('client2')
@@ -371,26 +373,11 @@ export default function Client2Module() {
     }
   }, [fetchClients, fetchRebateTotals])
 
-  // Apply client-side search filtering (like Positions module)
+  // Return clients as-is since search is handled server-side via API
   const filteredClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
-    
-    let filtered = clients.filter(c => c != null && c.login != null)
-    
-    // Apply search query client-side
-    if (searchInput && searchInput.trim()) {
-      const query = searchInput.toLowerCase().trim()
-      filtered = filtered.filter(client => {
-        const login = String(client.login || '').toLowerCase()
-        const name = String(client.name || '').toLowerCase()
-        const email = String(client.email || '').toLowerCase()
-        
-        return login.includes(query) || name.includes(query) || email.includes(query)
-      })
-    }
-    
-    return filtered
-  }, [clients, searchInput])
+    return clients.filter(c => c != null && c.login != null)
+  }, [clients])
 
   // Calculate cards from API totals (filters are handled server-side)
   const cards = useMemo(() => {
