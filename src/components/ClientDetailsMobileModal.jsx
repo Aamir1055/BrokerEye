@@ -1629,52 +1629,72 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           )}
         </div>
 
-        {/* Summary Cards (same for Positions and Net Positions) */}
-        <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime PnL</p>
-              <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.lifetimePnL)}
-              </p>
+        {/* Summary Cards - Different for Positions vs NET Position tab */}
+        {activeTab === 'positions' && (
+          <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Lifetime PnL</p>
+                <p className={`text-sm font-bold truncate ${stats.lifetimePnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(stats.lifetimePnL)}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Floating Profit</p>
+                <p className={`text-sm font-bold truncate ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(stats.totalPnL)}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
+                <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Floating Profit</p>
-              <p className={`text-sm font-bold truncate ${
-                (activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
-                  : stats.totalPnL
-                ) >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {formatNum(activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
-                  : stats.totalPnL
-                )}
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Balance</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.balance)}</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-2">
-              <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PnL</p>
-              <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatNum(stats.bookPnL)}
-              </p>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Equity</p>
+                <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.equity)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Credit</p>
+                <p className="text-sm font-bold text-gray-900 truncate">{formatNum(stats.credit)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Book PnL</p>
+                <p className={`text-sm font-bold truncate ${stats.bookPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(stats.bookPnL)}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* NET Position Face Cards (matching desktop except NET Symbols) */}
+        {activeTab === 'netPositions' && (
+          <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-indigo-50 rounded-lg p-2 border border-indigo-200">
+                <p className="text-[10px] text-indigo-600 uppercase font-semibold">Total NET Volume</p>
+                <p className="text-sm font-bold text-indigo-900 truncate">
+                  {netStats.totalNetVolume.toFixed(2)}
+                </p>
+              </div>
+              <div className={`rounded-lg p-2 border ${netStats.buyFloating >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                <p className={`text-[10px] uppercase font-semibold ${netStats.buyFloating >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Buy Floating</p>
+                <p className={`text-sm font-bold truncate ${netStats.buyFloating >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+                  {formatNum(netStats.buyFloating)}
+                </p>
+              </div>
+              <div className={`rounded-lg p-2 border ${netStats.sellFloating >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                <p className={`text-[10px] uppercase font-semibold ${netStats.sellFloating >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Sell Floating</p>
+                <p className={`text-sm font-bold truncate ${netStats.sellFloating >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+                  {formatNum(netStats.sellFloating)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Column Selector Dropdown */}
         {showColumnSelector && (
