@@ -121,6 +121,7 @@ export default function Client2Module() {
   // API data state (restored)
   const [clients, setClients] = useState([])
   const [totals, setTotals] = useState({})
+  const [rebateTotals, setRebateTotals] = useState({})
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [isLoading, setIsLoading] = useState(true)
