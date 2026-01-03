@@ -1606,7 +1606,8 @@ export default function Client2Module() {
                     </>
                   )}
                 </>
-              )
+              ))
+            }
             </div>
           </div>
         </div>
