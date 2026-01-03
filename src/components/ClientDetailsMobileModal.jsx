@@ -1670,25 +1670,25 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
         )}
 
-        {/* NET Position Face Cards (matching desktop except NET Symbols) */}
+        {/* NET Position Face Cards (matching Positions tab styling) */}
         {activeTab === 'netPositions' && (
           <div className="px-4 py-3 bg-white border-t border-gray-200 flex-shrink-0">
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-indigo-50 rounded-lg p-2 border border-indigo-200">
-                <p className="text-[10px] text-indigo-600 uppercase font-semibold">Total NET Volume</p>
-                <p className="text-sm font-bold text-indigo-900 truncate">
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Total NET Volume</p>
+                <p className="text-sm font-bold text-gray-900 truncate">
                   {netStats.totalNetVolume.toFixed(2)}
                 </p>
               </div>
-              <div className={`rounded-lg p-2 border ${netStats.buyFloating >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-                <p className={`text-[10px] uppercase font-semibold ${netStats.buyFloating >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Buy Floating</p>
-                <p className={`text-sm font-bold truncate ${netStats.buyFloating >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Buy Floating</p>
+                <p className={`text-sm font-bold truncate ${netStats.buyFloating >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatNum(netStats.buyFloating)}
                 </p>
               </div>
-              <div className={`rounded-lg p-2 border ${netStats.sellFloating >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-                <p className={`text-[10px] uppercase font-semibold ${netStats.sellFloating >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Sell Floating</p>
-                <p className={`text-sm font-bold truncate ${netStats.sellFloating >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-[10px] text-gray-600 uppercase font-semibold">Sell Floating</p>
+                <p className={`text-sm font-bold truncate ${netStats.sellFloating >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatNum(netStats.sellFloating)}
                 </p>
               </div>
