@@ -1420,15 +1420,16 @@ export default function Client2Module() {
         </div>
 
         {/* Table area */}
-        <div className="relative">
+        <div className="relative" style={{ minHeight: '200px' }}>
           <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
             paddingRight: '16px',
-            paddingLeft: '4px'
+            paddingLeft: '4px',
+            minHeight: '100px'
           }}>
-            <div className="relative" style={{ minWidth: 'max-content' }}>
+            <div className="relative" style={{ minWidth: 'max-content', minHeight: '60px' }}>
               {/* Header row */}
               <div className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
                 {visibleColumnsList.map((col, idx) => (
