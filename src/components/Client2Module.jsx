@@ -472,27 +472,7 @@ export default function Client2Module() {
     } catch {}
 
     let order = Array.isArray(saved) && saved.length > 0
-      ? (() => {
-          // Start with saved order but ensure priority cards are in correct positions
-          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
-          let result = [...saved.filter(l => labels.includes(l))]
-          
-          // Insert priority cards that are missing or out of order
-          priority.reverse().forEach(priorityLabel => {
-            if (labels.includes(priorityLabel)) {
-              // Remove from current position if exists
-              const currentIndex = result.indexOf(priorityLabel)
-              if (currentIndex !== -1) {
-                result.splice(currentIndex, 1)
-              }
-              // Insert at the beginning (since we're iterating in reverse)
-              result.unshift(priorityLabel)
-            }
-          })
-          
-          // Remove duplicates (shouldn't happen but just in case)
-          return Array.from(new Set(result))
-        })()
+      ? saved.filter(l => labels.includes(l))
       : (() => {
           // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW, Total Rebate first
           const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
