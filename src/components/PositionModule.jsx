@@ -194,13 +194,27 @@ export default function PositionModule() {
   // Defer heavy calculations to allow navigation to be responsive
   const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)
 
+  // Apply date filter to positions before calculating summary stats
+  const dateFilteredPositions = useMemo(() => {
+    if (!dateFilter) return deferredIbFilteredPositions
+    
+    const now = Date.now() / 1000 // Current time in seconds
+    const daysInSeconds = dateFilter * 24 * 60 * 60
+    const cutoffTime = now - daysInSeconds
+    
+    return deferredIbFilteredPositions.filter(pos => {
+      const timeValue = pos.timeUpdate || pos.timeCreate
+      return timeValue && timeValue >= cutoffTime
+    })
+  }, [deferredIbFilteredPositions, dateFilter])
+
   // Calculate summary statistics (use deferred value to prevent blocking navigation)
   const summaryStats = useMemo(() => {
-    const totalPositions = deferredIbFilteredPositions.length
-    const totalFloatingProfit = deferredIbFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
-    const totalFloatingProfitPercentage = deferredIbFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
-    const uniqueLogins = new Set(deferredIbFilteredPositions.map(p => p.login)).size
-    const uniqueSymbols = new Set(deferredIbFilteredPositions.map(p => p.symbol)).size
+    const totalPositions = dateFilteredPositions.length
+    const totalFloatingProfit = dateFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfitPercentage = dateFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
+    const uniqueLogins = new Set(dateFilteredPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(dateFilteredPositions.map(p => p.symbol)).size
     
     return {
       totalPositions,
@@ -209,7 +223,7 @@ export default function PositionModule() {
       uniqueLogins,
       uniqueSymbols
     }
-  }, [deferredIbFilteredPositions])
+  }, [dateFilteredPositions])
 
   // Calculate NET positions
   const calculateGlobalNetPositions = (positions) => {
@@ -350,7 +364,7 @@ export default function PositionModule() {
     return netPositionsData.sort((a, b) => b.netVolume - a.netVolume)
   }
 
-  const netPositions = useMemo(() => calculateGlobalNetPositions(deferredIbFilteredPositions), [deferredIbFilteredPositions, groupByBaseSymbol])
+  const netPositions = useMemo(() => calculateGlobalNetPositions(dateFilteredPositions), [dateFilteredPositions, groupByBaseSymbol])
 
   // Calculate Client NET positions (group by login then symbol)
   const calculateClientNetPositions = (positions) => {
@@ -431,7 +445,7 @@ export default function PositionModule() {
     return rows.sort((a, b) => a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
   }
 
-  const clientNetPositions = useMemo(() => calculateClientNetPositions(deferredIbFilteredPositions), [deferredIbFilteredPositions, groupByBaseSymbol])
+  const clientNetPositions = useMemo(() => calculateClientNetPositions(dateFilteredPositions), [dateFilteredPositions, groupByBaseSymbol])
 
   // Filter NET positions based on search
   const filteredNetPositions = useMemo(() => {
@@ -466,20 +480,8 @@ export default function PositionModule() {
 
   // Apply search and sorting (use deferred value to prevent blocking navigation)
   const filteredPositions = useMemo(() => {
-    // Apply search filter
-    let filtered = applySearchFilter(deferredIbFilteredPositions, searchInput, ['symbol', 'login'])
-    
-    // Apply date filter if selected
-    if (dateFilter) {
-      const now = Date.now() / 1000 // Current time in seconds
-      const daysInSeconds = dateFilter * 24 * 60 * 60
-      const cutoffTime = now - daysInSeconds
-      
-      filtered = filtered.filter(pos => {
-        const timeValue = pos.timeUpdate || pos.timeCreate
-        return timeValue && timeValue >= cutoffTime
-      })
-    }
+    // Apply search filter (date filter already applied in dateFilteredPositions)
+    let filtered = applySearchFilter(dateFilteredPositions, searchInput, ['symbol', 'login'])
     
     // Map column keys to actual data fields for sorting
     const columnKeyMapping = {
@@ -495,7 +497,7 @@ export default function PositionModule() {
     filtered = applySorting(filtered, sortKey, sortDirection)
     
     return filtered
-  }, [deferredIbFilteredPositions, searchInput, sortColumn, sortDirection, dateFilter])
+  }, [dateFilteredPositions, searchInput, sortColumn, sortDirection])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
