@@ -1232,10 +1232,23 @@ export default function LiveDealingModule() {
                   </div>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state inline row */}
                 {sortedDeals.length === 0 && !loading && (
-                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
-                    No deals available
+                  <div 
+                    className="grid text-[10px] text-[#9CA3AF] bg-white"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    <div className="px-2 py-8 text-center col-span-full">
+                      {(() => {
+                        const hasFilters = Boolean(searchInput) || timeFilter !== '24h' || moduleFilter !== 'both' || selectedIB || getActiveGroupFilter('livedealing')
+                        return hasFilters ? 'No deals match the applied filters' : 'No deals available'
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>

@@ -777,10 +777,23 @@ export default function PendingOrdersModule() {
                   </div>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state inline row */}
                 {filteredOrders.length === 0 && !loading?.orders && (
-                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
-                    No pending orders found
+                  <div 
+                    className="grid text-[10px] text-[#9CA3AF] bg-white"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    <div className="px-2 py-8 text-center col-span-full">
+                      {(() => {
+                        const hasFilters = Boolean(searchInput) || filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('pendingorders')
+                        return hasFilters ? 'No pending orders match the applied filters' : 'No pending orders found'
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>

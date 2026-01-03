@@ -937,10 +937,23 @@ export default function IBCommissionsModule() {
                   </div>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state inline row */}
                 {!loading && paginatedData.length === 0 && (
-                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
-                    No data available
+                  <div 
+                    className="grid text-[10px] text-[#9CA3AF] bg-white"
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    <div className="px-2 py-8 text-center col-span-full">
+                      {(() => {
+                        const hasFilters = Boolean(searchInput) || selectedIB || getActiveGroupFilter('ibcommissions')
+                        return hasFilters ? 'No IBs match the applied filters' : 'No data available'
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>
