@@ -97,6 +97,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     profit: true
   })
 
+  // Deal stats from API
+  const [dealStats, setDealStats] = useState(null)
+
   // Summary stats
   const [stats, setStats] = useState({
     positionsCount: 0,
@@ -127,10 +130,22 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return { symbols, totalNetVolume, buyFloating, sellFloating }
   }, [netPositions, positions])
 
+  // Fetch deal stats from API
+  const fetchDealStats = async () => {
+    try {
+      const data = await brokerAPI.getClientDealStatsGET(client.login)
+      setDealStats(data || null)
+    } catch (error) {
+      console.error('Failed to load deal stats:', error)
+      setDealStats(null)
+    }
+  }
+
   useEffect(() => {
     fetchPositionsAndInitDeals()
     fetchAvailableRules()
     fetchClientRules()
+    fetchDealStats()
   }, [client.login])
 
   // Reset pagination when tab changes
@@ -315,29 +330,30 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             netType: netType,
             volume: absNetVolume,
             avgPrice: avgOpenPrice,
-            profit: totalProfit,
+            totalProfit: totalProfit,
             positions: group.buyPositions.length + group.sellPositions.length
           })
         }
       })
       setNetPositions(computedNet)
 
-      // Calculate and set stats immediately with positions data
+      // Calculate and set stats using client data from WebSocket (like desktop)
       const totalPnL = positionsData.reduce((sum, p) => sum + (p.profit || 0), 0)
-      const lifetimePnL = client.lifetimePnL || 0
-      const bookPnL = lifetimePnL + totalPnL
+      const lifetimePnL = Number(client.lifetimePnL ?? client.pnl ?? 0)
+      const floating = Number(client.floating ?? totalPnL)
+      const bookPnL = lifetimePnL + floating
       
       setStats({
         positionsCount: positionsData.length,
         totalPnL,
         lifetimePnL,
         bookPnL,
-        balance: client.balance || 0,
-        credit: client.credit || 0,
-        equity: client.equity || 0,
-        totalVolume: 0,
-        totalDeals: 0,
-        winRate: 0
+        balance: Number(client.balance ?? 0),
+        credit: Number(client.credit ?? 0),
+        equity: Number(client.equity ?? 0),
+        totalVolume: dealStats?.totalVolume ?? 0,
+        totalDeals: dealStats?.totalDeals ?? 0,
+        winRate: dealStats?.winRate ?? 0
       })
 
       // Set default date range to Today
@@ -377,12 +393,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       setCurrentDateFilter({ from: fromTimestamp, to: toTimestamp })
       setHasAppliedFilter(true)
 
-      // Calculate stats with positions and deals data
+      // Calculate stats using client data and dealStats from API
       // Use provided positionsArray or fall back to state
       const positionsToUse = positionsArray !== null ? positionsArray : positions
       const totalPnL = positionsToUse.reduce((sum, p) => sum + (p.profit || 0), 0)
-      const lifetimePnL = client.lifetimePnL || 0
-      const bookPnL = lifetimePnL + totalPnL
+      const lifetimePnL = Number(client.lifetimePnL ?? client.pnl ?? 0)
+      const floating = Number(client.floating ?? totalPnL)
+      const bookPnL = lifetimePnL + floating
       const totalVolume = dealsData.reduce((sum, d) => sum + (d.volume || 0), 0)
       
       const profitableDeals = dealsData.filter(d => (d.profit || 0) > 0).length
@@ -1016,8 +1033,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {netPositionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>}
               {netPositionColumns.avgPrice && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.avgPrice, 5)}</td>}
               {netPositionColumns.profit && (
-                <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatNum(netPos.profit)}
+                <td className={`px-3 py-2 text-xs ${netPos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(netPos.totalProfit)}
                 </td>
               )}
               {netPositionColumns.positions && <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions}</td>}
@@ -1603,12 +1620,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Floating Profit</p>
               <p className={`text-sm font-bold truncate ${
                 (activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
                   : stats.totalPnL
                 ) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
                 {formatNum(activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
                   : stats.totalPnL
                 )}
               </p>
