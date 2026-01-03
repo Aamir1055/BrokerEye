@@ -598,20 +598,7 @@ const IBCommissionsPage = () => {
 
             {/* Table Container */}
             <div className="flex-1 overflow-auto p-4">
-              {commissions.length === 0 && !loading ? (
-                <div className="text-center py-16">
-                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                  <p className="text-gray-500 text-lg font-medium mb-2">No IB commissions found</p>
-                  {searchQuery && (
-                    <p className="text-gray-400 text-sm">
-                      Try adjusting your search terms
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="border border-[#E5E7EB] rounded-lg overflow-hidden shadow-sm">
+              <div className="border border-[#E5E7EB] rounded-lg overflow-hidden shadow-sm">
                   <table className="w-full border-collapse">
                     <thead className="bg-blue-600 sticky top-0 z-10">
                       <tr>
@@ -702,6 +689,33 @@ const IBCommissionsPage = () => {
                             Loading IB commissions...
                           </td>
                         </tr>
+                      ) : sortedCommissions.length === 0 ? (
+                        <tr>
+                          <td colSpan="9" className="px-6 py-12 text-center">
+                            <div className="flex flex-col items-center gap-4">
+                              <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <div>
+                                <p className="text-gray-600 text-lg font-semibold mb-2">No IB commissions found</p>
+                                <p className="text-gray-500 text-sm mb-4">
+                                  {searchQuery ? 'Try adjusting or clearing your search' : 'Data will appear when commissions are available'}
+                                </p>
+                              </div>
+                              {searchQuery && (
+                                <button
+                                  onClick={() => setSearchQuery('')}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  Clear Search
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
                       ) : (
                       sortedCommissions.map((ib) => (
                         <tr key={ib.id} className={`hover:bg-blue-50 transition-colors ${selectedIBs.includes(ib.id) ? 'bg-blue-100' : ''}`}>
@@ -752,7 +766,6 @@ const IBCommissionsPage = () => {
                     </tbody>
                   </table>
                 </div>
-              )}
             </div>
           </div>
 

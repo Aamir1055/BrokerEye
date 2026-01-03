@@ -1494,8 +1494,8 @@ export default function Client2Module() {
                       <p className="text-sm text-gray-500 mt-1">Try adjusting your filters or search criteria</p>
                     )}
                   </div>
-                ) : (
-                <>
+                ) : 
+                  <div>
                   {paginatedClients.map((client, idx) => {
                     const rowData = {};
                     visibleColumnsList.forEach(col => {
@@ -1575,7 +1575,7 @@ export default function Client2Module() {
                   
                   {/* Total Row */}
                   {filteredClients.length > 0 && (
-                    <>
+                    <div>
                       <div style={{ height: '2px', backgroundColor: '#1A63BC', width: '100%' }} />
                       <div 
                         className="grid text-[10px] text-[#1A63BC] font-outfit bg-[#EFF4FB]"
@@ -1607,9 +1607,9 @@ export default function Client2Module() {
                           </div>
                         ))}
                       </div>
-                    </>
+                    </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
