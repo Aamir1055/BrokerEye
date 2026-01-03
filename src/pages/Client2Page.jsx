@@ -4320,8 +4320,8 @@ const Client2Page = () => {
               </div>
             )}
 
-            {/* Table - Show table with progress bar for all loading states */}
-            {(clients.length > 0 || (initialLoad && loading)) && (
+            {/* Table - Always render header; body shows rows or empty-state */}
+            (
               <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '550px' : '750px' }}>
                 {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
                 <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
@@ -5406,13 +5406,20 @@ const Client2Page = () => {
                           })}
                         </tr>
                       ))}
+                      {((sortedClients || []).filter(client => client != null && client.login != null).length === 0) && (
+                        <tr>
+                          <td colSpan={visibleColumnsList.length} className="text-center py-8 text-gray-500">
+                            {filters.length > 0 ? 'No clients match the applied filters' : 'No clients found'}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Removed duplicate sticky horizontal scrollbar to keep a single native scrollbar */}
               </div>
-            )}
+            )
 
             {/* Active Filters Display */}
             {filters.length > 0 && (
