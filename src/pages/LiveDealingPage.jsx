@@ -815,14 +815,14 @@ const LiveDealingPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'DEALS (24H)': '/Desktop cards icons/Total Balance.svg',
-      'DEALS (7D)': '/Desktop cards icons/Total Balance.svg',
-      'FILTERED DEALS': '/Desktop cards icons/Total Balance.svg',
-      'CONNECTION STATUS': '/Desktop cards icons/Total Credit.svg',
-      'UNIQUE LOGINS': '/Desktop cards icons/Total Clients.svg',
-      'SYMBOLS': '/Desktop cards icons/Total Equity.svg',
+      'DEALS (24H)': '/Desktop%20cards%20icons/Total%20Balance.svg',
+      'DEALS (7D)': '/Desktop%20cards%20icons/Total%20Balance.svg',
+      'FILTERED DEALS': '/Desktop%20cards%20icons/Total%20Balance.svg',
+      'CONNECTION STATUS': '/Desktop%20cards%20icons/Total%20Credit.svg',
+      'UNIQUE LOGINS': '/Desktop%20cards%20icons/Total%20Clients.svg',
+      'SYMBOLS': '/Desktop%20cards%20icons/Total%20Equity.svg',
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || '/Desktop%20cards%20icons/Total%20Clients.svg'
   }
 
   const handleRefresh = () => {
@@ -2452,3 +2452,5 @@ const LiveDealingPage = () => {
 }
 
 export default LiveDealingPage
+
+

@@ -713,12 +713,12 @@ export default function PositionModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'POSITIONS': '/Mobile cards icons/Total Balance.svg',
-      'FLOATING': '/Mobile cards icons/Floating Profit.svg',
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
-      'SYMBOLS': '/Mobile cards icons/Total Equity.svg'
+      'POSITIONS': '/Mobile%20cards%20icons/Total%20Balance.svg',
+      'FLOATING': '/Mobile%20cards%20icons/Floating%20Profit.svg',
+      'UNIQUE LOGINS': '/Mobile%20cards%20icons/Total%20Clients.svg',
+      'SYMBOLS': '/Mobile%20cards%20icons/Total%20Equity.svg'
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
   }
   
   // Update cards when summary stats change
@@ -1307,7 +1307,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Symbols</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1338,7 +1338,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1369,7 +1369,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1402,7 +1402,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Total Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1779,7 +1779,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Rows</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1810,7 +1810,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1841,7 +1841,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1874,7 +1874,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile cards icons/Total Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src="/Mobile%20cards%20icons/Total%20Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -2547,4 +2547,6 @@ export default function PositionModule() {
     </div>
   )
 }
+
+
 

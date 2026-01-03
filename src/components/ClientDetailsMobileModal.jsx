@@ -1792,3 +1792,5 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 }
 
 export default ClientDetailsMobileModal
+
+

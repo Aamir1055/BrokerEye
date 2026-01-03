@@ -263,13 +263,13 @@ const IBCommissionsPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Rebate': '/Desktop cards icons/TOTAL COMMISION.svg',
-      'Available Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
-      'Disbursed Rebate': '/Desktop cards icons/AVAILABLE Commision.svg',
-      'Total Rebate %': '/Desktop cards icons/TOTAL COMMISION%25.svg',
-      'Available Rebate %': '/Desktop cards icons/AVAILABLE Commision%25.svg',
+      'Total Rebate': '/Desktop%20cards%20icons/TOTAL%20COMMISION.svg',
+      'Available Rebate': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
+      'Disbursed Rebate': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
+      'Total Rebate %': '/Desktop%20cards%20icons/TOTAL%20COMMISION%25.svg',
+      'Available Rebate %': '/Desktop%20cards%20icons/AVAILABLE%20Commision%25.svg',
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/TOTAL COMMISION.svg'
+    return iconMap[cardTitle] || '/Desktop%20cards%20icons/TOTAL%20COMMISION.svg'
   }
 
   const formatDate = (dateString) => {
@@ -905,3 +905,5 @@ const IBCommissionsPage = () => {
 }
 
 export default IBCommissionsPage
+
+

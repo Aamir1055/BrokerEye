@@ -239,13 +239,13 @@ export default function IBCommissionsModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'TOTAL REBATE': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION.svg',
-      'AVAILABLE REBATE': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision.svg',
-      'DISBURSED REBATE': '/Mobile cards icons/Brokers Eye Platform/Blocked commision.svg',
-      'TOTAL REBATE %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%25.svg',
-      'AVAILABLE REBATE %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%25.svg'
+      'TOTAL REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/TOTAL%20COMMISION.svg',
+      'AVAILABLE REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/AVAILABLE%20Commision.svg',
+      'DISBURSED REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/Blocked%20commision.svg',
+      'TOTAL REBATE %': '/Mobile%20cards%20icons/Brokers Eye Platform/TOTAL%20COMMISION%25.svg',
+      'AVAILABLE REBATE %': '/Mobile%20cards%20icons/Brokers Eye Platform/AVAILABLE%20Commision%25.svg'
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
   }
   
   useEffect(() => {
@@ -1333,4 +1333,6 @@ export default function IBCommissionsModule() {
     </div>
   )
 }
+
+
 

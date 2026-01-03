@@ -462,12 +462,12 @@ const ClientPercentagePage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Clients': '/Desktop cards icons/Total Clients.svg',
-      'Custom Percentages': '/Desktop cards icons/TOTAL COMMISION.svg',
-      'Using Default': '/Desktop cards icons/AVAILABLE Commision.svg',
-      'Default Percentage': '/Desktop cards icons/TOTAL COMMISION%25.svg',
+      'Total Clients': '/Desktop%20cards%20icons/Total%20Clients.svg',
+      'Custom Percentages': '/Desktop%20cards%20icons/TOTAL%20COMMISION.svg',
+      'Using Default': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
+      'Default Percentage': '/Desktop%20cards%20icons/TOTAL%20COMMISION%25.svg',
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || '/Desktop%20cards%20icons/Total%20Clients.svg'
   }
 
   // Sorting
@@ -1534,3 +1534,5 @@ const ClientPercentagePage = () => {
 }
 
 export default ClientPercentagePage
+
+

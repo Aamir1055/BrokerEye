@@ -476,11 +476,11 @@ const MarginLevelPage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Below 50%': '/Desktop cards icons/Total Equity.svg',
-      'Avg Margin Level': '/Desktop cards icons/Total Balance.svg',
-      'Unique Logins': '/Desktop cards icons/Total Clients.svg',
+      'Below 50%': '/Desktop%20cards%20icons/Total%20Equity.svg',
+      'Avg Margin Level': '/Desktop%20cards%20icons/Total%20Balance.svg',
+      'Unique Logins': '/Desktop%20cards%20icons/Total%20Clients.svg',
     }
-    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
+    return iconMap[cardTitle] || '/Desktop%20cards%20icons/Total%20Clients.svg'
   }
 
   // Show loading only for table data
@@ -1421,3 +1421,5 @@ const MarginLevelPage = () => {
 }
 
 export default MarginLevelPage
+
+

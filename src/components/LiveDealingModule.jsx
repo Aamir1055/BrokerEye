@@ -504,12 +504,12 @@ export default function LiveDealingModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
-    if (label.includes('DEALS')) return '/Mobile cards icons/Brokers Eye Platform/Daily PNL.svg'
+    if (label.includes('DEALS')) return '/Mobile%20cards%20icons/Brokers Eye Platform/Daily%20PNL.svg'
     const iconMap = {
-      'UNIQUE LOGINS': '/Mobile cards icons/Total Clients.svg',
-      'SYMBOLS': '/Mobile cards icons/Brokers Eye Platform/Group.svg'
+      'UNIQUE LOGINS': '/Mobile%20cards%20icons/Total%20Clients.svg',
+      'SYMBOLS': '/Mobile%20cards%20icons/Brokers Eye Platform/Group.svg'
     }
-    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
+    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
   }
 
   // Face cards data - use useMemo to avoid infinite loop
@@ -1563,4 +1563,6 @@ export default function LiveDealingModule() {
     </div>
   )
 }
+
+
 
