@@ -315,7 +315,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             netType: netType,
             volume: absNetVolume,
             avgPrice: avgOpenPrice,
-            profit: totalProfit,
+            totalProfit: totalProfit,
             positions: group.buyPositions.length + group.sellPositions.length
           })
         }
@@ -324,8 +324,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
       // Calculate and set stats immediately with positions data
       const totalPnL = positionsData.reduce((sum, p) => sum + (p.profit || 0), 0)
-      const lifetimePnL = client.lifetimePnL || 0
-      const bookPnL = lifetimePnL + totalPnL
+      const lifetimePnL = Number(client.lifetimePnL ?? client.pnl ?? 0)
+      const floating = Number(client.floating ?? totalPnL)
+      const bookPnL = lifetimePnL + floating
       
       setStats({
         positionsCount: positionsData.length,
@@ -381,8 +382,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       // Use provided positionsArray or fall back to state
       const positionsToUse = positionsArray !== null ? positionsArray : positions
       const totalPnL = positionsToUse.reduce((sum, p) => sum + (p.profit || 0), 0)
-      const lifetimePnL = client.lifetimePnL || 0
-      const bookPnL = lifetimePnL + totalPnL
+      const lifetimePnL = Number(client.lifetimePnL ?? client.pnl ?? 0)
+      const floating = Number(client.floating ?? totalPnL)
+      const bookPnL = lifetimePnL + floating
       const totalVolume = dealsData.reduce((sum, d) => sum + (d.volume || 0), 0)
       
       const profitableDeals = dealsData.filter(d => (d.profit || 0) > 0).length
@@ -1016,8 +1018,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {netPositionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.volume)}</td>}
               {netPositionColumns.avgPrice && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(netPos.avgPrice, 5)}</td>}
               {netPositionColumns.profit && (
-                <td className={`px-3 py-2 text-xs ${netPos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatNum(netPos.profit)}
+                <td className={`px-3 py-2 text-xs ${netPos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatNum(netPos.totalProfit)}
                 </td>
               )}
               {netPositionColumns.positions && <td className="px-3 py-2 text-xs text-gray-900">{netPos.positions}</td>}
@@ -1625,12 +1627,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               <p className="text-[10px] text-gray-600 uppercase font-semibold">Floating Profit</p>
               <p className={`text-sm font-bold truncate ${
                 (activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
                   : stats.totalPnL
                 ) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
                 {formatNum(activeTab === 'netPositions' 
-                  ? netPositions.reduce((sum, pos) => sum + (pos.profit || 0), 0)
+                  ? netPositions.reduce((sum, pos) => sum + (pos.totalProfit || 0), 0)
                   : stats.totalPnL
                 )}
               </p>
