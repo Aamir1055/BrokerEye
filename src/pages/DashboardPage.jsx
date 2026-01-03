@@ -40,8 +40,12 @@ const DashboardPage = () => {
     return window.innerWidth <= 768
   })
   const { user } = useAuth()
-  const { clients, positions, orders, clientStats, loading, connectionState } = useData()
+  const { positions, orders, connectionState } = useData()
   const navigate = useNavigate()
+
+  // API-fetched clients state (replacing WebSocket data)
+  const [clients, setClients] = useState([])
+  const [clientsLoading, setClientsLoading] = useState(true)
 
   // Commission totals state
   const [commissionTotals, setCommissionTotals] = useState(null)
@@ -162,6 +166,42 @@ const DashboardPage = () => {
 
     // Refresh every hour (3600000 ms)
     const interval = setInterval(fetchCommissionTotals, 3600000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fetch clients data via API (replacing WebSocket data)
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setClientsLoading(true)
+        console.log('[Dashboard] Fetching clients data from API...')
+        
+        // Fetch all clients without pagination for face cards calculation
+        const response = await brokerAPI.searchClients({
+          page: 1,
+          limit: 10000, // Large limit to get all clients for totals
+          percentage: false
+        })
+        
+        const responseData = response?.data || {}
+        const data = responseData?.data || responseData
+        const clientsList = data.clients || []
+        
+        console.log('[Dashboard] Fetched', clientsList.length, 'clients from API')
+        setClients(clientsList)
+        setClientsLoading(false)
+      } catch (err) {
+        console.error('[Dashboard] Failed to fetch clients:', err)
+        setClientsLoading(false)
+      }
+    }
+
+    // Initial fetch
+    fetchClients()
+
+    // Refresh every 10 seconds to keep data fresh
+    const interval = setInterval(fetchClients, 10000)
 
     return () => clearInterval(interval)
   }, [])
@@ -752,7 +792,7 @@ const DashboardPage = () => {
               headers={['Login', 'Name', 'Balance', 'Lifetime P&L']}
               rows={topProfitableClients}
               onViewAll={() => navigate('/client2')}
-              loading={loading.clients}
+              loading={clientsLoading}
               emptyMessage="No clients data available"
             />
 
@@ -761,7 +801,7 @@ const DashboardPage = () => {
               headers={['Login', 'Symbol', 'Type', 'Volume', 'Profit']}
               rows={recentPositions}
               onViewAll={() => navigate('/positions')}
-              loading={loading.positions}
+              loading={false}
               emptyMessage="No positions data available"
             />
           </div>
