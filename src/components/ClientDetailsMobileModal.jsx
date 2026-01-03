@@ -1240,7 +1240,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Transactions
+              Balance
             </button>
             <button
               onClick={() => setActiveTab('rules')}
@@ -1439,11 +1439,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
 
-              {/* Money Transactions Tab */}
+              {/* Balance Tab */}
               {activeTab === 'funds' && (
                 <div className="">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Balance</h3>
                     
                     {operationSuccess && (
                       <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
