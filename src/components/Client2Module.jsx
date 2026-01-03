@@ -1567,6 +1567,7 @@ export default function Client2Module() {
                         ))}
                       </div>
                     );
+                  })}
                   
                   {/* Total Row */}
                   {filteredClients.length > 0 && (
