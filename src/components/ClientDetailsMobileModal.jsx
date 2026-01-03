@@ -97,6 +97,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     profit: true
   })
 
+  // Deal stats from API
+  const [dealStats, setDealStats] = useState(null)
+
   // Summary stats
   const [stats, setStats] = useState({
     positionsCount: 0,
@@ -127,10 +130,22 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return { symbols, totalNetVolume, buyFloating, sellFloating }
   }, [netPositions, positions])
 
+  // Fetch deal stats from API
+  const fetchDealStats = async () => {
+    try {
+      const data = await brokerAPI.getClientDealStatsGET(client.login)
+      setDealStats(data || null)
+    } catch (error) {
+      console.error('Failed to load deal stats:', error)
+      setDealStats(null)
+    }
+  }
+
   useEffect(() => {
     fetchPositionsAndInitDeals()
     fetchAvailableRules()
     fetchClientRules()
+    fetchDealStats()
   }, [client.login])
 
   // Reset pagination when tab changes
@@ -322,7 +337,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       })
       setNetPositions(computedNet)
 
-      // Calculate and set stats immediately with positions data
+      // Calculate and set stats using client data from WebSocket (like desktop)
       const totalPnL = positionsData.reduce((sum, p) => sum + (p.profit || 0), 0)
       const lifetimePnL = Number(client.lifetimePnL ?? client.pnl ?? 0)
       const floating = Number(client.floating ?? totalPnL)
@@ -333,12 +348,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         totalPnL,
         lifetimePnL,
         bookPnL,
-        balance: client.balance || 0,
-        credit: client.credit || 0,
-        equity: client.equity || 0,
-        totalVolume: 0,
-        totalDeals: 0,
-        winRate: 0
+        balance: Number(client.balance ?? 0),
+        credit: Number(client.credit ?? 0),
+        equity: Number(client.equity ?? 0),
+        totalVolume: dealStats?.totalVolume ?? 0,
+        totalDeals: dealStats?.totalDeals ?? 0,
+        winRate: dealStats?.winRate ?? 0
       })
 
       // Set default date range to Today
@@ -378,7 +393,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       setCurrentDateFilter({ from: fromTimestamp, to: toTimestamp })
       setHasAppliedFilter(true)
 
-      // Calculate stats with positions and deals data
+      // Calculate stats using client data and dealStats from API
       // Use provided positionsArray or fall back to state
       const positionsToUse = positionsArray !== null ? positionsArray : positions
       const totalPnL = positionsToUse.reduce((sum, p) => sum + (p.profit || 0), 0)
