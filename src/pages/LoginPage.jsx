@@ -191,12 +191,12 @@ const LoginPage = () => {
           {/* Footer removed; copyright moved to hero side */}
         </div>
       </div>
-      
+
       {/* Right Side - Blue Wave Design (true circles, beyond semicircle, absolute overlay) */}
       <div className="hidden lg:block pointer-events-none absolute inset-0 z-0">
         {/* Ellipse 49 (shifted right with stronger bottom-right taper) */}
-         <div 
-           className="absolute rounded-full" 
+         <div
+           className="absolute rounded-full"
            style={{
             width: '1549px',
             height: '1490px',
@@ -207,10 +207,10 @@ const LoginPage = () => {
              maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
-        
+
         {/* Ellipse 51 (shifted right with stronger bottom-right taper) */}
-         <div 
-           className="absolute rounded-full" 
+         <div
+           className="absolute rounded-full"
            style={{
             width: '1549px',
             height: '1490px',
@@ -221,10 +221,10 @@ const LoginPage = () => {
              maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
-        
+
         {/* Ellipse 50 (shifted right with stronger bottom-right taper) */}
-         <div 
-           className="absolute rounded-full" 
+         <div
+           className="absolute rounded-full"
            style={{
             width: '1549px',
             height: '1456px',
@@ -235,10 +235,10 @@ const LoginPage = () => {
              maskImage: 'linear-gradient(115deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0) 100%)'
            }}
          />
-        
+
         {/* Ellipse 29 - Border Circle (no mask per Figma) */}
-        <div 
-          className="absolute rounded-full box-border" 
+        <div
+          className="absolute rounded-full box-border"
           style={{
             width: '320px',
             height: '320px',
@@ -262,7 +262,7 @@ const LoginPage = () => {
         </div>
 
         {/* Content inside dark blue semicircle */}
-        <div 
+        <div
           className="absolute text-white text-left"
           style={{
             right: '60px',
@@ -271,7 +271,7 @@ const LoginPage = () => {
           }}
         >
           {/* Main Heading */}
-          <h1 
+          <h1
             className="font-bold text-3xl lg:text-4xl xl:text-5xl mb-10"
             style={{
               lineHeight: '1.2',
@@ -282,9 +282,9 @@ const LoginPage = () => {
           </h1>
 
           {/* Feature Icons */}
-          <div className="flex gap-8 mb-10 justify-start">
+          <div className="flex gap-8 mb-6 justify-center">
             {/* Secure Trading Infrastructure */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -292,7 +292,7 @@ const LoginPage = () => {
             </div>
 
             {/* Fast And Reliable Execution */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group9} alt="Fast And Reliable Execution" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -300,7 +300,7 @@ const LoginPage = () => {
             </div>
 
             {/* Real-Time Market Insights */}
-            <div className="flex flex-col items-start text-left" style={{ width: '160px' }}>
+            <div className="flex flex-col items-center text-center" style={{ width: '160px' }}>
               <div className="relative w-20 h-20 mb-3">
                 <img src={Group10} alt="Real-Time Market Insights" className="absolute inset-0 w-full h-full select-none" />
               </div>
@@ -309,15 +309,8 @@ const LoginPage = () => {
           </div>
 
           {/* Subtitle */}
-          <p 
-            className="text-white text-base"
-            style={{
-              lineHeight: '1.5',
-              opacity: 0.95,
-              maxWidth: '500px'
-            }}
-          >
-            A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
+          <p className="text-sm text-center" style={{ lineHeight: '1.6', opacity: 0.9, paddingLeft: '30px' }}>
+            
           </p>
         </div>
       </div>

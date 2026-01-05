@@ -226,13 +226,14 @@ export default function PendingOrdersModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'PENDING ORDERS': '/Mobile%20cards%20icons/Brokers Eye Platform/Group.svg',
-      'UNIQUE LOGINS': '/Mobile%20cards%20icons/Total%20Clients.svg',
-      'SYMBOLS': '/Mobile%20cards%20icons/Brokers Eye Platform/Group.svg',
-      'TOTAL VOLUME': '/Mobile%20cards%20icons/Total%20Balance.svg'
+      'PENDING ORDERS': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Group.svg`,
+      'UNIQUE LOGINS': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Mobile cards icons/Brokers Eye Platform/Group.svg`,
+      'TOTAL VOLUME': `${baseUrl}Mobile cards icons/Total Balance.svg`
     }
-    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
   
   // Update cards when summary stats change
@@ -436,6 +437,9 @@ export default function PendingOrdersModule() {
                   )},
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
@@ -777,23 +781,10 @@ export default function PendingOrdersModule() {
                   </div>
                 )}
 
-                {/* Empty state inline row */}
+                {/* Empty state */}
                 {filteredOrders.length === 0 && !loading?.orders && (
-                  <div 
-                    className="grid text-[10px] text-[#9CA3AF] bg-white"
-                    style={{
-                      gap: '0px', 
-                      gridGap: '0px', 
-                      columnGap: '0px',
-                      gridTemplateColumns
-                    }}
-                  >
-                    <div className="px-2 py-8 text-center col-span-full">
-                      {(() => {
-                        const hasFilters = Boolean(searchInput) || filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('pendingorders')
-                        return hasFilters ? 'No pending orders match the applied filters' : 'No pending orders found'
-                      })()}
-                    </div>
+                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
+                    No pending orders found
                   </div>
                 )}
               </div>
@@ -1019,6 +1010,4 @@ export default function PendingOrdersModule() {
     </div>
   )
 }
-
-
 

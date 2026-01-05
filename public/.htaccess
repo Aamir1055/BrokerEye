@@ -1,16 +1,20 @@
-RewriteEngine On
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /amari-capital/
+  
+  # Enable proxy for WebSocket (must come BEFORE regular API proxy)
+  RewriteCond %{HTTP:Upgrade} =websocket [NC]
+  RewriteCond %{HTTP:Connection} =Upgrade [NC]
+  RewriteRule ^api/broker/ws(.*)$ ws://185.136.159.142:8080/api/broker/ws$1 [P,L]
 
-# Enable proxy for WebSocket (must come BEFORE regular API proxy)
-RewriteCond %{HTTP:Upgrade} =websocket [NC]
-RewriteCond %{HTTP:Connection} =Upgrade [NC]
-RewriteRule ^api/broker/ws(.*)$ ws://185.136.159.142:8080/api/broker/ws$1 [P,L]
-
-# Enable proxy for regular API requests
-RewriteCond %{REQUEST_URI} ^/api/
-RewriteRule ^api/(.*)$ http://185.136.159.142:8080/api/$1 [P,L]
-
-# Fallback to index.html for React Router (SPA)
-# Use per-directory relative path to avoid breaking when deployed in a subfolder like /v2
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]
+  # Enable proxy for regular API requests
+  RewriteCond %{REQUEST_URI} ^/amari-capital/api/
+  RewriteRule ^api/(.*)$ http://185.136.159.142:8080/api/$1 [P,L]
+  
+  # Don't rewrite files or directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Rewrite everything else to index.html to allow html5 state links
+  RewriteRule ^ index.html [L]
+</IfModule>

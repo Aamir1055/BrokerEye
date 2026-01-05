@@ -661,20 +661,20 @@ const PositionsPage = () => {
   const getCardIcon = (cardTitle) => {
     const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Positions': `${baseUrl}Desktop%20cards%20icons/Total%20Balance.svg`,
-      'Floating Profit': `${baseUrl}Desktop%20cards%20icons/Floating%20Profit.svg`,
-      'Floating Profit %': `${baseUrl}Desktop%20cards%20icons/Floating%20Profit.svg`,
-      'Unique Logins': `${baseUrl}Desktop%20cards%20icons/Total%20Clients.svg`,
-      'Symbols': `${baseUrl}Desktop%20cards%20icons/Total%20Equity.svg`,
+      'Total Positions': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Floating Profit': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
+      'Floating Profit %': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
+      'Unique Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'Symbols': `${baseUrl}Desktop cards icons/Total Equity.svg`,
       // NET Position cards
-      'NET Symbols': `${baseUrl}Desktop%20cards%20icons/Total%20Clients.svg`,
-      'Total NET Volume': `${baseUrl}Desktop%20cards%20icons/Total%20Balance.svg`,
-      'Total NET P/L': `${baseUrl}Desktop%20cards%20icons/PNL.svg`,
-      'Total Logins': `${baseUrl}Desktop%20cards%20icons/Total%20Clients.svg`,
+      'NET Symbols': `${baseUrl}Desktop cards icons/Total Clients.svg`,
+      'Total NET Volume': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Total NET P/L': `${baseUrl}Desktop cards icons/PNL.svg`,
+      'Total Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
       // Client NET cards
-      'Client NET Rows': `${baseUrl}Desktop%20cards%20icons/Total%20Clients.svg`,
+      'Client NET Rows': `${baseUrl}Desktop cards icons/Total Clients.svg`,
     }
-    return iconMap[cardTitle] || `${baseUrl}Desktop%20cards%20icons/Total%20Clients.svg`
+    return iconMap[cardTitle] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
 
   // Helper function to adjust value for USC symbols (divide by 100)
@@ -3902,5 +3902,3 @@ const PositionsPage = () => {
 }
 
 export default PositionsPage
-
-

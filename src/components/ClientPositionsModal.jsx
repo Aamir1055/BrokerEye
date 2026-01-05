@@ -1641,26 +1641,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({totalDealsCount || deals.length})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'funds'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Balance
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'rules'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Broker Rules ({clientRules.filter(r => r.is_active === true).length})
-            </button>
           </div>
 
           {/* Controls for Positions Tab */}
@@ -1937,8 +1917,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
+              ) : positions.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-sm">No open positions</p>
+                </div>
               ) : (
                 <>
+                  
                   {/* Search Bar */}
                   <div className="mb-4 flex items-center gap-3">
                     <div className="relative flex-1" ref={searchRef}>
@@ -2003,8 +1991,28 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       {displayedPositions.length} of {filteredPositions.length} positions
                     </div>
                   </div>
-
-                  <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative">
+                  
+                  {filteredPositions.length === 0 ? (
+                    <div className="text-center py-12">
+                      <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <p className="text-gray-500 text-sm font-medium mb-1">No positions found</p>
+                      <p className="text-gray-400 text-xs">Try adjusting your search or filters</p>
+                      {(searchQuery || Object.keys(columnFilters).length > 0) && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setColumnFilters({})
+                          }}
+                          className="mt-3 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Clear all filters
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative">
                   <table className="min-w-full table-fixed divide-y divide-gray-200">
                     <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                       <tr>
@@ -2522,15 +2530,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       {paginatedGroupedData.regularPositions.length === 0 && paginatedGroupedData.pendingOrders.length === 0 && (
                         <tr>
                           <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-12 text-center text-gray-500">
-                            {(searchQuery || Object.keys(columnFilters).length > 0)
-                              ? 'No positions match the applied filters'
-                              : 'No positions or orders found'}
+                            No positions or orders found
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+                  )}
                 </>
               )}
             </div>
@@ -2679,13 +2686,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           )}
                         </tr>
                       ))}
-                      {filteredNetPositions.length === 0 && (
-                        <tr>
-                          <td colSpan={Object.values(netVisibleColumns).filter(Boolean).length} className="px-3 py-12 text-center text-gray-500">
-                            {netSearchQuery ? 'No net positions match the applied filters' : 'No net positions found'}
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3344,11 +3344,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
-          {/* Balance Tab */}
+          {/* Money Transactions Tab */}
           {activeTab === 'funds' && (
             <div>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Balance</h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                 
                 {/* Success Message */}
                 {operationSuccess && (

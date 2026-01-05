@@ -69,54 +69,45 @@ const LoginMobile = () => {
         </div>
 
         {/* Hero heading (center top) */}
-        <div className="absolute text-white font-outfit font-extrabold text-[26px] leading-[32px] capitalize" style={{ width: 290, left: '10%', top: 75 }}>
+        <div className="absolute text-white font-outfit font-extrabold text-[26px] leading-[32px] capitalize text-center" style={{ width: 340, left: '50%', transform: 'translateX(-50%)', top: 75 }}>
           Your Path To Financial Recovery!
         </div>
 
-        {/* Three feature boxes */}
-        {/* Left */}
-        <div className="absolute" style={{ left: 41, top: 145, width: 54, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group8} alt="Secure Trading Infrastructure" className="absolute inset-0 w-full h-full select-none" />
+        {/* Three feature boxes - centered as a group */}
+        <div className="absolute flex justify-center items-start gap-[20px]" style={{ left: '50%', transform: 'translateX(-50%)', top: 180, width: 320 }}>
+          {/* Left */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group8} alt="Secure Trading Infrastructure" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Secure Trading Infrastructure</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Secure Trading<br />Infrastructure</div>
           </div>
-        </div>
-        {/* Middle */}
-        <div className="absolute" style={{ left: 115, top: 145, width: 62, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group9} alt="Fast and reliable execution" className="absolute inset-0 w-full h-full select-none" />
+          {/* Middle */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group9} alt="Fast and reliable execution" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Fast And Reliable Execution</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Fast And Reliable<br />Execution</div>
           </div>
-        </div>
-        {/* Right */}
-        <div className="absolute" style={{ left: 197, top: 145, width: 64, height: 60 }}>
-          <div className="flex flex-col items-center gap-[4px]">
-            <div className="relative w-[36px] h-[36px]">
-              <img src={Group10} alt="Real-time market insights" className="absolute inset-0 w-full h-full select-none" />
+          {/* Right */}
+          <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
+            <div className="relative w-[40px] h-[40px] flex items-center justify-center">
+              <img src={Group10} alt="Real-time market insights" className="w-full h-full object-contain select-none" />
             </div>
-            <div className="font-outfit font-medium text-[7px] leading-[9px] text-white text-center capitalize">Real-Time Market Insights</div>
+            <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Real-Time Market<br />Insights</div>
           </div>
-        </div>
-
-        {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text capitalize" style={{ width: 295, left: '45%', transform: 'translateX(-50%)', top: 220 }}>
-          A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
         {/* Form header: Welcome Back + note */}
-        <div className="absolute" style={{ left: 20, top: 370, width: 324, height: 55 }}>
+        <div className="absolute" style={{ left: 20, top: 390, width: 324, height: 55 }}>
           <div className="flex flex-col items-start gap-[5px]">
-            <div className="font-outfit font-semibold text-[18px] leading-[23px] text-[#333333]">Welcome Back</div>
+            <div className="font-outfit font-semibold text-[22px] leading-[28px] text-[#2563EB]">Welcome Back</div>
             <div className="font-outfit font-normal text-[11px] leading-[14px] text-[#8C8C8C]"></div>
           </div>
         </div>
 
         {/* Username field */}
-        <div className="absolute" style={{ left: 20, top: 445, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 465, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* User icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -134,7 +125,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Password field */}
-        <div className="absolute" style={{ left: 20, top: 515, width: 372, height: 50 }}>
+        <div className="absolute" style={{ left: 20, top: 535, width: 372, height: 50 }}>
           <div className="w-full h-full rounded-[9px] bg-[rgba(239,246,255,0.36)] border border-[#EDEDED] flex items-center px-[17px] gap-[15px]">
             {/* Lock icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -180,7 +171,7 @@ const LoginMobile = () => {
             type="submit"
             disabled={isLoading}
             className="absolute flex items-center justify-center gap-[10px] text-white font-montserrat font-bold text-[16px]"
-            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 630 : 585, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
+            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 680 : 630, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
           >
             {isLoading ? 'Signing in…' : 'Log In'}
           </button>
@@ -188,7 +179,7 @@ const LoginMobile = () => {
 
         {/* Footer tiny text */}
         <div className="absolute font-roboto font-normal text-[8px] leading-[9px] text-center flex items-center justify-center" style={{ left: '50%', transform: 'translateX(-50%)', bottom: 10, width: 236 }}>
-          <span style={{ color: 'rgba(64, 64, 64, 0.42)' }}>Terms & Conditions | Privacy Notice | FAQs | Contact Us | Follow Us</span>
+          <span style={{ color: 'rgba(64, 64, 64, 0.42)' }}></span>
         </div>
       </div>
     </div>

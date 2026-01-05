@@ -1204,7 +1204,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1214,7 +1214,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1224,7 +1224,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1232,31 +1232,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             >
               Deals ({hasAppliedFilter ? totalDealsCount : 0})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'funds'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Balance
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`flex-1 py-1.5 px-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'rules'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Rules
-            </button>
           </div>
         </div>
 
-        {/* Search - Only show for positions, netPositions, and deals tabs */}
-        {(activeTab === 'positions' || activeTab === 'netPositions' || activeTab === 'deals') && (
+        {/* Search */}
         <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
@@ -1327,7 +1306,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             )}
           </div>
         </div>
-        )}
 
         {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
@@ -1438,12 +1416,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {activeTab === 'positions' && renderPositions()}
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
-
-              {/* Balance Tab */}
+              
+              {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
-                <div className="">
+                <div className="p-4">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Balance</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                     
                     {operationSuccess && (
                       <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
@@ -1812,5 +1790,3 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 }
 
 export default ClientDetailsMobileModal
-
-

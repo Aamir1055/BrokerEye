@@ -4,9 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
+  base: '/amari-capital/',
   build: {
-    outDir: 'dist',
+    outDir: 'C:/xampp/htdocs/amari-capital',
     assetsDir: 'assets',
     emptyOutDir: true,
     rollupOptions: {
@@ -35,16 +35,16 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
+        scope: '/amari-capital/',
+        start_url: '/amari-capital/',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: '/amari-capital/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/amari-capital/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }

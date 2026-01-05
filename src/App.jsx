@@ -16,6 +16,7 @@ const PendingOrdersPage = lazy(() => import('./pages/PendingOrdersPage'))
 const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
 const LiveDealingPage = lazy(() => import('./pages/LiveDealingPage'))
 const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
+const IBCommissionsPage = lazy(() => import('./pages/IBCommissionsPage'))
 const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
@@ -30,13 +31,12 @@ const AppContent = () => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768)
     }
-    
+
     // Check on mount
     checkMobile()
-    
-    // Add resize listener
+
+    // Listen for resize events
     window.addEventListener('resize', checkMobile)
-    
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
@@ -47,6 +47,7 @@ const AppContent = () => {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/" element={isMobile ? <LoginMobile /> : <LoginPage />} />
         <Route path="/login" element={isMobile ? <LoginMobile /> : <LoginPage />} />
         <Route path="/m/login" element={<LoginMobile />} />
         <Route path="/d/login" element={<LoginPage />} />
@@ -69,6 +70,7 @@ const AppContent = () => {
         <Route path="/margin-level" element={<MarginLevelPage />} />
         <Route path="/live-dealing" element={<LiveDealingPage />} />
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
+        <Route path="/ib-commissions" element={<IBCommissionsPage />} />
         <Route path="/broker-rules" element={<BrokerRulePage />} />
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />
@@ -110,8 +112,18 @@ function PreloadRoutes() {
 }
 
 function App() {
+  // Dynamically detect basename from current URL path
+  // Supports both /amari-capital/ and /broker-branch/
+  const getBasename = () => {
+    const path = window.location.pathname
+    if (path.startsWith('/broker-branch')) return '/broker-branch'
+    if (path.startsWith('/amari-capital')) return '/amari-capital'
+    // Default to amari-capital for root or unknown paths
+    return '/amari-capital'
+  }
+
   return (
-    <Router>
+    <Router basename={getBasename()}>
       <AuthProvider>
         <DataProvider>
           <GroupProvider>

@@ -373,7 +373,7 @@ export default function Client2Module() {
     }
   }, [fetchClients, fetchRebateTotals])
 
-  // Filtered clients - search is handled server-side, so just validate data
+  // Return clients as-is since search is handled server-side via API
   const filteredClients = useMemo(() => {
     if (!Array.isArray(clients)) return []
     return clients.filter(c => c != null && c.login != null)
@@ -505,69 +505,70 @@ export default function Client2Module() {
   const getCardIcon = (cardLabel) => {
     // Remove % suffix if present for matching
     const cleanLabel = cardLabel.replace(' %', '')
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Total Clients': '/Desktop%20cards%20icons/Total%20Clients.svg',
-      'Lifetime P&L': '/Desktop%20cards%20icons/LIFETIME%20PNL.svg',
-      'NET Lifetime DW': '/Desktop%20cards%20icons/NET%20WD.svg',
-      'Total Rebate': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
-      'Assets': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Balance': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Blocked Commission': '/Desktop%20cards%20icons/Blocked%20commision.svg',
-      'Blocked Profit': '/Desktop%20cards%20icons/Floating%20Profit.svg',
-      'Commission': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
-      'Credit': '/Desktop%20cards%20icons/Total%20Credit.svg',
-      'Daily Bonus In': '/Desktop%20cards%20icons/Daily%20BONUS%20IN.svg',
-      'Daily Bonus Out': '/Desktop%20cards%20icons/Daily%20BONUS%20OUT.svg',
-      'Daily Credit In': '/Desktop%20cards%20icons/LIFETIME%20CREDIT%20IN.svg',
-      'Daily Credit Out': '/Desktop%20cards%20icons/LIFETIME%20CREDIT%20OUT.svg',
-      'Daily Deposit': '/Desktop%20cards%20icons/Daily%20Deposite.svg',
-      'Daily P&L': '/Desktop%20cards%20icons/Daily%20PNL.svg',
-      'Daily SO Compensation In': '/Desktop%20cards%20icons/Daily%20BONUS%20IN.svg',
-      'Daily SO Compensation Out': '/Desktop%20cards%20icons/Daily%20BONUS%20OUT.svg',
-      'Daily Withdrawal': '/Desktop%20cards%20icons/Daily%20WITHDRAWL.svg',
-      'Daily Net D/W': '/Desktop%20cards%20icons/NET%20WD.svg',
-      'NET Daily Bonus': '/Desktop%20cards%20icons/Net%20Daily%20Bonus.svg',
-      'Equity': '/Desktop%20cards%20icons/Total%20Equity.svg',
-      'Floating P/L': '/Desktop%20cards%20icons/Floating%20Profit.svg',
-      'Liabilities': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Lifetime Bonus In': '/Desktop%20cards%20icons/LIFETIME%20BONUS%20IN.svg',
-      'Lifetime Bonus Out': '/Desktop%20cards%20icons/LIFETIME%20BONUS%20OUT.svg',
-      'Lifetime Credit In': '/Desktop%20cards%20icons/LIFETIME%20CREDIT%20IN.svg',
-      'Lifetime Credit Out': '/Desktop%20cards%20icons/LIFETIME%20CREDIT%20OUT.svg',
-      'Lifetime Deposit': '/Desktop%20cards%20icons/Daily%20Deposite.svg',
-      'Lifetime SO Compensation In': '/Desktop%20cards%20icons/LIFETIME%20BONUS%20IN.svg',
-      'Lifetime SO Compensation Out': '/Desktop%20cards%20icons/LIFETIME%20BONUS%20OUT.svg',
-      'Lifetime Withdrawal': '/Desktop%20cards%20icons/Daily%20WITHDRAWL.svg',
-      'Margin': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Margin Free': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Month Bonus In': '/Desktop%20cards%20icons/MONTHLY%20BONUS%20IN.svg',
-      'Month Bonus Out': '/Desktop%20cards%20icons/MONTHLY%20BONUS%20OUt.svg',
-      'Month Credit In': '/Desktop%20cards%20icons/MONTHLY CREDIT IN.svg',
-      'Month Credit Out': '/Desktop%20cards%20icons/MOnthly CREDIT OUT.svg',
-      'Month Deposit': '/Desktop%20cards%20icons/MONTLY DEPOSITE.svg',
-      'Month P&L': '/Desktop%20cards%20icons/THIS%20MONTH%20PNL.svg',
-      'Month SO Compensation In': '/Desktop%20cards%20icons/MONTHLY%20BONUS%20IN.svg',
-      'Month SO Compensation Out': '/Desktop%20cards%20icons/MONTHLY%20BONUS%20OUt.svg',
-      'Month Withdrawal': '/Desktop%20cards%20icons/MONTLY WITHDRAWL.svg',
-      'NET Month Bonus': '/Desktop%20cards%20icons/NET%20MONTHLY%20BONUS.svg',
-      'NET Month D/W': '/Desktop%20cards%20icons/NET MONTHLY DW.svg',
-      'Profit': '/Desktop%20cards%20icons/Floating%20Profit.svg',
-      'Storage': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'This Month PnL': '/Desktop%20cards%20icons/THIS%20MONTH%20PNL.svg',
-      'Week Bonus In': '/Desktop%20cards%20icons/Weekly%20bonus%20in.svg',
-      'Week Bonus Out': '/Desktop%20cards%20icons/WEEK%20BONUS%20OUT.svg',
-      'Week Credit In': '/Desktop%20cards%20icons/WEEKLY Credit IN.svg',
-      'Week Credit Out': '/Desktop%20cards%20icons/WEEKLY CREDIT OUT.svg',
-      'Week Deposit': '/Desktop%20cards%20icons/WEEK%20DEPOSITE.svg',
-      'Week P&L': '/Desktop%20cards%20icons/This%20week%20pnl.svg',
-      'Week SO Compensation In': '/Desktop%20cards%20icons/Weekly%20bonus%20in.svg',
-      'Week SO Compensation Out': '/Desktop%20cards%20icons/WEEK%20BONUS%20OUT.svg',
-      'Week Withdrawal': '/Desktop%20cards%20icons/WEEK WITHDRAWL.svg',
-      'NET Week Bonus': '/Desktop%20cards%20icons/NET%20WEEK%20BONUS.svg',
-      'NET Week D/W': '/Desktop%20cards%20icons/NET WEEK DAY.svg',
-      'Book PnL': '/Desktop%20cards%20icons/PNL.svg',
+      'Total Clients': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'Lifetime P&L': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
+      'NET Lifetime DW': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'Total Rebate': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'Assets': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Balance': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Blocked Commission': `${baseUrl}Mobile cards icons/Blocked commision.svg`,
+      'Blocked Profit': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Commission': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'Credit': `${baseUrl}Mobile cards icons/Total Credit.svg`,
+      'Daily Bonus In': `${baseUrl}Mobile cards icons/Daily BONUS IN.svg`,
+      'Daily Bonus Out': `${baseUrl}Mobile cards icons/Daily BONUS OUT.svg`,
+      'Daily Credit In': `${baseUrl}Mobile cards icons/LIFETIME CREDIT IN.svg`,
+      'Daily Credit Out': `${baseUrl}Mobile cards icons/LIFETIME CREDIT OUT.svg`,
+      'Daily Deposit': `${baseUrl}Mobile cards icons/Daily Deposite.svg`,
+      'Daily P&L': `${baseUrl}Mobile cards icons/Daily PNL.svg`,
+      'Daily SO Compensation In': `${baseUrl}Mobile cards icons/Daily BONUS IN.svg`,
+      'Daily SO Compensation Out': `${baseUrl}Mobile cards icons/Daily BONUS OUT.svg`,
+      'Daily Withdrawal': `${baseUrl}Mobile cards icons/Daily WITHDRAWL.svg`,
+      'Daily Net D/W': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'NET Daily Bonus': `${baseUrl}Mobile cards icons/Net Daily Bonus.svg`,
+      'Equity': `${baseUrl}Mobile cards icons/Total Equity.svg`,
+      'Floating P/L': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Liabilities': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Lifetime Bonus In': `${baseUrl}Mobile cards icons/LIFETIME BONUS IN.svg`,
+      'Lifetime Bonus Out': `${baseUrl}Mobile cards icons/LIFETIME BONUS OUT.svg`,
+      'Lifetime Credit In': `${baseUrl}Mobile cards icons/LIFETIME CREDIT IN.svg`,
+      'Lifetime Credit Out': `${baseUrl}Mobile cards icons/LIFETIME CREDIT OUT.svg`,
+      'Lifetime Deposit': `${baseUrl}Mobile cards icons/Daily Deposite.svg`,
+      'Lifetime SO Compensation In': `${baseUrl}Mobile cards icons/LIFETIME BONUS IN.svg`,
+      'Lifetime SO Compensation Out': `${baseUrl}Mobile cards icons/LIFETIME BONUS OUT.svg`,
+      'Lifetime Withdrawal': `${baseUrl}Mobile cards icons/Daily WITHDRAWL.svg`,
+      'Margin': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Margin Free': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Month Bonus In': `${baseUrl}Mobile cards icons/MONTHLY BONUS IN.svg`,
+      'Month Bonus Out': `${baseUrl}Mobile cards icons/MONTHLY BONUS OUt.svg`,
+      'Month Credit In': `${baseUrl}Mobile cards icons/MONTHLY CREDIT IN.svg`,
+      'Month Credit Out': `${baseUrl}Mobile cards icons/MOnthly CREDIT OUT.svg`,
+      'Month Deposit': `${baseUrl}Mobile cards icons/MONTLY DEPOSITE.svg`,
+      'Month P&L': `${baseUrl}Mobile cards icons/THIS MONTH PNL.svg`,
+      'Month SO Compensation In': `${baseUrl}Mobile cards icons/MONTHLY BONUS IN.svg`,
+      'Month SO Compensation Out': `${baseUrl}Mobile cards icons/MONTHLY BONUS OUt.svg`,
+      'Month Withdrawal': `${baseUrl}Mobile cards icons/MONTLY WITHDRAWL.svg`,
+      'NET Month Bonus': `${baseUrl}Mobile cards icons/NET MONTHLY BONUS.svg`,
+      'NET Month D/W': `${baseUrl}Mobile cards icons/NET MONTHLY DW.svg`,
+      'Profit': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'Storage': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'This Month PnL': `${baseUrl}Mobile cards icons/THIS MONTH PNL.svg`,
+      'Week Bonus In': `${baseUrl}Mobile cards icons/Weekly bonus in.svg`,
+      'Week Bonus Out': `${baseUrl}Mobile cards icons/WEEK BONUS OUT.svg`,
+      'Week Credit In': `${baseUrl}Mobile cards icons/WEEKLY Credit IN.svg`,
+      'Week Credit Out': `${baseUrl}Mobile cards icons/WEEKLY CREDIT OUT.svg`,
+      'Week Deposit': `${baseUrl}Mobile cards icons/WEEK DEPOSITE.svg`,
+      'Week P&L': `${baseUrl}Mobile cards icons/This week pnl.svg`,
+      'Week SO Compensation In': `${baseUrl}Mobile cards icons/Weekly bonus in.svg`,
+      'Week SO Compensation Out': `${baseUrl}Mobile cards icons/WEEK BONUS OUT.svg`,
+      'Week Withdrawal': `${baseUrl}Mobile cards icons/WEEK WITHDRAWL.svg`,
+      'NET Week Bonus': `${baseUrl}Mobile cards icons/NET WEEK BONUS.svg`,
+      'NET Week D/W': `${baseUrl}Mobile cards icons/NET WEEK DAY.svg`,
+      'Book PnL': `${baseUrl}Mobile cards icons/PNL.svg`,
     }
-    return iconMap[cleanLabel] || '/Desktop%20cards%20icons/Total%20Clients.svg' // Default icon
+    return iconMap[cleanLabel] || `${baseUrl}Mobile cards icons/Total Clients.svg` // Default icon
   }
 
   // Calculate totals for table footer
@@ -1105,6 +1106,9 @@ export default function Client2Module() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -1420,16 +1424,15 @@ export default function Client2Module() {
         </div>
 
         {/* Table area */}
-        <div className="relative" style={{ minHeight: '200px' }}>
+        <div className="relative">
           <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
             paddingRight: '16px',
-            paddingLeft: '4px',
-            minHeight: '100px'
+            paddingLeft: '4px'
           }}>
-            <div className="relative" style={{ minWidth: 'max-content', minHeight: '60px' }}>
+            <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
               <div className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
                 {visibleColumnsList.map((col, idx) => (
@@ -1856,7 +1859,6 @@ export default function Client2Module() {
                 'Margin Leverage': 'marginLeverage',
                 'Leverage': 'leverage',
                 'Profit': 'profit',
-                'PnL': 'pnl',
                 'Currency': 'currency',
                 'Currency Digits': 'currencyDigits',
                 'Applied Percentage': 'applied_percentage',
@@ -2149,5 +2151,3 @@ export default function Client2Module() {
     </div>
   )
 }
-
-

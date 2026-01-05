@@ -475,12 +475,13 @@ const MarginLevelPage = () => {
 
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'Below 50%': '/Desktop%20cards%20icons/Total%20Equity.svg',
-      'Avg Margin Level': '/Desktop%20cards%20icons/Total%20Balance.svg',
-      'Unique Logins': '/Desktop%20cards%20icons/Total%20Clients.svg',
+      'Below 50%': `${baseUrl}Desktop cards icons/Total Equity.svg`,
+      'Avg Margin Level': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'Unique Logins': `${baseUrl}Desktop cards icons/Total Clients.svg`,
     }
-    return iconMap[cardTitle] || '/Desktop%20cards%20icons/Total%20Clients.svg'
+    return iconMap[cardTitle] || `${baseUrl}Desktop cards icons/Total Clients.svg`
   }
 
   // Show loading only for table data
@@ -894,9 +895,9 @@ const MarginLevelPage = () => {
           {/* Summary Cards - Client2 Face Card Design */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Below 50%</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Below 50%</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Below 50%')} 
                     alt="Below 50%"
@@ -917,9 +918,9 @@ const MarginLevelPage = () => {
               )}
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Avg Margin Level</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Avg Margin Level</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Avg Margin Level')} 
                     alt="Avg Margin Level"
@@ -940,9 +941,9 @@ const MarginLevelPage = () => {
               )}
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Unique Logins</span>
-                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Unique Logins</span>
+                <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Unique Logins')} 
                     alt="Unique Logins"
@@ -1421,5 +1422,3 @@ const MarginLevelPage = () => {
 }
 
 export default MarginLevelPage
-
-

@@ -39,14 +39,14 @@ export default function PositionModule() {
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
+  const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
+  const [pendingDateDraft, setPendingDateDraft] = useState(null)
   const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
     // Pending apply tracking for Customize View
     const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
     const [pendingIBDraft, setPendingIBDraft] = useState(null)
     const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
     const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
-    const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
-    const [pendingDateDraft, setPendingDateDraft] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
@@ -714,27 +714,33 @@ export default function PositionModule() {
 
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
     const iconMap = {
-      'POSITIONS': '/Mobile%20cards%20icons/Total%20Balance.svg',
-      'FLOATING': '/Mobile%20cards%20icons/Floating%20Profit.svg',
-      'UNIQUE LOGINS': '/Mobile%20cards%20icons/Total%20Clients.svg',
-      'SYMBOLS': '/Mobile%20cards%20icons/Total%20Equity.svg'
+      'POSITIONS': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'FLOATING': `${baseUrl}Mobile cards icons/Floating Profit.svg`,
+      'UNIQUE LOGINS': `${baseUrl}Mobile cards icons/Total Clients.svg`,
+      'SYMBOLS': `${baseUrl}Mobile cards icons/Total Equity.svg`
     }
-    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
+    return iconMap[label] || `${baseUrl}Mobile cards icons/Total Clients.svg`
   }
   
-  // Update cards when summary stats change
+  // Update cards when filtered positions change (includes date filter)
   useEffect(() => {
+    const totalPositions = filteredPositions.length
+    const totalFloatingProfit = filteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const uniqueLogins = new Set(filteredPositions.map(p => p.login)).size
+    const uniqueSymbols = new Set(filteredPositions.map(p => p.symbol)).size
+    
     const newCards = [
-      { label: 'POSITIONS', value: String(summaryStats.totalPositions) },
+      { label: 'POSITIONS', value: String(totalPositions) },
       { 
         label: 'FLOATING', 
-        value: formatNum(Math.abs(summaryStats.totalFloatingProfit)),
+        value: formatNum(Math.abs(totalFloatingProfit)),
         isProfit: true,
-        profitValue: summaryStats.totalFloatingProfit
+        profitValue: totalFloatingProfit
       },
-      { label: 'UNIQUE LOGINS', value: String(summaryStats.uniqueLogins) },
-      { label: 'SYMBOLS', value: String(summaryStats.uniqueSymbols) }
+      { label: 'UNIQUE LOGINS', value: String(uniqueLogins) },
+      { label: 'SYMBOLS', value: String(uniqueSymbols) }
     ]
     
     // Only update if cards length is different (initial load) or keep existing order
@@ -749,7 +755,7 @@ export default function PositionModule() {
         })
       })
     }
-  }, [summaryStats])
+  }, [filteredPositions])
 
   // Card carousel scroll tracking
   useEffect(() => {
@@ -849,6 +855,9 @@ export default function PositionModule() {
                   )},
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
+                  )},
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
@@ -1309,11 +1318,11 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Symbols</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Equity.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{filteredNetPositions.length}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.length}</span>
                   </div>
                 </div>
                 <div style={{
@@ -1340,11 +1349,11 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Balance.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(filteredNetPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{formatNum(netPositions.reduce((s,p)=>s+p.netVolume,0))}</span>
                   </div>
                 </div>
                 <div style={{
@@ -1371,12 +1380,12 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/PNL.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: filteredNetPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
-                      {formatNum(filteredNetPositions.reduce((s,p)=>s+p.totalProfit,0))}
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: netPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? '#16A34A' : '#DC2626' }}>
+                      {formatNum(netPositions.reduce((s,p)=>s+p.totalProfit,0))}
                     </span>
                   </div>
                 </div>
@@ -1404,11 +1413,11 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Total Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Clients.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{filteredNetPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, lineHeight: '14px', letterSpacing: '-0.01em', color: '#000000' }}>{netPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
                   </div>
                 </div>
               </div>
@@ -1781,7 +1790,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Rows</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Equity.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Equity.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1812,7 +1821,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET Volume</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Balance.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Balance.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1843,7 +1852,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>NET P/L</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/PNL.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/PNL.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -1876,7 +1885,7 @@ export default function PositionModule() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', pointerEvents: 'none' }}>
                     <span style={{ color: '#4B4B4B', fontSize: '9px', fontWeight: 600, lineHeight: '12px', paddingRight: '4px' }}>Logins</span>
                     <div style={{ width: '16px', height: '16px', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src="/Mobile%20cards%20icons/Total%20Clients.svg" alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
+                      <img src={`${import.meta.env.BASE_URL || '/'}Mobile cards icons/Total Clients.svg`} alt="" style={{ width: '16px', height: '16px' }} onError={(e) => { e.target.style.display = 'none' }} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minHeight: '16px', pointerEvents: 'none' }}>
@@ -2549,6 +2558,4 @@ export default function PositionModule() {
     </div>
   )
 }
-
-
 
