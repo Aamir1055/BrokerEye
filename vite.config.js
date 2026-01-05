@@ -25,7 +25,21 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        navigateFallback: null // Prevent service worker from intercepting navigation
+        globIgnores: ['**/Desktop cards icons/**', '**/Mobile cards icons/**', '**/Desktop*/**', '**/Mobile*/**'],
+        navigateFallback: null, // Prevent service worker from intercepting navigation
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.brokereye\.work\.gd\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 300 // 5 minutes
+              }
+            }
+          }
+        ]
       },
       manifest: process.env.NODE_ENV === 'production' ? {
         name: 'Broker Eyes',
@@ -35,16 +49,16 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/amari-capital/',
-        start_url: '/amari-capital/',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
-            src: '/amari-capital/pwa-192x192.png',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/amari-capital/pwa-512x512.png',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }
