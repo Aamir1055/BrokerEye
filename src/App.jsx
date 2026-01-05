@@ -113,13 +113,13 @@ function PreloadRoutes() {
 
 function App() {
   // Dynamically detect basename from current URL path
-  // Supports both /amari-capital/ and /broker-branch/
+  // Supports both /amari-capital/ and /broker-branch/ and root /
   const getBasename = () => {
     const path = window.location.pathname
     if (path.startsWith('/broker-branch')) return '/broker-branch'
     if (path.startsWith('/amari-capital')) return '/amari-capital'
-    // Default to amari-capital for root or unknown paths
-    return '/amari-capital'
+    // Default to root for broker development
+    return '/'
   }
 
   return (
