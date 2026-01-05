@@ -74,7 +74,7 @@ const LoginMobile = () => {
         </div>
 
         {/* Three feature boxes - centered as a group */}
-        <div className="absolute flex justify-center items-start gap-[20px]" style={{ left: '50%', transform: 'translateX(-50%)', top: 145, width: 320 }}>
+        <div className="absolute flex justify-center items-start gap-[20px]" style={{ left: '50%', transform: 'translateX(-50%)', top: 180, width: 320 }}>
           {/* Left */}
           <div className="flex flex-col items-center gap-[6px]" style={{ width: 85 }}>
             <div className="relative w-[40px] h-[40px] flex items-center justify-center">
@@ -96,11 +96,6 @@ const LoginMobile = () => {
             </div>
             <div className="font-outfit font-semibold text-[8px] leading-[10px] text-white text-center">Real-Time Market<br />Insights</div>
           </div>
-        </div>
-
-        {/* Subtitle paragraph */}
-        <div className="absolute font-outfit font-medium text-[11px] leading-[16px] text-white text-center" style={{ width: 340, left: '57%', transform: 'translateX(-50%)', top: 230 }}>
-          A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
         </div>
 
         {/* Form header: Welcome Back + note */}
@@ -176,7 +171,7 @@ const LoginMobile = () => {
             type="submit"
             disabled={isLoading}
             className="absolute flex items-center justify-center gap-[10px] text-white font-montserrat font-bold text-[16px]"
-            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 630 : 585, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
+            style={{ left: '50%', transform: 'translateX(-50%)', top: errorMessage ? 680 : 630, width: 372, height: 50, background: '#2563EB', borderRadius: 12 }}
           >
             {isLoading ? 'Signing in…' : 'Log In'}
           </button>
@@ -184,7 +179,7 @@ const LoginMobile = () => {
 
         {/* Footer tiny text */}
         <div className="absolute font-roboto font-normal text-[8px] leading-[9px] text-center flex items-center justify-center" style={{ left: '50%', transform: 'translateX(-50%)', bottom: 10, width: 236 }}>
-          <span style={{ color: 'rgba(64, 64, 64, 0.42)' }}>Terms & Conditions | Privacy Notice | FAQs | Contact Us | Follow Us</span>
+          <span style={{ color: 'rgba(64, 64, 64, 0.42)' }}></span>
         </div>
       </div>
     </div>

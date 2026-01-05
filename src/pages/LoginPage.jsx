@@ -310,7 +310,7 @@ const LoginPage = () => {
 
           {/* Subtitle */}
           <p className="text-sm text-center" style={{ lineHeight: '1.6', opacity: 0.9, paddingLeft: '30px' }}>
-            A Trusted Platform For Disciplined Trading, Designed To Support Consistency, Risk Awareness, And Execution Quality.
+            
           </p>
         </div>
       </div>
