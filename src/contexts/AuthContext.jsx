@@ -160,7 +160,8 @@ export const AuthProvider = ({ children }) => {
       // Navigate to login explicitly so user is redirected immediately
       try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
       if (typeof window !== 'undefined') {
-        window.location.href = 'https://api.brokereye.work.gd/amari-capital/login'
+        // Redirect to local login route (respects current origin and basename)
+        window.location.href = '/login'
       }
     }
   }

@@ -1,8 +1,11 @@
 import axios from 'axios'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
-// Base URL: empty in dev (uses Vite proxy), hardcoded SSL in production
-const BASE_URL = import.meta?.env?.VITE_API_BASE_URL || (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd')
+// Base URL:
+// - In development: ALWAYS use relative '' so Vite proxy handles CORS
+// - In production: use env override or default to public API domain
+const IS_DEV = !!import.meta?.env?.DEV
+const BASE_URL = IS_DEV ? '' : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
 if (DEBUG_LOGS) console.log('[API] Base URL:', BASE_URL || '(empty - using Vite proxy)')
 
 const api = axios.create({
