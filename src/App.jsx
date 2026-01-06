@@ -123,6 +123,17 @@ function App() {
     return '/'
   }
 
+  // Guard: if hosted under a known subpath but current pathname lacks it, hard-redirect with the base.
+  // This mitigates misconfigured server rewrites that strip the subpath on refresh.
+  try {
+    const base = getBasename()
+    if (base !== '/' && !window.location.pathname.startsWith(base)) {
+      const { pathname, search, hash } = window.location
+      const target = `${base}${pathname}${search}${hash}`
+      window.location.replace(target)
+    }
+  } catch {}
+
   return (
     <Router basename={getBasename()}>
       <AuthProvider>
