@@ -123,7 +123,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     totalPnL: true,
     totalCommission: true,
     totalStorage: true,
-    winRate: true
+    winRate: true,
+    maxLoss: true,
+    maxProfit: true
   }
   const [dealStatVisibility, setDealStatVisibility] = useState(() => {
     try {
@@ -332,6 +334,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         return {
           container: pos ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
           label: pos ? 'text-emerald-600' : 'text-red-600',
+          value: getProfitColor(n)
+        }
+      }
+      case 'maxProfit': {
+        const pos = n >= 0
+        return {
+          container: pos ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
+          label: pos ? 'text-emerald-600' : 'text-red-600',
+          value: getProfitColor(n)
+        }
+      }
+      case 'maxLoss': {
+        return {
+          container: 'bg-red-50 border-red-200',
+          label: 'text-red-600',
           value: getProfitColor(n)
         }
       }
@@ -1640,6 +1657,26 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               }`}
             >
               Deals ({totalDealsCount || deals.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('funds')}
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                activeTab === 'funds'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              Balance
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                activeTab === 'rules'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+              }`}
+            >
+              Broker Rules
             </button>
           </div>
 
@@ -3589,7 +3626,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 const keys = dealStats ? Object.keys(dealStats) : []
                 const visibleKeys = keys.filter(k => dealStatVisibility[k])
                 const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
-                const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate']
+                const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate','maxLoss','maxProfit']
                 const toRender = [
                   ...preferredOrder.filter(k => baseKeys.includes(k)),
                   ...baseKeys.filter(k => !preferredOrder.includes(k))
@@ -3602,6 +3639,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   if (k === 'totalStorage') return (Number(v || 0) >= 0) ? 'border-teal-400' : 'border-orange-400'
                   if (k === 'totalVolume') return 'border-indigo-300'
                   if (k === 'winRate') return (Number(v || 0) >= 50) ? 'border-green-400' : 'border-orange-400'
+                  if (k === 'maxProfit') return (Number(v || 0) >= 0) ? 'border-emerald-400' : 'border-red-400'
+                  if (k === 'maxLoss') return 'border-red-400'
                   return 'border-gray-200'
                 }
                 toRender.forEach((key) => {

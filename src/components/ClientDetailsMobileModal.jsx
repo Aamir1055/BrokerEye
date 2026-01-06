@@ -25,8 +25,8 @@ const formatDateToValue = (displayStr) => {
   return `${fullYear}-${month}-${day}`
 }
 
-const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
-  const [activeTab, setActiveTab] = useState('positions')
+const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [], defaultTab = 'positions' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab)
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
   const [netPositions, setNetPositions] = useState([])
@@ -1201,10 +1201,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1214,7 +1214,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1224,13 +1224,33 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Deals ({hasAppliedFilter ? totalDealsCount : 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('funds')}
+              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
+                activeTab === 'funds'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Balance
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
+                activeTab === 'rules'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Rules
             </button>
           </div>
         </div>
@@ -1647,6 +1667,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </div>
           </div>
         )}
+
+        {/* Summary Cards - NET Position tab */}
 
         {/* NET Position Face Cards (matching Positions tab styling) */}
         {activeTab === 'netPositions' && (
