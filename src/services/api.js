@@ -16,6 +16,17 @@ const api = axios.create({
   timeout: 30000, // Increased to 30 seconds for slow endpoints
 })
 
+// Helper to compute current base path (for sub-folder deployments)
+const getBasePath = () => {
+  try {
+    const path = window.location?.pathname || '/'
+    const match = path.match(/^\/(amari-capital|broker-branch|broker)\b/)
+    return match ? `/${match[1]}` : ''
+  } catch {
+    return ''
+  }
+}
+
 // A raw axios instance without interceptors, used for token refresh to avoid loops
 const rawApi = axios.create({
   baseURL: BASE_URL,
@@ -143,7 +154,8 @@ api.interceptors.response.use(
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
                   try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                  window.location.href = '/login'
+                  const base = getBasePath()
+                  window.location.href = `${base}/login`
                 }
                 throw new Error('Refresh token expired')
               }
@@ -172,7 +184,8 @@ api.interceptors.response.use(
                   localStorage.removeItem('user_data')
                   if (typeof window !== 'undefined') {
                     try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                    window.location.href = '/login'
+                    const base = getBasePath()
+                    window.location.href = `${base}/login`
                   }
                   throw new Error('Refresh token expired')
                 }
@@ -202,7 +215,8 @@ api.interceptors.response.use(
         } catch {}
         if (typeof window !== 'undefined') {
           try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-          window.location.href = '/login'
+          const base = getBasePath()
+          window.location.href = `${base}/login`
         }
         return Promise.reject(refreshErr)
       }
@@ -267,7 +281,8 @@ ibApi.interceptors.response.use(
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
                   try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                  window.location.href = '/login'
+                  const base = getBasePath()
+                  window.location.href = `${base}/login`
                 }
                 requestQueue = []
                 throw new Error('Refresh token expired')
@@ -295,7 +310,8 @@ ibApi.interceptors.response.use(
         } catch {}
         if (typeof window !== 'undefined') {
           try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-          window.location.href = '/login'
+          const base = getBasePath()
+          window.location.href = `${base}/login`
         }
         return Promise.reject(refreshErr)
       }

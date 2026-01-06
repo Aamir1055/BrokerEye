@@ -4,7 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
+  // Use relative base in production so assets resolve under subpaths
+  base: process.env.NODE_ENV === 'production' ? './' : '/',
   build: {
     outDir: 'C:/xampp/htdocs/broker',
     assetsDir: 'assets',
@@ -24,9 +25,23 @@ export default defineConfig({
         enabled: false // Disable PWA in development
       },
       workbox: {
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         globIgnores: ['**/Desktop cards icons/**', '**/Mobile cards icons/**', '**/Desktop*/**', '**/Mobile*/**'],
         navigateFallback: null, // Prevent service worker from intercepting navigation
+        manifestTransforms: [
+          async (entries) => {
+            // Filter out problematic assets (spaces encoded, percent chars, or icons folders)
+            const filtered = entries.filter((e) => {
+              const url = e.url || ''
+              if (url.includes('Desktop%20cards%20icons') || url.includes('Mobile%20cards%20icons')) return false
+              if (url.includes('Desktop cards icons') || url.includes('Mobile cards icons')) return false
+              if (url.includes('%')) return false
+              return true
+            })
+            return { manifest: filtered }
+          }
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.brokereye\.work\.gd\/.*/i,
@@ -49,16 +64,17 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
+        // Use relative scope/start_url so builds work under subpaths (e.g., /amari-capital or /broker)
+        scope: '.',
+        start_url: '.',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/pwa-512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }

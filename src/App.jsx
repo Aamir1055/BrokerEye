@@ -116,6 +116,7 @@ function App() {
   // Supports both /amari-capital/ and /broker-branch/ and root /
   const getBasename = () => {
     const path = window.location.pathname
+    if (path.startsWith('/broker')) return '/broker'
     if (path.startsWith('/broker-branch')) return '/broker-branch'
     if (path.startsWith('/amari-capital')) return '/amari-capital'
     // Default to root for broker development

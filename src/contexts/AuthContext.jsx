@@ -160,8 +160,11 @@ export const AuthProvider = ({ children }) => {
       // Navigate to login explicitly so user is redirected immediately
       try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
       if (typeof window !== 'undefined') {
-        // Redirect to local login route (respects current origin and basename)
-        window.location.href = '/login'
+        // Compute current base path (supports sub-folder deployments)
+        const path = window.location.pathname || '/'
+        const match = path.match(/^\/(amari-capital|broker-branch|broker)\b/)
+        const base = match ? `/${match[1]}` : ''
+        window.location.href = `${base}/login`
       }
     }
   }
