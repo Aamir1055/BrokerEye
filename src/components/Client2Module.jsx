@@ -1542,7 +1542,7 @@ export default function Client2Module() {
                             onClick={() => {
                               if (col.key === 'login') {
                                 setSelectedClient(client)
-                                setSelectedClientDefaultTab && setSelectedClientDefaultTab('funds')
+                                setSelectedClientDefaultTab && setSelectedClientDefaultTab('positions')
                               }
                             }}
                             className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap ${
