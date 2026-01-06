@@ -112,26 +112,10 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Dynamically detect basename from current URL path
-  // Supports both /amari-capital/ and /broker-branch/ and root /
+  // Broker runs at root - no subpath detection
   const getBasename = () => {
-    const path = window.location.pathname
-    if (path.startsWith('/broker-branch')) return '/broker-branch'
-    if (path.startsWith('/amari-capital')) return '/amari-capital'
-    // Default to root for broker development
     return '/'
   }
-
-  // Guard: if hosted under a known subpath but current pathname lacks it, hard-redirect with the base.
-  // This mitigates misconfigured server rewrites that strip the subpath on refresh.
-  try {
-    const base = getBasename()
-    if (base !== '/' && !window.location.pathname.startsWith(base)) {
-      const { pathname, search, hash } = window.location
-      const target = `${base}${pathname}${search}${hash}`
-      window.location.replace(target)
-    }
-  } catch {}
 
   return (
     <Router basename={getBasename()}>
