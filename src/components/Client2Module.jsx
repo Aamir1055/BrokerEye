@@ -1146,8 +1146,8 @@ export default function Client2Module() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
-        <div className="pt-5 pb-4 px-4">
-          <div className="flex items-center justify-between">
+        <div className="pt-5 pb-4">
+          <div className="flex items-center justify-between px-4">
             {/* Left side - Filter, %, Download buttons */}
             <div className="flex items-center gap-2">
               <button 
@@ -1282,10 +1282,10 @@ export default function Client2Module() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2 pl-5">
+        <div className="pb-2">
           <div 
             ref={scrollContainerRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2"
           >
             {orderedCards.map((card, i) => (
                 <div 
@@ -1341,8 +1341,8 @@ export default function Client2Module() {
             ))}
           </div>
         </div>        {/* Search and action buttons */}
-        <div className="pb-3 px-4">
-          <div className="flex items-center gap-1">
+        <div className="pb-3">
+          <div className="flex items-center gap-1 px-2">
             {/* Search box - compact, edge-to-edge */}
             <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
@@ -1427,9 +1427,7 @@ export default function Client2Module() {
           <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
-            scrollbarColor: '#CBD5E0 #F7FAFC',
-            paddingRight: '16px',
-            paddingLeft: '4px'
+            scrollbarColor: '#CBD5E0 #F7FAFC'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}

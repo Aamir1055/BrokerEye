@@ -295,7 +295,7 @@ export default function PendingOrdersModule() {
             onClick={() => {
               const fullClient = clients.find(c => String(c.login) === String(order.login))
               setSelectedClient(fullClient || { login: order.login, email: order.email || '', name: '' })
-              setSelectedClientDefaultTab('funds')
+              setSelectedClientDefaultTab('positions')
             }}
           >
             <span className="truncate">{value}</span>

@@ -63,6 +63,12 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   const fromDateInputRef = useRef(null)
   const toDateInputRef = useRef(null)
   
+  // Ref for pending orders section
+  const pendingOrdersRef = useRef(null)
+  
+  // Track if deals have been auto-loaded on first tab switch
+  const hasAutoLoadedDeals = useRef(false)
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12)
@@ -151,6 +157,17 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   // Reset pagination when tab changes
   useEffect(() => {
     setCurrentPage(1)
+  }, [activeTab])
+
+  // Auto-load deals when switching to deals tab for the first time (like desktop modal)
+  useEffect(() => {
+    if (activeTab === 'deals' && !hasAutoLoadedDeals.current) {
+      hasAutoLoadedDeals.current = true
+      // If deals haven't been loaded yet, load them with default "Today" filter
+      if (!hasAppliedFilter || currentDateFilter.from === 0) {
+        handleQuickFilter('Today')
+      }
+    }
   }, [activeTab])
 
   // Fetch deals when page changes in deals tab
@@ -356,19 +373,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         winRate: dealStats?.winRate ?? 0
       })
 
-      // Set default date range to Today
+      // Set default date range to Today (but don't fetch deals yet - wait for tab switch like desktop)
       const today = new Date()
       const todayStr = today.toISOString().split('T')[0]
       setFromDate(formatDateToDisplay(todayStr))
       setToDate(formatDateToDisplay(todayStr))
-      
-      // Fetch deals for today by default, passing positionsData so it can calculate stats correctly
-      const startOfDay = new Date(today)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(today)
-      endOfDay.setHours(23, 59, 59, 999)
-      
-      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1, positionsData)
       
       setLoading(false)
     } catch (error) {
@@ -505,6 +514,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     setHasAppliedFilter(false)
     setQuickFilter('Today')
     handleQuickFilter('Today')
+  }
+
+  // Scroll to pending orders section
+  const scrollToPendingOrders = () => {
+    if (pendingOrdersRef.current) {
+      pendingOrdersRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   const fetchAvailableRules = async () => {
@@ -917,7 +933,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {/* Pending Orders Section */}
             {pendingOrders.length > 0 && (
               <>
-                <tr className="bg-gray-100">
+                <tr className="bg-gray-100" ref={pendingOrdersRef}>
                   <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-2">
                     <div className="text-sm font-semibold text-gray-700">Pending Orders</div>
                   </td>
@@ -1258,7 +1274,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         {/* Search */}
         <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
+            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1" style={{ maxWidth: activeTab === 'positions' && orders.length > 0 ? 'calc(100% - 140px)' : '100%' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
                 <path d="M9 9L12 12" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1289,6 +1305,20 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
+            {/* Orders Button - Only show in positions tab when there are pending orders */}
+            {activeTab === 'positions' && orders.length > 0 && (
+              <button
+                onClick={scrollToPendingOrders}
+                className="h-[28px] px-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center gap-1 transition-all active:scale-95 flex-shrink-0"
+                title="Scroll to Pending Orders"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+                <span className="text-[10px] font-semibold">Orders</span>
+              </button>
+            )}
             {/* Pagination Buttons - Hidden for positions and netPositions tabs */}
             {activeTab !== 'positions' && activeTab !== 'netPositions' && (
               <>

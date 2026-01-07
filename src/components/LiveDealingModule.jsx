@@ -659,7 +659,7 @@ export default function LiveDealingModule() {
             onClick={() => {
               const fullClient = clients.find(c => String(c.login) === String(deal.login))
               setSelectedClient(fullClient || { login: deal.login, email: deal.email || '', name: '' })
-              setSelectedClientDefaultTab('funds')
+              setSelectedClientDefaultTab('positions')
             }}
           >
             <span className="truncate">{value}</span>

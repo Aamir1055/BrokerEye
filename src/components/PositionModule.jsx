@@ -893,8 +893,8 @@ export default function PositionModule() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
-        <div className="pt-5 pb-4 px-4">
-          <div className="flex items-center gap-2">
+        <div className="pt-5 pb-4">
+          <div className="flex items-center gap-2 px-2">
             <button 
               onClick={() => setIsCustomizeOpen(true)}
               className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
@@ -969,10 +969,10 @@ export default function PositionModule() {
 
         {/* Face Cards Carousel - Hidden in NET views */}
         {!showNetPositions && !showClientNet && (
-        <div className="pb-2 pl-5">
+        <div className="pb-2">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2"
           >
             {loading && loading.positions ? (
               // Skeleton loading for face cards
@@ -1075,7 +1075,7 @@ export default function PositionModule() {
 
         {/* Search and navigation */}
         {!showNetPositions && !showClientNet && (
-        <div className="pb-3 px-4">
+        <div className="pb-3 px-2">
           <div className="flex items-center gap-1">
             <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
@@ -1147,7 +1147,6 @@ export default function PositionModule() {
             <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
-              paddingRight: '8px',
               paddingBottom: '8px',
               maxHeight: 'calc(100vh - 280px)'
             }}>
@@ -1291,8 +1290,8 @@ export default function PositionModule() {
         {showNetPositions && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 pl-5">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2">
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1423,7 +1422,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-4">
+            <div className="flex items-center gap-2 pb-3 px-2">
                 {/* Search Bar */}
                 <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1498,7 +1497,6 @@ export default function PositionModule() {
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Body - Scrollable with sticky header */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
-                  paddingRight: '8px',
                   paddingBottom: '8px',
                   maxHeight: 'calc(100vh - 350px)'
                 }}>
@@ -1763,8 +1761,8 @@ export default function PositionModule() {
         {showClientNet && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 pl-5">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2">
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1895,7 +1893,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-4 pr-8">
+            <div className="flex items-center gap-2 pb-3 px-2">
                 {/* Search Bar */}
                 <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1970,7 +1968,6 @@ export default function PositionModule() {
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Table - single scroll container */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
-                  paddingRight: '8px',
                   paddingBottom: '8px',
                   maxHeight: 'calc(100vh - 350px)'
                 }}>
