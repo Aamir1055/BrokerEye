@@ -519,7 +519,16 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   // Scroll to pending orders section
   const scrollToPendingOrders = () => {
     if (pendingOrdersRef.current) {
-      pendingOrdersRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Get the scroll container (the parent div with overflow)
+      const scrollContainer = pendingOrdersRef.current.closest('.overflow-y-auto')
+      if (scrollContainer) {
+        const elementTop = pendingOrdersRef.current.offsetTop
+        // Scroll to the element with small offset to show the heading fully without cutting it off
+        scrollContainer.scrollTo({
+          top: elementTop - 60,
+          behavior: 'smooth'
+        })
+      }
     }
   }
 
@@ -1274,7 +1283,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         {/* Search */}
         <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1" style={{ maxWidth: activeTab === 'positions' && orders.length > 0 ? 'calc(100% - 140px)' : '100%' }}>
+            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
                 <path d="M9 9L12 12" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1305,20 +1314,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
-            {/* Orders Button - Only show in positions tab when there are pending orders */}
-            {activeTab === 'positions' && orders.length > 0 && (
-              <button
-                onClick={scrollToPendingOrders}
-                className="h-[28px] px-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center gap-1 transition-all active:scale-95 flex-shrink-0"
-                title="Scroll to Pending Orders"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <polyline points="19 12 12 19 5 12"></polyline>
-                </svg>
-                <span className="text-[10px] font-semibold">Orders</span>
-              </button>
-            )}
             {/* Pagination Buttons - Hidden for positions and netPositions tabs */}
             {activeTab !== 'positions' && activeTab !== 'netPositions' && (
               <>
@@ -1452,7 +1447,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         )}
 
         {/* Table Content - Scrollable Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50 relative">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -1466,6 +1461,22 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {activeTab === 'positions' && renderPositions()}
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
+              
+              {/* Floating Orders Button - Only show in positions tab when there are pending orders */}
+              {activeTab === 'positions' && orders.length > 0 && (
+                <button
+                  onClick={scrollToPendingOrders}
+                  className="fixed bottom-40 right-6 h-9 px-3 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center gap-1.5 hover:scale-105"
+                  title="Scroll to Pending Orders"
+                  style={{ zIndex: 9999 }}
+                >
+                  <span className="text-[11px] font-semibold whitespace-nowrap">Orders ({orders.length})</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-lg">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                </button>
+              )}
               
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
