@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
@@ -50,6 +50,13 @@ const ClientPercentagePage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
+  
+  // Sort states for API
+  const [sortColumn, setSortColumn] = useState('login')
+  const [sortDirection, setSortDirection] = useState('asc')
+  
+  // Filter state for has_custom
+  const [hasCustomFilter, setHasCustomFilter] = useState(null) // null, true, or false
 
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -271,27 +278,26 @@ const ClientPercentagePage = () => {
   const [editPercentage, setEditPercentage] = useState('')
   const [editComment, setEditComment] = useState('')
   const [saving, setSaving] = useState(false)
-  
-  // Sorting states
-  const [sortColumn, setSortColumn] = useState('client_login')
-  const [sortDirection, setSortDirection] = useState('asc')
 
   // Module filter removed (belongs to Live Dealing)
 
+  // Reset to page 1 when search, sort, or filter changes
   useEffect(() => {
-    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
-    if (!isAuthenticated || unauthorized || hidden) return
-    fetchAllClientPercentages(1)
-  }, [isAuthenticated, unauthorized])
+    setCurrentPage(1)
+  }, [searchQuery, sortColumn, sortDirection, hasCustomFilter])
 
-  // Fetch data when page changes
+  // Fetch data when page, search, sort, or filter changes
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
     if (!isAuthenticated || unauthorized || hidden) return
-    if (currentPage > 1) {
+    
+    // Debounce search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
       fetchAllClientPercentages(currentPage)
-    }
-  }, [currentPage, isAuthenticated, unauthorized])
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [currentPage, searchQuery, sortColumn, sortDirection, hasCustomFilter, isAuthenticated, unauthorized])
 
   useEffect(() => {
     const onRefreshed = () => setUnauthorized(false)
@@ -322,7 +328,41 @@ const ClientPercentagePage = () => {
     try {
       setLoading(true)
       setError('')
-      const response = await brokerAPI.getAllClientPercentages({ page, page_size: itemsPerPage })
+      
+      // Build API params with search and sort
+      const params = {
+        page,
+        page_size: itemsPerPage,
+        sort_by: sortColumn,
+        sort_order: sortDirection
+      }
+      
+      const query = searchQuery.trim().toLowerCase()
+      
+      // Special handling for custom/default search - use has_custom parameter
+      if (query === 'custom') {
+        params.has_custom = true
+      } else if (query === 'default') {
+        params.has_custom = false
+      } else if (searchQuery.trim()) {
+        // Detect if it's a percentage search vs login search
+        // Percentage: 1-2 digits (70, 80, 90, 95), decimals (70.5, 95.5), or has % sign
+        // Login: 3+ digits (300, 1234, 300100) or contains non-numeric chars
+        const isProbablyPercentage = /^[0-9]{1,2}(\.[0-9]+)?%?$/.test(query) || query.includes('%')
+        
+        if (!isProbablyPercentage) {
+          // Regular login search - send to API
+          params.login = searchQuery.trim()
+        }
+        // Otherwise let client-side search handle it (percentage search)
+      }
+      
+      // Add has_custom filter if set (separate from search)
+      if (hasCustomFilter !== null && query !== 'custom' && query !== 'default') {
+        params.has_custom = hasCustomFilter
+      }
+      
+      const response = await brokerAPI.getAllClientPercentages(params)
       
       const clientsData = response.data?.clients || []
       setClients(clientsData)
@@ -388,39 +428,37 @@ const ClientPercentagePage = () => {
     setEditComment('')
   }
 
-  // Search filtering
-  const searchClients = () => {
-    if (!searchQuery.trim()) return clients
+  // Client-side search filter for multi-field search
+  const applyClientSideSearch = (clientsList) => {
+    if (!searchQuery.trim()) return clientsList
 
     const query = searchQuery.toLowerCase().trim()
 
-    // Special-case: if user types an explicit type keyword, filter strictly by type
+    // Special handling for type keywords
     if (query === 'default' || query === 'custom') {
       const wantCustom = query === 'custom'
-      return clients.filter(c => {
+      return clientsList.filter(c => {
         const isCustom = c.is_custom === true || c.is_custom === 1 || c.is_custom === '1'
         return wantCustom ? isCustom : !isCustom
       })
     }
 
-    // Otherwise, search across all visible/primitive fields
-    return clients.filter(client => {
-      for (const key in client) {
-        if (!Object.prototype.hasOwnProperty.call(client, key)) continue
-        const value = client[key]
-
-        // Map type for better fuzzy matching
-        if (key === 'is_custom') {
-          const typeText = (value === true || value === 1 || value === '1') ? 'custom' : 'default'
-          if (typeText.includes(query)) return true
-          continue
-        }
-
-        if (value !== null && value !== undefined) {
-          const strValue = String(value).toLowerCase()
-          if (strValue.includes(query)) return true
-        }
-      }
+    // Search across login, percentage, type, and comment fields
+    return clientsList.filter(client => {
+      // Search in login
+      if (client.client_login?.toString().toLowerCase().includes(query)) return true
+      
+      // Search in percentage
+      if (client.percentage?.toString().includes(query)) return true
+      
+      // Search in comment
+      if (client.comment?.toString().toLowerCase().includes(query)) return true
+      
+      // Search in type (custom/default)
+      const isCustom = client.is_custom === true || client.is_custom === 1 || client.is_custom === '1'
+      const typeText = isCustom ? 'custom' : 'default'
+      if (typeText.includes(query)) return true
+      
       return false
     })
   }
@@ -481,10 +519,11 @@ const ClientPercentagePage = () => {
   }
 
   const sortedClients = () => {
-    const searched = searchClients(clients)
+    // API handles login search and sort, apply client-side multi-field search
+    let filtered = applyClientSideSearch(clients)
     
-    // Apply IB filter first (cumulative order: IB -> Group)
-    let ibFiltered = filterByActiveIB(searched, 'client_login')
+    // Apply IB filter (cumulative order: IB -> Group)
+    let ibFiltered = filterByActiveIB(filtered, 'client_login')
     
     // Apply group filter on top of IB filter
     let groupFiltered = filterByActiveGroup(ibFiltered, 'client_login', 'clientpercentage')

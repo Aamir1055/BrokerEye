@@ -13,6 +13,7 @@ import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
 import PositionModule from '../components/PositionModule'
 import DateFilterModal from '../components/DateFilterModal'
+import { normalizePositions } from '../utils/currencyNormalization'
 
 const PositionsPage = () => {
   // Mobile detection - initialize with actual window width to prevent flash
@@ -33,10 +34,28 @@ const PositionsPage = () => {
   }, [])
 
   // Use cached data from DataContext
-  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState } = useData()
+  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState, rawClients } = useData()
   const { isAuthenticated } = useAuth()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
+  
+  // Build client currency map from rawClients for USC detection
+  const clientCurrencyMap = useMemo(() => {
+    if (!rawClients || rawClients.length === 0) return {}
+    const map = {}
+    rawClients.forEach(client => {
+      if (client && client.login && client.currency) {
+        map[client.login] = client.currency
+      }
+    })
+    return map
+  }, [rawClients])
+  
+  // Apply USD normalization to all positions automatically with USC handling
+  const displayPositions = useMemo(() => {
+    if (!cachedPositions || cachedPositions.length === 0) return cachedPositions
+    return normalizePositions(cachedPositions, clientCurrencyMap)
+  }, [cachedPositions, clientCurrencyMap])
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -291,7 +310,7 @@ const PositionsPage = () => {
     const isTimeColumn = columnKey === 'timeUpdate'
     const originalTimestamps = new Map() // Store original timestamps for sorting
     
-    cachedPositions.forEach(position => {
+    displayPositions.forEach(position => {
       let value = position[columnKey]
       
       // Format timeUpdate (epoch) to dd/mm/yyyy hh:mm:ss for display in filter
@@ -1008,7 +1027,7 @@ const PositionsPage = () => {
   }
   
   // Defer heavy list processing so route changes remain responsive
-  const deferredPositions = useDeferredValue(cachedPositions)
+  const deferredPositions = useDeferredValue(displayPositions)
 
   // Memoize filtered and sorted positions to prevent blocking on navigation
   const { sortedPositions, ibFilteredPositions } = useMemo(() => {
@@ -1072,10 +1091,10 @@ const PositionsPage = () => {
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
   }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
 
-  // Memoized summary statistics - based on filtered positions
+  // Memoized summary statistics - based on filtered positions (always use USD)
   const summaryStats = useMemo(() => {
     const totalPositions = ibFilteredPositions.length
-    const totalFloatingProfit = ibFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfit = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_usd || 0), 0)
     const totalFloatingProfitPercentage = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
@@ -1255,7 +1274,7 @@ const PositionsPage = () => {
       return parts[0] || s
     }
 
-    cachedPositions.forEach(pos => {
+    displayPositions.forEach(pos => {
       const login = pos.login
       const symbol = pos.symbol
       if (login == null || !symbol) return
@@ -3676,9 +3695,9 @@ const PositionsPage = () => {
                           {effectiveCols.profit && (
                             <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
-                                (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                (p.profit_usd || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
-                                {formatNumber(adjustValueForSymbol(p.profit, p.symbol), 2)}
+                                {formatNumber(p.profit_usd || 0, 2)}
                               </span>
                             </td>
                           )}
@@ -3692,7 +3711,9 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.storage, p.symbol), 2)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
+                              {formatNumber(p.storage_usd || 0, 2)}
+                            </td>
                           )}
                           {effectiveCols.storagePercentage && (
                             <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
@@ -3721,7 +3742,9 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.commission, p.symbol), 2)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
+                              {formatNumber(p.commission_usd || 0, 2)}
+                            </td>
                           )}
                         </tr>
                       )

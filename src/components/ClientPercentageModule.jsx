@@ -51,8 +51,9 @@ export default function ClientPercentageModule() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768)
   const itemsPerPage = isMobileView ? 15 : 100
-  const [sortColumn, setSortColumn] = useState(null)
+  const [sortColumn, setSortColumn] = useState('login')
   const [sortDirection, setSortDirection] = useState('asc')
+  const [hasCustomFilter, setHasCustomFilter] = useState(null) // null, true, or false
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     percentage: true,
@@ -112,19 +113,59 @@ export default function ClientPercentageModule() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Fetch data on mount
+  // Reset to page 1 when search/sort/filter changes
   useEffect(() => {
-    fetchAllClientPercentages(1)
-  }, [])
+    setCurrentPage(1)
+  }, [searchInput, sortColumn, sortDirection, hasCustomFilter])
+
+  // Fetch data when page changes or on initial mount
+  useEffect(() => {
+    // Debounce search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      fetchAllClientPercentages(currentPage)
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [currentPage, searchInput, sortColumn, sortDirection, hasCustomFilter])
 
   const fetchAllClientPercentages = async (page = 1) => {
     try {
       setLoading(true)
       setError('')
       
-      // Server-side pagination for both views
-      // Some backends use `limit` instead of `page_size` for this endpoint
-      const params = isMobileView ? { page, limit: 15 } : { page, limit: 100 }
+      // Build API params with search, sort, and filter
+      const params = {
+        page,
+        limit: itemsPerPage,
+        sort_by: sortColumn,
+        sort_order: sortDirection
+      }
+      
+      const query = searchInput.trim().toLowerCase()
+      
+      // Special handling for custom/default search - use has_custom parameter
+      if (query === 'custom') {
+        params.has_custom = true
+      } else if (query === 'default') {
+        params.has_custom = false
+      } else if (searchInput.trim()) {
+        // Detect if it's a percentage search vs login search
+        // Percentage: 1-2 digits (70, 80, 90, 95), decimals (70.5, 95.5), or has % sign
+        // Login: 3+ digits (300, 1234, 300100) or contains non-numeric chars
+        const isProbablyPercentage = /^[0-9]{1,2}(\.[0-9]+)?%?$/.test(query) || query.includes('%')
+        
+        if (!isProbablyPercentage) {
+          // Regular login search - send to API
+          params.login = searchInput.trim()
+        }
+        // Otherwise let client-side search handle it (percentage search)
+      }
+      
+      // Add has_custom filter if set (separate from search)
+      if (hasCustomFilter !== null && query !== 'custom' && query !== 'default') {
+        params.has_custom = hasCustomFilter
+      }
+      
       const response = await brokerAPI.getAllClientPercentages(params)
 
       // Normalize nested API shape: response.data?.data
@@ -193,72 +234,38 @@ export default function ClientPercentageModule() {
     }
   }, [ibFilteredData])
 
-  // Filter data based on search
+  // Apply client-side multi-field search after IB filtering
   const filteredData = useMemo(() => {
-    let filtered = ibFilteredData.filter(item => {
-      if (!searchInput.trim()) return true
-      const query = searchInput.toLowerCase()
-      
-      // Special handling for Type column search
-      if (query === 'default') {
-        return item.is_custom === false
-      }
-      if (query === 'custom') {
-        return item.is_custom === true
-      }
-      
-      // Search across all primitive fields
-      return (
-        String(item.client_login || item.login || '').toLowerCase().includes(query) ||
-        String(item.percentage || '').toLowerCase().includes(query) ||
-        String(item.comment || '').toLowerCase().includes(query) ||
-        (item.is_custom ? 'custom' : 'default').includes(query) ||
-        String(item.updated_at || '').toLowerCase().includes(query)
-      )
-    })
+    if (!searchInput.trim()) return ibFilteredData
 
-    // Apply sorting
-    if (sortColumn) {
-      filtered.sort((a, b) => {
-        // Map column keys to actual data fields for sorting
-        let aVal, bVal
-        
-        if (sortColumn === 'login') {
-          aVal = a.client_login || a.login
-          bVal = b.client_login || b.login
-        } else if (sortColumn === 'updatedAt') {
-          aVal = a.updated_at
-          bVal = b.updated_at
-        } else if (sortColumn === 'type') {
-          aVal = a.is_custom ? 'Custom' : 'Default'
-          bVal = b.is_custom ? 'Custom' : 'Default'
-        } else {
-          aVal = a[sortColumn]
-          bVal = b[sortColumn]
-        }
-        
-        if (aVal == null && bVal == null) return 0
-        if (aVal == null) return 1
-        if (bVal == null) return -1
-        
-        const aNum = Number(aVal)
-        const bNum = Number(bVal)
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
-        }
-        
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        if (sortDirection === 'asc') {
-          return aStr.localeCompare(bStr)
-        } else {
-          return bStr.localeCompare(aStr)
-        }
-      })
+    const query = searchInput.toLowerCase().trim()
+
+    // Special handling for type keywords
+    if (query === 'default') {
+      return ibFilteredData.filter(item => item.is_custom === false)
+    }
+    if (query === 'custom') {
+      return ibFilteredData.filter(item => item.is_custom === true)
     }
 
-    return filtered
-  }, [ibFilteredData, searchInput, sortColumn, sortDirection])
+    // Search across login, percentage, type, and comment fields
+    return ibFilteredData.filter(item => {
+      // Search in login
+      if (String(item.client_login || item.login || '').toLowerCase().includes(query)) return true
+      
+      // Search in percentage
+      if (String(item.percentage || '').includes(query)) return true
+      
+      // Search in comment
+      if (String(item.comment || '').toLowerCase().includes(query)) return true
+      
+      // Search in type
+      const typeText = item.is_custom ? 'custom' : 'default'
+      if (typeText.includes(query)) return true
+      
+      return false
+    })
+  }, [ibFilteredData, searchInput])
 
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
