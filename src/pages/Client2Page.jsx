@@ -4103,7 +4103,6 @@ const Client2Page = () => {
                             ? formatIndianNumber(String(Math.round(rawValue || 0)))
                             : formatIndianNumber((rawValue || 0).toFixed(2))}
                         </span>
-                        <span className="text-[10px] md:text-xs font-normal text-[#6B7280] leading-none">USD</span>
                       </div>
                     </div>
                   )
