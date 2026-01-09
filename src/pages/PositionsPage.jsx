@@ -2290,7 +2290,7 @@ const PositionsPage = () => {
                   <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
-                    <span>{formatNumber(Math.abs(summaryStats.totalFloatingProfit))}</span>
+                    <span>{formatNumber(summaryStats.totalFloatingProfit)}</span>
                     <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
                   </div>
                 )}
@@ -2319,7 +2319,7 @@ const PositionsPage = () => {
                   <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
                     summaryStats.totalFloatingProfitPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                   }`}>
-                    <span>{formatIndianNumber(Math.abs(summaryStats.totalFloatingProfitPercentage), 2)}</span>
+                    <span>{formatIndianNumber(summaryStats.totalFloatingProfitPercentage, 2)}</span>
                   </div>
                 )}
               </div>
