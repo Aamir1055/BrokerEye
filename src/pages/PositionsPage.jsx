@@ -1094,8 +1094,9 @@ const PositionsPage = () => {
   // Memoized summary statistics - based on filtered positions (always use USD)
   const summaryStats = useMemo(() => {
     const totalPositions = ibFilteredPositions.length
-    const totalFloatingProfit = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_usd || 0), 0)
-    const totalFloatingProfitPercentage = ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
+    // Invert profit values to show broker perspective (client loss = broker gain)
+    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_usd || 0), 0)
+    const totalFloatingProfitPercentage = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
     
