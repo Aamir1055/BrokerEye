@@ -2890,8 +2890,8 @@ const Client2Page = () => {
       // Calculated PnL cards
       netLifetimePnL: { label: 'Net Lifetime PnL', color: 'violet', getValue: () => (totals?.lifetimePnL || 0) - (rebateTotals?.totalRebate || 0), colorCheck: true },
       netLifetimePnLPercent: { label: 'Net Lifetime PnL %', color: 'purple', getValue: () => (totalsPercent?.lifetimePnL || 0) - (rebateTotals?.totalRebatePercent || 0), colorCheck: true },
-      bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => (totals?.lifetimePnL || 0) + (totals?.floating || 0), colorCheck: true },
-      bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => (totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0), colorCheck: true }
+      bookPnL: { label: 'Book PnL', color: 'sky', getValue: () => -((totals?.lifetimePnL || 0) + (totals?.floating || 0)), colorCheck: false, forceColor: 'red' },
+      bookPnLPercent: { label: 'Book PnL %', color: 'indigo', getValue: () => -((totalsPercent?.lifetimePnL || 0) + (totalsPercent?.floating || 0)), colorCheck: false, forceColor: 'red' }
     }
 
     return configs[cardKey] || null
@@ -4061,8 +4061,9 @@ const Client2Page = () => {
                   const rawValue = card.getValue()
 
                   // Determine color based on value: green (>0), red (<0), black (=0)
+                  // Override for Book PnL to always be red
                   const numericValue = Number(rawValue) || 0
-                  const textColorClass = numericValue > 0 ? 'text-[#16A34A]' : numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]'
+                  const textColorClass = card.forceColor === 'red' ? 'text-[#DC2626]' : (numericValue > 0 ? 'text-[#16A34A]' : numericValue < 0 ? 'text-[#DC2626]' : 'text-[#000000]')
                   
                   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
                   
