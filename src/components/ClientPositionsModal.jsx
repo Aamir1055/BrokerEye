@@ -3603,10 +3603,12 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 const keys = dealStats ? Object.keys(dealStats) : []
                 const visibleKeys = keys.filter(k => dealStatVisibility[k])
                 const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
+                // Filter out maxProfit and maxLoss from deals summary since they're already in position metrics
+                const filteredBaseKeys = baseKeys.filter(k => k !== 'maxProfit' && k !== 'maxLoss')
                 const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate']
                 const toRender = [
-                  ...preferredOrder.filter(k => baseKeys.includes(k)),
-                  ...baseKeys.filter(k => !preferredOrder.includes(k))
+                  ...preferredOrder.filter(k => filteredBaseKeys.includes(k)),
+                  ...filteredBaseKeys.filter(k => !preferredOrder.includes(k))
                 ]
                 const row2 = []
                 const dealAccent = (k, v) => {
