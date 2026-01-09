@@ -3556,6 +3556,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             <div className="space-y-1">
               {/* Positions + Deals Summary face cards in 2 rows of Excel-like cells */}
               {(() => {
+                // Detect desktop view (for Max Profit/Loss placement)
+                const isDesktop = window.innerWidth > 768
+                
                 // Build first row: fixed position & money cards
                 const row1 = []
                 const totalPL = positions.reduce((sum, p) => sum + (p.profit || 0), 0)
@@ -3588,16 +3591,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 if (fixedCardVisibility.pf_equity) {
                   row1.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700', accent: 'border-green-300' })
                 }
-                if (fixedCardVisibility.pf_maxProfit) {
-                  const profits = positions.map(p => p.profit || 0)
-                  const maxProfit = profits.length > 0 ? Math.max(...profits) : 0
-                  row1.push({ label: 'Max Profit', value: formatCurrency(maxProfit), labelClass: maxProfit >= 0 ? 'text-emerald-700' : 'text-gray-700', valueClass: getProfitColor(maxProfit), accent: maxProfit >= 0 ? 'border-emerald-400' : 'border-gray-300' })
-                }
-                if (fixedCardVisibility.pf_maxLoss) {
-                  const profits = positions.map(p => p.profit || 0)
-                  const maxLoss = profits.length > 0 ? Math.min(...profits) : 0
-                  row1.push({ label: 'Max Loss', value: formatCurrency(maxLoss), labelClass: maxLoss < 0 ? 'text-red-700' : 'text-gray-700', valueClass: getProfitColor(maxLoss), accent: maxLoss < 0 ? 'border-red-400' : 'border-gray-300' })
-                }
 
                 // Build second row: Deals Summary (six face cards from GET stats)
                 const keys = dealStats ? Object.keys(dealStats) : []
@@ -3624,6 +3617,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   const styles = getDealStatStyle(key, dealStats?.[key])
                   row2.push({ label: toTitle(key), value: formatStatValue(key, dealStats?.[key]), labelClass: styles.label, valueClass: styles.value, accent: dealAccent(key, dealStats?.[key]) })
                 })
+                
+                // Add Max Profit and Max Loss to second row (desktop only)
+                if (isDesktop) {
+                  if (fixedCardVisibility.pf_maxProfit) {
+                    const profits = positions.map(p => p.profit || 0)
+                    const maxProfit = profits.length > 0 ? Math.max(...profits) : 0
+                    row2.push({ label: 'Max Profit', value: formatCurrency(maxProfit), labelClass: maxProfit >= 0 ? 'text-emerald-700' : 'text-gray-700', valueClass: getProfitColor(maxProfit), accent: maxProfit >= 0 ? 'border-emerald-400' : 'border-gray-300' })
+                  }
+                  if (fixedCardVisibility.pf_maxLoss) {
+                    const profits = positions.map(p => p.profit || 0)
+                    const maxLoss = profits.length > 0 ? Math.min(...profits) : 0
+                    row2.push({ label: 'Max Loss', value: formatCurrency(maxLoss), labelClass: maxLoss < 0 ? 'text-red-700' : 'text-gray-700', valueClass: getProfitColor(maxLoss), accent: maxLoss < 0 ? 'border-red-400' : 'border-gray-300' })
+                  }
+                }
 
                 if (!row1.length && !row2.length) return null
 
