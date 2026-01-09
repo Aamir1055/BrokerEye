@@ -13,6 +13,7 @@ import ClientDetailsMobileModal from './ClientDetailsMobileModal'
 import { useIB } from '../contexts/IBContext'
 import { useGroups } from '../contexts/GroupContext'
 import { applyCumulativeFilters, applySearchFilter, applySorting } from '../utils/mobileFilters'
+import { normalizePositions } from '../utils/currencyNormalization'
 
 const formatNum = (n) => {
   const v = Number(n || 0)
@@ -23,7 +24,7 @@ const formatNum = (n) => {
 export default function PositionModule() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { positions, clients, loading, orders } = useData()
+  const { positions, clients, loading, orders, rawClients } = useData()
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -48,6 +49,26 @@ export default function PositionModule() {
     const [hasPendingGroupChanges, setHasPendingGroupChanges] = useState(false)
     const [pendingGroupDraft, setPendingGroupDraft] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
+  
+  // Build client currency map from rawClients for USC detection
+  const clientCurrencyMap = useMemo(() => {
+    if (!rawClients || rawClients.length === 0) return {}
+    const map = {}
+    rawClients.forEach(client => {
+      if (client && client.login && client.currency) {
+        map[client.login] = client.currency
+      }
+    })
+    return map
+  }, [rawClients])
+  
+  // Apply USD normalization to all positions automatically with USC handling
+  const displayPositions = useMemo(() => {
+    if (!positions || positions.length === 0) return positions
+    return normalizePositions(positions, clientCurrencyMap)
+  }, [positions, clientCurrencyMap])
+  
+  const [selectedClientDefaultTab, setSelectedClientDefaultTab] = useState('positions')
   const carouselRef = useRef(null)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -182,14 +203,14 @@ export default function PositionModule() {
 
   // Apply all filters in cumulative order: Customize View -> IB -> Group
   const ibFilteredPositions = useMemo(() => {
-    return applyCumulativeFilters(positions, {
+    return applyCumulativeFilters(displayPositions, {
       customizeFilters: filters,
       filterByActiveIB,
       filterByActiveGroup,
       loginField: 'login',
       moduleName: 'positions'
     })
-  }, [positions, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
+  }, [displayPositions, filters, filterByActiveIB, selectedIB, ibMT5Accounts, filterByActiveGroup, activeGroupFilters])
 
   // Defer heavy calculations to allow navigation to be responsive
   const deferredIbFilteredPositions = useDeferredValue(ibFilteredPositions)

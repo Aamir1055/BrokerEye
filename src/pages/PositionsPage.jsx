@@ -13,6 +13,7 @@ import GroupModal from '../components/GroupModal'
 import IBSelector from '../components/IBSelector'
 import PositionModule from '../components/PositionModule'
 import DateFilterModal from '../components/DateFilterModal'
+import { normalizePositions } from '../utils/currencyNormalization'
 
 const PositionsPage = () => {
   // Mobile detection - initialize with actual window width to prevent flash
@@ -33,10 +34,28 @@ const PositionsPage = () => {
   }, [])
 
   // Use cached data from DataContext
-  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState } = useData()
+  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState, rawClients } = useData()
   const { isAuthenticated } = useAuth()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
+  
+  // Build client currency map from rawClients for USC detection
+  const clientCurrencyMap = useMemo(() => {
+    if (!rawClients || rawClients.length === 0) return {}
+    const map = {}
+    rawClients.forEach(client => {
+      if (client && client.login && client.currency) {
+        map[client.login] = client.currency
+      }
+    })
+    return map
+  }, [rawClients])
+  
+  // Apply USD normalization to all positions automatically with USC handling
+  const displayPositions = useMemo(() => {
+    if (!cachedPositions || cachedPositions.length === 0) return cachedPositions
+    return normalizePositions(cachedPositions, clientCurrencyMap)
+  }, [cachedPositions, clientCurrencyMap])
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -1008,7 +1027,7 @@ const PositionsPage = () => {
   }
   
   // Defer heavy list processing so route changes remain responsive
-  const deferredPositions = useDeferredValue(cachedPositions)
+  const deferredPositions = useDeferredValue(displayPositions)
 
   // Memoize filtered and sorted positions to prevent blocking on navigation
   const { sortedPositions, ibFilteredPositions } = useMemo(() => {
