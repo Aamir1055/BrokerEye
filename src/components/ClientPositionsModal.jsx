@@ -143,7 +143,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     pf_bookPnL: true,
     pf_balance: true,
     pf_credit: true,
-    pf_equity: true
+    pf_equity: true,
+    pf_maxProfit: true,
+    pf_maxLoss: true
   }
   const [fixedCardVisibility, setFixedCardVisibility] = useState(() => {
     try {
@@ -1715,7 +1717,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         ['pf_totalVolume','Total Volume'],
                         ['pf_totalPL','Floating Profit'],
                         ['pf_lifetimePnL','Lifetime PnL'],
-                        ['pf_bookPnL','Book PnL']
+                        ['pf_bookPnL','Book PnL'],
+                        ['pf_maxProfit','Max Profit'],
+                        ['pf_maxLoss','Max Loss']
                       ].map(([key,label]) => (
                         <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
                           <input type="checkbox" className="w-3 h-3" checked={fixedCardVisibility[key]} onChange={() => setFixedCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
@@ -3583,6 +3587,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 }
                 if (fixedCardVisibility.pf_equity) {
                   row1.push({ label: 'Equity', value: formatCurrency(clientData?.equity), labelClass: 'text-green-700', accent: 'border-green-300' })
+                }
+                if (fixedCardVisibility.pf_maxProfit) {
+                  const profits = positions.map(p => p.profit || 0)
+                  const maxProfit = profits.length > 0 ? Math.max(...profits) : 0
+                  row1.push({ label: 'Max Profit', value: formatCurrency(maxProfit), labelClass: maxProfit >= 0 ? 'text-emerald-700' : 'text-gray-700', valueClass: getProfitColor(maxProfit), accent: maxProfit >= 0 ? 'border-emerald-400' : 'border-gray-300' })
+                }
+                if (fixedCardVisibility.pf_maxLoss) {
+                  const profits = positions.map(p => p.profit || 0)
+                  const maxLoss = profits.length > 0 ? Math.min(...profits) : 0
+                  row1.push({ label: 'Max Loss', value: formatCurrency(maxLoss), labelClass: maxLoss < 0 ? 'text-red-700' : 'text-gray-700', valueClass: getProfitColor(maxLoss), accent: maxLoss < 0 ? 'border-red-400' : 'border-gray-300' })
                 }
 
                 // Build second row: Deals Summary (six face cards from GET stats)
