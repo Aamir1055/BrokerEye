@@ -46,6 +46,9 @@ const PendingOrdersPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
   
+  // Track if component is mounted to prevent updates after unmount
+  const isMountedRef = useRef(true)
+  
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
@@ -98,7 +101,7 @@ const PendingOrdersPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['login', 'symbol', 'type', 'state']
+  const stringColumns = ['symbol', 'type', 'state']
   const isStringColumn = (key) => stringColumns.includes(key)
 
   // Column filter helper functions
@@ -266,6 +269,13 @@ const PendingOrdersPage = () => {
     }, 1500)
     flashTimeouts.current.set(key, to)
   }
+  
+  // Critical: Set unmounted flag ASAP to unblock route transitions
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
   
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -523,16 +533,34 @@ const PendingOrdersPage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (!isMountedRef.current) return
+      
+      // Check if click is inside any filter-related element
+      const isInsideMainFilter = showFilterDropdown && filterRefs.current[showFilterDropdown] && 
+                                  filterRefs.current[showFilterDropdown].contains(event.target)
+      
+      const numberFilterElements = document.querySelectorAll('[data-number-filter]')
+      let isInsideNumberFilter = false
+      numberFilterElements.forEach(el => {
+        if (el.contains(event.target)) {
+          isInsideNumberFilter = true
+        }
+      })
+      
+      // If click is outside both main filter and number filter dropdowns, close them
+      if (!isInsideMainFilter && !isInsideNumberFilter) {
+        if (showFilterDropdown) {
           setShowFilterDropdown(null)
+        }
+        if (showNumberFilterDropdown) {
+          setShowNumberFilterDropdown(null)
         }
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, showNumberFilterDropdown])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -602,19 +630,21 @@ const PendingOrdersPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
+              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
-                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
-                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    const dropdownWidth = 256 // w-64 in pixels
+                    const offset = 30 // Offset to the right to keep filter icon visible
+                    const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
-                      : `${rect.left}px`
+                      : `${rect.left + offset}px`
                   })()
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -690,7 +720,16 @@ const PendingOrdersPage = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                        if (showNumberFilterDropdown === columnKey) {
+                          setShowNumberFilterDropdown(null)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
+                        } else {
+                          setShowNumberFilterDropdown(columnKey)
+                          setCustomFilterColumn(columnKey)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
+                        }
                       }}
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
@@ -699,103 +738,96 @@ const PendingOrdersPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
+
+                    {/* Custom Filter Form - Appears directly when clicking Number Filters */}
                     {showNumberFilterDropdown === columnKey && (
-                      <div 
-                        className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                      <div
+                        data-number-filter
+                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: 'calc(100% + 8px)',
-                          zIndex: 10000000
+                          zIndex: 10000001
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-[11px] text-slate-700 py-1">
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Equal...
+                        <div className="p-3 space-y-3">
+                          {/* Operator Dropdown */}
+                          <div>
+                            <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                            <select
+                              value={customFilterType}
+                              onChange={(e) => setCustomFilterType(e.target.value)}
+                              className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                            >
+                              <option value="equal">Equal...</option>
+                              <option value="notEqual">Not Equal...</option>
+                              <option value="lessThan">Less Than...</option>
+                              <option value="lessThanOrEqual">Less Than Or Equal...</option>
+                              <option value="greaterThan">Greater Than...</option>
+                              <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
+                              <option value="between">Between...</option>
+                            </select>
                           </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('notEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Not Equal...
+
+                          {/* Value Input(s) */}
+                          <div>
+                            <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                            <input
+                              type="number"
+                              step="any"
+                              placeholder="Enter value"
+                              value={customFilterValue1}
+                              onChange={(e) => setCustomFilterValue1(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  if (customFilterType === 'between' && !customFilterValue2) return
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                            />
                           </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Less Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThan')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThanOrEqual')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Greater Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('between')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Between...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                            }}
-                          >
-                            Custom Filter...
+
+                          {/* Second Value for Between */}
+                          {customFilterType === 'between' && (
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
+                              <input
+                                type="number"
+                                step="any"
+                                placeholder="Enter value"
+                                value={customFilterValue2}
+                                onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    if (!customFilterValue1 || !customFilterValue2) return
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              />
+                            </div>
+                          )}
+
+                          {/* Apply Button */}
+                          <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            <button
+                              onClick={() => {
+                                applyCustomNumberFilter()
+                                setShowNumberFilterDropdown(null)
+                                setShowCustomFilterModal(false)
+                              }}
+                              disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
+                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                              OK
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -811,7 +843,16 @@ const PendingOrdersPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                          if (showNumberFilterDropdown === columnKey) {
+                            setShowNumberFilterDropdown(null)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          } else {
+                            setShowNumberFilterDropdown(columnKey)
+                            setCustomFilterColumn(columnKey)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
                         }}
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
@@ -820,19 +861,70 @@ const PendingOrdersPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
+
+                      {/* Text Filter Form - Appears directly when clicking Text Filters */}
                       {showNumberFilterDropdown === columnKey && (
-                        <div 
-                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                        <div
+                          data-number-filter
+                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          style={{
+                            left: 'calc(100% + 8px)',
+                            zIndex: 10000001
+                          }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="text-[11px] text-slate-700 py-1">
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('notEqual'); setShowCustomFilterModal(true) }}>Not Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('startsWith'); setShowCustomFilterModal(true) }}>Starts With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('endsWith'); setShowCustomFilterModal(true) }}>Ends With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('contains'); setShowCustomFilterModal(true) }}>Contains...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('doesNotContain'); setShowCustomFilterModal(true) }}>Does Not Contain...</div>
+                          <div className="p-3 space-y-3">
+                            {/* Operator Dropdown */}
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                              <select
+                                value={customFilterType}
+                                onChange={(e) => setCustomFilterType(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              >
+                                <option value="equal">Equal...</option>
+                                <option value="notEqual">Not Equal...</option>
+                                <option value="startsWith">Starts With...</option>
+                                <option value="endsWith">Ends With...</option>
+                                <option value="contains">Contains...</option>
+                                <option value="doesNotContain">Does Not Contain...</option>
+                              </select>
+                            </div>
+
+                            {/* Value Input */}
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                              <input
+                                type="text"
+                                placeholder="Enter value"
+                                value={customFilterValue1}
+                                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              />
+                            </div>
+
+                            {/* Apply Button */}
+                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => {
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }}
+                                disabled={!customFilterValue1}
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              >
+                                OK
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -885,7 +977,7 @@ const PendingOrdersPage = () => {
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-40 overflow-y-auto">
+                <div className="max-h-64 overflow-y-auto">
                   <div className="p-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-3 py-2 text-center text-[11px] text-slate-500">

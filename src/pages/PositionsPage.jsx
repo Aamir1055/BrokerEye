@@ -1164,16 +1164,33 @@ const PositionsPage = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!isMountedRef.current) return
+      
+      // Check if clicking outside main filter dropdown
       if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
         if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
           setShowFilterDropdown(null)
+          setShowNumberFilterDropdown(null)
+        }
+      }
+      
+      // Check if clicking outside number filter dropdown (when it's open independently)
+      if (showNumberFilterDropdown && !showFilterDropdown) {
+        const numberFilterElements = document.querySelectorAll('[data-number-filter]')
+        let clickedInside = false
+        numberFilterElements.forEach(el => {
+          if (el.contains(event.target)) {
+            clickedInside = true
+          }
+        })
+        if (!clickedInside) {
+          setShowNumberFilterDropdown(null)
         }
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, showNumberFilterDropdown])
   
   // Calculate NET positions using useMemo - use cachedPositions for all data
   const netPositionsData = useMemo(() => {
@@ -1840,6 +1857,7 @@ const PositionsPage = () => {
                     {/* Custom Filter Form - Appears directly when clicking Number Filters */}
                     {showNumberFilterDropdown === columnKey && (
                       <div
+                        data-number-filter
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: 'calc(100% + 8px)',
@@ -1940,7 +1958,16 @@ const PositionsPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                          if (showNumberFilterDropdown === columnKey) {
+                            setShowNumberFilterDropdown(null)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          } else {
+                            setShowNumberFilterDropdown(columnKey)
+                            setCustomFilterColumn(columnKey)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
                         }}
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
@@ -1949,19 +1976,70 @@ const PositionsPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
+
+                      {/* Text Filter Form - Appears directly when clicking Text Filters */}
                       {showNumberFilterDropdown === columnKey && (
-                        <div 
-                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                        <div
+                          data-number-filter
+                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          style={{
+                            left: 'calc(100% + 8px)',
+                            zIndex: 10000001
+                          }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="text-[11px] text-slate-700 py-1">
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('notEqual'); setShowCustomFilterModal(true) }}>Not Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('startsWith'); setShowCustomFilterModal(true) }}>Starts With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('endsWith'); setShowCustomFilterModal(true) }}>Ends With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('contains'); setShowCustomFilterModal(true) }}>Contains...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('doesNotContain'); setShowCustomFilterModal(true) }}>Does Not Contain...</div>
+                          <div className="p-3 space-y-3">
+                            {/* Operator Dropdown */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                              <select
+                                value={customFilterType}
+                                onChange={(e) => setCustomFilterType(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              >
+                                <option value="equal">Equal...</option>
+                                <option value="notEqual">Not Equal...</option>
+                                <option value="startsWith">Starts With...</option>
+                                <option value="endsWith">Ends With...</option>
+                                <option value="contains">Contains...</option>
+                                <option value="doesNotContain">Does Not Contain...</option>
+                              </select>
+                            </div>
+
+                            {/* Value Input */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                              <input
+                                type="text"
+                                placeholder="Enter value"
+                                value={customFilterValue1}
+                                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              />
+                            </div>
+
+                            {/* Apply Button */}
+                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => {
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }}
+                                disabled={!customFilterValue1}
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              >
+                                OK
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
