@@ -1696,14 +1696,14 @@ const PositionsPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
+              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
                   top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
+                    const dropdownWidth = 256 // w-64 in pixels
                     const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
@@ -1714,9 +1714,9 @@ const PositionsPage = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
+                    <span className="text-xs font-bold text-gray-700">Text Filters</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1724,21 +1724,55 @@ const PositionsPage = () => {
                       }}
                       className="text-gray-400 hover:text-gray-600"
                     >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
                 </div>
 
-                {/* Quick Clear Filter (top like Syncfusion) */}
-                <div className="border-b border-slate-200 py-1">
+                {/* Sort Options */}
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey, 'asc')
+                      setShowFilterDropdown(null)
+                    }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
+                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    Sort A to Z
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSort(columnKey, 'desc')
+                      setShowFilterDropdown(null)
+                    }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
+                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    Sort Z to A
+                  </button>
+                </div>
+
+                {/* Clear Filter Button */}
+                <div className="px-3 py-2 border-b border-gray-200">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 font-medium hover:bg-red-50 rounded transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1746,8 +1780,6 @@ const PositionsPage = () => {
                     Clear Filter
                   </button>
                 </div>
-
-                {/* Sort Options */}
                 <div className="border-b border-slate-200 py-1">
                   <button
                     onClick={(e) => {
@@ -1795,16 +1827,16 @@ const PositionsPage = () => {
                     </button>
                     {showNumberFilterDropdown === columnKey && (
                       <div 
-                        className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                        className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-2xl"
                         style={{
                           left: 'calc(100% + 8px)',
                           zIndex: 10000000
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-[11px] text-slate-700 py-1">
+                        <div className="text-xs text-slate-700 py-2">
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1826,7 +1858,7 @@ const PositionsPage = () => {
                             Not Equal...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1837,7 +1869,7 @@ const PositionsPage = () => {
                             Less Than...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1848,7 +1880,7 @@ const PositionsPage = () => {
                             Less Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1859,7 +1891,7 @@ const PositionsPage = () => {
                             Greater Than...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1870,7 +1902,7 @@ const PositionsPage = () => {
                             Greater Than Or Equal...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
@@ -1881,7 +1913,7 @@ const PositionsPage = () => {
                             Between...
                           </div>
                           <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
+                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               setCustomFilterColumn(columnKey)
