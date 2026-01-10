@@ -3616,7 +3616,7 @@ const Client2Page = () => {
                   </button>
 
                   {showFilterMenu && (
-                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-50">
+                    <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#E5E7EB] z-[9999]">
                       <div className="p-4">
                         <div className="text-sm font-semibold text-[#1F2937] mb-3">Quick Filters</div>
                         <div className="space-y-2">
