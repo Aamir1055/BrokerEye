@@ -99,8 +99,63 @@ const ClientPercentagePage = () => {
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
+  // State for login column values fetched from API
+  const [loginColumnValues, setLoginColumnValues] = useState([])
+  const [loadingLoginValues, setLoadingLoginValues] = useState(false)
+
+  // Fetch login values from API
+  const fetchLoginValues = async (searchQuery = '') => {
+    setLoadingLoginValues(true)
+    try {
+      const params = {
+        page: 1,
+        page_size: 1000, // Get more values for the dropdown
+        sort_by: 'login',
+        sort_order: 'asc'
+      }
+      
+      // Add search query if provided
+      if (searchQuery.trim()) {
+        params.login = searchQuery.trim()
+      }
+
+      const response = await brokerAPI.get('/broker/clients/percentages', { params })
+      
+      if (response.data?.status === 'success' && response.data?.data?.clients) {
+        const logins = response.data.data.clients.map(client => client.client_login)
+        // Remove duplicates and sort
+        const uniqueLogins = [...new Set(logins)].sort((a, b) => a - b)
+        setLoginColumnValues(uniqueLogins)
+      }
+    } catch (err) {
+      console.error('Error fetching login values:', err)
+      // Fallback to client-side values on error
+      const values = new Set()
+      clients.forEach(client => {
+        if (client.client_login !== null && client.client_login !== undefined && client.client_login !== '') {
+          values.add(client.client_login)
+        }
+      })
+      setLoginColumnValues(Array.from(values).sort((a, b) => a - b))
+    } finally {
+      setLoadingLoginValues(false)
+    }
+  }
+
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
+    // For login column, use API-fetched values
+    if (columnKey === 'login' || columnKey === 'client_login') {
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      if (searchQuery) {
+        return loginColumnValues.filter(value => 
+          String(value).toLowerCase().includes(searchQuery)
+        )
+      }
+      return loginColumnValues
+    }
+
+    // For other columns, use client-side filtering
     const values = new Set()
     clients.forEach(client => {
       const value = client[columnKey]
@@ -291,6 +346,14 @@ const ClientPercentagePage = () => {
       isMountedRef.current = false
     }
   }, [])
+
+  // Fetch login values when login filter dropdown opens or search query changes
+  useEffect(() => {
+    if (showFilterDropdown === 'login' || showFilterDropdown === 'client_login') {
+      const searchQuery = filterSearchQuery['login'] || filterSearchQuery['client_login'] || ''
+      fetchLoginValues(searchQuery)
+    }
+  }, [showFilterDropdown, filterSearchQuery['login'], filterSearchQuery['client_login']])
 
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
@@ -1020,7 +1083,15 @@ const ClientPercentagePage = () => {
                 {/* Filter List */}
                 <div className="max-h-64 overflow-y-auto">
                   <div className="p-1.5 space-y-0.5">
-                    {getUniqueColumnValues(columnKey).length === 0 ? (
+                    {(columnKey === 'login' || columnKey === 'client_login') && loadingLoginValues ? (
+                      <div className="px-2 py-8 text-center">
+                        <svg className="animate-spin h-5 w-5 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-[11px] text-slate-500 mt-2">Loading...</p>
+                      </div>
+                    ) : getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-2 py-2 text-center text-[11px] text-slate-500">
                         No items found
                       </div>
