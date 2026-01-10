@@ -422,7 +422,15 @@ const ClientPercentagePage = () => {
       }
       
       // Add search parameter if search query exists
-      if (searchQuery.trim()) {
+      const trimmedQuery = searchQuery.trim().toLowerCase()
+      
+      // Check if searching for type (custom/default)
+      if (trimmedQuery === 'custom') {
+        params.has_custom = true
+      } else if (trimmedQuery === 'default') {
+        params.has_custom = false
+      } else if (trimmedQuery) {
+        // Otherwise search by login
         params.login = searchQuery.trim()
       }
       
@@ -1329,7 +1337,7 @@ const ClientPercentagePage = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
-                    placeholder="Search by login"
+                    placeholder="Search by login or type (custom/default)"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                   {searchQuery && (
