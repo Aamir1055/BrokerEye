@@ -4324,7 +4324,8 @@ const Client2Page = () => {
             )}
 
             {/* Table - Show table with progress bar for all loading states */}
-            {(clients.length > 0 || (initialLoad && loading)) && (
+            {/* Always show table unless it's the initial load, even when no clients */}
+            {(!initialLoad || clients.length > 0) && (
               <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '550px' : '750px' }}>
                 {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
                 <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
@@ -5317,9 +5318,24 @@ const Client2Page = () => {
                     )}
 
                     <tbody className="bg-white divide-y divide-slate-100 text-sm md:text-[15px]" key={`tbody-${animationKey}`}>
-                      {/* Always show actual data rows with staggered fade-in */}
-                      {/* Guard: filter out null/undefined clients */}
-                      {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
+                      {/* Show "No clients found" message when there are no clients */}
+                      {sortedClients.length === 0 ? (
+                        <tr>
+                          <td colSpan={visibleColumnsList.length} className="px-4 py-12 text-center">
+                            <div className="text-gray-500">
+                              <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                              </svg>
+                              <p className="text-lg font-medium">No clients found</p>
+                              <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search criteria</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        <>
+                          {/* Always show actual data rows with staggered fade-in */}
+                          {/* Guard: filter out null/undefined clients */}
+                          {(sortedClients || []).filter(client => client != null && client.login != null).map((client, idx) => (
                         <tr
                           key={`${client.login}-${animationKey}-${idx}`}
                           className={`hover:bg-blue-50 hover:shadow-sm transition-all duration-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
@@ -5409,6 +5425,8 @@ const Client2Page = () => {
                           })}
                         </tr>
                       ))}
+                        </>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -5451,13 +5469,6 @@ const Client2Page = () => {
                     )
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* No Results */}
-            {!loading && !initialLoad && clients.length === 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 py-12 text-center">
-                <p className="text-gray-500">No clients found</p>
               </div>
             )}
           </div>
