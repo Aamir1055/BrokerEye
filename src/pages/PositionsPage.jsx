@@ -3802,13 +3802,27 @@ const PositionsPage = () => {
         editGroup={editingGroup}
       />
 
-      {/* Custom Filter Modal */}
+      {/* Custom Filter Panel - Side Panel like Client2 */}
       {showCustomFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+        <>
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-30 z-[9998]"
+            onClick={() => {
+              setShowCustomFilterModal(false)
+              setCustomFilterValue1('')
+              setCustomFilterValue2('')
+            }}
+          ></div>
+          
+          {/* Side Panel */}
+          <div 
+            className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-[9999] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <h3 className="text-sm font-bold text-gray-900">Custom Filter</h3>
               <button
                 onClick={() => {
                   setShowCustomFilterModal(false)
@@ -3817,110 +3831,94 @@ const PositionsPage = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* Body */}
-            <div className="p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
-                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
+                <p className="text-xs font-medium text-gray-700 mb-1">Show rows where:</p>
+                <p className="text-xs text-gray-600 font-semibold mb-3">{customFilterColumn}</p>
               </div>
 
               {/* Filter Type Dropdown */}
               <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
                 <select
                   value={customFilterType}
                   onChange={(e) => setCustomFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                 >
-                  <option value="equal">Equal</option>
-                  <option value="notEqual">Not Equal</option>
-                  <option value="lessThan">Less Than</option>
-                  <option value="lessThanOrEqual">Less Than Or Equal</option>
-                  <option value="greaterThan">Greater Than</option>
-                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
-                  <option value="between">Between</option>
-                  <option value="startsWith">Starts With</option>
-                  <option value="endsWith">Ends With</option>
-                  <option value="contains">Contains</option>
-                  <option value="doesNotContain">Does Not Contain</option>
+                  <option value="equal">Equal...</option>
+                  <option value="notEqual">Not Equal...</option>
+                  <option value="lessThan">Less Than...</option>
+                  <option value="lessThanOrEqual">Less Than Or Equal...</option>
+                  <option value="greaterThan">Greater Than...</option>
+                  <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
+                  <option value="between">Between...</option>
+                  <option value="startsWith">Starts With...</option>
+                  <option value="endsWith">Ends With...</option>
+                  <option value="contains">Contains...</option>
+                  <option value="doesNotContain">Does Not Contain...</option>
                 </select>
               </div>
 
               {/* Value Input */}
               <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                 <input
                   type={['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
+                  step="any"
                   value={customFilterValue1}
                   onChange={(e) => setCustomFilterValue1(e.target.value)}
-                  placeholder="Enter the value"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && customFilterValue1) {
+                      e.preventDefault()
+                      applyCustomNumberFilter()
+                    }
+                  }}
+                  placeholder="Enter value"
+                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                 />
               </div>
 
               {/* Second Value for Between */}
               {customFilterType === 'between' && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={customFilterOperator === 'AND'}
-                        onChange={() => setCustomFilterOperator('AND')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">AND</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={customFilterOperator === 'OR'}
-                        onChange={() => setCustomFilterOperator('OR')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">OR</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <input
-                      type="number"
-                      value={customFilterValue2}
-                      onChange={(e) => setCustomFilterValue2(e.target.value)}
-                      placeholder="Enter the value"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                    />
-                  </div>
-                </>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={customFilterValue2}
+                    onChange={(e) => setCustomFilterValue2(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customFilterValue1 && customFilterValue2) {
+                        e.preventDefault()
+                        applyCustomNumberFilter()
+                      }
+                    }}
+                    placeholder="Enter value"
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                  />
+                </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowCustomFilterModal(false)
-                  setCustomFilterValue1('')
-                  setCustomFilterValue2('')
-                }}
-                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="px-4 py-3 border-t border-gray-200">
               <button
                 onClick={applyCustomNumberFilter}
-                disabled={!customFilterValue1}
-                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
+                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 OK
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Client Positions Modal */}
