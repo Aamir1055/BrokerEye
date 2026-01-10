@@ -1818,11 +1818,13 @@ const PositionsPage = () => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
                           setShowNumberFilterDropdown(null)
-                          setShowCustomFilterModal(false)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
                         } else {
                           setShowNumberFilterDropdown(columnKey)
-                          setShowCustomFilterModal(false)
                           setCustomFilterColumn(columnKey)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
                         }
                       }}
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -1832,108 +1834,9 @@ const PositionsPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
-                    
-                    {/* Number Filter Options Menu */}
-                    {showNumberFilterDropdown === columnKey && !showCustomFilterModal && (
-                      <div 
-                        className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-2xl"
-                        style={{
-                          left: 'calc(100% + 8px)',
-                          zIndex: 10000000
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="text-xs text-slate-700 py-2">
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('equal')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('notEqual')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Not Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('lessThan')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Less Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('lessThanOrEqual')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Less Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('greaterThan')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Greater Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('greaterThanOrEqual')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Greater Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-100 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterType('between')
-                              setShowCustomFilterModal(true)
-                              setCustomFilterValue1('')
-                              setCustomFilterValue2('')
-                            }}
-                          >
-                            Between...
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Custom Filter Form - Appears as submenu next to Number Filters */}
-                    {showNumberFilterDropdown === columnKey && showCustomFilterModal && (
+                    {/* Custom Filter Form - Appears directly when clicking Number Filters */}
+                    {showNumberFilterDropdown === columnKey && (
                       <div
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
