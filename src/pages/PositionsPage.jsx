@@ -1718,7 +1718,7 @@ const PositionsPage = () => {
                 {/* Header */}
                 <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700">Text Filters</span>
+                    <span className="text-xs text-gray-700">Text Filters</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1742,7 +1742,7 @@ const PositionsPage = () => {
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
-                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1757,7 +1757,7 @@ const PositionsPage = () => {
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
-                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1774,7 +1774,7 @@ const PositionsPage = () => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 font-medium hover:bg-red-50 rounded transition-colors"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
