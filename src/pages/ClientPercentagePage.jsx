@@ -361,6 +361,20 @@ const ClientPercentagePage = () => {
     fetchAllClientPercentages(1)
   }, [isAuthenticated, unauthorized])
 
+  // Fetch data when search query or sort changes (reset to page 1)
+  useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
+    
+    // Debounce search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1)
+      fetchAllClientPercentages(1)
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, sortColumn, sortDirection, isAuthenticated, unauthorized])
+
   // Fetch data when page changes
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
@@ -399,7 +413,20 @@ const ClientPercentagePage = () => {
     try {
       setLoading(true)
       setError('')
-      const response = await brokerAPI.getAllClientPercentages({ page, page_size: itemsPerPage })
+      
+      const params = { 
+        page, 
+        page_size: itemsPerPage,
+        sort_by: sortColumn === 'client_login' ? 'login' : sortColumn,
+        sort_order: sortDirection
+      }
+      
+      // Add search parameter if search query exists
+      if (searchQuery.trim()) {
+        params.login = searchQuery.trim()
+      }
+      
+      const response = await brokerAPI.getAllClientPercentages(params)
       
       const clientsData = response.data?.clients || []
       setClients(clientsData)
@@ -465,40 +492,8 @@ const ClientPercentagePage = () => {
     setEditComment('')
   }
 
-  // Client-side search filter for multi-field search
-  const applyClientSideSearch = (clientsList) => {
-    if (!searchQuery.trim()) return clientsList
-
-    const query = searchQuery.toLowerCase().trim()
-
-    // Special handling for type keywords
-    if (query === 'default' || query === 'custom') {
-      const wantCustom = query === 'custom'
-      return clientsList.filter(c => {
-        const isCustom = c.is_custom === true || c.is_custom === 1 || c.is_custom === '1'
-        return wantCustom ? isCustom : !isCustom
-      })
-    }
-
-    // Search across login, percentage, type, and comment fields
-    return clientsList.filter(client => {
-      // Search in login
-      if (client.client_login?.toString().toLowerCase().includes(query)) return true
-      
-      // Search in percentage
-      if (client.percentage?.toString().includes(query)) return true
-      
-      // Search in comment
-      if (client.comment?.toString().toLowerCase().includes(query)) return true
-      
-      // Search in type (custom/default)
-      const isCustom = client.is_custom === true || client.is_custom === 1 || client.is_custom === '1'
-      const typeText = isCustom ? 'custom' : 'default'
-      if (typeText.includes(query)) return true
-      
-      return false
-    })
-  }
+  // Note: Search is now handled by API, not client-side
+  // The API endpoint accepts 'login' parameter for searching
 
   // Get autocomplete suggestions
   const getSuggestions = () => {
@@ -556,8 +551,8 @@ const ClientPercentagePage = () => {
   }
 
   const sortedClients = () => {
-    // API handles login search and sort, apply client-side multi-field search
-    let filtered = applyClientSideSearch(clients)
+    // API handles search and sort, just apply filters here
+    let filtered = clients
     
     // Apply IB filter first (cumulative order: IB -> Group)
     let ibFiltered = filterByActiveIB(filtered, 'client_login')
@@ -1330,12 +1325,11 @@ const ClientPercentagePage = () => {
                     onChange={(e) => {
                       setSearchQuery(e.target.value)
                       setShowSuggestions(true)
-                      setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
-                    placeholder="Search"
+                    placeholder="Search by login"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                   {searchQuery && (
