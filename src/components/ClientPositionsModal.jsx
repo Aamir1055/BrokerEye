@@ -1947,7 +1947,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Tab Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0 bg-white">
           {activeTab === 'positions' && (
             <div>
               {loading ? (
