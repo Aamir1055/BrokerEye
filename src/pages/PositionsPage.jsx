@@ -1705,7 +1705,7 @@ const PositionsPage = () => {
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
                     const dropdownWidth = 256 // w-64 in pixels
-                    const offset = -50 // Offset to the left to keep filter icon visible
+                    const offset = 30 // Offset to the right to keep filter icon visible
                     const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
