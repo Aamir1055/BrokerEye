@@ -612,7 +612,6 @@ const IBCommissionsPage = () => {
                           />
                         </th>
                         {[ 
-                          { key: 'id', label: 'ID', align: 'left', width: columnWidths.id || 80 },
                           { key: 'name', label: 'Name', align: 'left', width: columnWidths.name || 200 },
                           { key: 'email', label: 'Email', align: 'left', width: columnWidths.email || 250 },
                           { key: 'percentage', label: 'Percentage', align: 'left', width: columnWidths.percentage || 120 },
@@ -661,7 +660,7 @@ const IBCommissionsPage = () => {
                     {loading && (
                       <thead className="sticky z-40" style={{ top: '48px' }}>
                         <tr>
-                          <th colSpan="9" className="p-0" style={{ height: '3px' }}>
+                          <th colSpan="8" className="p-0" style={{ height: '3px' }}>
                             <div className="relative w-full h-full bg-gray-200 overflow-hidden">
                               <style>{`
                                 @keyframes shimmerSlideIB {
@@ -685,13 +684,13 @@ const IBCommissionsPage = () => {
                     <tbody className="bg-white divide-y divide-gray-100 text-sm">
                       {loading ? (
                         <tr>
-                          <td colSpan="9" className="px-6 py-8 text-center text-sm text-gray-400">
+                          <td colSpan="8" className="px-6 py-8 text-center text-sm text-gray-400">
                             Loading IB commissions...
                           </td>
                         </tr>
                       ) : sortedCommissions.length === 0 ? (
                         <tr>
-                          <td colSpan="9" className="px-6 py-12 text-center">
+                          <td colSpan="8" className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center gap-4">
                               <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -727,9 +726,6 @@ const IBCommissionsPage = () => {
                               onChange={() => handleSelectIB(ib.id)}
                               className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                             />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {ib.id}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {ib.name}
@@ -823,29 +819,29 @@ const IBCommissionsPage = () => {
                 {/* Info Message */}
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                   <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> Please check the IDs you want to update using the checkboxes in the table, then enter the percentage value to apply.
+                    <strong>Note:</strong> Please check the IBs you want to update using the checkboxes in the table, then enter the percentage value to apply.
                   </p>
                 </div>
 
-                {/* Selected IDs Field */}
+                {/* Selected IB Emails Field */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Selected IB IDs ({selectedIBs.length})
+                    Selected IB Emails ({selectedIBs.length})
                   </label>
                   <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
                     {selectedIBs.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {selectedIBs.map(id => (
+                        {commissions.filter(ib => selectedIBs.includes(ib.id)).map(ib => (
                           <span
-                            key={id}
+                            key={ib.id}
                             className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
                           >
-                            #{id}
+                            {ib.email}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                      <p className="text-gray-400 text-sm italic">No IBs selected</p>
                     )}
                   </div>
                 </div>

@@ -45,7 +45,6 @@ export default function IBCommissionsModule() {
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
     checkbox: true,
-    id: true,
     name: true,
     email: true,
     percentage: true,
@@ -278,8 +277,7 @@ export default function IBCommissionsModule() {
   // Get visible columns
   const allColumns = [
     { key: 'checkbox', label: '', width: '50px', sticky: true, stickyLeft: '0px', zIndex: 20 },
-    { key: 'id', label: 'ID', width: '80px', sticky: !isMobileView, stickyLeft: '50px', zIndex: 10 },
-    { key: 'name', label: 'Name', width: '150px' },
+    { key: 'name', label: 'Name', width: '150px', sticky: !isMobileView, stickyLeft: '50px', zIndex: 10 },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
     { key: 'total_commission', label: 'Total Rebate', width: '150px' },
@@ -313,9 +311,6 @@ export default function IBCommissionsModule() {
             />
           </div>
         )
-      case 'id':
-        value = item.id || '-'
-        break
       case 'name':
         value = item.name || '-'
         break
@@ -386,9 +381,6 @@ export default function IBCommissionsModule() {
           let value = ''
           
           switch(col.key) {
-            case 'id':
-              value = item.id || '-'
-              break
             case 'name':
               value = item.name || '-'
               break
@@ -931,7 +923,7 @@ export default function IBCommissionsModule() {
                           zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
                         }}
                       >
-                        {col.key === 'checkbox' ? '' : (col.key === 'login' || col.key === 'id') ? 'Total' : ''}
+                        {col.key === 'checkbox' ? '' : col.key === 'name' ? 'Total' : ''}
                       </div>
                     ))}
                   </div>
@@ -1101,22 +1093,22 @@ export default function IBCommissionsModule() {
               {/* Selected IDs Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Selected IB IDs ({selectedIBs.length})
+                  Selected IB Emails ({selectedIBs.length})
                 </label>
                 <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
                   {selectedIBs.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {selectedIBs.map(id => (
+                      {commissions.filter(ib => selectedIBs.includes(ib.id)).map(ib => (
                         <span
-                          key={id}
+                          key={ib.id}
                           className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
                         >
-                          #{id}
+                          {ib.email}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                    <p className="text-gray-400 text-sm italic">No emails selected</p>
                   )}
                 </div>
               </div>

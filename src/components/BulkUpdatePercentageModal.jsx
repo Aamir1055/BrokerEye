@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { brokerAPI } from '../services/api'
 
-const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) => {
+const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBData, onSuccess }) => {
   const [percentage, setPercentage] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
 
@@ -16,7 +16,7 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
 
     try {
       setIsUpdating(true)
-      const updates = selectedIBs.map(id => ({ id, percentage: percentageValue }))
+      const updates = selectedIBData.map(ib => ({ id: ib.id, percentage: percentageValue }))
       const response = await brokerAPI.bulkUpdateIBPercentages(updates)
       
       if (response.status === 'success') {
@@ -74,22 +74,22 @@ const BulkUpdatePercentageModal = ({ isOpen, onClose, selectedIBs, onSuccess }) 
           {/* Selected IDs Field */}
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Selected IB IDs ({selectedIBs.length})
+              Selected IB Emails ({selectedIBData.length})
             </label>
             <div className="p-2.5 bg-gray-50 border border-gray-300 rounded-lg min-h-[52px] max-h-[110px] overflow-y-auto">
-              {selectedIBs.length > 0 ? (
+              {selectedIBData.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedIBs.map(id => (
+                  {selectedIBData.map(ib => (
                     <span
-                      key={id}
+                      key={ib.id}
                       className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded"
                     >
-                      #{id}
+                      {ib.email}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-xs italic">No IDs selected</p>
+                <p className="text-gray-400 text-xs italic">No emails selected</p>
               )}
             </div>
           </div>
