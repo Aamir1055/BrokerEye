@@ -21,7 +21,6 @@ const IBCommissionsPage = () => {
   }
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [commissions, setCommissions] = useState([])
-  const [allCommissions, setAllCommissions] = useState([]) // For filter values
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -70,29 +69,6 @@ const IBCommissionsPage = () => {
   // Search debounce
   const searchTimeoutRef = useRef(null)
 
-  // Column filter states
-  const [columnFilters, setColumnFilters] = useState({})
-  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
-  const filterRefs = useRef({})
-  const [filterSearchQuery, setFilterSearchQuery] = useState({})
-  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
-  
-  // Define string columns
-  const stringColumns = ['name', 'email']
-  const isStringColumn = (key) => stringColumns.includes(key)
-  
-  // Custom filter states
-  const [customFilterColumn, setCustomFilterColumn] = useState(null)
-  const [customFilterType, setCustomFilterType] = useState('equal')
-  const [customFilterValue1, setCustomFilterValue1] = useState('')
-  const [customFilterValue2, setCustomFilterValue2] = useState('')
-
-  // Fetch all commissions once for filter values
-  useEffect(() => {
-    if (!isAuthenticated || unauthorized) return
-    fetchAllCommissions()
-  }, [isAuthenticated, unauthorized])
-
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
     if (!isAuthenticated || unauthorized || hidden) return
@@ -116,25 +92,6 @@ const IBCommissionsPage = () => {
       window.removeEventListener('auth:logout', onLogout)
     }
   }, [])
-
-  // Close filter dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showFilterDropdown && filterRefs.current) {
-        // Check if click is inside the filter dropdown or number filter dropdown
-        const isInsideFilterDropdown = event.target.closest('[data-filter-dropdown]') ||
-                                       event.target.closest('[data-number-filter]') || 
-                                       Object.values(filterRefs.current).some(ref => ref?.contains(event.target))
-        if (!isInsideFilterDropdown) {
-          setShowFilterDropdown(null)
-          setShowNumberFilterDropdown(null)
-        }
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
 
   // Fetch commission totals for face cards
   const fetchCommissionTotals = async () => {
@@ -178,34 +135,6 @@ const IBCommissionsPage = () => {
     }
   }, [searchQuery])
 
-  // Fetch all commissions for filter values (run once on mount)
-  const fetchAllCommissions = async () => {
-    try {
-      let allRecords = []
-      let currentPage = 1
-      let totalPages = 1
-      
-      // Fetch all pages to get complete dataset for filters
-      do {
-        const response = await brokerAPI.getIBCommissions(currentPage, 100, '', 'created_at', 'desc')
-        if (response?.data) {
-          const records = response.data.records || []
-          allRecords = [...allRecords, ...records]
-          
-          const pagination = response.data.pagination || {}
-          totalPages = pagination.total_pages || 1
-          currentPage++
-        } else {
-          break
-        }
-      } while (currentPage <= totalPages)
-      
-      setAllCommissions(allRecords)
-    } catch (error) {
-      console.error('Error fetching all IB commissions for filters:', error)
-    }
-  }
-
   const fetchCommissions = async () => {
     try {
       setLoading(true)
@@ -238,14 +167,12 @@ const IBCommissionsPage = () => {
     setShowEditModal(false)
     setEditingIB(null)
     fetchCommissions() // Refresh the list
-    fetchAllCommissions() // Refresh filter values
     fetchCommissionTotals() // Refresh face card totals
   }
 
   const handleBulkSyncSuccess = () => {
     setShowBulkSyncModal(false)
     fetchCommissions() // Refresh the list
-    fetchAllCommissions() // Refresh filter values
     fetchCommissionTotals() // Refresh face card totals
   }
 
@@ -304,7 +231,6 @@ const IBCommissionsPage = () => {
         setBulkPercentage('')
         setShowBulkUpdateModal(false)
         fetchCommissions()
-        fetchAllCommissions() // Refresh filter values
         fetchCommissionTotals() // Refresh face card totals
       } else {
         setError('Bulk update failed: ' + (response.message || 'Unknown error'))
@@ -356,103 +282,6 @@ const IBCommissionsPage = () => {
     return `${day}/${month}/${year}`
   }
 
-  // Column filter helper functions
-  const getUniqueColumnValues = (columnKey) => {
-    const values = new Set()
-    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
-    
-    // Use allCommissions to show all values across all pages
-    allCommissions.forEach(ib => {
-      let value = ib[columnKey]
-      
-      // Format dates for display
-      if (columnKey === 'last_synced_at' && value) {
-        value = formatDate(value)
-      }
-      
-      if (value !== null && value !== undefined && value !== '') {
-        const strValue = String(value).toLowerCase()
-        if (!searchQuery || strValue.includes(searchQuery)) {
-          values.add(value)
-        }
-      }
-    })
-    
-    return Array.from(values).sort((a, b) => {
-      if (typeof a === 'number' && typeof b === 'number') return a - b
-      return String(a).localeCompare(String(b))
-    })
-  }
-
-  const toggleColumnFilter = (columnKey, value) => {
-    setColumnFilters(prev => {
-      const current = prev[columnKey] || []
-      const newFilters = current.includes(value)
-        ? current.filter(v => v !== value)
-        : [...current, value]
-      
-      if (newFilters.length === 0) {
-        const { [columnKey]: _, ...rest } = prev
-        return rest
-      }
-      
-      return { ...prev, [columnKey]: newFilters }
-    })
-  }
-
-  const clearColumnFilter = (columnKey) => {
-    setColumnFilters(prev => {
-      const customFilterKey = `${columnKey}_filter`
-      const { [columnKey]: _, [customFilterKey]: __, ...rest } = prev
-      return rest
-    })
-    setFilterSearchQuery(prev => {
-      const { [columnKey]: _, ...rest } = prev
-      return rest
-    })
-    setShowFilterDropdown(null)
-  }
-
-  const selectAllFilters = (columnKey) => {
-    const allValues = getUniqueColumnValues(columnKey)
-    setColumnFilters(prev => ({
-      ...prev,
-      [columnKey]: allValues
-    }))
-  }
-
-  const deselectAllFilters = (columnKey) => {
-    setColumnFilters(prev => {
-      const { [columnKey]: _, ...rest } = prev
-      return rest
-    })
-  }
-
-  const getActiveFilterCount = (columnKey) => {
-    const checkboxCount = columnFilters[columnKey]?.length || 0
-    const customFilterKey = `${columnKey}_filter`
-    const hasCustomFilter = columnFilters[customFilterKey] ? 1 : 0
-    return checkboxCount + hasCustomFilter
-  }
-
-  const isAllSelected = (columnKey) => {
-    const allValues = getUniqueColumnValues(columnKey)
-    const selectedValues = columnFilters[columnKey] || []
-    return allValues.length > 0 && selectedValues.length === allValues.length
-  }
-
-  const applyCustomNumberFilter = () => {
-    const columnKey = customFilterColumn || showFilterDropdown
-    const filterKey = `${columnKey}_filter`
-    setColumnFilters(prev => ({
-      ...prev,
-      [filterKey]: { type: customFilterType, value1: customFilterValue1, value2: customFilterValue2 }
-    }))
-    setShowNumberFilterDropdown(null)
-    setCustomFilterValue1('')
-    setCustomFilterValue2('')
-  }
-
   // Handle column sorting - triggers API call via useEffect
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
@@ -465,69 +294,8 @@ const IBCommissionsPage = () => {
     }
   }
 
-  // Since sorting is now done by API, apply column filters to the data
-  const sortedCommissions = useMemo(() => {
-    let filtered = [...commissions]
-    
-    // Apply column filters
-    Object.entries(columnFilters).forEach(([columnKey, filterValue]) => {
-      if (columnKey.endsWith('_filter')) {
-        // Custom filter (number or text)
-        const actualKey = columnKey.replace('_filter', '')
-        const { type, value1, value2 } = filterValue
-        
-        filtered = filtered.filter(ib => {
-          let cellValue = ib[actualKey]
-          
-          // Check if it's a string column
-          if (stringColumns.includes(actualKey)) {
-            // Text filter
-            const textValue = String(cellValue || '').toLowerCase()
-            const compareValue = String(value1 || '').toLowerCase()
-            
-            switch (type) {
-              case 'equal': return textValue === compareValue
-              case 'notEqual': return textValue !== compareValue
-              case 'startsWith': return textValue.startsWith(compareValue)
-              case 'endsWith': return textValue.endsWith(compareValue)
-              case 'contains': return textValue.includes(compareValue)
-              case 'doesNotContain': return !textValue.includes(compareValue)
-              default: return true
-            }
-          } else {
-            // Number filter
-            const numValue = parseFloat(cellValue)
-            const val1 = parseFloat(value1)
-            const val2 = parseFloat(value2)
-            
-            if (isNaN(numValue)) return false
-            
-            switch (type) {
-              case 'equal': return numValue === val1
-              case 'notEqual': return numValue !== val1
-              case 'lessThan': return numValue < val1
-              case 'lessThanOrEqual': return numValue <= val1
-              case 'greaterThan': return numValue > val1
-              case 'greaterThanOrEqual': return numValue >= val1
-              case 'between': return numValue >= val1 && numValue <= val2
-              default: return true
-            }
-          }
-        })
-      } else if (Array.isArray(filterValue) && filterValue.length > 0) {
-        // Checkbox filter
-        filtered = filtered.filter(ib => {
-          let value = ib[columnKey]
-          if (columnKey === 'last_synced_at' && value) {
-            value = formatDate(value)
-          }
-          return filterValue.includes(value)
-        })
-      }
-    })
-    
-    return filtered
-  }, [commissions, columnFilters])
+  // Since sorting is now done by API, just use commissions as-is
+  const sortedCommissions = commissions
 
   // Column resize handlers
   const handleResizeStart = (e, columnKey) => {
@@ -856,49 +624,17 @@ const IBCommissionsPage = () => {
                             className="px-4 py-3 text-xs font-bold text-white uppercase tracking-wider border-b-2 border-blue-700 border-r border-blue-500/50 relative group hover:bg-blue-700/80 transition-colors"
                             style={{ width: col.width, textAlign: col.align }}
                           >
-                            <div className="flex items-center gap-2 justify-between">
-                              <div 
-                                className="flex items-center gap-1 cursor-pointer flex-1 text-white"
-                                onClick={() => col.key !== 'action' && handleSort(col.key)}
-                                style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}
-                              >
-                                <span>{col.label}</span>
-                                {sortColumn === col.key && col.key !== 'action' && (
-                                  <svg
-                                    className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                  </svg>
-                                )}
-                              </div>
-                              
-                              {/* Filter button - only for non-action columns */}
-                              {col.key !== 'action' && (
-                                <div className="relative" ref={el => {
-                                  if (!filterRefs.current) filterRefs.current = {}
-                                  filterRefs.current[col.key] = el
-                                }}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setShowFilterDropdown(showFilterDropdown === col.key ? null : col.key)
-                                    }}
-                                    className={`p-1 rounded hover:bg-blue-700 transition-colors ${getActiveFilterCount(col.key) > 0 ? 'text-yellow-300' : 'text-white/80'}`}
-                                    title="Filter column"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                    </svg>
-                                    {getActiveFilterCount(col.key) > 0 && (
-                                      <span className="absolute -top-1 -right-1 bg-yellow-300 text-blue-900 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                                        {getActiveFilterCount(col.key)}
-                                      </span>
-                                    )}
-                                  </button>
-                                </div>
+                            <div className="flex items-center gap-1 cursor-pointer" onClick={() => col.key !== 'action' && handleSort(col.key)} style={{ justifyContent: col.align === 'right' ? 'flex-end' : col.align === 'center' ? 'center' : 'flex-start' }}>
+                              <span>{col.label}</span>
+                              {sortColumn === col.key && col.key !== 'action' && (
+                                <svg
+                                  className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
                               )}
                             </div>
                             {/* Resize Handle */}
@@ -1165,404 +901,6 @@ const IBCommissionsPage = () => {
                   )}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Column Filter Dropdowns */}
-        {showFilterDropdown && (
-          <div 
-            data-filter-dropdown
-            className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
-            style={{
-              top: '50%',
-              transform: 'translateY(-50%)',
-              left: (() => {
-                const rect = filterRefs.current[showFilterDropdown]?.getBoundingClientRect()
-                if (!rect) return '0px'
-                const dropdownWidth = 256
-                const offset = 30
-                const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
-                return wouldOverflow 
-                  ? `${rect.right - dropdownWidth}px`
-                  : `${rect.left + offset}px`
-              })()
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-700">Filter Menu</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFilterDropdown(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Sort Options */}
-            <div className="border-b border-slate-200 py-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSortColumn(showFilterDropdown)
-                  setSortDirection('asc')
-                  setShowFilterDropdown(null)
-                }}
-                className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
-              >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                </svg>
-                Sort Smallest to Largest
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSortColumn(showFilterDropdown)
-                  setSortDirection('desc')
-                  setShowFilterDropdown(null)
-                }}
-                className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
-              >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-                </svg>
-                Sort Largest to Smallest
-              </button>
-            </div>
-
-            {/* Quick Clear Filter */}
-            <div className="border-b border-slate-200 py-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  clearColumnFilter(showFilterDropdown)
-                }}
-                className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear Filter
-              </button>
-            </div>
-
-            {/* Number Filters (only for numeric columns) */}
-            {!isStringColumn(showFilterDropdown) && (
-            <div className="border-b border-slate-200 py-1">
-              <div className="px-2 py-1 relative group text-[11px]">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (showNumberFilterDropdown === showFilterDropdown) {
-                      setShowNumberFilterDropdown(null)
-                      setCustomFilterValue1('')
-                      setCustomFilterValue2('')
-                    } else {
-                      setShowNumberFilterDropdown(showFilterDropdown)
-                      setCustomFilterColumn(showFilterDropdown)
-                      setCustomFilterValue1('')
-                      setCustomFilterValue2('')
-                    }
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
-                >
-                  <span>Number Filters</span>
-                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                {showNumberFilterDropdown === showFilterDropdown && (
-                  <div
-                    data-number-filter
-                    className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
-                    style={{
-                      left: 'calc(100% + 8px)',
-                      zIndex: 10000001
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-3 space-y-3">
-                      <div>
-                        <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
-                        <select
-                          value={customFilterType}
-                          onChange={(e) => setCustomFilterType(e.target.value)}
-                          className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                        >
-                          <option value="equal">Equal...</option>
-                          <option value="notEqual">Not Equal...</option>
-                          <option value="lessThan">Less Than...</option>
-                          <option value="lessThanOrEqual">Less Than Or Equal...</option>
-                          <option value="greaterThan">Greater Than...</option>
-                          <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
-                          <option value="between">Between...</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
-                        <input
-                          type="number"
-                          step="any"
-                          placeholder="Enter value"
-                          value={customFilterValue1}
-                          onChange={(e) => setCustomFilterValue1(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              if (customFilterType === 'between' && !customFilterValue2) return
-                              applyCustomNumberFilter()
-                              setShowNumberFilterDropdown(null)
-                              setShowFilterDropdown(null)
-                            }
-                          }}
-                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                        />
-                      </div>
-
-                      {customFilterType === 'between' && (
-                        <div>
-                          <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
-                          <input
-                            type="number"
-                            step="any"
-                            placeholder="Enter value"
-                            value={customFilterValue2}
-                            onChange={(e) => setCustomFilterValue2(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault()
-                                if (!customFilterValue1 || !customFilterValue2) return
-                                applyCustomNumberFilter()
-                                setShowNumberFilterDropdown(null)
-                                setShowFilterDropdown(null)
-                              }
-                            }}
-                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 pt-2 border-t border-gray-200">
-                        <button
-                          onClick={() => {
-                            applyCustomNumberFilter()
-                            setShowNumberFilterDropdown(null)
-                            setShowFilterDropdown(null)
-                          }}
-                          disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                          className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                        >
-                          OK
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            )}
-
-            {/* Text Filters (only for string columns) */}
-            {isStringColumn(showFilterDropdown) && (
-              <div className="border-b border-slate-200 py-1">
-                <div className="px-2 py-1 relative group text-[11px]">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (showNumberFilterDropdown === showFilterDropdown) {
-                        setShowNumberFilterDropdown(null)
-                        setCustomFilterValue1('')
-                        setCustomFilterValue2('')
-                      } else {
-                        setShowNumberFilterDropdown(showFilterDropdown)
-                        setCustomFilterColumn(showFilterDropdown)
-                        setCustomFilterValue1('')
-                        setCustomFilterValue2('')
-                      }
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
-                  >
-                    <span>Text Filters</span>
-                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-
-                  {showNumberFilterDropdown === showFilterDropdown && (
-                    <div
-                      data-number-filter
-                      className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
-                      style={{
-                        left: 'calc(100% + 8px)',
-                        zIndex: 10000001
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="p-3 space-y-3">
-                        <div>
-                          <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
-                          <select
-                            value={customFilterType}
-                            onChange={(e) => setCustomFilterType(e.target.value)}
-                            className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                          >
-                            <option value="equal">Equal...</option>
-                            <option value="notEqual">Not Equal...</option>
-                            <option value="startsWith">Starts With...</option>
-                            <option value="endsWith">Ends With...</option>
-                            <option value="contains">Contains...</option>
-                            <option value="doesNotContain">Does Not Contain...</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
-                          <input
-                            type="text"
-                            placeholder="Enter value"
-                            value={customFilterValue1}
-                            onChange={(e) => setCustomFilterValue1(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault()
-                                applyCustomNumberFilter()
-                                setShowNumberFilterDropdown(null)
-                                setShowFilterDropdown(null)
-                              }
-                            }}
-                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                          />
-                        </div>
-
-                        <div className="flex gap-2 pt-2 border-t border-gray-200">
-                          <button
-                            onClick={() => {
-                              applyCustomNumberFilter()
-                              setShowNumberFilterDropdown(null)
-                              setShowFilterDropdown(null)
-                            }}
-                            disabled={!customFilterValue1}
-                            className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                          >
-                            OK
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Search Box */}
-            <div className="p-2 border-b border-slate-200">
-              <div className="relative">
-                <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={filterSearchQuery[showFilterDropdown] || ''}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setFilterSearchQuery(prev => ({
-                      ...prev,
-                      [showFilterDropdown]: e.target.value
-                    }))
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            {/* Select All / Deselect All */}
-            <div className="px-2 py-1.5 border-b border-slate-200 bg-slate-50">
-              <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={isAllSelected(showFilterDropdown)}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    if (e.target.checked) {
-                      selectAllFilters(showFilterDropdown)
-                    } else {
-                      deselectAllFilters(showFilterDropdown)
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-[11px] font-semibold text-slate-700">SELECT ALL</span>
-              </label>
-            </div>
-
-            {/* Filter List */}
-            <div className="max-h-64 overflow-y-auto">
-              <div className="p-1.5 space-y-0.5">
-                {getUniqueColumnValues(showFilterDropdown).length === 0 ? (
-                  <div className="px-2 py-2 text-center text-[11px] text-slate-500">
-                    No items found
-                  </div>
-                ) : (
-                  getUniqueColumnValues(showFilterDropdown).map(value => (
-                    <label 
-                      key={value} 
-                      className="flex items-center gap-2 hover:bg-blue-50 px-2 py-1.5 rounded cursor-pointer transition-colors bg-white"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={(columnFilters[showFilterDropdown] || []).includes(value)}
-                        onChange={(e) => {
-                          e.stopPropagation()
-                          toggleColumnFilter(showFilterDropdown, value)
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-[11px] text-slate-700 font-medium truncate">
-                        {value}
-                      </span>
-                    </label>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-2 py-1.5 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  clearColumnFilter(showFilterDropdown)
-                }}
-                className="px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
-              >
-                Clear
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowFilterDropdown(null)
-                }}
-                className="px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-              >
-                OK
-              </button>
             </div>
           </div>
         )}
