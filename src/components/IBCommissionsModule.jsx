@@ -45,7 +45,6 @@ export default function IBCommissionsModule() {
   const [sortDirection, setSortDirection] = useState('asc')
   const [visibleColumns, setVisibleColumns] = useState({
     checkbox: true,
-    id: true,
     name: true,
     email: true,
     percentage: true,
@@ -239,13 +238,13 @@ export default function IBCommissionsModule() {
   // Map card labels to icon file paths
   const getCardIcon = (label) => {
     const iconMap = {
-      'TOTAL REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/TOTAL%20COMMISION.svg',
-      'AVAILABLE REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/AVAILABLE%20Commision.svg',
-      'DISBURSED REBATE': '/Mobile%20cards%20icons/Brokers Eye Platform/Blocked%20commision.svg',
-      'TOTAL REBATE %': '/Mobile%20cards%20icons/Brokers Eye Platform/TOTAL%20COMMISION%25.svg',
-      'AVAILABLE REBATE %': '/Mobile%20cards%20icons/Brokers Eye Platform/AVAILABLE%20Commision%25.svg'
+      'TOTAL REBATE': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION.svg',
+      'AVAILABLE REBATE': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision.svg',
+      'DISBURSED REBATE': '/Mobile cards icons/Brokers Eye Platform/Blocked commision.svg',
+      'TOTAL REBATE %': '/Mobile cards icons/Brokers Eye Platform/TOTAL COMMISION%25.svg',
+      'AVAILABLE REBATE %': '/Mobile cards icons/Brokers Eye Platform/AVAILABLE Commision%25.svg'
     }
-    return iconMap[label] || '/Mobile%20cards%20icons/Total%20Clients.svg'
+    return iconMap[label] || '/Mobile cards icons/Total Clients.svg'
   }
   
   useEffect(() => {
@@ -278,8 +277,7 @@ export default function IBCommissionsModule() {
   // Get visible columns
   const allColumns = [
     { key: 'checkbox', label: '', width: '50px', sticky: true, stickyLeft: '0px', zIndex: 20 },
-    { key: 'id', label: 'ID', width: '80px', sticky: !isMobileView, stickyLeft: '50px', zIndex: 10 },
-    { key: 'name', label: 'Name', width: '150px' },
+    { key: 'name', label: 'Name', width: '150px', sticky: !isMobileView, stickyLeft: '50px', zIndex: 10 },
     { key: 'email', label: 'Email', width: '200px' },
     { key: 'percentage', label: 'Percentage', width: '120px' },
     { key: 'total_commission', label: 'Total Rebate', width: '150px' },
@@ -313,9 +311,6 @@ export default function IBCommissionsModule() {
             />
           </div>
         )
-      case 'id':
-        value = item.id || '-'
-        break
       case 'name':
         value = item.name || '-'
         break
@@ -327,7 +322,7 @@ export default function IBCommissionsModule() {
         break
       case 'total_commission':
         value = formatNum(item.total_commission || 0, 2)
-        breakDateString('en-GB'
+        break
       case 'available_commission':
         value = formatNum(item.available_commission || 0, 2)
         break
@@ -386,9 +381,6 @@ export default function IBCommissionsModule() {
           let value = ''
           
           switch(col.key) {
-            case 'id':
-              value = item.id || '-'
-              break
             case 'name':
               value = item.name || '-'
               break
@@ -397,7 +389,7 @@ export default function IBCommissionsModule() {
               break
             case 'percentage':
               value = item.percentage || 0
-              breakDateString('en-GB'
+              break
             case 'total_commission':
               value = formatNum(item.total_commission || 0, 2)
               break
@@ -931,29 +923,16 @@ export default function IBCommissionsModule() {
                           zIndex: col.sticky ? (col.zIndex || 10) : 'auto'
                         }}
                       >
-                        {col.key === 'checkbox' ? '' : (col.key === 'login' || col.key === 'id') ? 'Total' : ''}
+                        {col.key === 'checkbox' ? '' : col.key === 'name' ? 'Total' : ''}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Empty state inline row */}
+                {/* Empty state */}
                 {!loading && paginatedData.length === 0 && (
-                  <div 
-                    className="grid text-[10px] text-[#9CA3AF] bg-white"
-                    style={{
-                      gap: '0px', 
-                      gridGap: '0px', 
-                      columnGap: '0px',
-                      gridTemplateColumns
-                    }}
-                  >
-                    <div className="px-2 py-8 text-center col-span-full">
-                      {(() => {
-                        const hasFilters = Boolean(searchInput) || selectedIB || getActiveGroupFilter('ibcommissions')
-                        return hasFilters ? 'No IBs match the applied filters' : 'No data available'
-                      })()}
-                    </div>
+                  <div className="text-center py-8 text-[#9CA3AF] text-sm">
+                    No data available
                   </div>
                 )}
               </div>
@@ -1114,22 +1093,22 @@ export default function IBCommissionsModule() {
               {/* Selected IDs Field */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Selected IB IDs ({selectedIBs.length})
+                  Selected IB Emails ({selectedIBs.length})
                 </label>
                 <div className="p-3 bg-gray-50 border-2 border-gray-300 rounded-lg min-h-[60px] max-h-[120px] overflow-y-auto">
                   {selectedIBs.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {selectedIBs.map(id => (
+                      {commissions.filter(ib => selectedIBs.includes(ib.id)).map(ib => (
                         <span
-                          key={id}
+                          key={ib.id}
                           className="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
                         >
-                          #{id}
+                          {ib.email}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm italic">No IDs selected</p>
+                    <p className="text-gray-400 text-sm italic">No emails selected</p>
                   )}
                 </div>
               </div>
@@ -1346,6 +1325,4 @@ export default function IBCommissionsModule() {
     </div>
   )
 }
-
-
 

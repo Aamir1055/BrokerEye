@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { brokerAPI } from '../services/api'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
@@ -50,13 +50,6 @@ const ClientPercentagePage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
-  
-  // Sort states for API
-  const [sortColumn, setSortColumn] = useState('login')
-  const [sortDirection, setSortDirection] = useState('asc')
-  
-  // Filter state for has_custom
-  const [hasCustomFilter, setHasCustomFilter] = useState(null) // null, true, or false
 
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -91,6 +84,13 @@ const ClientPercentagePage = () => {
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   const [showTextFilterDropdown, setShowTextFilterDropdown] = useState(null)
   
+  // Track if component is mounted to prevent updates after unmount
+  const isMountedRef = useRef(true)
+  
+  // Define string columns that should show text filters instead of number filters
+  const stringColumns = ['login', 'type', 'comment']
+  const isStringColumn = (key) => stringColumns.includes(key)
+  
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
@@ -99,17 +99,63 @@ const ClientPercentagePage = () => {
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
-  // Track if component is mounted for cleanup
-  const isMountedRef = useRef(true)
+  // State for login column values fetched from API
+  const [loginColumnValues, setLoginColumnValues] = useState([])
+  const [loadingLoginValues, setLoadingLoginValues] = useState(false)
 
-  // Define which columns should use string filters vs number filters
-  const isStringColumn = (columnKey) => {
-    const stringColumns = ['login', 'type', 'comment']
-    return stringColumns.includes(columnKey)
+  // Fetch login values from API
+  const fetchLoginValues = async (searchQuery = '') => {
+    setLoadingLoginValues(true)
+    try {
+      const params = {
+        page: 1,
+        page_size: 1000, // Get more values for the dropdown
+        sort_by: 'login',
+        sort_order: 'asc'
+      }
+      
+      // Add search query if provided
+      if (searchQuery.trim()) {
+        params.login = searchQuery.trim()
+      }
+
+      const response = await brokerAPI.get('/broker/clients/percentages', { params })
+      
+      if (response.data?.status === 'success' && response.data?.data?.clients) {
+        const logins = response.data.data.clients.map(client => client.client_login)
+        // Remove duplicates and sort
+        const uniqueLogins = [...new Set(logins)].sort((a, b) => a - b)
+        setLoginColumnValues(uniqueLogins)
+      }
+    } catch (err) {
+      console.error('Error fetching login values:', err)
+      // Fallback to client-side values on error
+      const values = new Set()
+      clients.forEach(client => {
+        if (client.client_login !== null && client.client_login !== undefined && client.client_login !== '') {
+          values.add(client.client_login)
+        }
+      })
+      setLoginColumnValues(Array.from(values).sort((a, b) => a - b))
+    } finally {
+      setLoadingLoginValues(false)
+    }
   }
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
+    // For login column, use API-fetched values
+    if (columnKey === 'login' || columnKey === 'client_login') {
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      if (searchQuery) {
+        return loginColumnValues.filter(value => 
+          String(value).toLowerCase().includes(searchQuery)
+        )
+      }
+      return loginColumnValues
+    }
+
+    // For other columns, use client-side filtering
     const values = new Set()
     clients.forEach(client => {
       let value = client[columnKey]
@@ -292,26 +338,56 @@ const ClientPercentagePage = () => {
   const [editPercentage, setEditPercentage] = useState('')
   const [editComment, setEditComment] = useState('')
   const [saving, setSaving] = useState(false)
+  
+  // Sorting states
+  const [sortColumn, setSortColumn] = useState('client_login')
+  const [sortDirection, setSortDirection] = useState('asc')
 
   // Module filter removed (belongs to Live Dealing)
 
-  // Reset to page 1 when search, sort, or filter changes
+  // Critical: Set unmounted flag ASAP to unblock route transitions
   useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery, sortColumn, sortDirection, hasCustomFilter])
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
-  // Fetch data when page, search, sort, or filter changes
+  // Fetch login values when login filter dropdown opens or search query changes
+  useEffect(() => {
+    if (showFilterDropdown === 'login' || showFilterDropdown === 'client_login') {
+      const searchQuery = filterSearchQuery['login'] || filterSearchQuery['client_login'] || ''
+      fetchLoginValues(searchQuery)
+    }
+  }, [showFilterDropdown, filterSearchQuery['login'], filterSearchQuery['client_login']])
+
+  useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
+    fetchAllClientPercentages(1)
+  }, [isAuthenticated, unauthorized])
+
+  // Fetch data when search query or sort changes (reset to page 1)
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
     if (!isAuthenticated || unauthorized || hidden) return
     
     // Debounce search to avoid too many API calls
     const timeoutId = setTimeout(() => {
-      fetchAllClientPercentages(currentPage)
+      setCurrentPage(1)
+      fetchAllClientPercentages(1)
     }, 300)
     
     return () => clearTimeout(timeoutId)
-  }, [currentPage, searchQuery, sortColumn, sortDirection, hasCustomFilter, isAuthenticated, unauthorized])
+  }, [searchQuery, sortColumn, sortDirection, isAuthenticated, unauthorized])
+
+  // Fetch data when page changes
+  useEffect(() => {
+    const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isAuthenticated || unauthorized || hidden) return
+    if (currentPage > 1) {
+      fetchAllClientPercentages(currentPage)
+    }
+  }, [currentPage, isAuthenticated, unauthorized])
 
   useEffect(() => {
     const onRefreshed = () => setUnauthorized(false)
@@ -321,13 +397,6 @@ const ClientPercentagePage = () => {
     return () => {
       window.removeEventListener('auth:token_refreshed', onRefreshed)
       window.removeEventListener('auth:logout', onLogout)
-    }
-  }, [])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
     }
   }, [])
 
@@ -350,37 +419,24 @@ const ClientPercentagePage = () => {
       setLoading(true)
       setError('')
       
-      // Build API params with search and sort
-      const params = {
-        page,
+      const params = { 
+        page, 
         page_size: itemsPerPage,
-        sort_by: sortColumn,
+        sort_by: sortColumn === 'client_login' ? 'login' : sortColumn,
         sort_order: sortDirection
       }
       
-      const query = searchQuery.trim().toLowerCase()
+      // Add search parameter if search query exists
+      const trimmedQuery = searchQuery.trim().toLowerCase()
       
-      // Special handling for custom/default search - use has_custom parameter
-      if (query === 'custom') {
+      // Check if searching for type (custom/default)
+      if (trimmedQuery === 'custom') {
         params.has_custom = true
-      } else if (query === 'default') {
+      } else if (trimmedQuery === 'default') {
         params.has_custom = false
-      } else if (searchQuery.trim()) {
-        // Detect if it's a percentage search vs login search
-        // Percentage: 1-2 digits (70, 80, 90, 95), decimals (70.5, 95.5), or has % sign
-        // Login: 3+ digits (300, 1234, 300100) or contains non-numeric chars
-        const isProbablyPercentage = /^[0-9]{1,2}(\.[0-9]+)?%?$/.test(query) || query.includes('%')
-        
-        if (!isProbablyPercentage) {
-          // Regular login search - send to API
-          params.login = searchQuery.trim()
-        }
-        // Otherwise let client-side search handle it (percentage search)
-      }
-      
-      // Add has_custom filter if set (separate from search)
-      if (hasCustomFilter !== null && query !== 'custom' && query !== 'default') {
-        params.has_custom = hasCustomFilter
+      } else if (trimmedQuery) {
+        // Otherwise search by login
+        params.login = searchQuery.trim()
       }
       
       const response = await brokerAPI.getAllClientPercentages(params)
@@ -449,40 +505,8 @@ const ClientPercentagePage = () => {
     setEditComment('')
   }
 
-  // Client-side search filter for multi-field search
-  const applyClientSideSearch = (clientsList) => {
-    if (!searchQuery.trim()) return clientsList
-
-    const query = searchQuery.toLowerCase().trim()
-
-    // Special handling for type keywords
-    if (query === 'default' || query === 'custom') {
-      const wantCustom = query === 'custom'
-      return clientsList.filter(c => {
-        const isCustom = c.is_custom === true || c.is_custom === 1 || c.is_custom === '1'
-        return wantCustom ? isCustom : !isCustom
-      })
-    }
-
-    // Search across login, percentage, type, and comment fields
-    return clientsList.filter(client => {
-      // Search in login
-      if (client.client_login?.toString().toLowerCase().includes(query)) return true
-      
-      // Search in percentage
-      if (client.percentage?.toString().includes(query)) return true
-      
-      // Search in comment
-      if (client.comment?.toString().toLowerCase().includes(query)) return true
-      
-      // Search in type (custom/default)
-      const isCustom = client.is_custom === true || client.is_custom === 1 || client.is_custom === '1'
-      const typeText = isCustom ? 'custom' : 'default'
-      if (typeText.includes(query)) return true
-      
-      return false
-    })
-  }
+  // Note: Search is now handled by API, not client-side
+  // The API endpoint accepts 'login' parameter for searching
 
   // Get autocomplete suggestions
   const getSuggestions = () => {
@@ -521,12 +545,12 @@ const ClientPercentagePage = () => {
   // Get card icon path based on card title
   const getCardIcon = (cardTitle) => {
     const iconMap = {
-      'Total Clients': '/Desktop%20cards%20icons/Total%20Clients.svg',
-      'Custom Percentages': '/Desktop%20cards%20icons/TOTAL%20COMMISION.svg',
-      'Using Default': '/Desktop%20cards%20icons/AVAILABLE%20Commision.svg',
-      'Default Percentage': '/Desktop%20cards%20icons/TOTAL%20COMMISION%25.svg',
+      'Total Clients': '/Desktop cards icons/Total Clients.svg',
+      'Custom Percentages': '/Desktop cards icons/TOTAL COMMISION.svg',
+      'Using Default': '/Desktop cards icons/AVAILABLE Commision.svg',
+      'Default Percentage': '/Desktop cards icons/TOTAL COMMISION%25.svg',
     }
-    return iconMap[cardTitle] || '/Desktop%20cards%20icons/Total%20Clients.svg'
+    return iconMap[cardTitle] || '/Desktop cards icons/Total Clients.svg'
   }
 
   // Sorting
@@ -540,10 +564,10 @@ const ClientPercentagePage = () => {
   }
 
   const sortedClients = () => {
-    // API handles login search and sort, apply client-side multi-field search
-    let filtered = applyClientSideSearch(clients)
+    // API handles search and sort, just apply filters here
+    let filtered = clients
     
-    // Apply IB filter (cumulative order: IB -> Group)
+    // Apply IB filter first (cumulative order: IB -> Group)
     let ibFiltered = filterByActiveIB(filtered, 'client_login')
     
     // Apply group filter on top of IB filter
@@ -645,14 +669,24 @@ const ClientPercentagePage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if clicked element or its parents have the data-number-filter attribute
-      const isNumberFilterClick = event.target.closest('[data-number-filter]')
+      if (!isMountedRef.current) return
       
-      if (!isNumberFilterClick) {
-        if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-          if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
-            setShowFilterDropdown(null)
-          }
+      // Check if click is inside any filter-related element
+      const isInsideMainFilter = showFilterDropdown && filterRefs.current[showFilterDropdown] && 
+                                  filterRefs.current[showFilterDropdown].contains(event.target)
+      
+      const numberFilterElements = document.querySelectorAll('[data-number-filter]')
+      let isInsideNumberFilter = false
+      numberFilterElements.forEach(el => {
+        if (el.contains(event.target)) {
+          isInsideNumberFilter = true
+        }
+      })
+      
+      // If click is outside both main filter and number filter dropdowns, close them
+      if (!isInsideMainFilter && !isInsideNumberFilter) {
+        if (showFilterDropdown) {
+          setShowFilterDropdown(null)
         }
         if (showNumberFilterDropdown) {
           setShowNumberFilterDropdown(null)
@@ -730,24 +764,31 @@ const ClientPercentagePage = () => {
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
-                    return `${rect.right + 30}px`
+                    // Check if dropdown would go off-screen on the right
+                    const dropdownWidth = 256 // w-64 in pixels
+                    const offset = 30 // Offset to the right to keep filter icon visible
+                    const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
+                    // If would overflow, align to the right edge of the button
+                    return wouldOverflow 
+                      ? `${rect.right - dropdownWidth}px`
+                      : `${rect.left + offset}px`
                   })()
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-3 py-2 border-b border-slate-200 bg-slate-50 rounded-t-lg">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-700">Filter Menu</span>
+                    <span className="text-xs text-gray-700">Filter Menu</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         setShowFilterDropdown(null)
                       }}
-                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
@@ -1056,7 +1097,15 @@ const ClientPercentagePage = () => {
                 {/* Filter List */}
                 <div className="max-h-64 overflow-y-auto">
                   <div className="p-1.5 space-y-0.5">
-                    {getUniqueColumnValues(columnKey).length === 0 ? (
+                    {(columnKey === 'login' || columnKey === 'client_login') && loadingLoginValues ? (
+                      <div className="px-2 py-8 text-center">
+                        <svg className="animate-spin h-5 w-5 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-[11px] text-slate-500 mt-2">Loading...</p>
+                      </div>
+                    ) : getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-2 py-2 text-center text-[11px] text-slate-500">
                         No items found
                       </div>
@@ -1295,12 +1344,11 @@ const ClientPercentagePage = () => {
                     onChange={(e) => {
                       setSearchQuery(e.target.value)
                       setShowSuggestions(true)
-                      setCurrentPage(1)
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyDown={handleSearchKeyDown}
-                    placeholder="Search"
+                    placeholder="Search by login or type (custom/default)"
                     className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                   {searchQuery && (
@@ -1530,7 +1578,7 @@ const ClientPercentagePage = () => {
                       )}
                       {visibleColumns.updatedAt && (
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {client.updated_at ? new Date(client.updated_at).toLocaleString('en-GB') : '-'}
+                          {client.updated_at ? new Date(client.updated_at).toLocaleDateString('en-GB') : '-'}
                         </td>
                       )}
                       {visibleColumns.percentage && (
@@ -1817,5 +1865,3 @@ const ClientPercentagePage = () => {
 }
 
 export default ClientPercentagePage
-
-
