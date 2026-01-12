@@ -21,6 +21,7 @@ const IBCommissionsPage = () => {
   }
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const [commissions, setCommissions] = useState([])
+  const [allCommissions, setAllCommissions] = useState([]) // For filter values
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -85,6 +86,12 @@ const IBCommissionsPage = () => {
   const [customFilterType, setCustomFilterType] = useState('equal')
   const [customFilterValue1, setCustomFilterValue1] = useState('')
   const [customFilterValue2, setCustomFilterValue2] = useState('')
+
+  // Fetch all commissions once for filter values
+  useEffect(() => {
+    if (!isAuthenticated || unauthorized) return
+    fetchAllCommissions()
+  }, [isAuthenticated, unauthorized])
 
   useEffect(() => {
     const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
@@ -171,6 +178,19 @@ const IBCommissionsPage = () => {
     }
   }, [searchQuery])
 
+  // Fetch all commissions for filter values (run once on mount)
+  const fetchAllCommissions = async () => {
+    try {
+      // Fetch with large page size to get all records for filters
+      const response = await brokerAPI.getIBCommissions(1, 10000, '', sortColumn, sortDirection)
+      if (response?.data) {
+        setAllCommissions(response.data.records || [])
+      }
+    } catch (error) {
+      console.error('Error fetching all IB commissions for filters:', error)
+    }
+  }
+
   const fetchCommissions = async () => {
     try {
       setLoading(true)
@@ -203,12 +223,14 @@ const IBCommissionsPage = () => {
     setShowEditModal(false)
     setEditingIB(null)
     fetchCommissions() // Refresh the list
+    fetchAllCommissions() // Refresh filter values
     fetchCommissionTotals() // Refresh face card totals
   }
 
   const handleBulkSyncSuccess = () => {
     setShowBulkSyncModal(false)
     fetchCommissions() // Refresh the list
+    fetchAllCommissions() // Refresh filter values
     fetchCommissionTotals() // Refresh face card totals
   }
 
@@ -267,6 +289,7 @@ const IBCommissionsPage = () => {
         setBulkPercentage('')
         setShowBulkUpdateModal(false)
         fetchCommissions()
+        fetchAllCommissions() // Refresh filter values
         fetchCommissionTotals() // Refresh face card totals
       } else {
         setError('Bulk update failed: ' + (response.message || 'Unknown error'))
@@ -323,7 +346,8 @@ const IBCommissionsPage = () => {
     const values = new Set()
     const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
     
-    commissions.forEach(ib => {
+    // Use allCommissions to show all values across all pages
+    allCommissions.forEach(ib => {
       let value = ib[columnKey]
       
       // Format dates for display
