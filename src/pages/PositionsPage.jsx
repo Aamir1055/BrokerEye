@@ -1920,7 +1920,8 @@ const PositionsPage = () => {
                                   setShowCustomFilterModal(false)
                                 }
                               }}
-                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white font-normal"
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              style={{ fontWeight: 400 }}
                             />
                           </div>
 
@@ -1943,7 +1944,8 @@ const PositionsPage = () => {
                                     setShowCustomFilterModal(false)
                                   }
                                 }}
-                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white font-normal"
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                style={{ fontWeight: 400 }}
                               />
                             </div>
                           )}
