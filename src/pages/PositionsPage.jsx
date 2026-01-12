@@ -247,6 +247,7 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
@@ -1833,6 +1834,10 @@ const PositionsPage = () => {
                 <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                   <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                     <button
+                      ref={el => {
+                        if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                        numberFilterButtonRefs.current[columnKey] = el
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
@@ -1861,7 +1866,7 @@ const PositionsPage = () => {
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: (() => {
-                            const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'calc(100% + 8px)'
                             const dropdownWidth = 256 // 16rem in pixels
                             const offset = 8
@@ -1869,7 +1874,7 @@ const PositionsPage = () => {
                             return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
                           })(),
                           right: (() => {
-                            const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'auto'
                             const dropdownWidth = 256
                             const offset = 8
@@ -1971,6 +1976,10 @@ const PositionsPage = () => {
                   <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                     <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                       <button
+                        ref={el => {
+                          if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                          numberFilterButtonRefs.current[columnKey] = el
+                        }}
                         onClick={(e) => {
                           e.stopPropagation()
                           if (showNumberFilterDropdown === columnKey) {
@@ -1999,7 +2008,7 @@ const PositionsPage = () => {
                           className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
-                              const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
                               const dropdownWidth = 256 // 16rem in pixels
                               const offset = 8
@@ -2007,7 +2016,7 @@ const PositionsPage = () => {
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
                             })(),
                             right: (() => {
-                              const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
                               const dropdownWidth = 256
                               const offset = 8
