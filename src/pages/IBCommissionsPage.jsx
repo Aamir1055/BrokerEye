@@ -597,7 +597,7 @@ const IBCommissionsPage = () => {
             )}
 
             {/* Table Container */}
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto">
               <div className="border border-[#E5E7EB] rounded-lg overflow-hidden shadow-sm">
                   <table className="w-full border-collapse">
                     <thead className="bg-blue-600 sticky top-0 z-10">
