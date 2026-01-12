@@ -327,7 +327,7 @@ export default function IBCommissionsModule() {
         break
       case 'total_commission':
         value = formatNum(item.total_commission || 0, 2)
-        break
+        breakDateString('en-GB'
       case 'available_commission':
         value = formatNum(item.available_commission || 0, 2)
         break
@@ -397,7 +397,7 @@ export default function IBCommissionsModule() {
               break
             case 'percentage':
               value = item.percentage || 0
-              break
+              breakDateString('en-GB'
             case 'total_commission':
               value = formatNum(item.total_commission || 0, 2)
               break
