@@ -1860,7 +1860,22 @@ const PositionsPage = () => {
                         data-number-filter
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
-                          left: 'calc(100% + 8px)',
+                          left: (() => {
+                            const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'calc(100% + 8px)'
+                            const dropdownWidth = 256 // 16rem in pixels
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                          })(),
+                          right: (() => {
+                            const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'auto'
+                            const dropdownWidth = 256
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                          })(),
                           zIndex: 10000001
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -1983,7 +1998,22 @@ const PositionsPage = () => {
                           data-number-filter
                           className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
-                            left: 'calc(100% + 8px)',
+                            left: (() => {
+                              const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'calc(100% + 8px)'
+                              const dropdownWidth = 256 // 16rem in pixels
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                            })(),
+                            right: (() => {
+                              const rect = filterRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'auto'
+                              const dropdownWidth = 256
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                            })(),
                             zIndex: 10000001
                           }}
                           onClick={(e) => e.stopPropagation()}
