@@ -604,7 +604,8 @@ const PendingOrdersPage = () => {
             {showFilterDropdown === columnKey && (
               <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-48" 
                 style={{
-                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
