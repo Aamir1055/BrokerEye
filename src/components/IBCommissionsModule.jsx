@@ -332,7 +332,7 @@ export default function IBCommissionsModule() {
         value = formatNum(item.available_commission || 0, 2)
         break
       case 'last_synced_at':
-        value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleString() : '-'
+        value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleDateString('en-GB') : '-'
         break
       case 'actions':
         return (
@@ -405,7 +405,7 @@ export default function IBCommissionsModule() {
               value = formatNum(item.available_commission || 0, 2)
               break
             case 'last_synced_at':
-              value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleString() : '-'
+              value = item.last_synced_at ? new Date(item.last_synced_at).toLocaleDateString('en-GB') : '-'
               break
             case 'actions':
               value = 'N/A'
