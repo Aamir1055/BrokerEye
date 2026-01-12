@@ -181,11 +181,26 @@ const IBCommissionsPage = () => {
   // Fetch all commissions for filter values (run once on mount)
   const fetchAllCommissions = async () => {
     try {
-      // Fetch with large page size to get all records for filters
-      const response = await brokerAPI.getIBCommissions(1, 10000, '', sortColumn, sortDirection)
-      if (response?.data) {
-        setAllCommissions(response.data.records || [])
-      }
+      let allRecords = []
+      let currentPage = 1
+      let totalPages = 1
+      
+      // Fetch all pages to get complete dataset for filters
+      do {
+        const response = await brokerAPI.getIBCommissions(currentPage, 100, '', 'created_at', 'desc')
+        if (response?.data) {
+          const records = response.data.records || []
+          allRecords = [...allRecords, ...records]
+          
+          const pagination = response.data.pagination || {}
+          totalPages = pagination.total_pages || 1
+          currentPage++
+        } else {
+          break
+        }
+      } while (currentPage <= totalPages)
+      
+      setAllCommissions(allRecords)
     } catch (error) {
       console.error('Error fetching all IB commissions for filters:', error)
     }
