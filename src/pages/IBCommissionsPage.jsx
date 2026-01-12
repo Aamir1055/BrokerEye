@@ -1194,8 +1194,8 @@ const IBCommissionsPage = () => {
 
             {/* Number Filters (only for numeric columns) */}
             {!isStringColumn(showFilterDropdown) && (
-            <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
-              <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+            <div className="border-b border-slate-200 py-1">
+              <div className="px-2 py-1 relative group text-[11px]">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -1312,8 +1312,8 @@ const IBCommissionsPage = () => {
 
             {/* Text Filters (only for string columns) */}
             {isStringColumn(showFilterDropdown) && (
-              <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
-                <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+              <div className="border-b border-slate-200 py-1">
+                <div className="px-2 py-1 relative group text-[11px]">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
