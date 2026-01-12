@@ -115,7 +115,8 @@ const IBCommissionsPage = () => {
     const handleClickOutside = (event) => {
       if (showFilterDropdown && filterRefs.current) {
         // Check if click is inside the filter dropdown or number filter dropdown
-        const isInsideFilterDropdown = event.target.closest('[data-number-filter]') || 
+        const isInsideFilterDropdown = event.target.closest('[data-filter-dropdown]') ||
+                                       event.target.closest('[data-number-filter]') || 
                                        Object.values(filterRefs.current).some(ref => ref?.contains(event.target))
         if (!isInsideFilterDropdown) {
           setShowFilterDropdown(null)
@@ -1109,7 +1110,9 @@ const IBCommissionsPage = () => {
         
         {/* Column Filter Dropdowns */}
         {showFilterDropdown && (
-          <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+          <div 
+            data-filter-dropdown
+            className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
             style={{
               top: '50%',
               transform: 'translateY(-50%)',
