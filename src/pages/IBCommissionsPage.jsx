@@ -363,8 +363,8 @@ const IBCommissionsPage = () => {
 
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
-      const numberFilterKey = `${columnKey}_number`
-      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      const customFilterKey = `${columnKey}_filter`
+      const { [columnKey]: _, [customFilterKey]: __, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
