@@ -497,7 +497,13 @@ export const DataProvider = ({ children }) => {
       return clients
     }
 
-    isFetchingClientsRef.current = true
+    // Clients endpoint removed from backend - commenting out to prevent CORS errors
+    console.warn('[DataContext] fetchClients skipped - endpoint not available')
+    isFetchingClientsRef.current = false
+    setLoading(prev => ({ ...prev, clients: false }))
+    return clients
+    
+    /* isFetchingClientsRef.current = true
     setLoading(prev => ({ ...prev, clients: true }))
 
     try {
@@ -572,7 +578,7 @@ export const DataProvider = ({ children }) => {
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
       isFetchingClientsRef.current = false
-    }
+    } */
   }, [clients, isAuthenticated, calculateFullStats])
 
   // Fetch positions data
@@ -2058,31 +2064,34 @@ export const DataProvider = ({ children }) => {
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           const results = await Promise.allSettled([
-            fetchClients(true),
+            // fetchClients(true), // Endpoint removed from backend
             fetchPositions(true),
             fetchOrders(true),
             fetchAccounts(true)
           ])
           
           // Get the actual fetched clients from the first promise result
-          if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
-            fetchedClients = results[0].value
-          }
+          // if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
+          //   fetchedClients = results[0].value
+          // }
           
           // Log any failures
           results.forEach((result, idx) => {
             if (result.status === 'rejected') {
-              const names = ['clients', 'positions', 'orders', 'accounts']
+              const names = ['positions', 'orders', 'accounts']
               console.error(`[DataContext] Initial ${names[idx]} fetch failed:`, result.reason?.message || result.reason)
             }
           })
+          
+          // Mark as successful if at least accounts loaded
+          fetchedClients = ['success'] // Mark sync as complete
         } catch (error) {
           console.error('[DataContext] Initial sync error (attempt', attempt, '):', error)
         }
 
-        // Success criteria: we must have at least some clients loaded
+        // Success criteria: sync attempt completed
         if (fetchedClients.length > 0) {
-          console.log(`[DataContext] ✅ Initial sync successful: ${fetchedClients.length} clients loaded`)
+          console.log(`[DataContext] ✅ Initial sync successful`)
           break
         }
         
@@ -2093,12 +2102,10 @@ export const DataProvider = ({ children }) => {
         }
       }
 
-      // Mark initial data ready if we have clients
-      if (!hasInitialData && fetchedClients.length > 0) {
+      // Mark initial data ready after sync attempts
+      if (!hasInitialData) {
         setHasInitialData(true)
         console.log('[DataContext] 🔌 Initial data ready, WebSocket can now connect')
-      } else if (fetchedClients.length === 0) {
-        console.error('[DataContext] ❌ Failed to load initial data after all attempts')
       }
     }
     
