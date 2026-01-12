@@ -1837,7 +1837,23 @@ const PositionsPage = () => {
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
-                      <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg 
+                        className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={2.5}
+                        style={{
+                          transform: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'none'
+                            const dropdownWidth = 256
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'rotate(180deg)' : 'none'
+                          })()
+                        }}
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -1969,7 +1985,23 @@ const PositionsPage = () => {
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
-                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <svg 
+                          className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24" 
+                          strokeWidth={2.5}
+                          style={{
+                            transform: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'none'
+                              const dropdownWidth = 224
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'rotate(180deg)' : 'none'
+                            })()
+                          }}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
