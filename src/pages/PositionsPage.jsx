@@ -247,6 +247,7 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
@@ -1816,6 +1817,10 @@ const PositionsPage = () => {
                 <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                   <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                     <button
+                      ref={el => {
+                        if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                        numberFilterButtonRefs.current[columnKey] = el
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
@@ -1842,7 +1847,22 @@ const PositionsPage = () => {
                       <div
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
-                          left: 'calc(100% + 8px)',
+                          left: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'calc(100% + 8px)'
+                            const dropdownWidth = 256 // 16rem in pixels
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                          })(),
+                          right: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'auto'
+                            const dropdownWidth = 256
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                          })(),
                           zIndex: 10000001
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -1938,6 +1958,10 @@ const PositionsPage = () => {
                   <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                     <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                       <button
+                        ref={el => {
+                          if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                          numberFilterButtonRefs.current[columnKey] = el
+                        }}
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
@@ -1952,7 +1976,25 @@ const PositionsPage = () => {
                       {showNumberFilterDropdown === columnKey && (
                         <div 
                           className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                          style={{
+                            left: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'calc(100% + 8px)'
+                              const dropdownWidth = 224 // w-56 in pixels
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                            })(),
+                            right: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'auto'
+                              const dropdownWidth = 224
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                            })(),
+                            zIndex: 10000000
+                          }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="text-[11px] text-slate-700 py-1">
