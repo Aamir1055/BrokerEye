@@ -391,9 +391,9 @@ const IBCommissionsPage = () => {
 
   const getActiveFilterCount = (columnKey) => {
     const checkboxCount = columnFilters[columnKey]?.length || 0
-    const numberFilterKey = `${columnKey}_number`
-    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
-    return checkboxCount + hasNumberFilter
+    const customFilterKey = `${columnKey}_filter`
+    const hasCustomFilter = columnFilters[customFilterKey] ? 1 : 0
+    return checkboxCount + hasCustomFilter
   }
 
   const isAllSelected = (columnKey) => {
@@ -402,11 +402,12 @@ const IBCommissionsPage = () => {
     return allValues.length > 0 && selectedValues.length === allValues.length
   }
 
-  const applyCustomNumberFilter = (columnKey, type, value1, value2) => {
-    const numberFilterKey = `${columnKey}_number`
+  const applyCustomNumberFilter = () => {
+    const columnKey = customFilterColumn || showFilterDropdown
+    const filterKey = `${columnKey}_filter`
     setColumnFilters(prev => ({
       ...prev,
-      [numberFilterKey]: { type, value1, value2 }
+      [filterKey]: { type: customFilterType, value1: customFilterValue1, value2: customFilterValue2 }
     }))
     setShowNumberFilterDropdown(null)
     setCustomFilterValue1('')
@@ -431,26 +432,47 @@ const IBCommissionsPage = () => {
     
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, filterValue]) => {
-      if (columnKey.endsWith('_number')) {
-        // Number filter
-        const actualKey = columnKey.replace('_number', '')
+      if (columnKey.endsWith('_filter')) {
+        // Custom filter (number or text)
+        const actualKey = columnKey.replace('_filter', '')
         const { type, value1, value2 } = filterValue
-        const val1 = parseFloat(value1)
-        const val2 = parseFloat(value2)
         
         filtered = filtered.filter(ib => {
-          const cellValue = parseFloat(ib[actualKey])
-          if (isNaN(cellValue)) return false
+          let cellValue = ib[actualKey]
           
-          switch (type) {
-            case 'equal': return cellValue === val1
-            case 'notEqual': return cellValue !== val1
-            case 'lessThan': return cellValue < val1
-            case 'lessThanOrEqual': return cellValue <= val1
-            case 'greaterThan': return cellValue > val1
-            case 'greaterThanOrEqual': return cellValue >= val1
-            case 'between': return cellValue >= val1 && cellValue <= val2
-            default: return true
+          // Check if it's a string column
+          if (stringColumns.includes(actualKey)) {
+            // Text filter
+            const textValue = String(cellValue || '').toLowerCase()
+            const compareValue = String(value1 || '').toLowerCase()
+            
+            switch (type) {
+              case 'equal': return textValue === compareValue
+              case 'notEqual': return textValue !== compareValue
+              case 'startsWith': return textValue.startsWith(compareValue)
+              case 'endsWith': return textValue.endsWith(compareValue)
+              case 'contains': return textValue.includes(compareValue)
+              case 'doesNotContain': return !textValue.includes(compareValue)
+              default: return true
+            }
+          } else {
+            // Number filter
+            const numValue = parseFloat(cellValue)
+            const val1 = parseFloat(value1)
+            const val2 = parseFloat(value2)
+            
+            if (isNaN(numValue)) return false
+            
+            switch (type) {
+              case 'equal': return numValue === val1
+              case 'notEqual': return numValue !== val1
+              case 'lessThan': return numValue < val1
+              case 'lessThanOrEqual': return numValue <= val1
+              case 'greaterThan': return numValue > val1
+              case 'greaterThanOrEqual': return numValue >= val1
+              case 'between': return numValue >= val1 && numValue <= val2
+              default: return true
+            }
           }
         })
       } else if (Array.isArray(filterValue) && filterValue.length > 0) {
