@@ -86,6 +86,7 @@ const PendingOrdersPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
@@ -689,6 +690,10 @@ const PendingOrdersPage = () => {
                 <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                   <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                     <button
+                      ref={el => {
+                        if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                        numberFilterButtonRefs.current[columnKey] = el
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
@@ -696,7 +701,23 @@ const PendingOrdersPage = () => {
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
-                      <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg 
+                        className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={2.5}
+                        style={{
+                          transform: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'none'
+                            const dropdownWidth = 192 // w-48
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'rotate(180deg)' : 'none'
+                          })()
+                        }}
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -704,7 +725,22 @@ const PendingOrdersPage = () => {
                       <div 
                         className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
                         style={{
-                          left: 'calc(100% + 8px)',
+                          left: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'calc(100% + 8px)'
+                            const dropdownWidth = 192
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                          })(),
+                          right: (() => {
+                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                            if (!rect) return 'auto'
+                            const dropdownWidth = 192
+                            const offset = 8
+                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                            return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                          })(),
                           zIndex: 10000000
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -810,6 +846,10 @@ const PendingOrdersPage = () => {
                   <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
                     <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                       <button
+                        ref={el => {
+                          if (!numberFilterButtonRefs.current) numberFilterButtonRefs.current = {}
+                          numberFilterButtonRefs.current[columnKey] = el
+                        }}
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
@@ -817,14 +857,48 @@ const PendingOrdersPage = () => {
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
-                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <svg 
+                          className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24" 
+                          strokeWidth={2.5}
+                          style={{
+                            transform: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'none'
+                              const dropdownWidth = 224 // w-56
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'rotate(180deg)' : 'none'
+                            })()
+                          }}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
                       {showNumberFilterDropdown === columnKey && (
                         <div 
                           className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                          style={{ left: 'calc(100% + 8px)', zIndex: 10000000 }}
+                          style={{
+                            left: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'calc(100% + 8px)'
+                              const dropdownWidth = 224
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
+                            })(),
+                            right: (() => {
+                              const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
+                              if (!rect) return 'auto'
+                              const dropdownWidth = 224
+                              const offset = 8
+                              const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
+                              return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
+                            })(),
+                            zIndex: 10000000
+                          }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="text-[11px] text-slate-700 py-1">
