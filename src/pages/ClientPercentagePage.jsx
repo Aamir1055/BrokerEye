@@ -112,8 +112,13 @@ const ClientPercentagePage = () => {
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
     clients.forEach(client => {
-      const value = client[columnKey]
+      let value = client[columnKey]
       if (value !== null && value !== undefined && value !== '') {
+        // Format date for updated_at column
+        if (columnKey === 'updated_at' && value) {
+          const date = new Date(value)
+          value = date.toLocaleDateString('en-GB')
+        }
         values.add(value)
       }
     })
@@ -560,7 +565,13 @@ const ClientPercentagePage = () => {
       } else if (values && values.length > 0) {
         // Apply checkbox filter
         ibFiltered = ibFiltered.filter(client => {
-          const clientValue = client[columnKey]
+          let clientValue = client[columnKey]
+          
+          // Special handling for updated_at field - format date to match filter values
+          if (columnKey === 'updated_at' && clientValue) {
+            clientValue = new Date(clientValue).toLocaleDateString('en-GB')
+          }
+          
           // Special handling for is_custom field - compare boolean/number values
           if (columnKey === 'is_custom') {
             // Convert clientValue to comparable format
