@@ -35,6 +35,17 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Verify dist folder exists
+        run: |
+          ls -la
+          if [ -d "dist" ]; then
+            echo "✅ dist folder exists"
+            ls -la dist/
+          else
+            echo "❌ dist folder not found!"
+            exit 1
+          fi
+
       - name: Set deployment variables
         id: deploy-vars
         run: |
@@ -53,13 +64,13 @@ jobs:
           server: ${{ secrets.WINDOWS_HOST }}
           username: ${{ secrets.WINDOWS_USER }}
           password: ${{ secrets.WINDOWS_PASSWORD }}
-          local-dir: ./dist/
-          server-dir: /htdocs/${{ steps.deploy-vars.outputs.DEPLOY_PATH }}/
+          protocol: ftp
+          port: 21
+          local-dir: dist/
+          server-dir: /${{ steps.deploy-vars.outputs.DEPLOY_PATH }}/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
-            **/.git*/**
-            **/node_modules/**
             **/.git*/**
             **/node_modules/**
 
