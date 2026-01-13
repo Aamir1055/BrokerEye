@@ -187,12 +187,18 @@ const Client2Page = () => {
     'equity', 'floating', 'liabilities',
     'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeDeposit', 'lifetimePnL', 'lifetimePnLPercent',
     'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeWithdrawal',
+    // Lifetime Commission/Correction/Swap
+    'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap',
     'margin', 'marginFree', 'marginInitial', 'marginLevel', 'marginMaintenance',
     'soEquity', 'soLevel', 'soMargin', 'pnl', 'previousEquity', 'profit', 'storage',
     'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthDeposit', 'thisMonthPnL',
     'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthWithdrawal',
+    // This Month Commission/Correction/Swap
+    'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap',
     'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekDeposit', 'thisWeekPnL',
     'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekWithdrawal',
+    // This Week Commission/Correction/Swap
+    'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap',
     // New computed cards: NET Week/Monthly Bonus
     'netWeekBonus', 'netMonthBonus',
     // Remaining NET cards
@@ -2826,6 +2832,10 @@ const Client2Page = () => {
       lifetimeSOCompensationIn: { label: 'Lifetime SO Compensation In', color: 'purple', getValue: () => totals?.lifetimeSOCompensationIn || 0 },
       lifetimeSOCompensationOut: { label: 'Lifetime SO Compensation Out', color: 'orange', getValue: () => totals?.lifetimeSOCompensationOut || 0 },
       lifetimeWithdrawal: { label: 'Lifetime Withdrawal', color: 'red', getValue: () => totals?.lifetimeWithdrawal || 0 },
+      // Lifetime Commission/Correction/Swap
+      lifetimeCommission: { label: 'Lifetime Commission', color: 'amber', getValue: () => totals?.lifetimeCommission || 0 },
+      lifetimeCorrection: { label: 'Lifetime Correction', color: 'rose', getValue: () => totals?.lifetimeCorrection || 0 },
+      lifetimeSwap: { label: 'Lifetime Swap', color: 'cyan', getValue: () => totals?.lifetimeSwap || 0 },
 
       // M
       margin: { label: 'Margin', color: 'yellow', getValue: () => totals?.margin || 0 },
@@ -2855,6 +2865,10 @@ const Client2Page = () => {
       thisMonthSOCompensationIn: { label: 'This Month SO Compensation In', color: 'purple', getValue: () => totals?.thisMonthSOCompensationIn || 0 },
       thisMonthSOCompensationOut: { label: 'This Month SO Compensation Out', color: 'orange', getValue: () => totals?.thisMonthSOCompensationOut || 0 },
       thisMonthWithdrawal: { label: 'This Month Withdrawal', color: 'red', getValue: () => totals?.thisMonthWithdrawal || 0 },
+      // This Month Commission/Correction/Swap
+      thisMonthCommission: { label: 'This Month Commission', color: 'amber', getValue: () => totals?.thisMonthCommission || 0 },
+      thisMonthCorrection: { label: 'This Month Correction', color: 'rose', getValue: () => totals?.thisMonthCorrection || 0 },
+      thisMonthSwap: { label: 'This Month Swap', color: 'cyan', getValue: () => totals?.thisMonthSwap || 0 },
 
       // T - This Week
       thisWeekBonusIn: { label: 'This Week Bonus In', color: 'teal', getValue: () => totals?.thisWeekBonusIn || 0 },
@@ -2866,6 +2880,10 @@ const Client2Page = () => {
       thisWeekSOCompensationIn: { label: 'This Week SO Compensation In', color: 'purple', getValue: () => totals?.thisWeekSOCompensationIn || 0 },
       thisWeekSOCompensationOut: { label: 'This Week SO Compensation Out', color: 'orange', getValue: () => totals?.thisWeekSOCompensationOut || 0 },
       thisWeekWithdrawal: { label: 'This Week Withdrawal', color: 'red', getValue: () => totals?.thisWeekWithdrawal || 0 },
+      // This Week Commission/Correction/Swap
+      thisWeekCommission: { label: 'This Week Commission', color: 'amber', getValue: () => totals?.thisWeekCommission || 0 },
+      thisWeekCorrection: { label: 'This Week Correction', color: 'rose', getValue: () => totals?.thisWeekCorrection || 0 },
+      thisWeekSwap: { label: 'This Week Swap', color: 'cyan', getValue: () => totals?.thisWeekSwap || 0 },
       // Computed: NET Week Bonus = This Week Bonus In - This Week Bonus Out
       netWeekBonus: { label: 'NET Week Bonus', color: 'blue', getValue: () => (totals?.thisWeekBonusIn || 0) - (totals?.thisWeekBonusOut || 0), colorCheck: true },
       // Computed: NET Week D/W = This Week Deposit - This Week Withdrawal
@@ -3438,6 +3456,9 @@ const Client2Page = () => {
       'BLOCKED COMMISSION': `${baseUrl}Desktop cards icons/Blocked commision.svg`,
       'BLOCKED PROFIT': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
       'COMMISSION': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
+      'THIS WEEK COMMISSION': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
+      'THIS MONTH COMMISSION': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
+      'LIFETIME COMMISSION': `${baseUrl}Desktop cards icons/AVAILABLE Commision.svg`,
       'CREDIT': `${baseUrl}Desktop cards icons/Total Credit.svg`,
       'DAILY BONUS IN': `${baseUrl}Desktop cards icons/Daily BONUS IN.svg`,
       'DAILY BONUS OUT': `${baseUrl}Desktop cards icons/Daily BONUS OUT.svg`,
@@ -3477,6 +3498,13 @@ const Client2Page = () => {
       'THIS MONTH SO COMPENSATION IN': `${baseUrl}Desktop cards icons/MONTHLY BONUS IN.svg`,
       'THIS MONTH SO COMPENSATION OUT': `${baseUrl}Desktop cards icons/MONTHLY BONUS OUt.svg`,
       'THIS MONTH WITHDRAWAL': `${baseUrl}Desktop cards icons/MONTLY WITHDRAWL.svg`,
+      // Correction and Swap (no dedicated icons; using generic ones)
+      'THIS WEEK CORRECTION': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'THIS MONTH CORRECTION': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'LIFETIME CORRECTION': `${baseUrl}Desktop cards icons/Total Balance.svg`,
+      'THIS WEEK SWAP': `${baseUrl}Desktop cards icons/PNL.svg`,
+      'THIS MONTH SWAP': `${baseUrl}Desktop cards icons/PNL.svg`,
+      'LIFETIME SWAP': `${baseUrl}Desktop cards icons/PNL.svg`,
       'NET MONTHLY BONUS': `${baseUrl}Desktop cards icons/NET MONTHLY BONUS.svg`,
       'NET MONTHLY DW': `${baseUrl}Desktop cards icons/NET MONTHLY DW.svg`,
       'PROFIT': `${baseUrl}Desktop cards icons/Floating Profit.svg`,
@@ -3873,6 +3901,16 @@ const Client2Page = () => {
                             const baseLabels = {
                               assets: 'Assets', balance: 'Balance', blockedCommission: 'Blocked Commission', blockedProfit: 'Blocked Profit', commission: 'Commission', credit: 'Credit', dailyBonusIn: 'Daily Bonus In', dailyBonusOut: 'Daily Bonus Out', dailyCreditIn: 'Daily Credit In', dailyCreditOut: 'Daily Credit Out', dailyDeposit: 'Daily Deposit', dailyPnL: 'Daily P&L', dailySOCompensationIn: 'Daily SO Compensation In', dailySOCompensationOut: 'Daily SO Compensation Out', dailyWithdrawal: 'Daily Withdrawal', equity: 'Equity', floating: 'Floating', liabilities: 'Liabilities', lifetimeBonusIn: 'Lifetime Bonus In', lifetimeBonusOut: 'Lifetime Bonus Out', lifetimeCreditIn: 'Lifetime Credit In', lifetimeCreditOut: 'Lifetime Credit Out', lifetimeDeposit: 'Lifetime Deposit', lifetimePnL: 'Lifetime P&L', lifetimeSOCompensationIn: 'Lifetime SO Compensation In', lifetimeSOCompensationOut: 'Lifetime SO Compensation Out', lifetimeWithdrawal: 'Lifetime Withdrawal', margin: 'Margin', marginFree: 'Margin Free', marginInitial: 'Margin Initial', marginLevel: 'Margin Level', marginMaintenance: 'Margin Maintenance', soEquity: 'SO Equity', soLevel: 'SO Level', soMargin: 'SO Margin', pnl: 'P&L', previousEquity: 'Previous Equity', profit: 'Profit', storage: 'Storage', thisMonthBonusIn: 'This Month Bonus In', thisMonthBonusOut: 'This Month Bonus Out', thisMonthCreditIn: 'This Month Credit In', thisMonthCreditOut: 'This Month Credit Out', thisMonthDeposit: 'This Month Deposit', thisMonthPnL: 'This Month P&L', thisMonthSOCompensationIn: 'This Month SO Compensation In', thisMonthSOCompensationOut: 'This Month SO Compensation Out', thisMonthWithdrawal: 'This Month Withdrawal', thisWeekBonusIn: 'This Week Bonus In', thisWeekBonusOut: 'This Week Bonus Out', thisWeekCreditIn: 'This Week Credit In', thisWeekCreditOut: 'This Week Credit Out', thisWeekDeposit: 'This Week Deposit', thisWeekPnL: 'This Week P&L', thisWeekSOCompensationIn: 'This Week SO Compensation In', thisWeekSOCompensationOut: 'This Week SO Compensation Out', thisWeekWithdrawal: 'This Week Withdrawal', availableRebate: 'Available Rebate', totalRebate: 'Total Rebate', netLifetimePnL: 'Net Lifetime PnL', bookPnL: 'Book PnL'
                             }
+                            // Inject new Commission/Correction/Swap labels
+                            baseLabels.thisWeekCommission = 'This Week Commission'
+                            baseLabels.thisMonthCommission = 'This Month Commission'
+                            baseLabels.lifetimeCommission = 'Lifetime Commission'
+                            baseLabels.thisWeekCorrection = 'This Week Correction'
+                            baseLabels.thisMonthCorrection = 'This Month Correction'
+                            baseLabels.lifetimeCorrection = 'Lifetime Correction'
+                            baseLabels.thisWeekSwap = 'This Week Swap'
+                            baseLabels.thisMonthSwap = 'This Month Swap'
+                            baseLabels.lifetimeSwap = 'Lifetime Swap'
                             // Inject new labels for net cards
                             baseLabels.dailyNetDW = 'Daily Net D/W'
                             baseLabels.netDailyBonus = 'NET Daily Bonus'
@@ -3935,6 +3973,9 @@ const Client2Page = () => {
                             lifetimeSOCompensationIn: 'Lifetime SO Compensation In',
                             lifetimeSOCompensationOut: 'Lifetime SO Compensation Out',
                             lifetimeWithdrawal: 'Lifetime Withdrawal',
+                            lifetimeCommission: 'Lifetime Commission',
+                            lifetimeCorrection: 'Lifetime Correction',
+                            lifetimeSwap: 'Lifetime Swap',
                             margin: 'Margin',
                             marginFree: 'Margin Free',
                             marginInitial: 'Margin Initial',
@@ -3956,6 +3997,9 @@ const Client2Page = () => {
                             thisMonthSOCompensationIn: 'This Month SO Compensation In',
                             thisMonthSOCompensationOut: 'This Month SO Compensation Out',
                             thisMonthWithdrawal: 'This Month Withdrawal',
+                            thisMonthCommission: 'This Month Commission',
+                            thisMonthCorrection: 'This Month Correction',
+                            thisMonthSwap: 'This Month Swap',
                             thisWeekBonusIn: 'This Week Bonus In',
                             thisWeekBonusOut: 'This Week Bonus Out',
                             thisWeekCreditIn: 'This Week Credit In',
@@ -3965,6 +4009,9 @@ const Client2Page = () => {
                             thisWeekSOCompensationIn: 'This Week SO Compensation In',
                             thisWeekSOCompensationOut: 'This Week SO Compensation Out',
                             thisWeekWithdrawal: 'This Week Withdrawal',
+                            thisWeekCommission: 'This Week Commission',
+                            thisWeekCorrection: 'This Week Correction',
+                            thisWeekSwap: 'This Week Swap',
                             // NET cards
                             netDailyBonus: 'NET Daily Bonus',
                             netWeekBonus: 'NET Week Bonus',
