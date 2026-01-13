@@ -1045,10 +1045,11 @@ const Client2Page = () => {
               let apiValues = selectedValues
               if (columnKey === 'processorType') {
                 apiValues = selectedValues.map(v => {
-                  if (v === 'Connected') return 1
-                  if (v === 'Not Connected') return 0
+                  if (v === 'Connected') return '1'
+                  if (v === 'Not Connected') return '0'
                   return v // fallback for any unexpected values
                 })
+                console.log('[Client2] 🔍 processorType filter transformation:', selectedValues, '→', apiValues)
               }
 
               combinedFilters.push({ field, operator: 'in', value: apiValues })
@@ -4872,53 +4873,58 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List - Also for numeric columns */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar */}
-                                                <div className="px-3 py-2 border-b border-gray-200">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="Search values..."
-                                                    value={columnValueSearch[columnKey] || ''}
-                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                  />
-                                                </div>
-
-                                                {/* Select Visible Checkbox */}
-                                                {columnValuesUnsupported[columnKey] ? null : (
-                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                    {(() => {
-                                                      const allVals = columnValues[columnKey] || []
-                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                      const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                      // Always read from columnFilters to show currently applied filters
-                                                      const existingFilter = columnFilters[`${columnKey}_checkbox`]
-                                                      const filterValues = existingFilter?.values || []
-                                                      // Use selectedColumnValues only if user has interacted (different from applied filter)
-                                                      const interactiveSelected = selectedColumnValues[columnKey]
-                                                      // Show filterValues by default, or interactiveSelected if it differs from filter
-                                                      const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
-                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                      const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
-                                                      return (
-                                                        <>
-                                                          <label className="flex items-center gap-2 cursor-pointer">
-                                                            <input
-                                                              type="checkbox"
-                                                              checked={allVisibleSelected}
-                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                            />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                          </label>
-                                                        </>
-                                                      )
-                                                    })()}
+                                                {/* Search Bar - Only show if values are available */}
+                                                {!columnValuesLoading[columnKey] && (columnValues[columnKey] || []).length > 0 && (
+                                                  <div className="px-3 py-2 border-b border-gray-200">
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Search values..."
+                                                      value={columnValueSearch[columnKey] || ''}
+                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                    />
                                                   </div>
                                                 )}
 
-                                                {/* Values List - Lazy loading with scroll detection */}
-                                                <div
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                {/* Only show Select Visible and Values List if values are available */}
+                                                {!columnValuesLoading[columnKey] && (columnValues[columnKey] || []).length > 0 && (
+                                                  <>
+                                                    {/* Select Visible Checkbox */}
+                                                    {columnValuesUnsupported[columnKey] ? null : (
+                                                      <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                        {(() => {
+                                                          const allVals = columnValues[columnKey] || []
+                                                          const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                          const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
+                                                          // Always read from columnFilters to show currently applied filters
+                                                          const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                          const filterValues = existingFilter?.values || []
+                                                          // Use selectedColumnValues only if user has interacted (different from applied filter)
+                                                          const interactiveSelected = selectedColumnValues[columnKey]
+                                                          // Show filterValues by default, or interactiveSelected if it differs from filter
+                                                          const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
+                                                          const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
+                                                          const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
+                                                          return (
+                                                            <>
+                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={allVisibleSelected}
+                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                              </label>
+                                                            </>
+                                                          )
+                                                        })()}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Values List - Lazy loading with scroll detection */}
+                                                    <div
+                                                      className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5011,6 +5017,8 @@ const Client2Page = () => {
                                                     )
                                                   })()}
                                                 </div>
+                                                  </>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
@@ -5194,52 +5202,57 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar */}
-                                                <div className="px-3 py-2 border-b border-gray-200">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="Search values..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    onKeyDown={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        e.preventDefault()
-                                                        applyCheckboxFilter(columnKey)
-                                                        setShowFilterDropdown(null)
-                                                      }
-                                                    }}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                  />
-                                                </div>
-
-                                                {/* Select Visible Checkbox */}
-                                                {columnValuesUnsupported[columnKey] ? null : (
-                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                    {(() => {
-                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                      const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
-                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                      const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
-                                                      return (
-                                                        <>
-                                                          <label className="flex items-center gap-2 cursor-pointer">
-                                                            <input
-                                                              type="checkbox"
-                                                              checked={allVisibleSelected}
-                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                            />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                          </label>
-                                                        </>
-                                                      )
-                                                    })()}
+                                                {/* Search Bar - Only show if values are available */}
+                                                {!loading && allValues.length > 0 && (
+                                                  <div className="px-3 py-2 border-b border-gray-200">
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Search values..."
+                                                      value={searchQuery}
+                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                          e.preventDefault()
+                                                          applyCheckboxFilter(columnKey)
+                                                          setShowFilterDropdown(null)
+                                                        }
+                                                      }}
+                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                    />
                                                   </div>
                                                 )}
 
-                                                {/* Values List - Lazy loading with scroll detection */}
-                                                <div
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                {/* Only show Select Visible and Values List if values are available */}
+                                                {!loading && allValues.length > 0 && (
+                                                  <>
+                                                    {/* Select Visible Checkbox */}
+                                                    {columnValuesUnsupported[columnKey] ? null : (
+                                                      <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                        {(() => {
+                                                          const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                          const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+                                                          const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
+                                                          const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
+                                                          return (
+                                                            <>
+                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={allVisibleSelected}
+                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                              </label>
+                                                            </>
+                                                          )
+                                                        })()}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Values List - Lazy loading with scroll detection */}
+                                                    <div
+                                                      className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5318,6 +5331,8 @@ const Client2Page = () => {
                                                     </>
                                                   )}
                                                 </div>
+                                                  </>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}

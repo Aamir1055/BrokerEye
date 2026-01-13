@@ -1924,11 +1924,39 @@ const PositionsPage = () => {
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                             <input
-                              type="number"
-                              step="any"
-                              placeholder="Enter value"
-                              value={customFilterValue1}
-                              onChange={(e) => setCustomFilterValue1(e.target.value)}
+                              type={columnKey === 'timeUpdate' ? 'datetime-local' : 'number'}
+                              step={columnKey === 'timeUpdate' ? '1' : 'any'}
+                              placeholder={columnKey === 'timeUpdate' ? 'Select date and time' : 'Enter value'}
+                              value={columnKey === 'timeUpdate' && customFilterValue1 ? 
+                                (() => {
+                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                  const timestamp = Number(customFilterValue1)
+                                  if (isNaN(timestamp)) return customFilterValue1
+                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  const hours = String(date.getHours()).padStart(2, '0')
+                                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                                  const seconds = String(date.getSeconds()).padStart(2, '0')
+                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                })() 
+                                : customFilterValue1
+                              }
+                              onChange={(e) => {
+                                if (columnKey === 'timeUpdate') {
+                                  // Convert datetime-local to Unix timestamp
+                                  const dateValue = e.target.value
+                                  if (dateValue) {
+                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                    setCustomFilterValue1(String(timestamp))
+                                  } else {
+                                    setCustomFilterValue1('')
+                                  }
+                                } else {
+                                  setCustomFilterValue1(e.target.value)
+                                }
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
@@ -1948,11 +1976,39 @@ const PositionsPage = () => {
                             <div>
                               <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                               <input
-                                type="number"
-                                step="any"
-                                placeholder="Enter value"
-                                value={customFilterValue2}
-                                onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                type={columnKey === 'timeUpdate' ? 'datetime-local' : 'number'}
+                                step={columnKey === 'timeUpdate' ? '1' : 'any'}
+                                placeholder={columnKey === 'timeUpdate' ? 'Select date and time' : 'Enter value'}
+                                value={columnKey === 'timeUpdate' && customFilterValue2 ? 
+                                  (() => {
+                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                    const timestamp = Number(customFilterValue2)
+                                    if (isNaN(timestamp)) return customFilterValue2
+                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                    const year = date.getFullYear()
+                                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                                    const day = String(date.getDate()).padStart(2, '0')
+                                    const hours = String(date.getHours()).padStart(2, '0')
+                                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                                    const seconds = String(date.getSeconds()).padStart(2, '0')
+                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                  })() 
+                                  : customFilterValue2
+                                }
+                                onChange={(e) => {
+                                  if (columnKey === 'timeUpdate') {
+                                    // Convert datetime-local to Unix timestamp
+                                    const dateValue = e.target.value
+                                    if (dateValue) {
+                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                      setCustomFilterValue2(String(timestamp))
+                                    } else {
+                                      setCustomFilterValue2('')
+                                    }
+                                  } else {
+                                    setCustomFilterValue2(e.target.value)
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
@@ -3754,12 +3810,12 @@ const PositionsPage = () => {
           </div>
 
           {/* Positions Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0">
-            <div className="overflow-y-scroll overflow-x-auto flex-1" style={{
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0 mb-4">
+            <div className="overflow-y-scroll overflow-x-auto flex-1 pb-10" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
               scrollbarColor: '#CBD5E0 #F7FAFC',
-              maxHeight: '60vh'
+              maxHeight: '55vh'
             }}>
               <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>

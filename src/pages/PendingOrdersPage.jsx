@@ -809,11 +809,39 @@ const PendingOrdersPage = () => {
                           <div>
                             <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
                             <input
-                              type="number"
-                              step="any"
-                              placeholder="Enter value"
-                              value={customFilterValue1}
-                              onChange={(e) => setCustomFilterValue1(e.target.value)}
+                              type={columnKey === 'timeSetup' ? 'datetime-local' : 'number'}
+                              step={columnKey === 'timeSetup' ? '1' : 'any'}
+                              placeholder={columnKey === 'timeSetup' ? 'Select date and time' : 'Enter value'}
+                              value={columnKey === 'timeSetup' && customFilterValue1 ? 
+                                (() => {
+                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                  const timestamp = Number(customFilterValue1)
+                                  if (isNaN(timestamp)) return customFilterValue1
+                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  const hours = String(date.getHours()).padStart(2, '0')
+                                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                                  const seconds = String(date.getSeconds()).padStart(2, '0')
+                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                })() 
+                                : customFilterValue1
+                              }
+                              onChange={(e) => {
+                                if (columnKey === 'timeSetup') {
+                                  // Convert datetime-local to Unix timestamp
+                                  const dateValue = e.target.value
+                                  if (dateValue) {
+                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                    setCustomFilterValue1(String(timestamp))
+                                  } else {
+                                    setCustomFilterValue1('')
+                                  }
+                                } else {
+                                  setCustomFilterValue1(e.target.value)
+                                }
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
@@ -833,11 +861,39 @@ const PendingOrdersPage = () => {
                             <div>
                               <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
                               <input
-                                type="number"
-                                step="any"
-                                placeholder="Enter value"
-                                value={customFilterValue2}
-                                onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                type={columnKey === 'timeSetup' ? 'datetime-local' : 'number'}
+                                step={columnKey === 'timeSetup' ? '1' : 'any'}
+                                placeholder={columnKey === 'timeSetup' ? 'Select date and time' : 'Enter value'}
+                                value={columnKey === 'timeSetup' && customFilterValue2 ? 
+                                  (() => {
+                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                    const timestamp = Number(customFilterValue2)
+                                    if (isNaN(timestamp)) return customFilterValue2
+                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                    const year = date.getFullYear()
+                                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                                    const day = String(date.getDate()).padStart(2, '0')
+                                    const hours = String(date.getHours()).padStart(2, '0')
+                                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                                    const seconds = String(date.getSeconds()).padStart(2, '0')
+                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                  })() 
+                                  : customFilterValue2
+                                }
+                                onChange={(e) => {
+                                  if (columnKey === 'timeSetup') {
+                                    // Convert datetime-local to Unix timestamp
+                                    const dateValue = e.target.value
+                                    if (dateValue) {
+                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                      setCustomFilterValue2(String(timestamp))
+                                    } else {
+                                      setCustomFilterValue2('')
+                                    }
+                                  } else {
+                                    setCustomFilterValue2(e.target.value)
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
@@ -1075,7 +1131,21 @@ const PendingOrdersPage = () => {
                             className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
                           <span className="text-[11px] text-slate-700 truncate">
-                            {value}
+                            {columnKey === 'timeSetup' && !isNaN(Number(value)) 
+                              ? (() => {
+                                  const date = new Date(Number(value) * 1000)
+                                  return date.toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false
+                                  })
+                                })()
+                              : value
+                            }
                           </span>
                         </label>
                       ))

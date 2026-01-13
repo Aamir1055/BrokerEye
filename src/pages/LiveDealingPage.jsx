@@ -1301,7 +1301,18 @@ const LiveDealingPage = () => {
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
-                      <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <svg 
+                        className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={2.5}
+                        style={{
+                          transform: ['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey) 
+                            ? 'rotate(180deg)' 
+                            : 'none'
+                        }}
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -1312,7 +1323,10 @@ const LiveDealingPage = () => {
                         data-number-filter
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
-                          left: 'calc(100% + 8px)',
+                          ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey))
+                            ? { right: 'calc(100% + 8px)', left: 'auto' }
+                            : { left: 'calc(100% + 8px)', right: 'auto' }
+                          ),
                           zIndex: 10000001
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -1338,11 +1352,39 @@ const LiveDealingPage = () => {
                           <div>
                             <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
                             <input
-                              type="number"
-                              step="any"
-                              placeholder="Enter value"
-                              value={customFilterValue1}
-                              onChange={(e) => setCustomFilterValue1(e.target.value)}
+                              type={columnKey === 'time' ? 'datetime-local' : 'number'}
+                              step={columnKey === 'time' ? '1' : 'any'}
+                              placeholder={columnKey === 'time' ? 'Select date and time' : 'Enter value'}
+                              value={columnKey === 'time' && customFilterValue1 ? 
+                                (() => {
+                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                  const timestamp = Number(customFilterValue1)
+                                  if (isNaN(timestamp)) return customFilterValue1
+                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  const hours = String(date.getHours()).padStart(2, '0')
+                                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                                  const seconds = String(date.getSeconds()).padStart(2, '0')
+                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                })() 
+                                : customFilterValue1
+                              }
+                              onChange={(e) => {
+                                if (columnKey === 'time') {
+                                  // Convert datetime-local to Unix timestamp
+                                  const dateValue = e.target.value
+                                  if (dateValue) {
+                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                    setCustomFilterValue1(String(timestamp))
+                                  } else {
+                                    setCustomFilterValue1('')
+                                  }
+                                } else {
+                                  setCustomFilterValue1(e.target.value)
+                                }
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
@@ -1360,11 +1402,39 @@ const LiveDealingPage = () => {
                             <div>
                               <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
                               <input
-                                type="number"
-                                step="any"
-                                placeholder="Enter value"
-                                value={customFilterValue2}
-                                onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                type={columnKey === 'time' ? 'datetime-local' : 'number'}
+                                step={columnKey === 'time' ? '1' : 'any'}
+                                placeholder={columnKey === 'time' ? 'Select date and time' : 'Enter value'}
+                                value={columnKey === 'time' && customFilterValue2 ? 
+                                  (() => {
+                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                    const timestamp = Number(customFilterValue2)
+                                    if (isNaN(timestamp)) return customFilterValue2
+                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                    const year = date.getFullYear()
+                                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                                    const day = String(date.getDate()).padStart(2, '0')
+                                    const hours = String(date.getHours()).padStart(2, '0')
+                                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                                    const seconds = String(date.getSeconds()).padStart(2, '0')
+                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                  })() 
+                                  : customFilterValue2
+                                }
+                                onChange={(e) => {
+                                  if (columnKey === 'time') {
+                                    // Convert datetime-local to Unix timestamp
+                                    const dateValue = e.target.value
+                                    if (dateValue) {
+                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                      setCustomFilterValue2(String(timestamp))
+                                    } else {
+                                      setCustomFilterValue2('')
+                                    }
+                                  } else {
+                                    setCustomFilterValue2(e.target.value)
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
@@ -1560,7 +1630,21 @@ const LiveDealingPage = () => {
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
                           />
                           <span className="text-[11px] text-gray-700 truncate">
-                            {value}
+                            {columnKey === 'time' && !isNaN(Number(value)) 
+                              ? (() => {
+                                  const date = new Date(Number(value) * 1000)
+                                  return date.toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false
+                                  })
+                                })()
+                              : value
+                            }
                           </span>
                         </label>
                       ))
