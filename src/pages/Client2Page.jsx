@@ -964,7 +964,9 @@ const Client2Page = () => {
           lastAccess: 'lastAccess',
           zipCode: 'zipCode',
           middleName: 'middleName',
-          lastName: 'lastName'
+          lastName: 'lastName',
+          processorType: 'processorType',
+          accountType: 'accountType'
         }
         return fieldMap[colKey] || colKey
       }
@@ -1033,8 +1035,18 @@ const Client2Page = () => {
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              combinedFilters.push({ field, operator: 'in', value: selectedValues })
-              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
+              // Transform processorType friendly labels back to numeric values for API (0 or 1)
+              let apiValues = selectedValues
+              if (columnKey === 'processorType') {
+                apiValues = selectedValues.map(v => {
+                  if (v === 'Connected') return 1
+                  if (v === 'Not Connected') return 0
+                  return v // fallback for any unexpected values
+                })
+              }
+
+              combinedFilters.push({ field, operator: 'in', value: apiValues })
+              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${apiValues.length} values`, apiValues)
             }
           }
         }
@@ -2019,7 +2031,9 @@ const Client2Page = () => {
         lastAccess: 'lastAccess',
         zipCode: 'zipCode',
         middleName: 'middleName',
-        lastName: 'lastName'
+        lastName: 'lastName',
+        processorType: 'processorType',
+        accountType: 'accountType'
       }
       return fieldMap[colKey] || colKey
     }
@@ -2297,7 +2311,22 @@ const Client2Page = () => {
       const clients = data?.clients || []
       const setVals = new Set()
       clients.forEach(client => {
-        const v = client?.[columnKey]
+        let v = client?.[columnKey]
+        
+        // Transform processorType values to friendly labels
+        if (columnKey === 'processorType' && v !== null && v !== undefined && v !== '') {
+          if (typeof v === 'boolean') {
+            v = v ? 'Connected' : 'Not Connected'
+          } else {
+            const normalized = typeof v === 'string' ? v.trim().toLowerCase() : v
+            if (normalized === 1 || normalized === '1' || normalized === 'true') {
+              v = 'Connected'
+            } else if (normalized === 0 || normalized === '0' || normalized === 'false') {
+              v = 'Not Connected'
+            }
+          }
+        }
+        
         if (v !== null && v !== undefined && v !== '') setVals.add(v)
       })
 
@@ -2929,7 +2958,9 @@ const Client2Page = () => {
         lastAccess: 'lastAccess',
         zipCode: 'zipCode',
         middleName: 'middleName',
-        lastName: 'lastName'
+        lastName: 'lastName',
+        processorType: 'processorType',
+        accountType: 'accountType'
       }
       return fieldMap[colKey] || colKey
     }
@@ -4944,7 +4975,10 @@ const Client2Page = () => {
                                                   Close
                                                 </button>
                                                 <button
-                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  onClick={() => {
+                                                    applyCheckboxFilter(columnKey)
+                                                    setShowFilterDropdown(null)
+                                                  }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
@@ -5212,7 +5246,7 @@ const Client2Page = () => {
                                                                 onChange={() => toggleColumnValue(columnKey, value)}
                                                                 className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                               />
-                                                              <span className="text-xs text-gray-900 font-medium">{value}</span>
+                                                              <span className="text-xs text-gray-700">{value}</span>
                                                             </label>
                                                           ))}
                                                           {/* Loading more indicator */}
@@ -5248,7 +5282,10 @@ const Client2Page = () => {
                                                   Close
                                                 </button>
                                                 <button
-                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  onClick={() => {
+                                                    applyCheckboxFilter(columnKey)
+                                                    setShowFilterDropdown(null)
+                                                  }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
