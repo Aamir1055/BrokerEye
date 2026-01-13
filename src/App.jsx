@@ -112,14 +112,14 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Dynamically detect basename from current URL path
-  // Supports both /amari-capital/ and /broker-branch/
+  // Dynamically detect basename; use '/' in dev, and
+  // auto-detect '/amari-capital' or '/broker' in production.
   const getBasename = () => {
+    if (import.meta.env.DEV) return '/amari-capital'
     const path = window.location.pathname
-    if (path.startsWith('/broker-branch')) return '/broker-branch'
-    if (path.startsWith('/amari-capital')) return '/amari-capital'
-    // Default to amari-capital for root or unknown paths
-    return '/amari-capital'
+    const match = path.match(/^\/(amari-capital|broker)(\/|$)/)
+    if (match) return `/${match[1]}`
+    return '/'
   }
 
   return (
