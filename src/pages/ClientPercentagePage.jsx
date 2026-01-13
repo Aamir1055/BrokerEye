@@ -676,6 +676,7 @@ const ClientPercentagePage = () => {
   // Helper function to render table header without filters (only sorting)
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
     const actualSortKey = sortKey || columnKey
+    const filterCount = getActiveFilterCount(columnKey)
     
     return (
       <th 
@@ -691,8 +692,6 @@ const ClientPercentagePage = () => {
             <span>{label}</span>
             {getSortIcon(actualSortKey)}
           </div>
-<<<<<<< Updated upstream
-=======
           
           <div className="relative" ref={el => {
             if (!filterRefs.current) filterRefs.current = {}
@@ -1119,7 +1118,6 @@ const ClientPercentagePage = () => {
               </div>
             )}
           </div>
->>>>>>> Stashed changes
         </div>
       </th>
     )
