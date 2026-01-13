@@ -2199,22 +2199,22 @@ const PositionsPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
+                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      clearColumnFilter(columnKey)
+                      setShowFilterDropdown(null)
                     }}
-                    className="px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
-                    Clear
+                    Close
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
                     OK
                   </button>

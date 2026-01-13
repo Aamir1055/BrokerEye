@@ -4907,7 +4907,7 @@ const Client2Page = () => {
                                                                   onChange={() => toggleColumnValue(columnKey, value)}
                                                                   className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                                 />
-                                                                <span className="text-xs text-gray-700">{value}</span>
+                                                                <span className="text-xs text-gray-900 font-medium">{value}</span>
                                                               </label>
                                                             ))}
                                                             {/* Loading more indicator */}
@@ -4938,19 +4938,16 @@ const Client2Page = () => {
                                               {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
                                                 >
-                                                  OK
+                                                  Close
                                                 </button>
                                                 <button
                                                   onClick={() => setShowFilterDropdown(null)}
-                                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
-                                                  Close
+                                                  OK
                                                 </button>
                                               </div>
                                             </>
@@ -5215,7 +5212,7 @@ const Client2Page = () => {
                                                                 onChange={() => toggleColumnValue(columnKey, value)}
                                                                 className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                               />
-                                                              <span className="text-xs text-gray-700">{value}</span>
+                                                              <span className="text-xs text-gray-900 font-medium">{value}</span>
                                                             </label>
                                                           ))}
                                                           {/* Loading more indicator */}
@@ -5245,19 +5242,16 @@ const Client2Page = () => {
                                               {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                 <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
                                                 >
-                                                  OK
+                                                  Close
                                                 </button>
                                                 <button
                                                   onClick={() => setShowFilterDropdown(null)}
-                                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
-                                                  Close
+                                                  OK
                                                 </button>
                                               </div>
                                             </>

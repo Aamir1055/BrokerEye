@@ -1569,22 +1569,22 @@ const LiveDealingPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center justify-end gap-1.5">
+                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      clearColumnFilter(columnKey)
+                      setShowFilterDropdown(null)
                     }}
-                    className="px-2 py-1 text-[11px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    className="flex-1 px-2 py-1 text-[11px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                   >
-                    Clear
+                    Close
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                    className="flex-1 px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
                   >
                     OK
                   </button>

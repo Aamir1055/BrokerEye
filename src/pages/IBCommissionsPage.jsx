@@ -904,6 +904,407 @@ const IBCommissionsPage = () => {
             </div>
           </div>
         )}
+<<<<<<< Updated upstream
+=======
+        
+        {/* Column Filter Dropdowns */}
+        {showFilterDropdown && (
+          <div 
+            data-filter-dropdown
+            className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+            style={{
+              top: '50%',
+              transform: 'translateY(-50%)',
+              left: (() => {
+                const rect = filterRefs.current[showFilterDropdown]?.getBoundingClientRect()
+                if (!rect) return '0px'
+                const dropdownWidth = 256
+                const offset = 30
+                const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
+                return wouldOverflow 
+                  ? `${rect.right - dropdownWidth}px`
+                  : `${rect.left + offset}px`
+              })()
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-700">Filter Menu</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div className="border-b border-slate-200 py-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSortColumn(showFilterDropdown)
+                  setSortDirection('asc')
+                  setShowFilterDropdown(null)
+                }}
+                className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+              >
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+                Sort Smallest to Largest
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSortColumn(showFilterDropdown)
+                  setSortDirection('desc')
+                  setShowFilterDropdown(null)
+                }}
+                className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+              >
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                </svg>
+                Sort Largest to Smallest
+              </button>
+            </div>
+
+            {/* Quick Clear Filter */}
+            <div className="border-b border-slate-200 py-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearColumnFilter(showFilterDropdown)
+                }}
+                className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Filter
+              </button>
+            </div>
+
+            {/* Number Filters (only for numeric columns) */}
+            {!isStringColumn(showFilterDropdown) && (
+            <div className="border-b border-slate-200 py-1">
+              <div className="px-2 py-1 relative group text-[11px]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (showNumberFilterDropdown === showFilterDropdown) {
+                      setShowNumberFilterDropdown(null)
+                      setCustomFilterValue1('')
+                      setCustomFilterValue2('')
+                    } else {
+                      setShowNumberFilterDropdown(showFilterDropdown)
+                      setCustomFilterColumn(showFilterDropdown)
+                      setCustomFilterValue1('')
+                      setCustomFilterValue2('')
+                    }
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                >
+                  <span>Number Filters</span>
+                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {showNumberFilterDropdown === showFilterDropdown && (
+                  <div
+                    data-number-filter
+                    className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                    style={{
+                      left: 'calc(100% + 8px)',
+                      zIndex: 10000001
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                        <select
+                          value={customFilterType}
+                          onChange={(e) => setCustomFilterType(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                        >
+                          <option value="equal">Equal...</option>
+                          <option value="notEqual">Not Equal...</option>
+                          <option value="lessThan">Less Than...</option>
+                          <option value="lessThanOrEqual">Less Than Or Equal...</option>
+                          <option value="greaterThan">Greater Than...</option>
+                          <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
+                          <option value="between">Between...</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="Enter value"
+                          value={customFilterValue1}
+                          onChange={(e) => setCustomFilterValue1(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              if (customFilterType === 'between' && !customFilterValue2) return
+                              applyCustomNumberFilter()
+                              setShowNumberFilterDropdown(null)
+                              setShowFilterDropdown(null)
+                            }
+                          }}
+                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                        />
+                      </div>
+
+                      {customFilterType === 'between' && (
+                        <div>
+                          <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Enter value"
+                            value={customFilterValue2}
+                            onChange={(e) => setCustomFilterValue2(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                if (!customFilterValue1 || !customFilterValue2) return
+                                applyCustomNumberFilter()
+                                setShowNumberFilterDropdown(null)
+                                setShowFilterDropdown(null)
+                              }
+                            }}
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-gray-200">
+                        <button
+                          onClick={() => {
+                            applyCustomNumberFilter()
+                            setShowNumberFilterDropdown(null)
+                            setShowFilterDropdown(null)
+                          }}
+                          disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
+                          className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          OK
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* Text Filters (only for string columns) */}
+            {isStringColumn(showFilterDropdown) && (
+              <div className="border-b border-slate-200 py-1">
+                <div className="px-2 py-1 relative group text-[11px]">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (showNumberFilterDropdown === showFilterDropdown) {
+                        setShowNumberFilterDropdown(null)
+                        setCustomFilterValue1('')
+                        setCustomFilterValue2('')
+                      } else {
+                        setShowNumberFilterDropdown(showFilterDropdown)
+                        setCustomFilterColumn(showFilterDropdown)
+                        setCustomFilterValue1('')
+                        setCustomFilterValue2('')
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                  >
+                    <span>Text Filters</span>
+                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  {showNumberFilterDropdown === showFilterDropdown && (
+                    <div
+                      data-number-filter
+                      className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                      style={{
+                        left: 'calc(100% + 8px)',
+                        zIndex: 10000001
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="p-3 space-y-3">
+                        <div>
+                          <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                          <select
+                            value={customFilterType}
+                            onChange={(e) => setCustomFilterType(e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                          >
+                            <option value="equal">Equal...</option>
+                            <option value="notEqual">Not Equal...</option>
+                            <option value="startsWith">Starts With...</option>
+                            <option value="endsWith">Ends With...</option>
+                            <option value="contains">Contains...</option>
+                            <option value="doesNotContain">Does Not Contain...</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                          <input
+                            type="text"
+                            placeholder="Enter value"
+                            value={customFilterValue1}
+                            onChange={(e) => setCustomFilterValue1(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                applyCustomNumberFilter()
+                                setShowNumberFilterDropdown(null)
+                                setShowFilterDropdown(null)
+                              }
+                            }}
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                          />
+                        </div>
+
+                        <div className="flex gap-2 pt-2 border-t border-gray-200">
+                          <button
+                            onClick={() => {
+                              applyCustomNumberFilter()
+                              setShowNumberFilterDropdown(null)
+                              setShowFilterDropdown(null)
+                            }}
+                            disabled={!customFilterValue1}
+                            className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Search Box */}
+            <div className="p-2 border-b border-slate-200">
+              <div className="relative">
+                <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={filterSearchQuery[showFilterDropdown] || ''}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    setFilterSearchQuery(prev => ({
+                      ...prev,
+                      [showFilterDropdown]: e.target.value
+                    }))
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 placeholder-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* Select All / Deselect All */}
+            <div className="px-2 py-1.5 border-b border-slate-200 bg-slate-50">
+              <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected(showFilterDropdown)}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    if (e.target.checked) {
+                      selectAllFilters(showFilterDropdown)
+                    } else {
+                      deselectAllFilters(showFilterDropdown)
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-[11px] font-semibold text-slate-700">SELECT ALL</span>
+              </label>
+            </div>
+
+            {/* Filter List */}
+            <div className="max-h-64 overflow-y-auto">
+              <div className="p-1.5 space-y-0.5">
+                {getUniqueColumnValues(showFilterDropdown).length === 0 ? (
+                  <div className="px-2 py-2 text-center text-[11px] text-slate-500">
+                    No items found
+                  </div>
+                ) : (
+                  getUniqueColumnValues(showFilterDropdown).map(value => (
+                    <label 
+                      key={value} 
+                      className="flex items-center gap-2 hover:bg-blue-50 px-2 py-1.5 rounded cursor-pointer transition-colors bg-white"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(columnFilters[showFilterDropdown] || []).includes(value)}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleColumnFilter(showFilterDropdown, value)
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-[11px] text-slate-700 font-medium truncate">
+                        {value}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-2 py-1.5 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(null)
+                }}
+                className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(null)
+                }}
+                className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        )}
+>>>>>>> Stashed changes
         </div>
         </div>
       </main>
