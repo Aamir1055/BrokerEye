@@ -7,7 +7,7 @@ export default defineConfig({
   // Use relative base in production so assets resolve under subpaths
   base: process.env.NODE_ENV === 'production' ? './' : '/',
   build: {
-    outDir: 'C:/xampp/htdocs/broker',
+    outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
     rollupOptions: {
