@@ -40,10 +40,12 @@ class WebSocketService {
         dwarn('[WebSocket] No access token found in localStorage')
         return null
       }
-      // Always use secure WebSocket (wss://) for production
-      const base = (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
-      // Force wss:// for any https:// base, or if base is relative/empty and we're on https
-      const wsProtocol = (base.startsWith('https') || window.location.protocol === 'https:') ? 'wss' : 'ws'
+      // Prefer same-origin in dev; in prod use configured base or default
+      const base = import.meta?.env?.DEV
+        ? ''
+        : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
+      // Force wss for https pages; otherwise use ws
+      const wsProtocol = (window.location.protocol === 'https:' || base.startsWith('https')) ? 'wss' : 'ws'
       const wsHost = base.replace(/^https?:\/\//, '')
       const wsBase = wsHost ? `${wsProtocol}://${wsHost}` : `${wsProtocol}://${window.location.host}`
       return `${wsBase}/api/broker/ws?token=${encodeURIComponent(token)}`
