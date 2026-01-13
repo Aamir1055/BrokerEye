@@ -58,14 +58,15 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Create remote directory and deploy via SFTP
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.WINDOWS_HOST }}
+          host: ${{ secrets.WINDOWS_HOST }}
           username: ${{ secrets.WINDOWS_USER }}
           password: ${{ secrets.WINDOWS_PASSWORD }}
           port: 22
-          local_path: ./dist/*
-          remote_path: /htdocs/${{ steps.deploy-vars.outputs.DEPLOY_PATH }}
-          sftp_only: true
+          source: "dist/*"
+          target: "/htdocs/${{ steps.deploy-vars.outputs.DEPLOY_PATH }}"
+          strip_components: 1
+          rm: false
 
