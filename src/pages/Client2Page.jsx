@@ -1349,7 +1349,6 @@ const Client2Page = () => {
         setTotalsPercent({})
         setError('')
       }
-      }
     } catch (err) {
       // Ignore request cancellations caused by in-flight aborts
       const isCanceled = err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(err?.message || '')
