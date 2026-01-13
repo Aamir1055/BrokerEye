@@ -7,28 +7,13 @@ on:
       - broker
 
 jobs:
-  ci:
-    name: Run Tests & Build
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
-
-    outputs:
-      deploy_path: ${{ steps.set-path.outputs.deploy_path }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set deploy path based on branch
-        id: set-path
-        run: |
-          if [[ "${{ github.ref_name }}" == "amari-capital" ]]; then
-            echo "deploy_path=/c/xampp/htdocs/amari-capital" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref_name }}" == "broker" ]]; then
-            echo "deploy_path=/c/xampp/htdocs/broker" >> $GITHUB_OUTPUT
-          else
-            echo "Unsupported branch: ${{ github.ref_name }}"
-            exit 1
-          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,43 +25,39 @@ jobs:
         run: npm ci
 
       - name: Run lint
-        run: npm run lint || true
+        run: npm run lint
+        continue-on-error: true
 
       - name: Run tests
-        run: npm test || true
+        run: npm test
+        continue-on-error: true
 
       - name: Build project
         run: npm run build
 
-      - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ github.ref_name }}
-          path: dist/
-          retention-days: 1
+      - name: Set deployment variables
+        id: deploy-vars
+        run: |
+          if [[ "${{ github.ref_name }}" == "amari-capital" ]]; then
+            echo "DEPLOY_PATH=amari-capital" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "broker" ]]; then
+            echo "DEPLOY_PATH=broker" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported branch: ${{ github.ref_name }}"
+            exit 1
+          fi
 
-  cd:
-    name: Deploy to Windows XAMPP
-    needs: ci
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
+      - name: Deploy to Windows XAMPP via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          name: dist-${{ github.ref_name }}
-          path: dist
-
-      - name: Deploy to Windows Server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.WINDOWS_HOST }}
-          username: ${{ secrets.WINDOWS_USER }}
-          password: ${{ secrets.WINDOWS_PASSWORD }}
-          port: 22
-          source: "dist/*"
-          target: ${{ needs.ci.outputs.deploy_path }}
-          strip_components: 1
-          overwrite: true
-          rm: false
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /htdocs/${{ steps.deploy-vars.outputs.DEPLOY_PATH }}/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
