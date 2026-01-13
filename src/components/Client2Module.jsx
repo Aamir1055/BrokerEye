@@ -188,7 +188,16 @@ export default function Client2Module() {
     thisMonthPnL: false,
     thisWeekPnL: false,
     processorType: true,
-    accountType: true
+    accountType: true,
+    thisWeekCommission: false,
+    thisMonthCommission: false,
+    lifetimeCommission: false,
+    thisWeekCorrection: false,
+    thisMonthCorrection: false,
+    lifetimeCorrection: false,
+    thisWeekSwap: false,
+    thisMonthSwap: false,
+    lifetimeSwap: false
   })
 
   // Fetch clients data via API
@@ -457,7 +466,16 @@ export default function Client2Module() {
       { label: addPercent('NET Monthly DW'), value: formatNum((t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0)), unit: 'USD', numericValue: (t.thisMonthDeposit || 0) - (t.thisMonthWithdrawal || 0) },
       { label: addPercent('NET Lifetime Bonus'), value: formatNum((t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0)), unit: 'USD', numericValue: (t.lifetimeBonusIn || 0) - (t.lifetimeBonusOut || 0) },
       { label: addPercent('NET Credit'), value: formatNum((t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0)), unit: 'USD', numericValue: (t.lifetimeCreditIn || 0) - (t.lifetimeCreditOut || 0) },
-      { label: addPercent('Book PnL'), value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) }
+      { label: addPercent('Book PnL'), value: formatNum((t.lifetimePnL || 0) + (t.floating || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) + (t.floating || 0) },
+      { label: addPercent('This Week Commission'), value: formatNum(t.thisWeekCommission || 0), unit: 'USD', numericValue: t.thisWeekCommission || 0 },
+      { label: addPercent('This Month Commission'), value: formatNum(t.thisMonthCommission || 0), unit: 'USD', numericValue: t.thisMonthCommission || 0 },
+      { label: addPercent('Lifetime Commission'), value: formatNum(t.lifetimeCommission || 0), unit: 'USD', numericValue: t.lifetimeCommission || 0 },
+      { label: addPercent('This Week Correction'), value: formatNum(t.thisWeekCorrection || 0), unit: 'USD', numericValue: t.thisWeekCorrection || 0 },
+      { label: addPercent('This Month Correction'), value: formatNum(t.thisMonthCorrection || 0), unit: 'USD', numericValue: t.thisMonthCorrection || 0 },
+      { label: addPercent('Lifetime Correction'), value: formatNum(t.lifetimeCorrection || 0), unit: 'USD', numericValue: t.lifetimeCorrection || 0 },
+      { label: addPercent('This Week Swap'), value: formatNum(t.thisWeekSwap || 0), unit: 'USD', numericValue: t.thisWeekSwap || 0 },
+      { label: addPercent('This Month Swap'), value: formatNum(t.thisMonthSwap || 0), unit: 'USD', numericValue: t.thisMonthSwap || 0 },
+      { label: addPercent('Lifetime Swap'), value: formatNum(t.lifetimeSwap || 0), unit: 'USD', numericValue: t.lifetimeSwap || 0 }
     ]
   }, [filteredClients, totals, rebateTotals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent])
 
@@ -474,8 +492,25 @@ export default function Client2Module() {
     let order = Array.isArray(saved) && saved.length > 0
       ? saved.filter(l => labels.includes(l))
       : (() => {
-          // Default order: prioritize Total Clients, Lifetime P&L, NET Lifetime DW, Total Rebate first
-          const priority = ['Total Clients', 'Lifetime P&L', 'NET Lifetime DW', 'Total Rebate']
+          // Default order: prioritize key KPIs and requested commission/correction/swap cards
+          const priority = [
+            'Total Clients',
+            'Lifetime P&L',
+            'NET Lifetime DW',
+            'Total Rebate',
+            // Commission variants
+            'This Week Commission',
+            'This Month Commission',
+            'Lifetime Commission',
+            // Correction variants
+            'This Week Correction',
+            'This Month Correction',
+            'Lifetime Correction',
+            // Swap variants
+            'This Week Swap',
+            'This Month Swap',
+            'Lifetime Swap'
+          ]
           const priorityOrder = priority.filter(l => labels.includes(l))
           const remaining = labels.filter(l => !priority.includes(l))
           return [...priorityOrder, ...remaining]
@@ -567,6 +602,15 @@ export default function Client2Module() {
       'NET Week Bonus': `${baseUrl}Mobile cards icons/NET WEEK BONUS.svg`,
       'NET Week D/W': `${baseUrl}Mobile cards icons/NET WEEK DAY.svg`,
       'Book PnL': `${baseUrl}Mobile cards icons/PNL.svg`,
+      'This Week Commission': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'This Month Commission': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'Lifetime Commission': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
+      'This Week Correction': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'This Month Correction': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Lifetime Correction': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'This Week Swap': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'This Month Swap': `${baseUrl}Mobile cards icons/Total Balance.svg`,
+      'Lifetime Swap': `${baseUrl}Mobile cards icons/Total Balance.svg`,
     }
     return iconMap[cleanLabel] || `${baseUrl}Mobile cards icons/Total Clients.svg` // Default icon
   }
@@ -985,6 +1029,15 @@ export default function Client2Module() {
     { key: 'lifetimePnL', label: 'Lifetime PnL', width: '100px' },
     { key: 'thisMonthPnL', label: 'This Month PnL', width: '110px' },
     { key: 'thisWeekPnL', label: 'This Week PnL', width: '110px' },
+    { key: 'thisWeekCommission', label: 'This Week Commission', width: '140px' },
+    { key: 'thisMonthCommission', label: 'This Month Commission', width: '150px' },
+    { key: 'lifetimeCommission', label: 'Lifetime Commission', width: '140px' },
+    { key: 'thisWeekCorrection', label: 'This Week Correction', width: '140px' },
+    { key: 'thisMonthCorrection', label: 'This Month Correction', width: '150px' },
+    { key: 'lifetimeCorrection', label: 'Lifetime Correction', width: '140px' },
+    { key: 'thisWeekSwap', label: 'This Week Swap', width: '120px' },
+    { key: 'thisMonthSwap', label: 'This Month Swap', width: '130px' },
+    { key: 'lifetimeSwap', label: 'Lifetime Swap', width: '120px' },
     { key: 'accountType', label: 'Account Type', width: '100px' },
     { key: 'processorType', label: 'Processor Type', width: '120px' }
   ]
