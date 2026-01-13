@@ -58,19 +58,14 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy to Windows XAMPP via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.WINDOWS_HOST }}
           username: ${{ secrets.WINDOWS_USER }}
           password: ${{ secrets.WINDOWS_PASSWORD }}
-          protocol: ftp
-          port: 21
-          local-dir: dist/
-          server-dir: /${{ steps.deploy-vars.outputs.DEPLOY_PATH }}/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          port: 22
+          local_path: ./dist/*
+          remote_path: /htdocs/${{ steps.deploy-vars.outputs.DEPLOY_PATH }}
+          sftp_only: true
 
