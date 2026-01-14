@@ -1134,26 +1134,9 @@ const Client2Page = () => {
         }
       }
 
-      // Sorting Strategy: fetch ALL only when no search/filters are active
-      // Avoid huge limit=10000 during active search or filters; keep normal pagination
-      const hasSearch = !!(searchQuery && searchQuery.trim())
-      const hasAnyFilters = !!(payload.filters && payload.filters.length > 0)
-      const hasAccountsFilter = mt5AccountsFilter.length > 0
-      const hasGroupFilter = !!(activeGroup && (activeGroup.range || (activeGroup.loginIds && activeGroup.loginIds.length > 0)))
-      const hasQuick = !!(quickFilters?.hasFloating || quickFilters?.hasCredit || quickFilters?.noDeposit)
-      const shouldFetchAllForSorting = (sortBy && sortBy.trim() !== '') && !hasSearch && !hasAnyFilters && !hasAccountsFilter && !hasGroupFilter && !hasQuick
-      
-      // Store original pagination for later client-side pagination
-      const originalPage = payload.page
-      const originalLimit = payload.limit
-      
-      if (shouldFetchAllForSorting) {
-        // Fetch all data for proper sorting when dataset is unfiltered
-        payload.page = 1
-        payload.limit = 10000 // Large limit to get all data
-        // Don't send sortBy/sortOrder to backend - we'll sort client-side
-      } else if (sortBy && sortBy.trim() !== '') {
-        // When filters are active, send sort params to backend
+      // Sorting Strategy: Always use server-side sorting to avoid timeouts
+      // Send sort params to backend for proper pagination
+      if (sortBy && sortBy.trim() !== '') {
         payload.sortBy = sortBy
         payload.sortOrder = sortOrder
       }
@@ -1343,94 +1326,32 @@ const Client2Page = () => {
         // Fetch only percentage data
         const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
         const percentData = extractData(percentResponse)
-        let percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
+        const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
-        let percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const pages = Math.max(1, Number(percentData?.pages || 1))
 
-        // Apply client-side sorting if sorting is active
-        if (shouldFetchAllForSorting) {
-          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
-          percentClients.sort((a, b) => {
-            const va = a?.[sortBy]
-            const vb = b?.[sortBy]
-            const na = Number(va), nb = Number(vb)
-            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
-            const sa = String(va ?? '').toLowerCase()
-            const sb = String(vb ?? '').toLowerCase()
-            if (sa < sb) return -1 * dir
-            if (sa > sb) return 1 * dir
-            return 0
-          })
-          
-          // Apply client-side pagination
-          percentTotal = percentClients.length
-          const start = (originalPage - 1) * originalLimit
-          const end = start + originalLimit
-          percentClients = percentClients.slice(start, end)
-          const pages = Math.max(1, Math.ceil(percentTotal / originalLimit))
-          
-          setClients(percentClients)
-          setTotalClients(percentTotal)
-          setTotalPages(pages)
-          setTotals({}) // Clear normal totals
-          setTotalsPercent(percentTotals)
-          setError('')
-        } else {
-          // Use server-side filtered results directly
-          const pages = Math.max(1, Number(percentData?.pages || 1))
-          setClients(percentClients)
-          setTotalClients(percentTotal)
-          setTotalPages(pages)
-          setTotals({}) // Clear normal totals
-          setTotalsPercent(percentTotals)
-          setError('')
-        }
+        setClients(percentClients)
+        setTotalClients(percentTotal)
+        setTotalPages(pages)
+        setTotals({}) // Clear normal totals
+        setTotalsPercent(percentTotals)
+        setError('')
       } else {
         // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload)
         const normalData = extractData(normalResponse)
-        let normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
+        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
-        let normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const pages = Math.max(1, Number(normalData?.pages || 1))
 
-        // Apply client-side sorting if sorting is active
-        if (shouldFetchAllForSorting) {
-          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
-          normalClients.sort((a, b) => {
-            const va = a?.[sortBy]
-            const vb = b?.[sortBy]
-            const na = Number(va), nb = Number(vb)
-            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
-            const sa = String(va ?? '').toLowerCase()
-            const sb = String(vb ?? '').toLowerCase()
-            if (sa < sb) return -1 * dir
-            if (sa > sb) return 1 * dir
-            return 0
-          })
-          
-          // Apply client-side pagination
-          normalTotal = normalClients.length
-          const start = (originalPage - 1) * originalLimit
-          const end = start + originalLimit
-          normalClients = normalClients.slice(start, end)
-          const pages = Math.max(1, Math.ceil(normalTotal / originalLimit))
-          
-          setClients(normalClients)
-          setTotalClients(normalTotal)
-          setTotalPages(pages)
-          setTotals(normalTotals)
-          setTotalsPercent({})
-          setError('')
-        } else {
-          // Use server-side filtered results directly
-          const pages = Math.max(1, Number(normalData?.pages || 1))
-          setClients(normalClients)
-          setTotalClients(normalTotal)
-          setTotalPages(pages)
-          setTotals(normalTotals)
-          setTotalsPercent({})
-          setError('')
-        }
+        setClients(normalClients)
+        setTotalClients(normalTotal)
+        setTotalPages(pages)
+        setTotals(normalTotals)
+        setTotalsPercent({})
+        setError('')
       }
     } catch (err) {
       // Ignore request cancellations caused by in-flight aborts
