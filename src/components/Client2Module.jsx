@@ -629,7 +629,10 @@ export default function Client2Module() {
   const percentageColumns = new Set([
     'balance', 'credit', 'equity', 'profit', 'marginFree', 'margin',
     'assets', 'storage', 'pnl', 'dailyDeposit', 'dailyWithdrawal',
-    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL'
+    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL',
+    'lifetimeCommission', 'thisMonthCommission', 'thisWeekCommission',
+    'lifetimeCorrection', 'thisMonthCorrection', 'thisWeekCorrection',
+    'lifetimeSwap', 'thisMonthSwap', 'thisWeekSwap'
   ])
 
   // Map base column keys to their percentage field names from API
@@ -647,7 +650,16 @@ export default function Client2Module() {
     'dailyWithdrawal': 'dailyWithdrawal_percentage',
     'lifetimePnL': 'lifetimePnL_percentage',
     'thisMonthPnL': 'thisMonthPnL_percentage',
-    'thisWeekPnL': 'thisWeekPnL_percentage'
+    'thisWeekPnL': 'thisWeekPnL_percentage',
+    'lifetimeCommission': 'lifetimeCommission_percentage',
+    'thisMonthCommission': 'thisMonthCommission_percentage',
+    'thisWeekCommission': 'thisWeekCommission_percentage',
+    'lifetimeCorrection': 'lifetimeCorrection_percentage',
+    'thisMonthCorrection': 'thisMonthCorrection_percentage',
+    'thisWeekCorrection': 'thisWeekCorrection_percentage',
+    'lifetimeSwap': 'lifetimeSwap_percentage',
+    'thisMonthSwap': 'thisMonthSwap_percentage',
+    'thisWeekSwap': 'thisWeekSwap_percentage'
   }
 
   // Helper function to get the value from client object based on percentage mode
@@ -1077,6 +1089,11 @@ export default function Client2Module() {
 
   // Handle column sorting
   const handleSort = (columnKey) => {
+    // Prevent multiple sort clicks while data is loading
+    if (isLoading) {
+      return
+    }
+
     if (sortColumn === columnKey) {
       // Toggle direction if same column
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
@@ -1492,7 +1509,7 @@ export default function Client2Module() {
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-start px-1 gap-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                     style={{
                       border: 'none', 
                       outline: 'none', 

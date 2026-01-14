@@ -695,7 +695,19 @@ const Client2Page = () => {
     { key: 'lifetimeBonusIn', label: 'Lifetime Bonus In', type: 'float' },
     { key: 'lifetimeBonusOut', label: 'Lifetime Bonus Out', type: 'float' },
     { key: 'lifetimeSOCompensationIn', label: 'Lifetime SO Compensation In', type: 'float' },
-    { key: 'lifetimeSOCompensationOut', label: 'Lifetime SO Compensation Out', type: 'float' }
+    { key: 'lifetimeSOCompensationOut', label: 'Lifetime SO Compensation Out', type: 'float' },
+    // Commission columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeCommission', label: 'Lifetime Commission', type: 'float' },
+    { key: 'thisMonthCommission', label: 'This Month Commission', type: 'float' },
+    { key: 'thisWeekCommission', label: 'This Week Commission', type: 'float' },
+    // Correction columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeCorrection', label: 'Lifetime Correction', type: 'float' },
+    { key: 'thisMonthCorrection', label: 'This Month Correction', type: 'float' },
+    { key: 'thisWeekCorrection', label: 'This Week Correction', type: 'float' },
+    // Swap columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeSwap', label: 'Lifetime Swap', type: 'float' },
+    { key: 'thisMonthSwap', label: 'This Month Swap', type: 'float' },
+    { key: 'thisWeekSwap', label: 'This Week Swap', type: 'float' }
   ]
 
   // Get visible columns list (moved here before being used in useEffect dependencies)
@@ -1041,12 +1053,12 @@ const Client2Page = () => {
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              // Transform processorType friendly labels back to numeric values for API (0 or 1)
+              // Transform processorType friendly labels back to numeric values for API (1 or 0)
               let apiValues = selectedValues
               if (columnKey === 'processorType') {
                 apiValues = selectedValues.map(v => {
-                  if (v === 'Connected') return '1'
-                  if (v === 'Not Connected') return '0'
+                  if (v === 'Connected') return 1
+                  if (v === 'Not Connected') return 0
                   return v // fallback for any unexpected values
                 })
                 console.log('[Client2] 🔍 processorType filter transformation:', selectedValues, '→', apiValues)
@@ -1507,6 +1519,11 @@ const Client2Page = () => {
 
   // Handle sort
   const handleSort = (columnKey) => {
+    // Prevent multiple sort clicks while sorting is in progress
+    if (isSorting) {
+      return
+    }
+
     // Set sorting loading state
     setIsSorting(true)
 
@@ -4517,14 +4534,14 @@ const Client2Page = () => {
                                     </svg>
                                   </div>
                                   <div
-                                    className="flex items-center gap-1 cursor-pointer flex-1"
+                                    className={`flex items-center gap-1 flex-1 ${isSorting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                     onClick={() => handleSort(col.key)}
                                   >
                                     <span
                                       className="truncate"
                                       title={col.label}
                                     >
-                                      {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'].includes(col.key) ? ' %' : ''}
+                                      {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap'].includes(col.key) ? ' %' : ''}
                                     </span>
                                     {sortBy === col.key && (
                                       <span className="text-white">
@@ -5367,10 +5384,13 @@ const Client2Page = () => {
                               'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut',
                               'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut',
                               'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut',
+                              'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap',
                               'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut',
                               'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut',
+                              'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap',
                               'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut',
-                              'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'
+                              'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut',
+                              'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap'
                             ]
                             
                             const fieldKey = percentModeActive && fieldsWithPercentage.includes(col.key) 
