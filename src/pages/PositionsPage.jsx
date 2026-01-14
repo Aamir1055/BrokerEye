@@ -3909,7 +3909,7 @@ const PositionsPage = () => {
                           )}
                           {effectiveCols.action && (
                             <td className="px-2 py-1.5 text-sm whitespace-nowrap">
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getActionChipClasses(p.action)}`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[12px] font-semibold ${getActionChipClasses(p.action)}`}>
                                 {getActionLabel(p.action)}
                               </span>
                             </td>

@@ -148,6 +148,7 @@ const Client2Page = () => {
   const [textFilterTemp, setTextFilterTemp] = useState({}) // Temporary storage for text filters being edited
   const [columnSortOrder, setColumnSortOrder] = useState({}) // Track sort order per column: 'asc', 'desc', or null
   const [filterPosition, setFilterPosition] = useState(null) // Track filter button position for portal
+  const [filterDropdownLoading, setFilterDropdownLoading] = useState(false) // Loading state for filter dropdown
   const [columnValues, setColumnValues] = useState({}) // Store unique values for each column
   const [columnValuesLoading, setColumnValuesLoading] = useState({}) // Track first-load state for column values
   const [columnValuesLoadingMore, setColumnValuesLoadingMore] = useState({}) // Track incremental load state
@@ -1041,14 +1042,17 @@ const Client2Page = () => {
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              // Transform processorType friendly labels back to numeric values for API (0 or 1)
+              // Transform processorType friendly labels back to string '1'/'0' for API
               let apiValues = selectedValues
               if (columnKey === 'processorType') {
                 apiValues = selectedValues.map(v => {
-                  if (v === 'Connected') return '1'
-                  if (v === 'Not Connected') return '0'
-                  return v // fallback for any unexpected values
-                })
+                  const strVal = String(v).toLowerCase()
+                  // Transform display labels to API values
+                  if (v === 'Connected' || strVal === 'true' || strVal === '1' || v === true || v === 1) return '1'
+                  if (v === 'Not Connected' || strVal === 'false' || strVal === '0' || v === false || v === 0) return '0'
+                  // Skip any unexpected values by returning null, then filter them out
+                  return null
+                }).filter(v => v !== null)
                 console.log('[Client2] 🔍 processorType filter transformation:', selectedValues, '→', apiValues)
               }
 
@@ -1586,18 +1590,28 @@ const Client2Page = () => {
 
   // Handle sort
   const handleSort = (columnKey) => {
-    // Set sorting loading state
-    setIsSorting(true)
+    // Prevent sorting if already sorting
+    if (isSorting) {
+      console.log('[Client2] Sort already in progress, ignoring click')
+      return
+    }
 
-    // Increment animation key to force re-render and re-trigger animations
+    console.log('[Client2] Sorting by column:', columnKey)
+    
+    // Batch state updates using React 18 automatic batching
+    setIsSorting(true)
     setAnimationKey(prev => prev + 1)
 
+    // Determine new sort order
     if (sortBy === columnKey) {
+      // Toggle between asc and desc
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
+      // New column - start with asc
       setSortBy(columnKey)
       setSortOrder('asc')
     }
+    
     // Don't reset page - keep user on current page
   }
 
@@ -1910,9 +1924,17 @@ const Client2Page = () => {
 
   const applyNumberFilter = (columnKey) => {
     const temp = numericFilterTemp[columnKey]
-    if (!temp || temp.value1 === '' || temp.value1 == null) return
+    console.log('[Client2] applyNumberFilter - columnKey:', columnKey, 'temp:', temp, 'all numericFilterTemp:', numericFilterTemp)
+    
+    if (!temp || temp.value1 === '' || temp.value1 == null) {
+      console.log('[Client2] applyNumberFilter - Early return: temp is invalid or value1 is empty')
+      return
+    }
 
-    if (temp.operator === 'between' && (temp.value2 === '' || temp.value2 == null)) return
+    if (temp.operator === 'between' && (temp.value2 === '' || temp.value2 == null)) {
+      console.log('[Client2] applyNumberFilter - Early return: between operator but value2 is empty')
+      return
+    }
 
     const filterConfig = {
       operator: temp.operator,
@@ -1935,9 +1957,7 @@ const Client2Page = () => {
     setCurrentPage(1)
 
     // Immediately fetch full dataset with new filter
-    setTimeout(() => {
-      fetchClients(false)
-    }, 0)
+    fetchClients(false)
   }
 
   const initNumericFilterTemp = (columnKey) => {
@@ -1950,13 +1970,18 @@ const Client2Page = () => {
   }
 
   const updateNumericFilterTemp = (columnKey, field, value) => {
-    setNumericFilterTemp(prev => ({
-      ...prev,
-      [columnKey]: {
-        ...prev[columnKey],
-        [field]: value
+    console.log('[Client2] updateNumericFilterTemp - columnKey:', columnKey, 'field:', field, 'value:', value)
+    setNumericFilterTemp(prev => {
+      const updated = {
+        ...prev,
+        [columnKey]: {
+          ...(prev[columnKey] || { operator: 'equal', value1: '', value2: '' }),
+          [field]: value
+        }
       }
-    }))
+      console.log('[Client2] updateNumericFilterTemp - updated state:', updated)
+      return updated
+    })
   }
 
   const initTextFilterTemp = (columnKey) => {
@@ -2219,8 +2244,25 @@ const Client2Page = () => {
         // Extract values from first page
         const firstClients = firstData?.clients || []
         firstClients.forEach(client => {
-          const v = client?.[columnKey]
-          if (v !== null && v !== undefined && v !== '') setVals.add(v)
+          let v = client?.[columnKey]
+          // Skip null, undefined, and empty string values
+          if (v === null || v === undefined || v === '') return
+          
+          // Transform processorType boolean values to friendly labels
+          if (columnKey === 'processorType') {
+            // Handle all possible boolean/string/number representations
+            const strVal = String(v).toLowerCase()
+            if (strVal === 'true' || strVal === '1' || v === true || v === 1) {
+              v = 'Connected'
+            } else if (strVal === 'false' || strVal === '0' || v === false || v === 0) {
+              v = 'Not Connected'
+            } else {
+              // Skip any unexpected values
+              return
+            }
+          }
+          
+          setVals.add(v)
         })
 
         // Get total pages to determine if there's more data
@@ -2505,6 +2547,7 @@ const Client2Page = () => {
     console.log('[Client2] columnKey:', columnKey)
     console.log('[Client2] selected values:', selected)
     console.log('[Client2] selected count:', selected.length)
+    console.log('[Client2] selectedColumnValues state:', selectedColumnValues)
     console.log('[Client2] ========================================')
 
     if (selected.length === 0) {
@@ -2526,7 +2569,8 @@ const Client2Page = () => {
       return updated
     })
 
-    // No need to explicitly call fetchClients - useEffect will handle it when columnFilters changes
+    // Immediately trigger fetchClients
+    fetchClients(false)
   }
 
   const applySortToColumn = (columnKey, direction) => {
@@ -4653,11 +4697,24 @@ const Client2Page = () => {
                                           shouldOpenLeft
                                         })
                                         setShowFilterDropdown(col.key)
+                                        setFilterDropdownLoading(true)
+
+                                        // Initialize numeric filter temp if it's a numeric column
+                                        const columnType = getColumnType(col.key)
+                                        if ((columnType === 'float' || columnType === 'integer') && !numericFilterTemp[col.key]) {
+                                          initNumericFilterTemp(col.key)
+                                        }
 
                                         // Fetch column values for ALL columns (including login) - always refresh to ensure fresh data
-                                        const columnType = getColumnType(col.key)
                                         // Always fetch values for checkbox filtering with forceRefresh=true to avoid "No values available"
-                                        fetchColumnValues(col.key, true)
+                                        const startTime = Date.now()
+                                        fetchColumnValues(col.key, true).finally(() => {
+                                          const elapsed = Date.now() - startTime
+                                          const remainingTime = Math.max(1000 - elapsed, 0)
+                                          setTimeout(() => {
+                                            setFilterDropdownLoading(false)
+                                          }, remainingTime)
+                                        })
                                         // Don't initialize selectedColumnValues - let it stay undefined so we read from columnFilters
                                         // This ensures checkboxes show the correct state immediately when dropdown opens
                                       }
@@ -4720,6 +4777,14 @@ const Client2Page = () => {
                                           zIndex: 20000000
                                         }}
                                       >
+                                        {/* Loading State */}
+                                        {filterDropdownLoading ? (
+                                          <div className="flex flex-col items-center justify-center py-12">
+                                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                            <p className="text-xs text-gray-500 mt-3">Loading filters...</p>
+                                          </div>
+                                        ) : (
+                                          <>
                                         {/* Header */}
                                         <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                                           <div className="flex items-center justify-between">
@@ -4765,110 +4830,66 @@ const Client2Page = () => {
                                               </div>
 
                                               {/* Number Filter Operators */}
-                                              <div className="px-3 py-2 border-b border-gray-200">
-                                                <div className="relative">
-                                                  <button
-                                                    onClick={() => {
-                                                      const btn = document.getElementById(`number-filter-btn-${columnKey}`)
-                                                      const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                      if (menu) {
-                                                        menu.classList.toggle('hidden')
+                                              <div className="px-3 py-2 border-b border-gray-200 space-y-3">
+                                                {/* Operator Dropdown */}
+                                                <div>
+                                                  <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                                                  <select
+                                                    value={tempFilter.operator}
+                                                    onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                  >
+                                                    <option value="equal">Equal...</option>
+                                                    <option value="not_equal">Not Equal...</option>
+                                                    <option value="less_than">Less Than...</option>
+                                                    <option value="less_than_equal">Less Than Or Equal...</option>
+                                                    <option value="greater_than">Greater Than...</option>
+                                                    <option value="greater_than_equal">Greater Than Or Equal...</option>
+                                                    <option value="between">Between...</option>
+                                                  </select>
+                                                </div>
+
+                                                {/* Value Input(s) */}
+                                                <div>
+                                                  <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                                                  <input
+                                                    type="number"
+                                                    step="any"
+                                                    placeholder="Enter value"
+                                                    value={tempFilter.value1}
+                                                    onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        applyNumberFilter(columnKey)
+                                                        setShowFilterDropdown(null)
                                                       }
                                                     }}
-                                                    id={`number-filter-btn-${col.key}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                  >
-                                                    <span className="text-gray-700 font-medium">Number Filters</span>
-                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                  </button>
-
-                                                  {/* Number Filter Submenu */}
-                                                  <div
-                                                    id={`number-filter-menu-${columnKey}`}
-                                                    className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    <div className="p-3 space-y-3">
-                                                      {/* Operator Dropdown */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
-                                                        <select
-                                                          value={tempFilter.operator}
-                                                          onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                        >
-                                                          <option value="equal">Equal...</option>
-                                                          <option value="not_equal">Not Equal...</option>
-                                                          <option value="less_than">Less Than...</option>
-                                                          <option value="less_than_equal">Less Than Or Equal...</option>
-                                                          <option value="greater_than">Greater Than...</option>
-                                                          <option value="greater_than_equal">Greater Than Or Equal...</option>
-                                                          <option value="between">Between...</option>
-                                                        </select>
-                                                      </div>
-
-                                                      {/* Value Input(s) */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
-                                                        <input
-                                                          type="number"
-                                                          step="any"
-                                                          placeholder="Enter value"
-                                                          value={tempFilter.value1}
-                                                          onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
-                                                          onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                              e.preventDefault()
-                                                              applyNumberFilter(columnKey)
-                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                              if (menu) menu.classList.add('hidden')
-                                                            }
-                                                          }}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                        />
-                                                      </div>
-
-                                                      {/* Second Value for Between */}
-                                                      {tempFilter.operator === 'between' && (
-                                                        <div>
-                                                          <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
-                                                          <input
-                                                            type="number"
-                                                            step="any"
-                                                            placeholder="Enter value"
-                                                            value={tempFilter.value2}
-                                                            onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
-                                                            onKeyDown={(e) => {
-                                                              if (e.key === 'Enter') {
-                                                                e.preventDefault()
-                                                                applyNumberFilter(columnKey)
-                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                                if (menu) menu.classList.add('hidden')
-                                                              }
-                                                            }}
-                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                          />
-                                                        </div>
-                                                      )}
-
-                                                      {/* Apply Button */}
-                                                      <div className="flex gap-2 pt-2 border-t border-gray-200">
-                                                        <button
-                                                          onClick={() => {
-                                                            applyNumberFilter(columnKey)
-                                                            const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                            if (menu) menu.classList.add('hidden')
-                                                          }}
-                                                          className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                        >
-                                                          OK
-                                                        </button>
-                                                      </div>
-                                                    </div>
-                                                  </div>
+                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                  />
                                                 </div>
+
+                                                {/* Second Value for Between */}
+                                                {tempFilter.operator === 'between' && (
+                                                  <div>
+                                                    <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                                                    <input
+                                                      type="number"
+                                                      step="any"
+                                                      placeholder="Enter value"
+                                                      value={tempFilter.value2}
+                                                      onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                          e.preventDefault()
+                                                          applyNumberFilter(columnKey)
+                                                          setShowFilterDropdown(null)
+                                                        }
+                                                      }}
+                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                    />
+                                                  </div>
+                                                )}
                                               </div>
 
                                               {/* Checkbox Value List - Also for numeric columns */}
@@ -5031,7 +5052,8 @@ const Client2Page = () => {
                                                 </button>
                                                 <button
                                                   onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
+                                                    console.log('[Client2] Numeric section OK clicked - columnKey:', columnKey)
+                                                    applyNumberFilter(columnKey)
                                                     setShowFilterDropdown(null)
                                                   }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
@@ -5298,7 +5320,7 @@ const Client2Page = () => {
                                                     <>
                                                       {filteredValues.length > 0 ? (
                                                         <div className="space-y-1">
-                                                          {filteredValues.map((value) => (
+                                                          {filteredValues.filter(value => value !== null && value !== undefined && value !== '').map((value) => (
                                                             <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
                                                               <input
                                                                 type="checkbox"
@@ -5345,7 +5367,14 @@ const Client2Page = () => {
                                                 </button>
                                                 <button
                                                   onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
+                                                    console.log('[Client2] Bottom OK clicked - columnKey:', columnKey, 'isNumeric:', isNumeric, 'numericFilterTemp:', numericFilterTemp[columnKey])
+                                                    if (isNumeric) {
+                                                      console.log('[Client2] Calling applyNumberFilter for', columnKey)
+                                                      applyNumberFilter(columnKey)
+                                                    } else {
+                                                      console.log('[Client2] Calling applyCheckboxFilter for', columnKey)
+                                                      applyCheckboxFilter(columnKey)
+                                                    }
                                                     setShowFilterDropdown(null)
                                                   }}
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
@@ -5356,6 +5385,8 @@ const Client2Page = () => {
                                             </>
                                           )
                                         })()}
+                                        </>
+                                        )}
                                       </div>,
                                       document.body
                                     )
