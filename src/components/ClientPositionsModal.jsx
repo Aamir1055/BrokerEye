@@ -668,7 +668,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const formatCurrency = (value) => {
-    return parseFloat(value || 0).toFixed(2)
+    return parseFloat(value || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
   }
 
   // Sorting handler for positions
@@ -3625,6 +3628,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 const lifetime = Number(clientData?.lifetimePnL ?? clientData?.pnl ?? 0)
                 const floating = Number(clientData?.floating ?? totalPL)
                 const bookPnL = lifetime + floating
+                
+                // Invert lifetime and bookPnL for display (negative shows as positive, positive shows as negative)
+                const displayLifetime = -lifetime
+                const displayBookPnL = -bookPnL
 
                 if (fixedCardVisibility.pf_totalPositions) {
                   row1.push({ label: 'Positions', value: String(positions.length), labelClass: 'text-blue-700', accent: 'border-blue-300' })
@@ -3637,10 +3644,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   row1.push({ label: 'Floating Profit', value: formatCurrency(totalPL), labelClass: totalPL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalPL), accent: totalPL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_lifetimePnL) {
-                  row1.push({ label: 'Lifetime PnL', value: formatCurrency(lifetime), labelClass: lifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(lifetime), accent: lifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
+                  row1.push({ label: 'Lifetime PnL', value: formatCurrency(displayLifetime), labelClass: displayLifetime >= 0 ? 'text-teal-700' : 'text-orange-700', valueClass: getProfitColor(displayLifetime), accent: displayLifetime >= 0 ? 'border-teal-400' : 'border-orange-400' })
                 }
                 if (fixedCardVisibility.pf_bookPnL) {
-                  row1.push({ label: 'Book PnL', value: formatCurrency(bookPnL), labelClass: bookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(bookPnL), accent: bookPnL >= 0 ? 'border-emerald-400' : 'border-red-400' })
+                  row1.push({ label: 'Book PnL', value: formatCurrency(displayBookPnL), labelClass: displayBookPnL >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(displayBookPnL), accent: displayBookPnL >= 0 ? 'border-emerald-400' : 'border-red-400' })
                 }
                 if (fixedCardVisibility.pf_balance) {
                   row1.push({ label: 'Balance', value: formatCurrency(clientData?.balance), labelClass: 'text-cyan-700', accent: 'border-cyan-300' })
