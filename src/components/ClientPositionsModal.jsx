@@ -3453,7 +3453,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               key={opt.value}
                               role="option"
                               onClick={() => { setOperationType(opt.value); setOpSelectOpen(false); setOperationSuccess(''); setOperationError(''); }}
-                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-50 ${operationType === opt.value ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
+                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${operationType === opt.value ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
                             >
                               {opt.label}
                             </div>
