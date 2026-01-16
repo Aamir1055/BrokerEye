@@ -29,6 +29,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   
   // Funds management state
   const [operationType, setOperationType] = useState('deposit')
+  const [opSelectOpen, setOpSelectOpen] = useState(false)
+  const opSelectRef = useRef(null)
+  const operationOptions = [
+    { value: 'deposit', label: 'Deposit Funds' },
+    { value: 'withdrawal', label: 'Withdraw Funds' },
+    { value: 'credit_in', label: 'Credit In' },
+    { value: 'credit_out', label: 'Credit Out' }
+  ]
   const [amount, setAmount] = useState('')
   const [comment, setComment] = useState('')
   const [operationLoading, setOperationLoading] = useState(false)
@@ -1594,6 +1602,18 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       setOperationLoading(false)
     }
   }
+
+  // Close custom operation dropdown on outside click
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!opSelectRef.current) return
+      if (!opSelectRef.current.contains(e.target)) {
+        setOpSelectOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [])
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -3384,7 +3404,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {/* Money Transactions Tab */}
           {activeTab === 'funds' && (
             <div>
-              <div className="rounded-2xl p-6 border border-gray-200 bg-white">
+              <div className="rounded-2xl p-0 border border-gray-200 bg-white">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Balance</h3>
                 
                 {/* Success Message */}
@@ -3413,26 +3433,36 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
                 <form onSubmit={handleFundsOperation} className="space-y-6">
                   {/* Operation Type + Amount */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pt-2">
+                    <div ref={opSelectRef} className="relative">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
-                      <select
-                        value={operationType}
-                        onChange={(e) => {
-                          setOperationType(e.target.value)
-                          setOperationSuccess('')
-                          setOperationError('')
-                        }}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                      <button
+                        type="button"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
+                        onClick={() => setOpSelectOpen((o) => !o)}
                       >
-                        <option value="deposit" className="text-gray-900">Deposit Funds</option>
-                        <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
-                        <option value="credit_in" className="text-gray-900">Credit In</option>
-                        <option value="credit_out" className="text-gray-900">Credit Out</option>
-                      </select>
+                        <span>{operationOptions.find(o => o.value === operationType)?.label || 'Select'}</span>
+                        <svg className={`w-4 h-4 text-gray-500 transition-transform ${opSelectOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {opSelectOpen && (
+                        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                          {operationOptions.map((opt) => (
+                            <div
+                              key={opt.value}
+                              role="option"
+                              onClick={() => { setOperationType(opt.value); setOpSelectOpen(false); setOperationSuccess(''); setOperationError(''); }}
+                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-50 ${operationType === opt.value ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <div>
+                    <div className="pr-6">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
                       <input
                         type="number"
@@ -3448,7 +3478,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </div>
 
                   {/* Comment */}
-                  <div>
+                  <div className="px-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
                     <textarea
                       value={comment}
@@ -3459,8 +3489,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     />
                   </div>
 
+                  {/* Divider below comment */}
+                  <div className="px-6">
+                    <div className="border-t border-gray-200 my-4" />
+                  </div>
+
                   {/* Actions */}
-                  <div className="flex justify-between items-center pt-2">
+                  <div className="flex justify-between items-center pt-2 px-6 pb-6">
                     <button
                       type="button"
                       onClick={() => {
