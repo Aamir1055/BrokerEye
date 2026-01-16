@@ -3423,7 +3423,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           setOperationSuccess('')
                           setOperationError('')
                         }}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
                       >
                         <option value="deposit" className="text-gray-900">Deposit Funds</option>
                         <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
@@ -3441,7 +3441,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="Enter Amount"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
                         required
                       />
                     </div>
@@ -3455,7 +3455,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="Add Comments for this Transaction"
                       rows="4"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
                     />
                   </div>
 
@@ -3491,7 +3491,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
-                          Execute Operation
+                          Submit
                         </>
                       )}
                     </button>
