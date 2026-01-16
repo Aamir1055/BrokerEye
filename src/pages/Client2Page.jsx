@@ -4508,14 +4508,14 @@ const Client2Page = () => {
                                 backgroundColor: '#2563eb',
                                 position: 'sticky',
                                 top: 0,
-                                ...(col.key === 'login' && { left: 0, zIndex: 51 })
+                                ...(col.key === 'login' && { left: 0, zIndex: 51, paddingLeft: '4px' })
                               }}
                             >
                               <div className="flex items-center gap-2 justify-between min-w-0">
                                 <div className="flex items-center gap-2 min-w-0">
                                   {/* Drag Handle Area - larger clickable area on left side */}
                                   <div
-                                    className="flex items-center gap-2 cursor-move hover:opacity-80 py-1 -ml-2 pl-2 pr-1"
+                                    className={`${col.key === 'login' ? 'flex items-center gap-2 cursor-move hover:opacity-80 py-1 pl-1 pr-1' : 'flex items-center gap-2 cursor-move hover:opacity-80 py-1 -ml-2 pl-2 pr-1'}`}
                                     draggable={!resizingColumn}
                                     onDragStart={(e) => {
                                       e.stopPropagation()
@@ -5409,7 +5409,7 @@ const Client2Page = () => {
                               return (
                                 <td
                                   key={col.key}
-                                  className="px-2 py-1.5 text-sm md:text-[15px] font-medium text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all bg-white"
+                                  className="px-1 py-1.5 text-sm md:text-[15px] font-medium text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-all bg-white"
                                   style={{
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
