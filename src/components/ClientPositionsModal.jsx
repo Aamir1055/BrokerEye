@@ -3384,8 +3384,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {/* Money Transactions Tab */}
           {activeTab === 'funds' && (
             <div>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
+              <div className="rounded-2xl p-6 border border-gray-200 bg-white">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-6">Balance</h3>
                 
                 {/* Success Message */}
                 {operationSuccess && (
@@ -3411,61 +3411,56 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </div>
                 )}
 
-                <form onSubmit={handleFundsOperation} className="space-y-3">
-                  {/* Operation Type */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Operation Type
-                    </label>
-                    <select
-                      value={operationType}
-                      onChange={(e) => {
-                        setOperationType(e.target.value)
-                        setOperationSuccess('')
-                        setOperationError('')
-                      }}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
-                    >
-                      <option value="deposit" className="text-gray-900">Deposit Funds</option>
-                      <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
-                      <option value="credit_in" className="text-gray-900">Credit In</option>
-                      <option value="credit_out" className="text-gray-900">Credit Out</option>
-                    </select>
-                  </div>
+                <form onSubmit={handleFundsOperation} className="space-y-6">
+                  {/* Operation Type + Amount */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
+                      <select
+                        value={operationType}
+                        onChange={(e) => {
+                          setOperationType(e.target.value)
+                          setOperationSuccess('')
+                          setOperationError('')
+                        }}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                      >
+                        <option value="deposit" className="text-gray-900">Deposit Funds</option>
+                        <option value="withdrawal" className="text-gray-900">Withdraw Funds</option>
+                        <option value="credit_in" className="text-gray-900">Credit In</option>
+                        <option value="credit_out" className="text-gray-900">Credit Out</option>
+                      </select>
+                    </div>
 
-                  {/* Amount */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Amount ($)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="Enter amount"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
-                      required
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter Amount"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                        required
+                      />
+                    </div>
                   </div>
 
                   {/* Comment */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Comment (Optional)
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Add a comment for this transaction"
-                      rows="2"
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                      placeholder="Add Comments for this Transaction"
+                      rows="4"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
                     />
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="flex justify-end gap-2 pt-1">
+                  {/* Actions */}
+                  <div className="flex justify-between items-center pt-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -3474,14 +3469,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         setOperationSuccess('')
                         setOperationError('')
                       }}
-                      className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="w-[45%] px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full hover:bg-blue-100 transition-colors"
                     >
                       Clear
                     </button>
                     <button
                       type="submit"
                       disabled={operationLoading}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 transition-all inline-flex items-center gap-1.5"
+                      className="w-[45%] px-4 py-3 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 disabled:bg-blue-400 transition-all inline-flex items-center justify-center gap-2"
                     >
                       {operationLoading ? (
                         <>
