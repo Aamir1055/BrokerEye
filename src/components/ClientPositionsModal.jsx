@@ -3404,7 +3404,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           {/* Money Transactions Tab */}
           {activeTab === 'funds' && (
             <div>
-              <div className="rounded-2xl p-0 border border-gray-200 bg-white">
+              <div className="p-0">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Balance</h3>
                 
                 {/* Success Message */}
