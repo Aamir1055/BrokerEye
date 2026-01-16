@@ -115,7 +115,8 @@ function App() {
   // Dynamically detect basename; use '/' in dev, and
   // auto-detect '/amari-capital' or '/broker' in production.
   const getBasename = () => {
-    if (import.meta.env.DEV) return '/amari-capital'
+    // In development, serve at root to avoid blank screen when visiting '/'
+    if (import.meta.env.DEV) return '/'
     const path = window.location.pathname
     const match = path.match(/^\/(amari-capital|broker)(\/|$)/)
     if (match) return `/${match[1]}`
