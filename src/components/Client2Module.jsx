@@ -1721,6 +1721,8 @@ export default function Client2Module() {
           setIsLoginGroupsOpen(true)
         }}
         onReset={() => {
+          // Invalidate any in-flight requests from previous filter state
+          requestIdRef.current++
           setFilters({ hasFloating: false, hasCredit: false, noDeposit: false })
           clearIBSelection()
           setActiveGroupFilter('client2', null)
