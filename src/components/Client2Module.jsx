@@ -42,6 +42,7 @@ export default function Client2Module() {
   const columnDropdownRef = useRef(null)
   const columnSelectorButtonRef = useRef(null)
   const abortControllerRef = useRef(null)
+  const requestIdRef = useRef(0)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -213,6 +214,9 @@ export default function Client2Module() {
 
   // Fetch clients data via API
   const fetchClients = useCallback(async (overridePercent = null, isInitialLoad = false) => {
+    // Generate unique request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current
+    
     try {
       // Only show loading on initial load, not on periodic refreshes
       if (isInitialLoad) {
@@ -328,6 +332,12 @@ export default function Client2Module() {
       
       // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
+      
+      // Ignore response if it's from an outdated request (stale data)
+      if (currentRequestId !== requestIdRef.current) {
+        console.log('[Client2Module] Ignoring stale response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+        return
+      }
       
       // Extract data from response.data.data structure
       const responseData = response?.data || {}

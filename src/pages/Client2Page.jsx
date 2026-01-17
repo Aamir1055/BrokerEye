@@ -169,6 +169,7 @@ const Client2Page = () => {
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
+  const requestIdRef = useRef(0)
   // Drag-and-drop for face cards
   const [draggedCardKey, setDraggedCardKey] = useState(null)
   const [dragOverCardKey, setDragOverCardKey] = useState(null)
@@ -922,13 +923,16 @@ const Client2Page = () => {
 
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
+    // Generate unique request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current
+    
     // Cancel any previous pending request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
     // Create new AbortController for this request
     abortControllerRef.current = new AbortController()
-    console.log('[Client2] fetchClients called - silent:', silent, 'columnFilters:', columnFilters)
+    console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
       if (!silent) {
         setLoading(true)
@@ -1343,6 +1347,13 @@ const Client2Page = () => {
       if (shouldFetchPercentage) {
         // Fetch only percentage data
         const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true }, { signal: abortControllerRef.current.signal })
+        
+        // Ignore response if it's from an outdated request (stale data)
+        if (currentRequestId !== requestIdRef.current) {
+          console.log('[Client2] Ignoring stale percentage response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+          return
+        }
+        
         const percentData = extractData(percentResponse)
         const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
@@ -1358,6 +1369,13 @@ const Client2Page = () => {
       } else {
         // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
+        
+        // Ignore response if it's from an outdated request (stale data)
+        if (currentRequestId !== requestIdRef.current) {
+          console.log('[Client2] Ignoring stale normal response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+          return
+        }
+        
         const normalData = extractData(normalResponse)
         const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
