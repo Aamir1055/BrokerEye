@@ -4091,8 +4091,8 @@ const Client2Page = () => {
             </div>
           </div>
 
-          {/* New Dashboard Section */}
-          {showFaceCards && totals && Object.keys(totals).length > 0 && (
+          {/* New Dashboard Section - Always visible regardless of percentage mode */}
+          {totals && Object.keys(totals).length > 0 && (
             <div className="mb-6">
               <ClientDashboard totals={totals} clients={clients} totalClients={totalClients} rebateTotals={rebateTotals} />
             </div>
