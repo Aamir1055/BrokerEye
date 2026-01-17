@@ -1834,6 +1834,9 @@ const Client2Page = () => {
   }
 
   const clearColumnFilter = (columnKey) => {
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
+    
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
       const textFilterKey = `${columnKey}_text`
@@ -2586,6 +2589,9 @@ const Client2Page = () => {
 
   // Clear all filters
   const handleClearAllFilters = () => {
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
+    
     // Basic list filters
     setFilters([])
     setSearchQuery('')
