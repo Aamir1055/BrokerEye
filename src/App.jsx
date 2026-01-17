@@ -113,12 +113,12 @@ function PreloadRoutes() {
 
 function App() {
   // Dynamically detect basename; use '/' in dev, and
-  // auto-detect '/amari-capital' or '/broker' in production.
+  // auto-detect '/amari-capital-new', '/amari-capital' or '/broker' in production.
   const getBasename = () => {
     // In development, serve at root to avoid blank screen when visiting '/'
     if (import.meta.env.DEV) return '/'
     const path = window.location.pathname
-    const match = path.match(/^\/(amari-capital|broker)(\/|$)/)
+    const match = path.match(/^\/(amari-capital-new|amari-capital|broker)(\/|$)/)
     if (match) return `/${match[1]}`
     return '/'
   }
