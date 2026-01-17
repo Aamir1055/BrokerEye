@@ -168,6 +168,7 @@ const Client2Page = () => {
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
+  const abortControllerRef = useRef(null)
   // Drag-and-drop for face cards
   const [draggedCardKey, setDraggedCardKey] = useState(null)
   const [dragOverCardKey, setDragOverCardKey] = useState(null)
@@ -1321,10 +1322,16 @@ const Client2Page = () => {
 
       console.log('[Client2] 📡 Calling brokerAPI.searchClients with payload:', payload)
 
+      // Cancel previous pending request to prevent API collision
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      abortControllerRef.current = new AbortController()
+
       // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
         // Fetch only percentage data
-        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
+        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true }, { signal: abortControllerRef.current.signal })
         const percentData = extractData(percentResponse)
         let percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
@@ -1370,7 +1377,7 @@ const Client2Page = () => {
         }
       } else {
         // Fetch only normal data
-        const normalResponse = await brokerAPI.searchClients(payload)
+        const normalResponse = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
         const normalData = extractData(normalResponse)
         let normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
