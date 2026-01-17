@@ -1775,6 +1775,8 @@ export default function Client2Module() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={(newFilters) => {
+          // Invalidate any in-flight requests from previous filter state
+          requestIdRef.current++
           setFilters(newFilters)
           setIsFilterOpen(false)
           setHasPendingFilterChanges(false)
@@ -1800,6 +1802,8 @@ export default function Client2Module() {
         isOpen={isIBFilterOpen}
         onClose={() => setIsIBFilterOpen(false)}
         onSelectIB={(ib) => {
+          // Invalidate any in-flight requests from previous filter state
+          requestIdRef.current++
           if (ib) {
             selectIB(ib)
           } else {
@@ -1835,6 +1839,8 @@ export default function Client2Module() {
         }))}
         activeGroupName={getActiveGroupFilter('client2')}
         onSelectGroup={(group) => {
+          // Invalidate any in-flight requests from previous filter state
+          requestIdRef.current++
           if (group === null) {
             setActiveGroupFilter('client2', null)
           } else {
