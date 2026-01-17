@@ -41,6 +41,7 @@ export default function Client2Module() {
   const [columnSearch, setColumnSearch] = useState('')
   const columnDropdownRef = useRef(null)
   const columnSelectorButtonRef = useRef(null)
+  const abortControllerRef = useRef(null)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -309,8 +310,14 @@ export default function Client2Module() {
         payload.sortOrder = sortDirection
       }
       
+      // Cancel previous pending request to prevent API collision
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      abortControllerRef.current = new AbortController()
+      
       // Use searchClients to get totals data with percentage parameter
-      const response = await brokerAPI.searchClients(payload)
+      const response = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
       
       // Extract data from response.data.data structure
       const responseData = response?.data || {}

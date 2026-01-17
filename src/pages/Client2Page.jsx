@@ -916,8 +916,17 @@ const Client2Page = () => {
 
   // Checkbox filters are now handled server-side via API (no client-side filtering needed)
 
+  // AbortController ref to cancel previous requests
+  const abortControllerRef = useRef(null)
+
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
+    // Cancel any previous pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController()
     console.log('[Client2] fetchClients called - silent:', silent, 'columnFilters:', columnFilters)
     try {
       if (!silent) {
@@ -1332,7 +1341,7 @@ const Client2Page = () => {
       // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
         // Fetch only percentage data
-        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true })
+        const percentResponse = await brokerAPI.searchClients({ ...payload, percentage: true }, { signal: abortControllerRef.current.signal })
         const percentData = extractData(percentResponse)
         const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
@@ -1347,7 +1356,7 @@ const Client2Page = () => {
         setError('')
       } else {
         // Fetch only normal data
-        const normalResponse = await brokerAPI.searchClients(payload)
+        const normalResponse = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
         const normalData = extractData(normalResponse)
         const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
