@@ -1850,6 +1850,9 @@ const Client2Page = () => {
   }, [clients, filterSearchQuery])
 
   const toggleColumnFilter = (columnKey, value) => {
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
+    
     setColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
       const newFilters = currentFilters.includes(value)
@@ -1866,6 +1869,9 @@ const Client2Page = () => {
   }
 
   const selectAllFilters = (columnKey) => {
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
+    
     const allValues = getUniqueColumnValues(columnKey)
     setColumnFilters(prev => ({
       ...prev,
@@ -1874,6 +1880,9 @@ const Client2Page = () => {
   }
 
   const deselectAllFilters = (columnKey) => {
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
+    
     setColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
@@ -1937,6 +1946,9 @@ const Client2Page = () => {
     if (!temp || temp.value1 === '' || temp.value1 == null) return
 
     if (temp.operator === 'between' && (temp.value2 === '' || temp.value2 == null)) return
+
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
 
     const filterConfig = {
       operator: temp.operator,
@@ -2005,6 +2017,9 @@ const Client2Page = () => {
   const applyTextFilter = (columnKey) => {
     const temp = textFilterTemp[columnKey]
     if (!temp || !temp.value) return
+
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
 
     const filterConfig = {
       operator: temp.operator,
@@ -2522,6 +2537,9 @@ const Client2Page = () => {
 
     setShowFilterDropdown(null)
     setCurrentPage(1)
+
+    // Invalidate any in-flight requests from previous filter state
+    requestIdRef.current++
 
     // Store filter in state - will be sent to API via fetchClients
     setColumnFilters(prev => {
@@ -3693,6 +3711,8 @@ const Client2Page = () => {
                               type="checkbox"
                               checked={quickFilters.hasFloating}
                               onChange={(e) => {
+                                // Invalidate any in-flight requests from previous filter state
+                                requestIdRef.current++
                                 setQuickFilters(prev => ({
                                   ...prev,
                                   hasFloating: e.target.checked
@@ -3708,6 +3728,8 @@ const Client2Page = () => {
                               type="checkbox"
                               checked={quickFilters.hasCredit}
                               onChange={(e) => {
+                                // Invalidate any in-flight requests from previous filter state
+                                requestIdRef.current++
                                 setQuickFilters(prev => ({
                                   ...prev,
                                   hasCredit: e.target.checked
@@ -3723,6 +3745,8 @@ const Client2Page = () => {
                               type="checkbox"
                               checked={quickFilters.noDeposit}
                               onChange={(e) => {
+                                // Invalidate any in-flight requests from previous filter state
+                                requestIdRef.current++
                                 setQuickFilters(prev => ({
                                   ...prev,
                                   noDeposit: e.target.checked
