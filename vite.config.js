@@ -4,8 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Use relative base in production so assets resolve under subpaths
-  base: process.env.NODE_ENV === 'production' ? './' : '/',
+  // Set base path for amari-capital-new deployment
+  base: '/amari-capital-new/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
