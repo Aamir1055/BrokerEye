@@ -1970,10 +1970,7 @@ const Client2Page = () => {
     setShowFilterDropdown(null)
     setCurrentPage(1)
 
-    // Immediately fetch full dataset with new filter
-    setTimeout(() => {
-      fetchClients(false)
-    }, 0)
+    // No direct fetch; useEffect on columnFilters will handle refetch
   }
 
   const initNumericFilterTemp = (columnKey) => {
@@ -2041,10 +2038,7 @@ const Client2Page = () => {
     setShowFilterDropdown(null)
     setCurrentPage(1)
 
-    // Immediately fetch full dataset with new filter
-    setTimeout(() => {
-      fetchClients(false)
-    }, 0)
+    // No direct fetch; useEffect on columnFilters will handle refetch
   }
 
   // Build payload for fetching column values using current table filters (server-side), excluding the current column's header filter
