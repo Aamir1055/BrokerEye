@@ -110,6 +110,7 @@ const Client2Page = () => {
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [filters, setFilters] = useState([])
   const [mt5Accounts, setMt5Accounts] = useState([])
@@ -943,8 +944,8 @@ const Client2Page = () => {
       }
 
       // Add search query if present - API will handle searching across all fields
-      if (searchQuery && searchQuery.trim()) {
-        payload.search = searchQuery.trim()
+      if (debouncedSearchQuery && debouncedSearchQuery.trim()) {
+        payload.search = debouncedSearchQuery.trim()
       }
 
       // Add filters if present
@@ -1415,7 +1416,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, searchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
 
   // Resume after successful token refresh
   useEffect(() => {
@@ -1434,7 +1435,7 @@ const Client2Page = () => {
   useEffect(() => {
     setColumnValues({})
     setSelectedColumnValues({})
-  }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, searchQuery, quickFilters])
+  }, [selectedIB, ibMT5Accounts, activeGroup, mt5Accounts, accountRangeMin, accountRangeMax, filters, debouncedSearchQuery, quickFilters])
 
   // Refetch when any percent face card visibility toggles (desktop only)
   useEffect(() => {
@@ -1468,6 +1469,14 @@ const Client2Page = () => {
       lifetimePnL: dataSource.reduce((sum, client) => sum + (parseFloat(client.lifetimePnL_percentage) || 0), 0)
     }
   }, [sortedClients])
+
+  // Debounce search query to prevent API collision
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce delay
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Fetch rebate totals from API
   const fetchRebateTotals = useCallback(async () => {
