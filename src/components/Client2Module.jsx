@@ -53,6 +53,7 @@ export default function Client2Module() {
   const viewAllRef = useRef(null)
   const itemsPerPage = 12
   const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearchInput, setDebouncedSearchInput] = useState('')
   const [showViewAllModal, setShowViewAllModal] = useState(false)
   // Persistent card order for mobile face cards
   const [cardOrder, setCardOrder] = useState([])
@@ -97,7 +98,16 @@ export default function Client2Module() {
     clearIBSelection()
     setActiveGroupFilter('client2', null)
     setSearchInput('')
+    setDebouncedSearchInput('')
   }, [])
+
+  // Debounce search input to prevent API collision during typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchInput(searchInput)
+    }, 300) // 300ms debounce delay
+    return () => clearTimeout(timer)
+  }, [searchInput])
 
   // Listen for global request to open Customize View from child modals
   useEffect(() => {
@@ -234,8 +244,8 @@ export default function Client2Module() {
       }
 
       // Add search query to payload for server-side filtering (like desktop)
-      if (searchInput && searchInput.trim()) {
-        payload.search = searchInput.trim()
+      if (debouncedSearchInput && debouncedSearchInput.trim()) {
+        payload.search = debouncedSearchInput.trim()
       }
 
       // Add group filter to payload if active
@@ -350,12 +360,18 @@ export default function Client2Module() {
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
+      // Ignore request cancellations caused by AbortController
+      const isCanceled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(error?.message || '')
+      if (isCanceled) {
+        console.log('[Client2Module] Request canceled (expected during rapid filtering)')
+        return
+      }
       console.error('Failed to fetch clients:', error)
       if (isInitialLoad) {
         setIsLoading(false)
       }
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, searchInput])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
   // Fetch rebate totals from API
   const fetchRebateTotals = useCallback(async () => {
@@ -376,7 +392,7 @@ export default function Client2Module() {
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [filters, searchInput, selectedIB, getActiveGroupFilter('client2')])
+  }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2')])
 
   // Initial fetch and periodic refresh every 1 second (matching desktop)
   useEffect(() => {
@@ -485,7 +501,7 @@ export default function Client2Module() {
       { label: addPercent('This Month Swap'), value: formatNum(t.thisMonthSwap || 0), unit: 'USD', numericValue: t.thisMonthSwap || 0 },
       { label: addPercent('Lifetime Swap'), value: formatNum(t.lifetimeSwap || 0), unit: 'USD', numericValue: t.lifetimeSwap || 0 }
     ]
-  }, [filteredClients, totals, rebateTotals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, searchInput, showPercent])
+  }, [filteredClients, totals, rebateTotals, totalClients, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, debouncedSearchInput, showPercent])
 
   // Initialize and reconcile saved card order whenever cards change
   useEffect(() => {
