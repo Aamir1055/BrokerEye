@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /amari-capital/
+  RewriteBase /amari-capital-new/
   
   # Enable proxy for WebSocket (must come BEFORE regular API proxy)
   RewriteCond %{HTTP:Upgrade} =websocket [NC]
@@ -8,7 +8,7 @@
   RewriteRule ^api/broker/ws(.*)$ ws://185.136.159.142:8080/api/broker/ws$1 [P,L]
 
   # Enable proxy for regular API requests
-  RewriteCond %{REQUEST_URI} ^/amari-capital/api/
+  RewriteCond %{REQUEST_URI} ^/amari-capital-new/api/
   RewriteRule ^api/(.*)$ http://185.136.159.142:8080/api/$1 [P,L]
   
   # Don't rewrite files or directories
