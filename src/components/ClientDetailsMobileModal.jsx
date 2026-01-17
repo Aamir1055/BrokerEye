@@ -1280,10 +1280,11 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
         </div>
 
-        {/* Search */}
-        <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
+        {/* Search - Hidden for Balance and Rules tabs */}
+        {activeTab !== 'funds' && activeTab !== 'rules' && (
+          <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
                 <path d="M9 9L12 12" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1351,6 +1352,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             )}
           </div>
         </div>
+        )}
 
         {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
@@ -1480,35 +1482,35 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
-                <div className="p-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
+                <div className="flex justify-center items-start p-3">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-100 w-full max-w-xs">
+                    <h3 className="text-[9px] font-semibold text-gray-900 mb-1.5 text-center">Balance</h3>
                     
                     {operationSuccess && (
-                      <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-1.5 bg-green-50 border-l-2 border-green-500 rounded-r p-1">
+                        <div className="flex items-center gap-0.5">
+                          <svg className="w-2 h-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-green-700 text-xs">{operationSuccess}</span>
+                          <span className="text-green-700 text-[8px]">{operationSuccess}</span>
                         </div>
                       </div>
                     )}
 
                     {operationError && (
-                      <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-1.5 bg-red-50 border-l-2 border-red-500 rounded-r p-1">
+                        <div className="flex items-center gap-0.5">
+                          <svg className="w-2 h-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-red-700 text-xs">{operationError}</span>
+                          <span className="text-red-700 text-[8px]">{operationError}</span>
                         </div>
                       </div>
                     )}
 
-                    <form onSubmit={handleFundsOperation} className="space-y-3">
+                    <form onSubmit={handleFundsOperation} className="space-y-1.5">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Operation Type</label>
+                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Operation Type</label>
                         <select
                           value={operationType}
                           onChange={(e) => {
@@ -1516,7 +1518,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                             setOperationSuccess('')
                             setOperationError('')
                           }}
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[9px] bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="deposit">Deposit Funds</option>
                           <option value="withdrawal">Withdraw Funds</option>
@@ -1526,31 +1528,31 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Amount ($)</label>
+                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Amount ($)</label>
                         <input
                           type="number"
                           step="0.01"
                           min="0.01"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Enter amount"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter Amount"
+                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[9px] text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Comment (Optional)</label>
+                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Comment (Optional)</label>
                         <textarea
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
-                          placeholder="Add a comment"
+                          placeholder="Add Comments for this Transaction"
                           rows="2"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[8px] text-gray-900 placeholder-gray-400 resize-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
-                      <div className="flex justify-end gap-2 pt-1">
+                      <div className="flex justify-center gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -1559,29 +1561,29 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                             setOperationSuccess('')
                             setOperationError('')
                           }}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                          className="px-2 py-0.5 text-[7px] font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                         >
                           Clear
                         </button>
                         <button
                           type="submit"
                           disabled={operationLoading}
-                          className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center gap-1.5"
+                          className="px-2 py-0.5 text-[7px] font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center justify-center gap-0.5"
                         >
                           {operationLoading ? (
                             <>
-                              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-1.5 w-1.5" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              Processing...
+                              <span>Processing...</span>
                             </>
                           ) : (
                             <>
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-1.5 h-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              Execute
+                              <span>Submit</span>
                             </>
                           )}
                         </button>

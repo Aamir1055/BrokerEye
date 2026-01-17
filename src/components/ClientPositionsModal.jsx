@@ -3548,7 +3548,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                      <thead className="bg-[#EFF6FF] border-b border-blue-200">
                         <tr>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
                           <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
@@ -3613,7 +3613,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Summary Cards - Fixed at Bottom */}
-  <div className="flex-shrink-0 p-1.5 bg-slate-50 border-t-2 border-blue-200">
+  <div className="">
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
             <div className="space-y-1">
@@ -3681,7 +3681,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 if (!row1.length && !row2.length) return null
 
                 return (
-                  <div className="space-y-2">
+                  <div className="space-y-2 px-3 pb-3">
                     <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row1.length || 1}, minmax(0, 1fr))` }}>
                       {row1.map((it, idx) => (
                         <div key={`r1-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
@@ -3722,7 +3722,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               if (netCardVisibility.net_sellPL) row.push({ label: 'Sell Floating Profit', value: formatCurrency(sellTotal), labelClass: sellTotal >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(sellTotal), accent: sellTotal >= 0 ? 'border-emerald-400' : 'border-red-400' })
               if (!row.length) return null
               return (
-                <div className="space-y-2">
+                <div className="space-y-2 px-3 pb-3">
                   <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
                     {row.map((it, idx) => (
                       <div key={`net-r-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
