@@ -574,12 +574,14 @@ const IBCommissionsPage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header with title and buttons on same line */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title + Actions */}
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
             {/* Title Section */}
             <div>
-              <h1 className="text-2xl font-bold text-[#1F2937]">IB Commissions</h1>
-              <p className="text-sm text-[#6B7280] mt-0.5">Manage introducing broker commission percentages</p>
+              <h1 className="text-xl font-bold text-[#1A1A1A]">IB Commissions</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Manage introducing broker commission percentages</p>
             </div>
             
             {/* Action Buttons - All on right side */}
@@ -587,9 +589,10 @@ const IBCommissionsPage = () => {
               {/* Note: Bulk Update button is in the search controls section below */}
             </div>
           </div>
+        </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start gap-1.5 mb-1.5 min-h-[20px]">
                 <div className="flex-1 min-w-0">
@@ -697,101 +700,101 @@ const IBCommissionsPage = () => {
             </div>
           </div>
 
-          {/* Search and Controls Bar */}
-          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              {/* Left: Search and Bulk Update */}
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search"
-                    className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                      title="Clear search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleOpenBulkModal}
-                  className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Bulk Update
-                </button>
-              </div>
-
-              {/* Right: Pagination */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === 1
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                <div className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#374151]">
-                  <input
-                    type="number"
-                    min="1"
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const page = Number(e.target.value);
-                      if (!isNaN(page) && page >= 1 && page <= totalPages) {
-                        setCurrentPage(page);
-                      }
-                    }}
-                    className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
-                  />
-                  <span className="text-[#9CA3AF]">/</span>
-                  <span className="text-[#6B7280]">{totalPages}</span>
-                </div>
-
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Main Content */}
           <div className="flex-1 overflow-hidden">
             <div className="h-full bg-white rounded-lg shadow-sm border border-[#E5E7EB] flex flex-col">
+            
+            {/* Search and Controls Bar - Inside table container */}
+            <div className="border-b border-[#E5E7EB] p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                {/* Left: Search and Bulk Update */}
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search"
+                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                        title="Clear search"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleOpenBulkModal}
+                    className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Bulk Update
+                  </button>
+                </div>
+
+                {/* Right: Pagination */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === 1
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+
+                  <div className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[#374151]">
+                    <input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const page = Number(e.target.value);
+                        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                          setCurrentPage(page);
+                        }
+                      }}
+                      className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                    />
+                    <span className="text-[#9CA3AF]">/</span>
+                    <span className="text-[#6B7280]">{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
             
             {/* Error Message */}
             {error && (

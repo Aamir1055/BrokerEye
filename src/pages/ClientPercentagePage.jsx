@@ -1167,29 +1167,18 @@ const ClientPercentagePage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
-          <div className="mb-4">
-            {/* Single Line Header Layout */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              
-              {/* Flex container for title and buttons */}
-              <div className="flex items-center justify-between flex-1">
-                {/* Title Section */}
-                <div>
-                  <h1 className="text-2xl font-bold text-[#1F2937]">Client Percentage</h1>
-                  <p className="text-sm text-[#6B7280] mt-0.5">Manage custom profit-sharing percentages</p>
-                </div>
-                
-                {/* Action Buttons - Groups on right side */}
-                <div className="flex items-center gap-2">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title + Actions */}
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
+            {/* Title Section */}
+            <div>
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Client Percentage</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Manage custom profit-sharing percentages</p>
+            </div>
+
+            {/* Action Buttons - All on right side */}
+            <div className="flex items-center gap-2">
                   <GroupSelector 
                     moduleName="clientpercentage" 
                     onCreateClick={() => {
@@ -1208,7 +1197,6 @@ const ClientPercentagePage = () => {
                 </div>
               </div>
             </div>
-          </div>
           {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-500 rounded-r p-4 shadow-sm">
               <p className="text-red-700">{error}</p>
@@ -1216,7 +1204,7 @@ const ClientPercentagePage = () => {
           )}
 
           {/* Summary Cards - Client2 Face Card Design */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-1.5">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-none">Total Clients</span>
@@ -1286,146 +1274,6 @@ const ClientPercentagePage = () => {
             </div>
           </div>
 
-          {/* Search and Controls Bar */}
-          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              {/* Left: Search and Columns */}
-              <div className="flex items-center gap-2 flex-1">
-                {/* Search Bar */}
-                <div className="relative flex-1 max-w-md" ref={searchRef}>
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4B5563]" fill="none" viewBox="0 0 18 18">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="Search"
-                    className="w-full h-10 pl-10 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                  {/* Search Icon (inside input) */}
-                  <button
-                    onClick={handleSearch}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
-                    title="Search"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                  
-                  {searchInput && (
-                    <button
-                      onClick={() => {
-                        setSearchInput('')
-                        setSearchQuery('')
-                        setCurrentPage(1)
-                      }}
-                      className="absolute right-10 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
-                      title="Clear search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                
-                {/* Columns Button (icon only) */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    title="Show/Hide Columns"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                      <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                    </svg>
-                  </button>
-                  {showColumnSelector && (
-                    <div
-                      ref={columnSelectorRef}
-                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
-                      style={{ maxHeight: '400px', overflowY: 'auto' }}
-                    >
-                      <div className="px-3 py-2 border-b border-[#F3F4F6]">
-                        <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
-                      </div>
-                      {allColumns.map(col => (
-                        <label
-                          key={col.key}
-                          className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visibleColumns[col.key]}
-                            onChange={() => toggleColumn(col.key)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                          />
-                          <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Pagination */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === 1
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const n = Number(e.target.value)
-                      if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                        handlePageChange(n)
-                      }
-                    }}
-                    className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
-                    aria-label="Current page"
-                  />
-                  <span className="text-[#9CA3AF]">/</span>
-                  <span className="text-[#6B7280]">{totalPages}</span>
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Table */}
           {clients.length === 0 && !loading ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
@@ -1435,6 +1283,135 @@ const ClientPercentagePage = () => {
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden flex flex-col flex-1">
+              {/* Search and Controls Bar - Inside table container */}
+              <div className="border-b border-[#E5E7EB] p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  {/* Left: Search and Columns */}
+                  <div className="flex items-center gap-2 flex-1">
+                    {/* Search Bar */}
+                    <div className="relative flex-1 max-w-md" ref={searchRef}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                      <input
+                        type="text"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        placeholder="Search"
+                        className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      />
+                      
+                      {searchInput && (
+                        <button
+                          onClick={() => {
+                            setSearchInput('')
+                            setSearchQuery('')
+                            setCurrentPage(1)
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                          title="Clear search"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Columns Button (icon only) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowColumnSelector(!showColumnSelector)}
+                        className="h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        title="Show/Hide Columns"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                          <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                        </svg>
+                      </button>
+                      {showColumnSelector && (
+                        <div
+                          ref={columnSelectorRef}
+                          className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                          style={{ maxHeight: '400px', overflowY: 'auto' }}
+                        >
+                          <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                            <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
+                          </div>
+                          {allColumns.map(col => (
+                            <label
+                              key={col.key}
+                              className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={visibleColumns[col.key]}
+                                onChange={() => toggleColumn(col.key)}
+                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                              />
+                              <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Pagination */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        currentPage === 1
+                          ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                          : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+
+                    <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const n = Number(e.target.value)
+                          if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                            handlePageChange(n)
+                          }
+                        }}
+                        className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                        aria-label="Current page"
+                      />
+                      <span className="text-[#9CA3AF]">/</span>
+                      <span className="text-[#6B7280]">{totalPages}</span>
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                        currentPage === totalPages
+                          ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                          : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="overflow-y-auto flex-1">
                 <table className="min-w-full divide-y divide-[#E5E7EB]">
                 <thead className="bg-blue-600 sticky top-0 z-10" style={{ backgroundColor: '#2563eb' }}>
@@ -1586,73 +1563,108 @@ const ClientPercentagePage = () => {
 
       {/* Edit Modal */}
       {showEditModal && selectedClient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-xl w-full overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-8 py-5 bg-blue-600 border-b border-blue-700">
+              <h2 className="text-xl font-semibold text-white">
                 Set Custom Percentage
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Client Login: <span className="font-medium text-gray-900">{selectedClient.client_login}</span>
-              </p>
-            </div>
-            
-            <div className="px-6 py-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Percentage (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={editPercentage}
-                  onChange={(e) => setEditPercentage(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="Enter percentage (0-100)"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Comment
-                </label>
-                <textarea
-                  value={editComment}
-                  onChange={(e) => setEditComment(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  placeholder="Optional comment about this percentage"
-                />
-              </div>
-            </div>
-            
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              </h2>
               <button
                 onClick={handleCancelEdit}
                 disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="text-white/80 hover:text-white transition-colors disabled:opacity-50"
               >
-                Cancel
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              <button
-                onClick={handleSavePercentage}
-                disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Percentage'
-                )}
-              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-8 py-6">
+              <div className="space-y-6">
+                {/* Client Information */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Client Login
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedClient.client_login}
+                    readOnly
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Percentage Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Percentage (%)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={editPercentage}
+                      onChange={(e) => setEditPercentage(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-4 py-2.5 pr-10 bg-white border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                      required
+                      disabled={saving}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-gray-500">Value must be between 0 and 100</p>
+                </div>
+
+                {/* Comment Textarea */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comment
+                  </label>
+                  <textarea
+                    value={editComment}
+                    onChange={(e) => setEditComment(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 resize-none"
+                    placeholder="Optional comment about this percentage"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center gap-3 pt-6 mt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  className="flex-1 px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePercentage}
+                  disabled={saving}
+                  className="flex-1 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  {saving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </span>
+                  ) : (
+                    'Save Percentage'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
