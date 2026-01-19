@@ -311,7 +311,7 @@ const PositionsPage = () => {
     const isTimeColumn = columnKey === 'timeUpdate'
     const originalTimestamps = new Map() // Store original timestamps for sorting
     
-    displayPositions.forEach(position => {
+    cachedPositions.forEach(position => {
       let value = position[columnKey]
       
       // Format timeUpdate (epoch) to dd/mm/yyyy hh:mm:ss for display in filter
@@ -1092,11 +1092,11 @@ const PositionsPage = () => {
     return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
   }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
 
-  // Memoized summary statistics - based on filtered positions (always use USD)
+  // Memoized summary statistics - based on filtered positions
   const summaryStats = useMemo(() => {
     const totalPositions = ibFilteredPositions.length
     // Invert profit values to show broker perspective (client loss = broker gain)
-    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_usd || 0), 0)
+    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
     const totalFloatingProfitPercentage = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
@@ -1165,16 +1165,33 @@ const PositionsPage = () => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!isMountedRef.current) return
+      
+      // Check if clicking outside main filter dropdown
       if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
         if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
           setShowFilterDropdown(null)
+          setShowNumberFilterDropdown(null)
+        }
+      }
+      
+      // Check if clicking outside number filter dropdown (when it's open independently)
+      if (showNumberFilterDropdown && !showFilterDropdown) {
+        const numberFilterElements = document.querySelectorAll('[data-number-filter]')
+        let clickedInside = false
+        numberFilterElements.forEach(el => {
+          if (el.contains(event.target)) {
+            clickedInside = true
+          }
+        })
+        if (!clickedInside) {
+          setShowNumberFilterDropdown(null)
         }
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, showNumberFilterDropdown])
   
   // Calculate NET positions using useMemo - use cachedPositions for all data
   const netPositionsData = useMemo(() => {
@@ -1276,7 +1293,7 @@ const PositionsPage = () => {
       return parts[0] || s
     }
 
-    displayPositions.forEach(pos => {
+    cachedPositions.forEach(pos => {
       const login = pos.login
       const symbol = pos.symbol
       if (login == null || !symbol) return
@@ -1861,6 +1878,7 @@ const PositionsPage = () => {
                     {/* Custom Filter Form - Appears directly when clicking Number Filters */}
                     {showNumberFilterDropdown === columnKey && (
                       <div
+                        data-number-filter
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: (() => {
@@ -1906,11 +1924,39 @@ const PositionsPage = () => {
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                             <input
-                              type="number"
-                              step="any"
-                              placeholder="Enter value"
-                              value={customFilterValue1}
-                              onChange={(e) => setCustomFilterValue1(e.target.value)}
+                              type={columnKey === 'timeUpdate' ? 'datetime-local' : 'number'}
+                              step={columnKey === 'timeUpdate' ? '1' : 'any'}
+                              placeholder={columnKey === 'timeUpdate' ? 'Select date and time' : 'Enter value'}
+                              value={columnKey === 'timeUpdate' && customFilterValue1 ? 
+                                (() => {
+                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                  const timestamp = Number(customFilterValue1)
+                                  if (isNaN(timestamp)) return customFilterValue1
+                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  const hours = String(date.getHours()).padStart(2, '0')
+                                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                                  const seconds = String(date.getSeconds()).padStart(2, '0')
+                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                })() 
+                                : customFilterValue1
+                              }
+                              onChange={(e) => {
+                                if (columnKey === 'timeUpdate') {
+                                  // Convert datetime-local to Unix timestamp
+                                  const dateValue = e.target.value
+                                  if (dateValue) {
+                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                    setCustomFilterValue1(String(timestamp))
+                                  } else {
+                                    setCustomFilterValue1('')
+                                  }
+                                } else {
+                                  setCustomFilterValue1(e.target.value)
+                                }
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
@@ -1930,11 +1976,39 @@ const PositionsPage = () => {
                             <div>
                               <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                               <input
-                                type="number"
-                                step="any"
-                                placeholder="Enter value"
-                                value={customFilterValue2}
-                                onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                type={columnKey === 'timeUpdate' ? 'datetime-local' : 'number'}
+                                step={columnKey === 'timeUpdate' ? '1' : 'any'}
+                                placeholder={columnKey === 'timeUpdate' ? 'Select date and time' : 'Enter value'}
+                                value={columnKey === 'timeUpdate' && customFilterValue2 ? 
+                                  (() => {
+                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                    const timestamp = Number(customFilterValue2)
+                                    if (isNaN(timestamp)) return customFilterValue2
+                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                    const year = date.getFullYear()
+                                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                                    const day = String(date.getDate()).padStart(2, '0')
+                                    const hours = String(date.getHours()).padStart(2, '0')
+                                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                                    const seconds = String(date.getSeconds()).padStart(2, '0')
+                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                  })() 
+                                  : customFilterValue2
+                                }
+                                onChange={(e) => {
+                                  if (columnKey === 'timeUpdate') {
+                                    // Convert datetime-local to Unix timestamp
+                                    const dateValue = e.target.value
+                                    if (dateValue) {
+                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                      setCustomFilterValue2(String(timestamp))
+                                    } else {
+                                      setCustomFilterValue2('')
+                                    }
+                                  } else {
+                                    setCustomFilterValue2(e.target.value)
+                                  }
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
@@ -1982,7 +2056,16 @@ const PositionsPage = () => {
                         }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                          if (showNumberFilterDropdown === columnKey) {
+                            setShowNumberFilterDropdown(null)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          } else {
+                            setShowNumberFilterDropdown(columnKey)
+                            setCustomFilterColumn(columnKey)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
                         }}
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
@@ -1997,7 +2080,7 @@ const PositionsPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 224
+                              const dropdownWidth = 256
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -2007,14 +2090,17 @@ const PositionsPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
+
+                      {/* Text Filter Form - Appears directly when clicking Text Filters */}
                       {showNumberFilterDropdown === columnKey && (
-                        <div 
-                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
+                        <div
+                          data-number-filter
+                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 224 // w-56 in pixels
+                              const dropdownWidth = 256 // 16rem in pixels
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -2022,22 +2108,68 @@ const PositionsPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 224
+                              const dropdownWidth = 256
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                             })(),
-                            zIndex: 10000000
+                            zIndex: 10000001
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="text-[11px] text-slate-700 py-1">
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('equal'); setShowCustomFilterModal(true) }}>Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('notEqual'); setShowCustomFilterModal(true) }}>Not Equal...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('startsWith'); setShowCustomFilterModal(true) }}>Starts With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('endsWith'); setShowCustomFilterModal(true) }}>Ends With...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('contains'); setShowCustomFilterModal(true) }}>Contains...</div>
-                            <div className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors" onClick={(e) => { e.stopPropagation(); setCustomFilterColumn(columnKey); setCustomFilterType('doesNotContain'); setShowCustomFilterModal(true) }}>Does Not Contain...</div>
+                          <div className="p-3 space-y-3">
+                            {/* Operator Dropdown */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                              <select
+                                value={customFilterType}
+                                onChange={(e) => setCustomFilterType(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              >
+                                <option value="equal">Equal...</option>
+                                <option value="notEqual">Not Equal...</option>
+                                <option value="startsWith">Starts With...</option>
+                                <option value="endsWith">Ends With...</option>
+                                <option value="contains">Contains...</option>
+                                <option value="doesNotContain">Does Not Contain...</option>
+                              </select>
+                            </div>
+
+                            {/* Value Input */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                              <input
+                                type="text"
+                                placeholder="Enter value"
+                                value={customFilterValue1}
+                                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                style={{ fontWeight: 400 }}
+                              />
+                            </div>
+
+                            {/* Apply Button */}
+                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => {
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }}
+                                disabled={!customFilterValue1}
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              >
+                                OK
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2123,22 +2255,22 @@ const PositionsPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
+                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      clearColumnFilter(columnKey)
+                      setShowFilterDropdown(null)
                     }}
-                    className="px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
-                    Clear
+                    Close
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
                     OK
                   </button>
@@ -2171,16 +2303,16 @@ const PositionsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
 
-      <main className={`flex-1 p-4 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
-          <div className="mb-4">
-          {/* Header with title and buttons on same line */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title + Actions */}
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
             {/* Title Section */}
             <div>
-              <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
-              <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Positions</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
             </div>
 
             {/* Action Buttons - All on right side */}
@@ -2204,7 +2336,7 @@ const PositionsPage = () => {
               {/* NET Position Toggle */}
               <button
                 onClick={() => { setShowNetPositions((v)=>{const nv=!v; if (nv) setShowClientNet(false); return nv}); }}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showNetPositions 
                     ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2220,7 +2352,7 @@ const PositionsPage = () => {
               {/* Client NET Toggle */}
               <button
                 onClick={() => { setShowClientNet((v)=>{const nv=!v; if (nv) setShowNetPositions(false); return nv}); }}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showClientNet 
                     ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2236,7 +2368,7 @@ const PositionsPage = () => {
               {/* Date Filter Button */}
               <button
                 onClick={() => setIsDateFilterOpen(true)}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   dateFilter 
                     ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2254,7 +2386,7 @@ const PositionsPage = () => {
                 <button
                   ref={displayButtonRef}
                   onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium text-[#374151]"
+                  className="h-8 px-2.5 rounded-md border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium text-[#374151]"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -2312,7 +2444,7 @@ const PositionsPage = () => {
               {/* Export CSV */}
               <button
                 onClick={handleExportPositions}
-                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                className="h-8 w-8 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                 title="Export current positions to CSV"
               >
                 <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2335,7 +2467,7 @@ const PositionsPage = () => {
                   }, 3000)
                 }}
                 disabled={isRefreshing}
-                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
+                className={`h-8 w-8 rounded-md border shadow-sm flex items-center justify-center transition-all ${
                   isRefreshing 
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
@@ -2353,6 +2485,7 @@ const PositionsPage = () => {
               </button>
             </div>
           </div>
+        </div>
 
           {/* Stats Summary - Client2 Face Card Design */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
@@ -3523,167 +3656,168 @@ const PositionsPage = () => {
               </div>
             </div>
           ) : <>
-          {/* Search and Controls Bar */}
-          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              {/* Left: Search and Columns */}
-              <div className="flex items-center gap-2 flex-1">
-                {/* Search Bar */}
-                <div className="relative flex-1 max-w-md" ref={searchRef}>
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      setShowSuggestions(true)
-                      setCurrentPage(1)
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    onKeyDown={handleSearchKeyDown}
-                    placeholder="Search"
-                    className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery('')
-                        setShowSuggestions(false)
+          
+          {/* Positions Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0 mb-4">
+            {/* Search and Controls Bar - Inside table container */}
+            <div className="border-b border-[#E5E7EB] p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                {/* Left: Search and Columns */}
+                <div className="flex items-center gap-2 flex-1">
+                  {/* Search Bar */}
+                  <div className="relative flex-1 max-w-md" ref={searchRef}>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value)
+                        setShowSuggestions(true)
+                        setCurrentPage(1)
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                      title="Clear search"
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      onKeyDown={handleSearchKeyDown}
+                      placeholder="Search"
+                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('')
+                          setShowSuggestions(false)
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                        title="Clear search"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                    
+                    {/* Suggestions Dropdown - rendered when visible; show message if empty */}
+                    {showSuggestions ? (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
+                        {getSuggestions().length === 0 && (
+                          <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
+                        )}
+                        {getSuggestions().length > 0 && (
+                          <div>
+                            {getSuggestions().map((suggestion, index) => (
+                              <button
+                                key={index}
+                                onClick={() => handleSuggestionClick(suggestion)}
+                                className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                  
+                  {/* Columns Button (icon only) */}
+                  <div className="relative" ref={columnSelectorRef}>
+                    <button
+                      onClick={() => setShowColumnSelector(!showColumnSelector)}
+                      className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      title="Show/Hide Columns"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                        <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                       </svg>
                     </button>
-                  )}
-                  
-                  {/* Suggestions Dropdown - rendered when visible; show message if empty */}
-                  {showSuggestions ? (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                      {getSuggestions().length === 0 && (
-                        <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                      )}
-                      {getSuggestions().length > 0 && (
-                        <div>
-                          {getSuggestions().map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(suggestion)}
-                              className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
+                    {showColumnSelector && (
+                      <div
+                        className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                        style={{ maxHeight: '400px', overflowY: 'auto' }}
+                      >
+                        <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                          <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
                         </div>
-                      )}
-                    </div>
-                  ) : null}
+                        {allColumns.map(col => (
+                          <label
+                            key={col.key}
+                            className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[col.key]}
+                              onChange={() => toggleColumn(col.key)}
+                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                {/* Columns Button (icon only) */}
-                <div className="relative" ref={columnSelectorRef}>
+
+                {/* Right: Pagination */}
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    title="Show/Hide Columns"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === 1
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                      <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                      <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  {showColumnSelector && (
-                    <div
-                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
-                      style={{ maxHeight: '400px', overflowY: 'auto' }}
-                    >
-                      <div className="px-3 py-2 border-b border-[#F3F4F6]">
-                        <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
-                      </div>
-                      {allColumns.map(col => (
-                        <label
-                          key={col.key}
-                          className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visibleColumns[col.key]}
-                            onChange={() => toggleColumn(col.key)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                          />
-                          <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+
+                  <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const n = Number(e.target.value)
+                        if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                          handlePageChange(n)
+                        }
+                      }}
+                      className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                      aria-label="Current page"
+                    />
+                    <span className="text-[#9CA3AF]">/</span>
+                    <span className="text-[#6B7280]">{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
-              </div>
-
-              {/* Right: Pagination */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === 1
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const n = Number(e.target.value)
-                      if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                        handlePageChange(n)
-                      }
-                    }}
-                    className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
-                    aria-label="Current page"
-                  />
-                  <span className="text-[#9CA3AF]">/</span>
-                  <span className="text-[#6B7280]">{totalPages}</span>
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
               </div>
             </div>
-          </div>
 
-          {/* Positions Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0">
-            <div className="overflow-y-scroll overflow-x-auto flex-1" style={{
+            <div className="overflow-y-scroll overflow-x-auto flex-1 pb-10" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
               scrollbarColor: '#CBD5E0 #F7FAFC',
-              maxHeight: '60vh'
+              maxHeight: '55vh'
             }}>
               <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-blue-600 sticky top-0 shadow-md" style={{ zIndex: 10 }}>
@@ -3777,7 +3911,7 @@ const PositionsPage = () => {
                           )}
                           {effectiveCols.action && (
                             <td className="px-2 py-1.5 text-sm whitespace-nowrap">
-                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getActionChipClasses(p.action)}`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[12px] font-semibold ${getActionChipClasses(p.action)}`}>
                                 {getActionLabel(p.action)}
                               </span>
                             </td>
@@ -3807,9 +3941,9 @@ const PositionsPage = () => {
                           {effectiveCols.profit && (
                             <td className="px-2 py-1.5 text-sm whitespace-nowrap">
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
-                                (p.profit_usd || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
-                                {formatNumber(p.profit_usd || 0, 2)}
+                                {formatNumber(adjustValueForSymbol(p.profit, p.symbol), 2)}
                               </span>
                             </td>
                           )}
@@ -3823,9 +3957,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
-                              {formatNumber(p.storage_usd || 0, 2)}
-                            </td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.storage, p.symbol), 2)}</td>
                           )}
                           {effectiveCols.storagePercentage && (
                             <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
@@ -3854,9 +3986,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
-                              {formatNumber(p.commission_usd || 0, 2)}
-                            </td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.commission, p.symbol), 2)}</td>
                           )}
                         </tr>
                       )
@@ -3867,7 +3997,6 @@ const PositionsPage = () => {
           </div>
           </>
           }
-        </div>
         </div>
       </main>
       

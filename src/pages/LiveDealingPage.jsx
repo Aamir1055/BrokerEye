@@ -1612,29 +1612,18 @@ const LiveDealingPage = () => {
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
-          <div className="mb-4">
-            {/* Single Line Header Layout */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              
-              {/* Flex container for title and buttons */}
-              <div className="flex items-center justify-between flex-1">
-                {/* Title Section */}
-                <div>
-                  <h1 className="text-2xl font-bold text-[#1F2937]">Live Dealing</h1>
-                  <p className="text-sm text-[#6B7280] mt-0.5">Real-time trading activity monitor</p>
-                </div>
-                
-                {/* Action Buttons - All on right side */}
-                <div className="flex items-center gap-2">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title + Actions */}
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
+            {/* Title Section */}
+            <div>
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Live Dealing</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Real-time trading activity monitor</p>
+            </div>
+
+            {/* Action Buttons - All on right side */}
+            <div className="flex items-center gap-2">
                   <IBSelector />
                   
                   <GroupSelector 
@@ -1653,7 +1642,7 @@ const LiveDealingPage = () => {
                   <div className="relative" ref={filterButtonRef}>
                     <button
                       onClick={() => setShowFilterMenu(!showFilterMenu)}
-                      className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
+                      className="h-8 px-2.5 rounded-md border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1747,7 +1736,7 @@ const LiveDealingPage = () => {
                   <div className="relative" ref={moduleFilterRef}>
                     <button
                       onClick={() => setShowModuleFilter(!showModuleFilter)}
-                      className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
+                      className="h-8 px-2.5 rounded-md border border-[#E5E7EB] bg-white text-[#374151] hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 text-xs font-medium shadow-sm"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1802,10 +1791,9 @@ const LiveDealingPage = () => {
                 </div>
               </div>
             </div>
-          </div>
 
           {/* Summary Cards - Client2 Face Card Design */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
                 <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">

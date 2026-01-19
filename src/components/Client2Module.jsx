@@ -36,7 +36,6 @@ export default function Client2Module() {
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
-  const [selectedClientDefaultTab, setSelectedClientDefaultTab] = useState('positions')
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false)
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
   const [columnSearch, setColumnSearch] = useState('')
@@ -663,7 +662,10 @@ export default function Client2Module() {
   const percentageColumns = new Set([
     'balance', 'credit', 'equity', 'profit', 'marginFree', 'margin',
     'assets', 'storage', 'pnl', 'dailyDeposit', 'dailyWithdrawal',
-    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL'
+    'lifetimePnL', 'thisMonthPnL', 'thisWeekPnL',
+    'lifetimeCommission', 'thisMonthCommission', 'thisWeekCommission',
+    'lifetimeCorrection', 'thisMonthCorrection', 'thisWeekCorrection',
+    'lifetimeSwap', 'thisMonthSwap', 'thisWeekSwap'
   ])
 
   // Map base column keys to their percentage field names from API
@@ -681,7 +683,16 @@ export default function Client2Module() {
     'dailyWithdrawal': 'dailyWithdrawal_percentage',
     'lifetimePnL': 'lifetimePnL_percentage',
     'thisMonthPnL': 'thisMonthPnL_percentage',
-    'thisWeekPnL': 'thisWeekPnL_percentage'
+    'thisWeekPnL': 'thisWeekPnL_percentage',
+    'lifetimeCommission': 'lifetimeCommission_percentage',
+    'thisMonthCommission': 'thisMonthCommission_percentage',
+    'thisWeekCommission': 'thisWeekCommission_percentage',
+    'lifetimeCorrection': 'lifetimeCorrection_percentage',
+    'thisMonthCorrection': 'thisMonthCorrection_percentage',
+    'thisWeekCorrection': 'thisWeekCorrection_percentage',
+    'lifetimeSwap': 'lifetimeSwap_percentage',
+    'thisMonthSwap': 'thisMonthSwap_percentage',
+    'thisWeekSwap': 'thisWeekSwap_percentage'
   }
 
   // Helper function to get the value from client object based on percentage mode
@@ -1111,6 +1122,11 @@ export default function Client2Module() {
 
   // Handle column sorting
   const handleSort = (columnKey) => {
+    // Prevent multiple sort clicks while data is loading
+    if (isLoading) {
+      return
+    }
+
     if (sortColumn === columnKey) {
       // Toggle direction if same column
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
@@ -1193,7 +1209,9 @@ export default function Client2Module() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  // IB Commissions navigation removed
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -1232,8 +1250,8 @@ export default function Client2Module() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
-        <div className="pt-5 pb-4">
-          <div className="flex items-center justify-between px-4">
+        <div className="pt-5 pb-4 px-4">
+          <div className="flex items-center justify-between">
             {/* Left side - Filter, %, Download buttons */}
             <div className="flex items-center gap-2">
               <button 
@@ -1368,10 +1386,10 @@ export default function Client2Module() {
         </div>
 
         {/* Face Cards Carousel */}
-        <div className="pb-2">
+        <div className="pb-2 pl-5">
           <div 
             ref={scrollContainerRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
             {orderedCards.map((card, i) => (
                 <div 
@@ -1426,94 +1444,100 @@ export default function Client2Module() {
               </div>
             ))}
           </div>
-        </div>        {/* Search and action buttons */}
-        <div className="pb-3">
-          <div className="flex items-center gap-1 px-2">
-            {/* Search box - compact, edge-to-edge */}
-            <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
-                <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-                <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <input 
-                placeholder="Search" 
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit" 
-              />
-            </div>
-            
-            {/* Column selector button */}
-            <div className="relative" ref={columnSelectorButtonRef}>
+        </div>
+
+        {/* Search Bar and Table Container */}
+        <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden mx-4">
+          {/* Search and Controls Bar */}
+          <div className="border-b border-[#E5E7EB] p-4">
+            <div className="flex items-center gap-2">
+              {/* Search box */}
+              <div className="flex-1 min-w-0 h-10 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0 text-[#9CA3AF]">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input 
+                  placeholder="Search" 
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="flex-1 min-w-0 text-sm text-[#1F2937] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit focus:ring-0" 
+                />
+              </div>
+              
+              {/* Column selector button */}
+              <div className="relative" ref={columnSelectorButtonRef}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsColumnSelectorOpen(true)
+                  }}
+                  className="h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  title="Show/Hide Columns"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                    <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Previous button */}
               <button 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsColumnSelectorOpen(true)
-                }}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className={`h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                  currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
+                }`}
               >
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                  <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                  <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  <path d="M12 14L8 10L12 6" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {/* Page indicator */}
+              <div className="flex items-center gap-1.5 text-sm text-[#4B5563]">
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => {
+                    const n = Number(e.target.value)
+                    if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                      setCurrentPage(n)
+                    }
+                  }}
+                  className="w-12 h-8 border border-[#E5E7EB] rounded-md text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Current page"
+                />
+                <span className="text-[#9CA3AF]">/</span>
+                <span>{totalPages}</span>
+              </div>
+
+              {/* Next button */}
+              <button 
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className={`h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                  currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
+                }`}
+              >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 6L12 10L8 14" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
-
-            {/* Previous button */}
-            <button 
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              className={`w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
-                currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
-              }`}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-
-            {/* Page indicator */}
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                value={currentPage}
-                onChange={(e) => {
-                  const n = Number(e.target.value)
-                  if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                    setCurrentPage(n)
-                  }
-                }}
-                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
-                aria-label="Current page"
-              />
-              <span className="text-[#9CA3AF]">/</span>
-              <span>{totalPages}</span>
-            </div>
-
-            {/* Next button */}
-            <button 
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className={`w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 ${
-                currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
-              }`}
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
-        </div>
 
-        {/* Table area */}
-        <div className="relative">
-          <div className="w-full overflow-x-auto overflow-y-visible" style={{
+          {/* Table area */}
+          <div className="relative">
+            <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
-            scrollbarColor: '#CBD5E0 #F7FAFC'
+            scrollbarColor: '#CBD5E0 #F7FAFC',
+            paddingRight: '16px',
+            paddingLeft: '4px'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
@@ -1522,7 +1546,7 @@ export default function Client2Module() {
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-start px-1 gap-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                     style={{
                       border: 'none', 
                       outline: 'none', 
@@ -1623,12 +1647,7 @@ export default function Client2Module() {
                         {visibleColumnsList.map((col, colIdx) => (
                           <div 
                             key={col.key}
-                            onClick={() => {
-                              if (col.key === 'login') {
-                                setSelectedClient(client)
-                                setSelectedClientDefaultTab && setSelectedClientDefaultTab('positions')
-                              }
-                            }}
+                            onClick={() => col.key === 'login' && setSelectedClient(client)}
                             className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap ${
                               col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
                             }`}
@@ -1703,6 +1722,9 @@ export default function Client2Module() {
           </div>
         </div>
       </div>
+      {/* End of Search Bar and Table Container */}
+      </div>
+      {/* End of Main Content */}
 
       {/* CustomizeView Modal (shared) */}
       <CustomizeViewModal
@@ -2239,7 +2261,6 @@ export default function Client2Module() {
       {selectedClient && (
         <ClientDetailsMobileModal
           client={selectedClient}
-          defaultTab={selectedClientDefaultTab}
           onClose={() => setSelectedClient(null)}
           allPositionsCache={cachedPositions}
           allOrdersCache={orders}

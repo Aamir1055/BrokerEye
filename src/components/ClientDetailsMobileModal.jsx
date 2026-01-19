@@ -25,8 +25,8 @@ const formatDateToValue = (displayStr) => {
   return `${fullYear}-${month}-${day}`
 }
 
-const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [], defaultTab = 'positions' }) => {
-  const [activeTab, setActiveTab] = useState(defaultTab)
+const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
+  const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
   const [netPositions, setNetPositions] = useState([])
@@ -62,12 +62,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   // Refs for date inputs
   const fromDateInputRef = useRef(null)
   const toDateInputRef = useRef(null)
-  
-  // Ref for pending orders section
-  const pendingOrdersRef = useRef(null)
-  
-  // Track if deals have been auto-loaded on first tab switch
-  const hasAutoLoadedDeals = useRef(false)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -157,17 +151,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   // Reset pagination when tab changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [activeTab])
-
-  // Auto-load deals when switching to deals tab for the first time (like desktop modal)
-  useEffect(() => {
-    if (activeTab === 'deals' && !hasAutoLoadedDeals.current) {
-      hasAutoLoadedDeals.current = true
-      // If deals haven't been loaded yet, load them with default "Today" filter
-      if (!hasAppliedFilter || currentDateFilter.from === 0) {
-        handleQuickFilter('Today')
-      }
-    }
   }, [activeTab])
 
   // Fetch deals when page changes in deals tab
@@ -373,11 +356,19 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         winRate: dealStats?.winRate ?? 0
       })
 
-      // Set default date range to Today (but don't fetch deals yet - wait for tab switch like desktop)
+      // Set default date range to Today
       const today = new Date()
       const todayStr = today.toISOString().split('T')[0]
       setFromDate(formatDateToDisplay(todayStr))
       setToDate(formatDateToDisplay(todayStr))
+      
+      // Fetch deals for today by default, passing positionsData so it can calculate stats correctly
+      const startOfDay = new Date(today)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(today)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1, positionsData)
       
       setLoading(false)
     } catch (error) {
@@ -514,22 +505,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     setHasAppliedFilter(false)
     setQuickFilter('Today')
     handleQuickFilter('Today')
-  }
-
-  // Scroll to pending orders section
-  const scrollToPendingOrders = () => {
-    if (pendingOrdersRef.current) {
-      // Get the scroll container (the parent div with overflow)
-      const scrollContainer = pendingOrdersRef.current.closest('.overflow-y-auto')
-      if (scrollContainer) {
-        const elementTop = pendingOrdersRef.current.offsetTop
-        // Scroll to the element with small offset to show the heading fully without cutting it off
-        scrollContainer.scrollTo({
-          top: elementTop - 60,
-          behavior: 'smooth'
-        })
-      }
-    }
   }
 
   const fetchAvailableRules = async () => {
@@ -942,7 +917,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {/* Pending Orders Section */}
             {pendingOrders.length > 0 && (
               <>
-                <tr className="bg-gray-100" ref={pendingOrdersRef}>
+                <tr className="bg-gray-100">
                   <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-2">
                     <div className="text-sm font-semibold text-gray-700">Pending Orders</div>
                   </td>
@@ -1226,10 +1201,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1239,7 +1214,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1249,7 +1224,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1257,34 +1232,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             >
               Deals ({hasAppliedFilter ? totalDealsCount : 0})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
-                activeTab === 'funds'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Balance
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`shrink-0 whitespace-nowrap py-1 px-2 rounded-md text-[11px] font-medium transition-colors ${
-                activeTab === 'rules'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Rules
-            </button>
           </div>
         </div>
 
-        {/* Search - Hidden for Balance and Rules tabs */}
-        {activeTab !== 'funds' && activeTab !== 'rules' && (
-          <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
+        {/* Search */}
+        <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                 <circle cx="6" cy="6" r="4" stroke="#9CA3AF" strokeWidth="1.5"/>
                 <path d="M9 9L12 12" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1352,7 +1306,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             )}
           </div>
         </div>
-        )}
 
         {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
@@ -1449,7 +1402,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         )}
 
         {/* Table Content - Scrollable Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50 relative">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -1464,53 +1417,37 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
               
-              {/* Floating Orders Button - Only show in positions tab when there are pending orders */}
-              {activeTab === 'positions' && orders.length > 0 && (
-                <button
-                  onClick={scrollToPendingOrders}
-                  className="fixed bottom-40 right-6 h-9 px-3 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center gap-1.5 hover:scale-105"
-                  title="Scroll to Pending Orders"
-                  style={{ zIndex: 9999 }}
-                >
-                  <span className="text-[11px] font-semibold whitespace-nowrap">Orders ({orders.length})</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-lg">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <polyline points="19 12 12 19 5 12"></polyline>
-                  </svg>
-                </button>
-              )}
-              
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
-                <div className="flex justify-center items-start p-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-100 w-full max-w-xs">
-                    <h3 className="text-[9px] font-semibold text-gray-900 mb-1.5 text-center">Balance</h3>
+                <div className="p-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                     
                     {operationSuccess && (
-                      <div className="mb-1.5 bg-green-50 border-l-2 border-green-500 rounded-r p-1">
-                        <div className="flex items-center gap-0.5">
-                          <svg className="w-2 h-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-green-700 text-[8px]">{operationSuccess}</span>
+                          <span className="text-green-700 text-xs">{operationSuccess}</span>
                         </div>
                       </div>
                     )}
 
                     {operationError && (
-                      <div className="mb-1.5 bg-red-50 border-l-2 border-red-500 rounded-r p-1">
-                        <div className="flex items-center gap-0.5">
-                          <svg className="w-2 h-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-red-700 text-[8px]">{operationError}</span>
+                          <span className="text-red-700 text-xs">{operationError}</span>
                         </div>
                       </div>
                     )}
 
-                    <form onSubmit={handleFundsOperation} className="space-y-1.5">
+                    <form onSubmit={handleFundsOperation} className="space-y-3">
                       <div>
-                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Operation Type</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Operation Type</label>
                         <select
                           value={operationType}
                           onChange={(e) => {
@@ -1518,7 +1455,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                             setOperationSuccess('')
                             setOperationError('')
                           }}
-                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[9px] bg-white text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
                         >
                           <option value="deposit">Deposit Funds</option>
                           <option value="withdrawal">Withdraw Funds</option>
@@ -1528,31 +1465,31 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                       </div>
 
                       <div>
-                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Amount ($)</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Amount ($)</label>
                         <input
                           type="number"
                           step="0.01"
                           min="0.01"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Enter Amount"
-                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[9px] text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter amount"
+                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[8px] font-medium text-gray-700 mb-0.5">Comment (Optional)</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Comment (Optional)</label>
                         <textarea
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
-                          placeholder="Add Comments for this Transaction"
+                          placeholder="Add a comment"
                           rows="2"
-                          className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-[8px] text-gray-900 placeholder-gray-400 resize-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
                         />
                       </div>
 
-                      <div className="flex justify-center gap-1.5 pt-1">
+                      <div className="flex justify-end gap-2 pt-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -1561,29 +1498,29 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                             setOperationSuccess('')
                             setOperationError('')
                           }}
-                          className="px-2 py-0.5 text-[7px] font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                         >
                           Clear
                         </button>
                         <button
                           type="submit"
                           disabled={operationLoading}
-                          className="px-2 py-0.5 text-[7px] font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center justify-center gap-0.5"
+                          className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center gap-1.5"
                         >
                           {operationLoading ? (
                             <>
-                              <svg className="animate-spin h-1.5 w-1.5" fill="none" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              <span>Processing...</span>
+                              Processing...
                             </>
                           ) : (
                             <>
-                              <svg className="w-1.5 h-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
-                              <span>Submit</span>
+                              Execute
                             </>
                           )}
                         </button>
@@ -1710,8 +1647,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </div>
           </div>
         )}
-
-        {/* Summary Cards - NET Position tab */}
 
         {/* NET Position Face Cards (matching Positions tab styling) */}
         {activeTab === 'netPositions' && (
