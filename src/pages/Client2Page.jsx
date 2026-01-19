@@ -5433,8 +5433,14 @@ const Client2Page = () => {
                     )}
 
                     <tbody className="bg-white divide-y divide-slate-100 text-sm md:text-[15px]" key={`tbody-${animationKey}`}>
-                      {/* Show "No clients found" message when there are no clients AND not loading */}
-                      {!loading && sortedClients.length === 0 ? (
+                      {/* Loading state (match Live Dealing style) */}
+                      {loading && sortedClients.length === 0 ? (
+                        <tr>
+                          <td colSpan={visibleColumnsList.length} className="px-4 py-12 text-center">
+                            <p className="text-sm text-gray-500">Loading clients...</p>
+                          </td>
+                        </tr>
+                      ) : !loading && sortedClients.length === 0 ? (
                         <tr>
                           <td colSpan={visibleColumnsList.length} className="px-4 py-12 text-center">
                             <div className="text-gray-500">
