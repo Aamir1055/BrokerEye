@@ -4799,30 +4799,29 @@ const Client2Page = () => {
 
                                               {/* Number Filter Operators */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <div className="relative">
-                                                  <button
-                                                    onClick={() => {
-                                                      const btn = document.getElementById(`number-filter-btn-${columnKey}`)
-                                                      const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                      if (menu) {
-                                                        menu.classList.toggle('hidden')
-                                                      }
-                                                    }}
-                                                    id={`number-filter-btn-${col.key}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                  >
-                                                    <span className="text-gray-700 font-medium">Number Filters</span>
-                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                  </button>
+                                                <button
+                                                  onClick={() => {
+                                                    const btn = document.getElementById(`number-filter-btn-${columnKey}`)
+                                                    const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                    if (menu) {
+                                                      menu.classList.toggle('hidden')
+                                                    }
+                                                  }}
+                                                  id={`number-filter-btn-${col.key}`}
+                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                >
+                                                  <span className="text-gray-700 font-medium">Number Filters</span>
+                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                  </svg>
+                                                </button>
 
-                                                  {/* Number Filter Submenu */}
-                                                  <div
-                                                    id={`number-filter-menu-${columnKey}`}
-                                                    className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
+                                                {/* Number Filter Submenu */}
+                                                <div
+                                                  id={`number-filter-menu-${columnKey}`}
+                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <div className="p-3 space-y-3">
                                                       {/* Operator Dropdown */}
                                                       <div>
@@ -4901,7 +4900,6 @@ const Client2Page = () => {
                                                       </div>
                                                     </div>
                                                   </div>
-                                                </div>
                                               </div>
 
                                               {/* Checkbox Value List - Also for numeric columns */}
@@ -5111,40 +5109,39 @@ const Client2Page = () => {
 
                                               {/* Text Filters Section */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <div className="relative">
-                                                  <button
-                                                    onClick={() => {
-                                                      const btn = document.getElementById(`text-filter-btn-${columnKey}`)
-                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                      if (menu) {
-                                                        menu.classList.toggle('hidden')
-                                                      }
-                                                    }}
-                                                    id={`text-filter-btn-${columnKey}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                  >
-                                                    <span className="text-gray-700 font-medium">Text Filters</span>
-                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                  </button>
+                                                <button
+                                                  onClick={() => {
+                                                    const btn = document.getElementById(`text-filter-btn-${columnKey}`)
+                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                    if (menu) {
+                                                      menu.classList.toggle('hidden')
+                                                    }
+                                                  }}
+                                                  id={`text-filter-btn-${columnKey}`}
+                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                >
+                                                  <span className="text-gray-700 font-medium">Text Filters</span>
+                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                  </svg>
+                                                </button>
 
-                                                  {/* Keep existing text filter submenu for advanced filtering */}
-                                                  <div
-                                                    id={`text-filter-menu-${columnKey}`}
-                                                    className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onKeyDown={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        e.preventDefault()
-                                                        e.stopPropagation()
-                                                        applyTextFilter(columnKey)
-                                                        const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                        if (menu) menu.classList.add('hidden')
-                                                        setShowFilterDropdown(null)
-                                                      }
-                                                    }}
-                                                  >
+                                                {/* Keep existing text filter submenu for advanced filtering */}
+                                                <div
+                                                  id={`text-filter-menu-${columnKey}`}
+                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                      e.preventDefault()
+                                                      e.stopPropagation()
+                                                      applyTextFilter(columnKey)
+                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                      if (menu) menu.classList.add('hidden')
+                                                      setShowFilterDropdown(null)
+                                                    }
+                                                  }}
+                                                >
                                                     <div className="p-3 space-y-3">
                                                       {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
                                                       {(() => {
@@ -5223,7 +5220,6 @@ const Client2Page = () => {
                                                       })()}
                                                     </div>
                                                   </div>
-                                                </div>
                                               </div>
 
                                               {/* Checkbox Value List */}
