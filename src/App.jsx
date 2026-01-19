@@ -112,12 +112,9 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Set basename for amari-capital-new deployment
+  // Set basename for amari-capital deployment
   const getBasename = () => {
-    // In development, serve at root
-    if (import.meta.env.DEV) return '/'
-    // In production, always use /amari-capital-new/
-    return '/amari-capital-new'
+    return '/amari-capital'
   }
 
   return (
