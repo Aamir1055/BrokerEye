@@ -933,7 +933,8 @@ const Client2Page = () => {
     
     // Only cancel if there's already a request in flight to prevent race conditions
     // Don't cancel user-initiated requests (non-silent) to ensure they always complete
-    if (abortControllerRef.current && isFetchingRef.current && silent) {
+    if// Only show loading spinner on initial page load, not on subsequent fetches
+      if (!silent && initialLoadrollerRef.current && isFetchingRef.current && silent) {
       try { abortControllerRef.current.abort() } catch {}
     }
     // Create new AbortController for this request
