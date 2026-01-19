@@ -11,7 +11,11 @@
   RewriteCond %{REQUEST_URI} ^/amari-capital-new/api/
   RewriteRule ^api/(.*)$ http://185.136.159.142:8080/api/$1 [P,L]
   
-  # Don't rewrite files or directories
+  # Skip rewrite for static assets (js, css, images, fonts, etc)
+  RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|map)$ [NC]
+  RewriteRule ^ - [L]
+  
+  # Don't rewrite files or directories that exist
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   
