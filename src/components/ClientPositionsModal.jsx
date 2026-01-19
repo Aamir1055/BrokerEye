@@ -3351,9 +3351,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
-          {/* Money Transactions Tab - Removed for Amari Capital */}
-          {/* Balance tab only available in Broker branch */}
-          {false && activeTab === 'funds' && (
+          {/* Money Transactions Tab */}
+          {activeTab === 'funds' && (
             <div>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
@@ -3477,9 +3476,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </div>
           )}
 
-          {/* Broker Rules Tab - Removed for Amari Capital */}
-          {/* Broker Rules only available in Broker branch */}
-          {false && activeTab === 'rules' && (
+          {/* Broker Rules Tab */}
+          {activeTab === 'rules' && (
             <div>
               {rulesLoading ? (
                 <div className="text-center py-8">

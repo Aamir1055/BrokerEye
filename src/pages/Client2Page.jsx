@@ -4242,11 +4242,13 @@ const Client2Page = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Search and Controls Bar - Always show to allow search clearing */}
+            {/* Search Bar and Table Container */}
             {!initialLoad && (
-            <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                {/* Left: Search and Columns */}
+              <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden">
+                {/* Search and Controls Bar */}
+                <div className="border-b border-[#E5E7EB] p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  {/* Left: Search and Columns */}
                 <div className="flex items-center gap-2 flex-1">
                   <div className="relative flex-1 max-w-md">
                     <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4B5563]" fill="none" viewBox="0 0 18 18">
@@ -4378,85 +4380,90 @@ const Client2Page = () => {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-            )}
+                </div>
+                </div>
 
-            {/* Column Selector Dropdown */}
-            {showColumnSelector && (
-              <div
-                className="fixed bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-3 flex flex-col"
-                style={{
-                  top: columnSelectorPos.top,
-                  left: columnSelectorPos.left,
-                  width: 300,
-                  maxHeight: '70vh',
-                  zIndex: 20000000
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onWheel={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
-                  <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
-                  <button
-                    onClick={() => setShowColumnSelector(false)}
-                    className="text-[#9CA3AF] hover:text-[#4B5563] p-1 rounded hover:bg-gray-50"
+                {/* Error Message */}
+                {error && error !== 'Success' && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    {error}
+                  </div>
+                )}
+
+                {/* Column Selector Dropdown */}
+                {showColumnSelector && (
+                  <div
+                    className="fixed bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-3 flex flex-col"
+                    style={{
+                      top: columnSelectorPos.top,
+                      left: columnSelectorPos.left,
+                      width: 300,
+                      maxHeight: '70vh',
+                      zIndex: 20000000
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onWheel={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                  <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
+                    <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
+                    <button
+                      onClick={() => setShowColumnSelector(false)}
+                      className="text-[#9CA3AF] hover:text-[#4B5563] p-1 rounded hover:bg-gray-50"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
-                <div className="px-4 py-2 border-b border-[#F3F4F6]">
-                  <input
-                    type="text"
-                    placeholder="Search columns..."
-                    value={columnSearchQuery}
-                    onChange={(e) => setColumnSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 text-sm text-[#1F2937] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-[#9CA3AF]"
-                  />
-                </div>
+                  <div className="px-4 py-2 border-b border-[#F3F4F6]">
+                    <input
+                      type="text"
+                      placeholder="Search columns..."
+                      value={columnSearchQuery}
+                      onChange={(e) => setColumnSearchQuery(e.target.value)}
+                      className="w-full px-3 py-2 text-sm text-[#1F2937] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-[#9CA3AF]"
+                    />
+                  </div>
 
-                <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
-                  {allColumns
-                    .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
-                    .map(col => (
-                      <label
-                        key={col.key}
-                        className="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key] || false}
-                          onChange={() => toggleColumn(col.key)}
-                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                        />
-                        <span className="font-semibold">{col.label}</span>
-                      </label>
-                    ))}
-                </div>
-              </div>
-            )}
+                  <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
+                    {allColumns
+                      .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
+                      .map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={visibleColumns[col.key] || false}
+                            onChange={() => toggleColumn(col.key)}
+                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="font-semibold">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
 
-            {/* Error Message */}
-            {error && error !== 'Success' && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                {error}
-              </div>
-            )}
+                {/* Error Message */}
+                {error && error !== 'Success' && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    {error}
+                  </div>
+                )}
 
-            {/* Table - Show table with progress bar for all loading states */}
-            {/* Always show table unless it's the initial load, even when no clients */}
-            {(!initialLoad || clients.length > 0) && (
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex flex-col" ref={tableContainerRef} style={{ height: showFaceCards ? '550px' : '750px' }}>
-                {/* Table Container with Vertical + Horizontal Scroll (single scroll context) */}
-                <div className="overflow-auto relative table-scroll-container h-full" ref={hScrollRef} style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#9ca3af #e5e7eb',
-                  position: 'relative'
+                {/* Table - Show table with progress bar for all loading states */}
+                {/* Always show table unless it's the initial load, even when no clients */}
+                {(!initialLoad || clients.length > 0) && (
+                  <div className="overflow-auto relative table-scroll-container" ref={hScrollRef} style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#9ca3af #e5e7eb',
+                  position: 'relative',
+                  height: showFaceCards ? '550px' : '750px'
                 }}>
                   <style>{`
                   /* Table cell boundary enforcement */
@@ -5583,9 +5590,8 @@ const Client2Page = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
-
-                {/* Removed duplicate sticky horizontal scrollbar to keep a single native scrollbar */}
+                  </div>
+                )}
               </div>
             )}
 

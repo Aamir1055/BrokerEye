@@ -2303,16 +2303,16 @@ const PositionsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
 
-      <main className={`flex-1 p-4 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
-          {/* Header */}
-          <div className="mb-4">
-          {/* Header with title and buttons on same line */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            {/* Title + Actions */}
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
             {/* Title Section */}
             <div>
-              <h1 className="text-2xl font-bold text-[#1F2937]">Positions</h1>
-              <p className="text-sm text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
+              <h1 className="text-xl font-bold text-[#1A1A1A]">Positions</h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Live open positions across all accounts</p>
             </div>
 
             {/* Action Buttons - All on right side */}
@@ -2336,7 +2336,7 @@ const PositionsPage = () => {
               {/* NET Position Toggle */}
               <button
                 onClick={() => { setShowNetPositions((v)=>{const nv=!v; if (nv) setShowClientNet(false); return nv}); }}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showNetPositions 
                     ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2352,7 +2352,7 @@ const PositionsPage = () => {
               {/* Client NET Toggle */}
               <button
                 onClick={() => { setShowClientNet((v)=>{const nv=!v; if (nv) setShowNetPositions(false); return nv}); }}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   showClientNet 
                     ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2368,7 +2368,7 @@ const PositionsPage = () => {
               {/* Date Filter Button */}
               <button
                 onClick={() => setIsDateFilterOpen(true)}
-                className={`h-8 px-2.5 rounded-lg border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                   dateFilter 
                     ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
@@ -2386,7 +2386,7 @@ const PositionsPage = () => {
                 <button
                   ref={displayButtonRef}
                   onClick={() => setShowDisplayMenu(!showDisplayMenu)}
-                  className="h-8 px-2.5 rounded-lg border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium text-[#374151]"
+                  className="h-8 px-2.5 rounded-md border border-[#E5E7EB] bg-white hover:bg-gray-50 shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium text-[#374151]"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -2444,7 +2444,7 @@ const PositionsPage = () => {
               {/* Export CSV */}
               <button
                 onClick={handleExportPositions}
-                className="h-8 w-8 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                className="h-8 w-8 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                 title="Export current positions to CSV"
               >
                 <svg className="w-4 h-4 text-[#374151]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2467,7 +2467,7 @@ const PositionsPage = () => {
                   }, 3000)
                 }}
                 disabled={isRefreshing}
-                className={`h-8 w-8 rounded-lg border shadow-sm flex items-center justify-center transition-all ${
+                className={`h-8 w-8 rounded-md border shadow-sm flex items-center justify-center transition-all ${
                   isRefreshing 
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
@@ -2485,6 +2485,7 @@ const PositionsPage = () => {
               </button>
             </div>
           </div>
+        </div>
 
           {/* Stats Summary - Client2 Face Card Design */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 mb-6">
@@ -3655,162 +3656,163 @@ const PositionsPage = () => {
               </div>
             </div>
           ) : <>
-          {/* Search and Controls Bar */}
-          <div className="mb-4 bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              {/* Left: Search and Columns */}
-              <div className="flex items-center gap-2 flex-1">
-                {/* Search Bar */}
-                <div className="relative flex-1 max-w-md" ref={searchRef}>
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      setShowSuggestions(true)
-                      setCurrentPage(1)
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    onKeyDown={handleSearchKeyDown}
-                    placeholder="Search"
-                    className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery('')
-                        setShowSuggestions(false)
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                      title="Clear search"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                  
-                  {/* Suggestions Dropdown - rendered when visible; show message if empty */}
-                  {showSuggestions ? (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                      {getSuggestions().length === 0 && (
-                        <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                      )}
-                      {getSuggestions().length > 0 && (
-                        <div>
-                          {getSuggestions().map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(suggestion)}
-                              className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-                
-                {/* Columns Button (icon only) */}
-                <div className="relative" ref={columnSelectorRef}>
-                  <button
-                    onClick={() => setShowColumnSelector(!showColumnSelector)}
-                    className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    title="Show/Hide Columns"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                      <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                    </svg>
-                  </button>
-                  {showColumnSelector && (
-                    <div
-                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
-                      style={{ maxHeight: '400px', overflowY: 'auto' }}
-                    >
-                      <div className="px-3 py-2 border-b border-[#F3F4F6]">
-                        <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
-                      </div>
-                      {allColumns.map(col => (
-                        <label
-                          key={col.key}
-                          className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visibleColumns[col.key]}
-                            onChange={() => toggleColumn(col.key)}
-                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                          />
-                          <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Right: Pagination */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === 1
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-
-                <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const n = Number(e.target.value)
-                      if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                        handlePageChange(n)
-                      }
-                    }}
-                    className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
-                    aria-label="Current page"
-                  />
-                  <span className="text-[#9CA3AF]">/</span>
-                  <span className="text-[#6B7280]">{totalPages}</span>
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                    currentPage === totalPages
-                      ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                      : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
+          
           {/* Positions Table */}
           <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden flex flex-col flex-1 min-h-0 mb-4">
+            {/* Search and Controls Bar - Inside table container */}
+            <div className="border-b border-[#E5E7EB] p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                {/* Left: Search and Columns */}
+                <div className="flex items-center gap-2 flex-1">
+                  {/* Search Bar */}
+                  <div className="relative flex-1 max-w-md" ref={searchRef}>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value)
+                        setShowSuggestions(true)
+                        setCurrentPage(1)
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      onKeyDown={handleSearchKeyDown}
+                      placeholder="Search"
+                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('')
+                          setShowSuggestions(false)
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                        title="Clear search"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                    
+                    {/* Suggestions Dropdown - rendered when visible; show message if empty */}
+                    {showSuggestions ? (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
+                        {getSuggestions().length === 0 && (
+                          <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
+                        )}
+                        {getSuggestions().length > 0 && (
+                          <div>
+                            {getSuggestions().map((suggestion, index) => (
+                              <button
+                                key={index}
+                                onClick={() => handleSuggestionClick(suggestion)}
+                                className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                  
+                  {/* Columns Button (icon only) */}
+                  <div className="relative" ref={columnSelectorRef}>
+                    <button
+                      onClick={() => setShowColumnSelector(!showColumnSelector)}
+                      className="h-10 w-10 rounded-lg bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      title="Show/Hide Columns"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                        <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                      </svg>
+                    </button>
+                    {showColumnSelector && (
+                      <div
+                        className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
+                        style={{ maxHeight: '400px', overflowY: 'auto' }}
+                      >
+                        <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                          <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
+                        </div>
+                        {allColumns.map(col => (
+                          <label
+                            key={col.key}
+                            className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns[col.key]}
+                              onChange={() => toggleColumn(col.key)}
+                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                            />
+                            <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Pagination */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === 1
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+
+                  <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalPages}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const n = Number(e.target.value)
+                        if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                          handlePageChange(n)
+                        }
+                      }}
+                      className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                      aria-label="Current page"
+                    />
+                    <span className="text-[#9CA3AF]">/</span>
+                    <span className="text-[#6B7280]">{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      currentPage === totalPages
+                        ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
+                        : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="overflow-y-scroll overflow-x-auto flex-1 pb-10" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'thin',
@@ -3995,7 +3997,6 @@ const PositionsPage = () => {
           </div>
           </>
           }
-        </div>
         </div>
       </main>
       

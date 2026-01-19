@@ -1417,10 +1417,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
               
-              {/* Money Transactions Tab - Removed for Amari Capital */}
-              {/* Balance tab only available in Broker branch */}
-              {false && activeTab === 'funds' && (
-                <div className="p-4">:
+              {/* Money Transactions Tab */}
+              {activeTab === 'funds' && (
+                <div className="p-4">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
                     
@@ -1531,10 +1530,9 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                 </div>
               )}
 
-              {/* Broker Rules Tab - Removed for Amari Capital */}
-              {/* Broker Rules only available in Broker branch */}
-              {false && activeTab === 'rules' && (
-                <div className="p-4">:
+              {/* Broker Rules Tab */}
+              {activeTab === 'rules' && (
+                <div className="p-4">
                   {rulesLoading ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
