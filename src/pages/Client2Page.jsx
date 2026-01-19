@@ -122,6 +122,7 @@ const Client2Page = () => {
   const [sortOrder, setSortOrder] = useState('asc')
   const [animationKey, setAnimationKey] = useState(0)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [progressActive, setProgressActive] = useState(false)
 
   // UI state
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -170,6 +171,8 @@ const Client2Page = () => {
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
   const requestIdRef = useRef(0)
+  // Pause polling during active user filter changes to avoid race
+  const pausePollingUntilRef = useRef(0)
   // Drag-and-drop for face cards
   const [draggedCardKey, setDraggedCardKey] = useState(null)
   const [dragOverCardKey, setDragOverCardKey] = useState(null)
@@ -918,20 +921,24 @@ const Client2Page = () => {
 
   // Checkbox filters are now handled server-side via API (no client-side filtering needed)
 
-  // AbortController ref to cancel previous requests
+  // AbortController ref; cancel only polling requests, never user-triggered filters/search
   const abortControllerRef = useRef(null)
+  const lastRequestWasSilentRef = useRef(false)
+  const refetchTimerRef = useRef(null)
 
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
-    // Cancel any previous pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
+    // Cancel only polling requests (silent) to reduce cancel spam without breaking filters
+    if (abortControllerRef.current && (lastRequestWasSilentRef.current || silent)) {
+      try { abortControllerRef.current.abort() } catch {}
     }
-    // Create new AbortController for this request
+    // Create new AbortController for this request and remember type
     abortControllerRef.current = new AbortController()
+    lastRequestWasSilentRef.current = !!silent
+    if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
       if (!silent) {
@@ -1052,12 +1059,12 @@ const Client2Page = () => {
               return
             }
 
-            // Special-case: login filters should use IN array semantics
+            // Special-case: login filters should use mt5Accounts param, not filters
             if (columnKey === 'login') {
               const vals = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
               if (vals.length > 0) {
-                combinedFilters.push({ field: 'login', operator: 'in', value: vals })
-                console.log(`[Client2] 🔍 Checkbox login: using filters.in with ${vals.length} values`)
+                checkboxLoginIds = vals
+                console.log(`[Client2] 🔍 Checkbox login: routing to mt5Accounts with ${vals.length} values`)
               }
             } else {
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
@@ -1090,11 +1097,18 @@ const Client2Page = () => {
         console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
 
-      // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
+      // Build MT5 accounts filter, merging Account modal, Login checkbox selection, Active Group (manual list), and selected IB accounts
       let mt5AccountsFilter = []
       // From Account Filter modal
       if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) {
         mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
+      }
+
+      // From Login checkbox header filter (union with modal accounts)
+      if (Array.isArray(checkboxLoginIds) && checkboxLoginIds.length > 0) {
+        const union = new Set([...(mt5AccountsFilter || []).map(Number), ...checkboxLoginIds.map(Number)])
+        mt5AccountsFilter = Array.from(union)
+        console.log('[Client2] 🔗 Merged login checkbox IDs into mt5AccountsFilter:', mt5AccountsFilter.length)
       }
 
       // Add account range filter if present
@@ -1165,7 +1179,7 @@ const Client2Page = () => {
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
       const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
-      const LARGE_IN_THRESHOLD = 50
+      const LARGE_IN_THRESHOLD = 20 // Lower threshold for better backend compatibility, especially with text fields
       const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
 
       if (largeInFilters.length > 0) {
@@ -1200,7 +1214,12 @@ const Client2Page = () => {
           let totalPagesForChunk = 1
           do {
             chunkPayload.page = pageNum
-            const resp = await brokerAPI.searchClients(chunkPayload)
+            // Respect aborts and newer requests: pass signal and bail on staleness
+            const resp = await brokerAPI.searchClients(chunkPayload, { signal: abortControllerRef.current.signal })
+            if (abortControllerRef.current.signal.aborted || currentRequestId !== requestIdRef.current) {
+              console.log('[Client2] ⏹️ Abort/replace detected during chunk merge; stopping early')
+              return
+            }
             const data = extractData(resp)
             const list = (data?.clients || []).filter(c => c != null && c.login != null)
             list.forEach(row => {
@@ -1429,6 +1448,7 @@ const Client2Page = () => {
       isFetchingRef.current = false
       if (!silent) {
         setLoading(false)
+        setProgressActive(false)
       }
       // Mark initial load complete and always reset sorting state
       setInitialLoad(false)
@@ -1517,11 +1537,23 @@ const Client2Page = () => {
   // Initial fetch and refetch on dependency changes (desktop only)
   useEffect(() => {
     if (isMobile || !isAuthenticated || unauthorized) return
-    console.log('[Client2] ⚡ useEffect triggered - fetchClients dependency changed')
-    console.log('[Client2] Current columnFilters:', JSON.stringify(columnFilters, null, 2))
-    fetchClients()
-    fetchRebateTotals()
-  }, [fetchClients, fetchRebateTotals, isMobile, isAuthenticated, unauthorized])
+    if (refetchTimerRef.current) {
+      clearTimeout(refetchTimerRef.current)
+    }
+    // Debounce refetch slightly to coalesce rapid filter changes and avoid cancel spam
+    refetchTimerRef.current = setTimeout(() => {
+      console.log('[Client2] ⚡ Debounced refetch triggered')
+      fetchClients(false)
+      fetchRebateTotals()
+      refetchTimerRef.current = null
+    }, 200)
+    return () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current)
+        refetchTimerRef.current = null
+      }
+    }
+  }, [fetchClients, fetchRebateTotals, isMobile, isAuthenticated, unauthorized, columnFilters, debouncedSearchQuery, currentPage, itemsPerPage, sortBy, sortOrder, quickFilters])
 
   // Auto-refresh rebate totals every 1 hour (desktop only)
   useEffect(() => {
@@ -1542,6 +1574,8 @@ const Client2Page = () => {
     // Avoid polling when tab is hidden
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     const intervalId = setInterval(() => {
+      // Skip polling while recent user filter actions are active
+      if (Date.now() < pausePollingUntilRef.current) return
       fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
     }, 2000)
     return () => clearInterval(intervalId)
@@ -1805,6 +1839,7 @@ const Client2Page = () => {
   const toggleColumnFilter = (columnKey, value) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
@@ -1824,6 +1859,7 @@ const Client2Page = () => {
   const selectAllFilters = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     const allValues = getUniqueColumnValues(columnKey)
     setColumnFilters(prev => ({
@@ -1835,6 +1871,7 @@ const Client2Page = () => {
   const deselectAllFilters = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
@@ -1845,6 +1882,7 @@ const Client2Page = () => {
   const clearColumnFilter = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
@@ -1902,6 +1940,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     const filterConfig = {
       operator: temp.operator,
@@ -1970,6 +2009,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     const filterConfig = {
       operator: temp.operator,
@@ -2128,6 +2168,7 @@ const Client2Page = () => {
 
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
+    setProgressActive(true)
     // Allow API calls for a broader set of text columns to ensure filtering works across more fields
     const allowedColumns = [
       // Identifiers
@@ -2225,11 +2266,13 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
   // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
+    setProgressActive(true)
     // Allow API calls for a broader set of text columns to ensure filtering works across more fields
     const allowedColumns = [
       // Identifiers
@@ -2343,11 +2386,13 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
   // Load more column values when scrolling (fetch next 500)
   const fetchMoreColumnValues = async (columnKey) => {
+    setProgressActive(true)
     console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
     console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
 
@@ -2430,6 +2475,7 @@ const Client2Page = () => {
       console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
     } finally {
       setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
@@ -2504,6 +2550,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     // Store filter in state - will be sent to API via fetchClients
     setColumnFilters(prev => {
@@ -2603,6 +2650,7 @@ const Client2Page = () => {
   const handleClearAllFilters = () => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     // Basic list filters
     setFilters([])
@@ -4764,30 +4812,29 @@ const Client2Page = () => {
 
                                               {/* Number Filter Operators */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <div className="relative">
-                                                  <button
-                                                    onClick={() => {
-                                                      const btn = document.getElementById(`number-filter-btn-${columnKey}`)
-                                                      const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                      if (menu) {
-                                                        menu.classList.toggle('hidden')
-                                                      }
-                                                    }}
-                                                    id={`number-filter-btn-${col.key}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                  >
-                                                    <span className="text-gray-700 font-medium">Number Filters</span>
-                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                  </button>
+                                                <button
+                                                  onClick={() => {
+                                                    const btn = document.getElementById(`number-filter-btn-${columnKey}`)
+                                                    const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                    if (menu) {
+                                                      menu.classList.toggle('hidden')
+                                                    }
+                                                  }}
+                                                  id={`number-filter-btn-${col.key}`}
+                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                >
+                                                  <span className="text-gray-700 font-medium">Number Filters</span>
+                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                  </svg>
+                                                </button>
 
-                                                  {/* Number Filter Submenu */}
-                                                  <div
-                                                    id={`number-filter-menu-${columnKey}`}
-                                                    className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
+                                                {/* Number Filter Submenu */}
+                                                <div
+                                                  id={`number-filter-menu-${columnKey}`}
+                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <div className="p-3 space-y-3">
                                                       {/* Operator Dropdown */}
                                                       <div>
@@ -4866,13 +4913,20 @@ const Client2Page = () => {
                                                       </div>
                                                     </div>
                                                   </div>
-                                                </div>
                                               </div>
 
                                               {/* Checkbox Value List - Also for numeric columns */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar - Only show if values are available */}
-                                                {!columnValuesLoading[columnKey] && (columnValues[columnKey] || []).length > 0 && (
+                                                {/* Initial loading - centered when no values yet */}
+                                                {columnValuesLoading[columnKey] && !(columnValues[columnKey] || []).length && (
+                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
+                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
+                                                  </div>
+                                                )}
+
+                                                {/* Search Bar */}
+                                                {(columnValues[columnKey] || []).length > 0 && (
                                                   <div className="px-3 py-2 border-b border-gray-200">
                                                     <input
                                                       type="text"
@@ -4884,8 +4938,8 @@ const Client2Page = () => {
                                                   </div>
                                                 )}
 
-                                                {/* Only show Select Visible and Values List if values are available */}
-                                                {!columnValuesLoading[columnKey] && (columnValues[columnKey] || []).length > 0 && (
+                                                {/* Select Visible and Values List */}
+                                                {(columnValues[columnKey] || []).length > 0 && (
                                                   <>
                                                     {/* Select Visible Checkbox */}
                                                     {columnValuesUnsupported[columnKey] ? null : (
@@ -4960,9 +5014,9 @@ const Client2Page = () => {
                                                   }}
                                                 >
                                                   {columnValuesLoading[columnKey] ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                    <div className="flex flex-col items-center justify-center py-12">
+                                                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                      <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
@@ -5083,30 +5137,29 @@ const Client2Page = () => {
 
                                               {/* Text Filters Section */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <div className="relative">
-                                                  <button
-                                                    onClick={() => {
-                                                      const btn = document.getElementById(`text-filter-btn-${columnKey}`)
-                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                      if (menu) {
-                                                        menu.classList.toggle('hidden')
-                                                      }
-                                                    }}
-                                                    id={`text-filter-btn-${columnKey}`}
-                                                    className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                  >
-                                                    <span className="text-gray-700 font-medium">Text Filters</span>
-                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                  </button>
+                                                <button
+                                                  onClick={() => {
+                                                    const btn = document.getElementById(`text-filter-btn-${columnKey}`)
+                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                    if (menu) {
+                                                      menu.classList.toggle('hidden')
+                                                    }
+                                                  }}
+                                                  id={`text-filter-btn-${columnKey}`}
+                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                >
+                                                  <span className="text-gray-700 font-medium">Text Filters</span>
+                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                  </svg>
+                                                </button>
 
-                                                  {/* Keep existing text filter submenu for advanced filtering */}
-                                                  <div
-                                                    id={`text-filter-menu-${columnKey}`}
-                                                    className={`hidden absolute ${filterPosition?.shouldOpenLeft ? 'right-full mr-1' : 'left-full ml-1'} top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-50`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onKeyDown={(e) => {
+                                                {/* Keep existing text filter submenu for advanced filtering */}
+                                                <div
+                                                  id={`text-filter-menu-${columnKey}`}
+                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  onKeyDown={(e) => {
                                                       if (e.key === 'Enter') {
                                                         e.preventDefault()
                                                         e.stopPropagation()
@@ -5195,13 +5248,20 @@ const Client2Page = () => {
                                                       })()}
                                                     </div>
                                                   </div>
-                                                </div>
                                               </div>
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar - Only show if values are available */}
-                                                {!loading && allValues.length > 0 && (
+                                                {/* Initial loading - centered when no values yet */}
+                                                {loading && !allValues.length && (
+                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
+                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
+                                                  </div>
+                                                )}
+
+                                                {/* Search Bar */}
+                                                {allValues.length > 0 && (
                                                   <div className="px-3 py-2 border-b border-gray-200">
                                                     <input
                                                       type="text"
@@ -5220,8 +5280,8 @@ const Client2Page = () => {
                                                   </div>
                                                 )}
 
-                                                {/* Only show Select Visible and Values List if values are available */}
-                                                {!loading && allValues.length > 0 && (
+                                                {/* Select Visible and Values List */}
+                                                {allValues.length > 0 && (
                                                   <>
                                                     {/* Select Visible Checkbox */}
                                                     {columnValuesUnsupported[columnKey] ? null : (
@@ -5287,10 +5347,10 @@ const Client2Page = () => {
                                                     }
                                                   }}
                                                 >
-                                                  {loading ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                  {columnValuesLoading[columnKey] ? (
+                                                    <div className="flex flex-col items-center justify-center py-12">
+                                                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                      <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                     </div>
                                                   ) : (
                                                     <>
