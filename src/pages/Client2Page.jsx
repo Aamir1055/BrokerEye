@@ -919,6 +919,17 @@ const Client2Page = () => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
+    // Only cancel if there's already a request in flight to prevent race conditions
+    // Don't cancel user-initiated requests (non-silent) to ensure they always complete
+    if (abortControllerRef.current && isFetchingRef.current && silent) {
+      try { abortControllerRef.current.abort() } catch {}
+    }
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController()
+    lastRequestWasSilentRef.current = !!silent
+    isFetchingRef.current = true
+    
+    if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
       if (!silent) {
@@ -931,15 +942,13 @@ const Client2Page = () => {
       // Build request payload - simple pagination (column filters handled by /fields endpoint)
       const payload = {
         page: Number(currentPage) || 1,
-       Only cancel if there's already a request in flight to prevent race conditions
-    // Don't cancel user-initiated requests (non-silent) to ensure they always complete
-    if (abortControllerRef.current && isFetchingRef.current && silent) {
-      try { abortControllerRef.current.abort() } catch {}
-    }
-    // Create new AbortController for this request
-    abortControllerRef.current = new AbortController()
-    lastRequestWasSilentRef.current = !!silent
-    isFetchingRef.current = true
+        limit: Number(itemsPerPage) || 100
+      }
+
+      // Add search query if present - API will handle searching across all fields
+      if (debouncedSearchQuery && debouncedSearchQuery.trim()) {
+        payload.search = debouncedSearchQuery.trim()
+      }
 
       // Add filters if present
       const combinedFilters = []
