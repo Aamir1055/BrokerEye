@@ -933,8 +933,7 @@ const Client2Page = () => {
     
     // Only cancel if there's already a request in flight to prevent race conditions
     // Don't cancel user-initiated requests (non-silent) to ensure they always complete
-    if// Only show loading spinner on initial page load, not on subsequent fetches
-      if (!silent && initialLoadrollerRef.current && isFetchingRef.current && silent) {
+    if (abortControllerRef.current && isFetchingRef.current && silent) {
       try { abortControllerRef.current.abort() } catch {}
     }
     // Create new AbortController for this request
@@ -944,7 +943,8 @@ const Client2Page = () => {
     if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
-      if (!silent) {
+      // Only show loading spinner on initial page load, not on subsequent fetches
+      if (!silent && initialLoad) {
         setLoading(true)
       }
       setError('')
