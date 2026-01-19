@@ -933,7 +933,8 @@ const Client2Page = () => {
     if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
-      if (!silent) {
+      // Only show loading spinner on initial page load, not on subsequent fetches
+      if (!silent && initialLoad) {
         setLoading(true)
       }
       setError('')
