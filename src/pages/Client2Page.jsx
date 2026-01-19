@@ -5433,8 +5433,8 @@ const Client2Page = () => {
                     )}
 
                     <tbody className="bg-white divide-y divide-slate-100 text-sm md:text-[15px]" key={`tbody-${animationKey}`}>
-                      {/* Show "No clients found" message when there are no clients */}
-                      {sortedClients.length === 0 ? (
+                      {/* Show "No clients found" message when there are no clients AND not loading */}
+                      {!loading && sortedClients.length === 0 ? (
                         <tr>
                           <td colSpan={visibleColumnsList.length} className="px-4 py-12 text-center">
                             <div className="text-gray-500">
