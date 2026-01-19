@@ -293,6 +293,13 @@ const Client2Page = () => {
     clearIBSelection()
     setActiveGroupFilter('client2', null)
     setSearchInput('')
+    setSearchQuery('')
+    setDebouncedSearchQuery('')
+    setColumnFilters({})
+    setMt5Accounts([])
+    setAccountRangeMin('')
+    setAccountRangeMax('')
+    setCurrentPage(1)
   }, [])
 
   // useEffect to save columnWidths to localStorage
