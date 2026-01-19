@@ -931,13 +931,15 @@ const Client2Page = () => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
-    // Cancel only polling requests (silent) to reduce cancel spam without breaking filters
-    if (abortControllerRef.current && (lastRequestWasSilentRef.current || silent)) {
+    // Only cancel if there's already a request in flight to prevent race conditions
+    // Don't cancel user-initiated requests (non-silent) to ensure they always complete
+    if (abortControllerRef.current && isFetchingRef.current && silent) {
       try { abortControllerRef.current.abort() } catch {}
     }
-    // Create new AbortController for this request and remember type
+    // Create new AbortController for this request
     abortControllerRef.current = new AbortController()
     lastRequestWasSilentRef.current = !!silent
+    isFetchingRef.current = true
     if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
