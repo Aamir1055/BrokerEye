@@ -170,6 +170,7 @@ const Client2Page = () => {
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
   const abortControllerRef = useRef(null)
+  const lastRequestWasSilentRef = useRef(false)
   const requestIdRef = useRef(0)
   // Drag-and-drop for face cards
   const [draggedCardKey, setDraggedCardKey] = useState(null)
