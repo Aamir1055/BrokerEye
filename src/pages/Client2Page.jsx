@@ -93,7 +93,7 @@ const Client2Page = () => {
     }
   }
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   // Data state
