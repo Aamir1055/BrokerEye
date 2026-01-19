@@ -1111,9 +1111,10 @@ export default function LiveDealingModule() {
                 </svg>
               </button>
             </div>
-          </div>
+            </div>
 
-          <div className="w-full overflow-x-auto overflow-y-visible" style={{
+            {/* Table Data - Now properly inside the white container */}
+            <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
@@ -1258,7 +1259,7 @@ export default function LiveDealingModule() {
         </div>
       </div>
 
-      {/* Column Selector Modal */}      {/* Column Selector Modal */}      {/* Column Selector Modal */}
+      {/* Column Selector Modal */}
       {isColumnSelectorOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setIsColumnSelectorOpen(false)}>
           <div 
