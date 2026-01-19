@@ -93,7 +93,7 @@ const Client2Page = () => {
     }
   }
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   // Data state
@@ -122,6 +122,7 @@ const Client2Page = () => {
   const [sortOrder, setSortOrder] = useState('asc')
   const [animationKey, setAnimationKey] = useState(0)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [progressActive, setProgressActive] = useState(false)
 
   // UI state
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -169,9 +170,9 @@ const Client2Page = () => {
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
   const isFetchingRef = useRef(false)
-  const abortControllerRef = useRef(null)
-  const lastRequestWasSilentRef = useRef(false)
   const requestIdRef = useRef(0)
+  // Pause polling during active user filter changes to avoid race
+  const pausePollingUntilRef = useRef(0)
   // Drag-and-drop for face cards
   const [draggedCardKey, setDraggedCardKey] = useState(null)
   const [dragOverCardKey, setDragOverCardKey] = useState(null)
@@ -294,13 +295,6 @@ const Client2Page = () => {
     clearIBSelection()
     setActiveGroupFilter('client2', null)
     setSearchInput('')
-    setSearchQuery('')
-    setDebouncedSearchQuery('')
-    setColumnFilters({})
-    setMt5Accounts([])
-    setAccountRangeMin('')
-    setAccountRangeMax('')
-    setCurrentPage(1)
   }, [])
 
   // useEffect to save columnWidths to localStorage
@@ -706,7 +700,19 @@ const Client2Page = () => {
     { key: 'lifetimeBonusIn', label: 'Lifetime Bonus In', type: 'float' },
     { key: 'lifetimeBonusOut', label: 'Lifetime Bonus Out', type: 'float' },
     { key: 'lifetimeSOCompensationIn', label: 'Lifetime SO Compensation In', type: 'float' },
-    { key: 'lifetimeSOCompensationOut', label: 'Lifetime SO Compensation Out', type: 'float' }
+    { key: 'lifetimeSOCompensationOut', label: 'Lifetime SO Compensation Out', type: 'float' },
+    // Commission columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeCommission', label: 'Lifetime Commission', type: 'float' },
+    { key: 'thisMonthCommission', label: 'This Month Commission', type: 'float' },
+    { key: 'thisWeekCommission', label: 'This Week Commission', type: 'float' },
+    // Correction columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeCorrection', label: 'Lifetime Correction', type: 'float' },
+    { key: 'thisMonthCorrection', label: 'This Month Correction', type: 'float' },
+    { key: 'thisWeekCorrection', label: 'This Week Correction', type: 'float' },
+    // Swap columns (percentage values shown when % button is clicked)
+    { key: 'lifetimeSwap', label: 'Lifetime Swap', type: 'float' },
+    { key: 'thisMonthSwap', label: 'This Month Swap', type: 'float' },
+    { key: 'thisWeekSwap', label: 'This Week Swap', type: 'float' }
   ]
 
   // Get visible columns list (moved here before being used in useEffect dependencies)
@@ -915,6 +921,11 @@ const Client2Page = () => {
 
   // Checkbox filters are now handled server-side via API (no client-side filtering needed)
 
+  // AbortController ref; cancel only polling requests, never user-triggered filters/search
+  const abortControllerRef = useRef(null)
+  const lastRequestWasSilentRef = useRef(false)
+  const refetchTimerRef = useRef(null)
+
   // Fetch clients data
   const fetchClients = useCallback(async (silent = false) => {
     // Generate unique request ID to track this specific request
@@ -929,7 +940,6 @@ const Client2Page = () => {
     abortControllerRef.current = new AbortController()
     lastRequestWasSilentRef.current = !!silent
     isFetchingRef.current = true
-    
     if (!silent) setProgressActive(true)
     console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
     try {
@@ -996,7 +1006,9 @@ const Client2Page = () => {
           lastAccess: 'lastAccess',
           zipCode: 'zipCode',
           middleName: 'middleName',
-          lastName: 'lastName'
+          lastName: 'lastName',
+          processorType: 'processorType',
+          accountType: 'accountType'
         }
         return fieldMap[colKey] || colKey
       }
@@ -1050,12 +1062,12 @@ const Client2Page = () => {
               return
             }
 
-            // Special-case: login filters should use IN array semantics
+            // Special-case: login filters should use mt5Accounts param, not filters
             if (columnKey === 'login') {
               const vals = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
               if (vals.length > 0) {
-                combinedFilters.push({ field: 'login', operator: 'in', value: vals })
-                console.log(`[Client2] 🔍 Checkbox login: using filters.in with ${vals.length} values`)
+                checkboxLoginIds = vals
+                console.log(`[Client2] 🔍 Checkbox login: routing to mt5Accounts with ${vals.length} values`)
               }
             } else {
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
@@ -1065,8 +1077,19 @@ const Client2Page = () => {
               const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
               const visibleValues = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
 
-              combinedFilters.push({ field, operator: 'in', value: selectedValues })
-              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${selectedValues.length} values`)
+              // Transform processorType friendly labels back to numeric values for API (1 or 0)
+              let apiValues = selectedValues
+              if (columnKey === 'processorType') {
+                apiValues = selectedValues.map(v => {
+                  if (v === 'Connected') return 1
+                  if (v === 'Not Connected') return 0
+                  return v // fallback for any unexpected values
+                })
+                console.log('[Client2] 🔍 processorType filter transformation:', selectedValues, '→', apiValues)
+              }
+
+              combinedFilters.push({ field, operator: 'in', value: apiValues })
+              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${apiValues.length} values`, apiValues)
             }
           }
         }
@@ -1077,11 +1100,18 @@ const Client2Page = () => {
         console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
       }
 
-      // Build MT5 accounts filter, merging Account modal, Active Group (manual list), and selected IB accounts
+      // Build MT5 accounts filter, merging Account modal, Login checkbox selection, Active Group (manual list), and selected IB accounts
       let mt5AccountsFilter = []
       // From Account Filter modal
       if (Array.isArray(mt5Accounts) && mt5Accounts.length > 0) {
         mt5AccountsFilter = [...new Set(mt5Accounts.map(Number))]
+      }
+
+      // From Login checkbox header filter (union with modal accounts)
+      if (Array.isArray(checkboxLoginIds) && checkboxLoginIds.length > 0) {
+        const union = new Set([...(mt5AccountsFilter || []).map(Number), ...checkboxLoginIds.map(Number)])
+        mt5AccountsFilter = Array.from(union)
+        console.log('[Client2] 🔗 Merged login checkbox IDs into mt5AccountsFilter:', mt5AccountsFilter.length)
       }
 
       // Add account range filter if present
@@ -1143,33 +1173,16 @@ const Client2Page = () => {
         }
       }
 
-      // Sorting Strategy: fetch ALL only when no search/filters are active
-      // Avoid huge limit=10000 during active search or filters; keep normal pagination
-      const hasSearch = !!(debouncedSearchQuery && debouncedSearchQuery.trim())
-      const hasAnyFilters = !!(payload.filters && payload.filters.length > 0)
-      const hasAccountsFilter = mt5AccountsFilter.length > 0
-      const hasGroupFilter = !!(activeGroup && (activeGroup.range || (activeGroup.loginIds && activeGroup.loginIds.length > 0)))
-      const hasQuick = !!(quickFilters?.hasFloating || quickFilters?.hasCredit || quickFilters?.noDeposit)
-      const shouldFetchAllForSorting = (sortBy && sortBy.trim() !== '') && !hasSearch && !hasAnyFilters && !hasAccountsFilter && !hasGroupFilter && !hasQuick
-      
-      // Store original pagination for later client-side pagination
-      const originalPage = payload.page
-      const originalLimit = payload.limit
-      
-      if (shouldFetchAllForSorting) {
-        // Fetch all data for proper sorting when dataset is unfiltered
-        payload.page = 1
-        payload.limit = 10000 // Large limit to get all data
-        // Don't send sortBy/sortOrder to backend - we'll sort client-side
-      } else if (sortBy && sortBy.trim() !== '') {
-        // When filters are active, send sort params to backend
+      // Sorting Strategy: Always use server-side sorting to avoid timeouts
+      // Send sort params to backend for proper pagination
+      if (sortBy && sortBy.trim() !== '') {
         payload.sortBy = sortBy
         payload.sortOrder = sortOrder
       }
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
       const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
-      const LARGE_IN_THRESHOLD = 50
+      const LARGE_IN_THRESHOLD = 20 // Lower threshold for better backend compatibility, especially with text fields
       const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
 
       if (largeInFilters.length > 0) {
@@ -1204,7 +1217,12 @@ const Client2Page = () => {
           let totalPagesForChunk = 1
           do {
             chunkPayload.page = pageNum
-            const resp = await brokerAPI.searchClients(chunkPayload)
+            // Respect aborts and newer requests: pass signal and bail on staleness
+            const resp = await brokerAPI.searchClients(chunkPayload, { signal: abortControllerRef.current.signal })
+            if (abortControllerRef.current.signal.aborted || currentRequestId !== requestIdRef.current) {
+              console.log('[Client2] ⏹️ Abort/replace detected during chunk merge; stopping early')
+              return
+            }
             const data = extractData(resp)
             const list = (data?.clients || []).filter(c => c != null && c.login != null)
             list.forEach(row => {
@@ -1347,12 +1365,6 @@ const Client2Page = () => {
 
       console.log('[Client2] 📡 Calling brokerAPI.searchClients with payload:', payload)
 
-      // Cancel previous pending request to prevent API collision
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-      abortControllerRef.current = new AbortController()
-
       // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
         // Fetch only percentage data
@@ -1365,48 +1377,17 @@ const Client2Page = () => {
         }
         
         const percentData = extractData(percentResponse)
-        let percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
+        const percentClients = (percentData?.clients || []).filter(c => c != null && c.login != null)
         const percentTotals = percentData?.totals || {}
-        let percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const percentTotal = Number(percentData?.total || percentClients.length || 0)
+        const pages = Math.max(1, Number(percentData?.pages || 1))
 
-        // Apply client-side sorting if sorting is active
-        if (shouldFetchAllForSorting) {
-          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
-          percentClients.sort((a, b) => {
-            const va = a?.[sortBy]
-            const vb = b?.[sortBy]
-            const na = Number(va), nb = Number(vb)
-            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
-            const sa = String(va ?? '').toLowerCase()
-            const sb = String(vb ?? '').toLowerCase()
-            if (sa < sb) return -1 * dir
-            if (sa > sb) return 1 * dir
-            return 0
-          })
-          
-          // Apply client-side pagination
-          percentTotal = percentClients.length
-          const start = (originalPage - 1) * originalLimit
-          const end = start + originalLimit
-          percentClients = percentClients.slice(start, end)
-          const pages = Math.max(1, Math.ceil(percentTotal / originalLimit))
-          
-          setClients(percentClients)
-          setTotalClients(percentTotal)
-          setTotalPages(pages)
-          setTotals({}) // Clear normal totals
-          setTotalsPercent(percentTotals)
-          setError('')
-        } else {
-          // Use server-side filtered results directly
-          const pages = Math.max(1, Number(percentData?.pages || 1))
-          setClients(percentClients)
-          setTotalClients(percentTotal)
-          setTotalPages(pages)
-          setTotals({}) // Clear normal totals
-          setTotalsPercent(percentTotals)
-          setError('')
-        }
+        setClients(percentClients)
+        setTotalClients(percentTotal)
+        setTotalPages(pages)
+        setTotals({}) // Clear normal totals
+        setTotalsPercent(percentTotals)
+        setError('')
       } else {
         // Fetch only normal data
         const normalResponse = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
@@ -1418,48 +1399,17 @@ const Client2Page = () => {
         }
         
         const normalData = extractData(normalResponse)
-        let normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
+        const normalClients = (normalData?.clients || []).filter(c => c != null && c.login != null)
         const normalTotals = normalData?.totals || {}
-        let normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const normalTotal = Number(normalData?.total || normalClients.length || 0)
+        const pages = Math.max(1, Number(normalData?.pages || 1))
 
-        // Apply client-side sorting if sorting is active
-        if (shouldFetchAllForSorting) {
-          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
-          normalClients.sort((a, b) => {
-            const va = a?.[sortBy]
-            const vb = b?.[sortBy]
-            const na = Number(va), nb = Number(vb)
-            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
-            const sa = String(va ?? '').toLowerCase()
-            const sb = String(vb ?? '').toLowerCase()
-            if (sa < sb) return -1 * dir
-            if (sa > sb) return 1 * dir
-            return 0
-          })
-          
-          // Apply client-side pagination
-          normalTotal = normalClients.length
-          const start = (originalPage - 1) * originalLimit
-          const end = start + originalLimit
-          normalClients = normalClients.slice(start, end)
-          const pages = Math.max(1, Math.ceil(normalTotal / originalLimit))
-          
-          setClients(normalClients)
-          setTotalClients(normalTotal)
-          setTotalPages(pages)
-          setTotals(normalTotals)
-          setTotalsPercent({})
-          setError('')
-        } else {
-          // Use server-side filtered results directly
-          const pages = Math.max(1, Number(normalData?.pages || 1))
-          setClients(normalClients)
-          setTotalClients(normalTotal)
-          setTotalPages(pages)
-          setTotals(normalTotals)
-          setTotalsPercent({})
-          setError('')
-        }
+        setClients(normalClients)
+        setTotalClients(normalTotal)
+        setTotalPages(pages)
+        setTotals(normalTotals)
+        setTotalsPercent({})
+        setError('')
       }
     } catch (err) {
       // Ignore request cancellations caused by in-flight aborts
@@ -1501,6 +1451,7 @@ const Client2Page = () => {
       isFetchingRef.current = false
       if (!silent) {
         setLoading(false)
+        setProgressActive(false)
       }
       // Mark initial load complete and always reset sorting state
       setInitialLoad(false)
@@ -1589,11 +1540,23 @@ const Client2Page = () => {
   // Initial fetch and refetch on dependency changes (desktop only)
   useEffect(() => {
     if (isMobile || !isAuthenticated || unauthorized) return
-    console.log('[Client2] ⚡ useEffect triggered - fetchClients dependency changed')
-    console.log('[Client2] Current columnFilters:', JSON.stringify(columnFilters, null, 2))
-    fetchClients()
-    fetchRebateTotals()
-  }, [fetchClients, fetchRebateTotals, isMobile, isAuthenticated, unauthorized])
+    if (refetchTimerRef.current) {
+      clearTimeout(refetchTimerRef.current)
+    }
+    // Debounce refetch slightly to coalesce rapid filter changes and avoid cancel spam
+    refetchTimerRef.current = setTimeout(() => {
+      console.log('[Client2] ⚡ Debounced refetch triggered')
+      fetchClients(false)
+      fetchRebateTotals()
+      refetchTimerRef.current = null
+    }, 200)
+    return () => {
+      if (refetchTimerRef.current) {
+        clearTimeout(refetchTimerRef.current)
+        refetchTimerRef.current = null
+      }
+    }
+  }, [fetchClients, fetchRebateTotals, isMobile, isAuthenticated, unauthorized, columnFilters, debouncedSearchQuery, currentPage, itemsPerPage, sortBy, sortOrder, quickFilters])
 
   // Auto-refresh rebate totals every 1 hour (desktop only)
   useEffect(() => {
@@ -1614,6 +1577,8 @@ const Client2Page = () => {
     // Avoid polling when tab is hidden
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
     const intervalId = setInterval(() => {
+      // Skip polling while recent user filter actions are active
+      if (Date.now() < pausePollingUntilRef.current) return
       fetchClients(true) // silent = true, no loading spinner - will refresh with current filters applied
     }, 2000)
     return () => clearInterval(intervalId)
@@ -1627,6 +1592,11 @@ const Client2Page = () => {
 
   // Handle sort
   const handleSort = (columnKey) => {
+    // Prevent multiple sort clicks while sorting is in progress
+    if (isSorting) {
+      return
+    }
+
     // Set sorting loading state
     setIsSorting(true)
 
@@ -1872,6 +1842,7 @@ const Client2Page = () => {
   const toggleColumnFilter = (columnKey, value) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
@@ -1891,6 +1862,7 @@ const Client2Page = () => {
   const selectAllFilters = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     const allValues = getUniqueColumnValues(columnKey)
     setColumnFilters(prev => ({
@@ -1902,6 +1874,7 @@ const Client2Page = () => {
   const deselectAllFilters = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
@@ -1912,6 +1885,7 @@ const Client2Page = () => {
   const clearColumnFilter = (columnKey) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
@@ -1969,6 +1943,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     const filterConfig = {
       operator: temp.operator,
@@ -2037,6 +2012,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     const filterConfig = {
       operator: temp.operator,
@@ -2091,7 +2067,9 @@ const Client2Page = () => {
         lastAccess: 'lastAccess',
         zipCode: 'zipCode',
         middleName: 'middleName',
-        lastName: 'lastName'
+        lastName: 'lastName',
+        processorType: 'processorType',
+        accountType: 'accountType'
       }
       return fieldMap[colKey] || colKey
     }
@@ -2193,6 +2171,7 @@ const Client2Page = () => {
 
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
+    setProgressActive(true)
     // Allow API calls for a broader set of text columns to ensure filtering works across more fields
     const allowedColumns = [
       // Identifiers
@@ -2290,11 +2269,13 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
   // Fetch column values in batches of 500 (lazy loading) using dedicated fields API
   const fetchColumnValues = async (columnKey, forceRefresh = false) => {
+    setProgressActive(true)
     // Allow API calls for a broader set of text columns to ensure filtering works across more fields
     const allowedColumns = [
       // Identifiers
@@ -2369,7 +2350,22 @@ const Client2Page = () => {
       const clients = data?.clients || []
       const setVals = new Set()
       clients.forEach(client => {
-        const v = client?.[columnKey]
+        let v = client?.[columnKey]
+        
+        // Transform processorType values to friendly labels
+        if (columnKey === 'processorType' && v !== null && v !== undefined && v !== '') {
+          if (typeof v === 'boolean') {
+            v = v ? 'Connected' : 'Not Connected'
+          } else {
+            const normalized = typeof v === 'string' ? v.trim().toLowerCase() : v
+            if (normalized === 1 || normalized === '1' || normalized === 'true') {
+              v = 'Connected'
+            } else if (normalized === 0 || normalized === '0' || normalized === 'false') {
+              v = 'Not Connected'
+            }
+          }
+        }
+        
         if (v !== null && v !== undefined && v !== '') setVals.add(v)
       })
 
@@ -2393,11 +2389,13 @@ const Client2Page = () => {
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: null }))
     } finally {
       setColumnValuesLoading(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
   // Load more column values when scrolling (fetch next 500)
   const fetchMoreColumnValues = async (columnKey) => {
+    setProgressActive(true)
     console.log(`[Client2] fetchMoreColumnValues called for ${columnKey}`)
     console.log(`[Client2] State - loading: ${columnValuesLoadingMore[columnKey]}, hasMore: ${columnValuesHasMore[columnKey]}`)
 
@@ -2480,6 +2478,7 @@ const Client2Page = () => {
       console.error(`[Client2Page] Error fetching more column values for ${columnKey}:`, err)
     } finally {
       setColumnValuesLoadingMore(prev => ({ ...prev, [columnKey]: false }))
+      setProgressActive(false)
     }
   }
 
@@ -2554,6 +2553,7 @@ const Client2Page = () => {
 
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
 
     // Store filter in state - will be sent to API via fetchClients
     setColumnFilters(prev => {
@@ -2653,6 +2653,7 @@ const Client2Page = () => {
   const handleClearAllFilters = () => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
+    pausePollingUntilRef.current = Date.now() + 1200
     
     // Basic list filters
     setFilters([])
@@ -3019,7 +3020,9 @@ const Client2Page = () => {
         lastAccess: 'lastAccess',
         zipCode: 'zipCode',
         middleName: 'middleName',
-        lastName: 'lastName'
+        lastName: 'lastName',
+        processorType: 'processorType',
+        accountType: 'accountType'
       }
       return fieldMap[colKey] || colKey
     }
@@ -4649,14 +4652,14 @@ const Client2Page = () => {
                                     </svg>
                                   </div>
                                   <div
-                                    className="flex items-center gap-1 cursor-pointer flex-1"
+                                    className={`flex items-center gap-1 flex-1 ${isSorting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                     onClick={() => handleSort(col.key)}
                                   >
                                     <span
                                       className="truncate"
                                       title={col.label}
                                     >
-                                      {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'].includes(col.key) ? ' %' : ''}
+                                      {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap'].includes(col.key) ? ' %' : ''}
                                     </span>
                                     {sortBy === col.key && (
                                       <span className="text-white">
@@ -4924,53 +4927,66 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List - Also for numeric columns */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar */}
-                                                <div className="px-3 py-2 border-b border-gray-200">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="Search values..."
-                                                    value={columnValueSearch[columnKey] || ''}
-                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                  />
-                                                </div>
-
-                                                {/* Select Visible Checkbox */}
-                                                {columnValuesUnsupported[columnKey] ? null : (
-                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                    {(() => {
-                                                      const allVals = columnValues[columnKey] || []
-                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                      const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                      // Always read from columnFilters to show currently applied filters
-                                                      const existingFilter = columnFilters[`${columnKey}_checkbox`]
-                                                      const filterValues = existingFilter?.values || []
-                                                      // Use selectedColumnValues only if user has interacted (different from applied filter)
-                                                      const interactiveSelected = selectedColumnValues[columnKey]
-                                                      // Show filterValues by default, or interactiveSelected if it differs from filter
-                                                      const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
-                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                      const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
-                                                      return (
-                                                        <>
-                                                          <label className="flex items-center gap-2 cursor-pointer">
-                                                            <input
-                                                              type="checkbox"
-                                                              checked={allVisibleSelected}
-                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                            />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                          </label>
-                                                        </>
-                                                      )
-                                                    })()}
+                                                {/* Initial loading - centered when no values yet */}
+                                                {columnValuesLoading[columnKey] && !(columnValues[columnKey] || []).length && (
+                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
+                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                   </div>
                                                 )}
 
-                                                {/* Values List - Lazy loading with scroll detection */}
-                                                <div
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                {/* Search Bar */}
+                                                {(columnValues[columnKey] || []).length > 0 && (
+                                                  <div className="px-3 py-2 border-b border-gray-200">
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Search values..."
+                                                      value={columnValueSearch[columnKey] || ''}
+                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                    />
+                                                  </div>
+                                                )}
+
+                                                {/* Select Visible and Values List */}
+                                                {(columnValues[columnKey] || []).length > 0 && (
+                                                  <>
+                                                    {/* Select Visible Checkbox */}
+                                                    {columnValuesUnsupported[columnKey] ? null : (
+                                                      <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                        {(() => {
+                                                          const allVals = columnValues[columnKey] || []
+                                                          const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                          const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
+                                                          // Always read from columnFilters to show currently applied filters
+                                                          const existingFilter = columnFilters[`${columnKey}_checkbox`]
+                                                          const filterValues = existingFilter?.values || []
+                                                          // Use selectedColumnValues only if user has interacted (different from applied filter)
+                                                          const interactiveSelected = selectedColumnValues[columnKey]
+                                                          // Show filterValues by default, or interactiveSelected if it differs from filter
+                                                          const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
+                                                          const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
+                                                          const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
+                                                          return (
+                                                            <>
+                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={allVisibleSelected}
+                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                              </label>
+                                                            </>
+                                                          )
+                                                        })()}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Values List - Lazy loading with scroll detection */}
+                                                    <div
+                                                      className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5008,9 +5024,9 @@ const Client2Page = () => {
                                                   }}
                                                 >
                                                   {columnValuesLoading[columnKey] ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                    <div className="flex flex-col items-center justify-center py-12">
+                                                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                      <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                     </div>
                                                   ) : (() => {
                                                     const allVals = columnValues[columnKey] || []
@@ -5037,7 +5053,7 @@ const Client2Page = () => {
                                                                   onChange={() => toggleColumnValue(columnKey, value)}
                                                                   className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                                 />
-                                                                <span className="text-xs text-gray-700">{value}</span>
+                                                                <span className="text-xs text-gray-900 font-medium">{value}</span>
                                                               </label>
                                                             ))}
                                                             {/* Loading more indicator */}
@@ -5063,10 +5079,18 @@ const Client2Page = () => {
                                                     )
                                                   })()}
                                                 </div>
+                                                  </>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                <button
+                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                >
+                                                  Close
+                                                </button>
                                                 <button
                                                   onClick={() => {
                                                     applyCheckboxFilter(columnKey)
@@ -5075,12 +5099,6 @@ const Client2Page = () => {
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
-                                                </button>
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
                                                 </button>
                                               </div>
                                             </>
@@ -5152,16 +5170,16 @@ const Client2Page = () => {
                                                   className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
                                                   onClick={(e) => e.stopPropagation()}
                                                   onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                      e.preventDefault()
-                                                      e.stopPropagation()
-                                                      applyTextFilter(columnKey)
-                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                      if (menu) menu.classList.add('hidden')
-                                                      setShowFilterDropdown(null)
-                                                    }
-                                                  }}
-                                                >
+                                                      if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                        applyTextFilter(columnKey)
+                                                        const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                        if (menu) menu.classList.add('hidden')
+                                                        setShowFilterDropdown(null)
+                                                      }
+                                                    }}
+                                                  >
                                                     <div className="p-3 space-y-3">
                                                       {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
                                                       {(() => {
@@ -5244,52 +5262,65 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar */}
-                                                <div className="px-3 py-2 border-b border-gray-200">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="Search values..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                    onKeyDown={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        e.preventDefault()
-                                                        applyCheckboxFilter(columnKey)
-                                                        setShowFilterDropdown(null)
-                                                      }
-                                                    }}
-                                                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                  />
-                                                </div>
-
-                                                {/* Select Visible Checkbox */}
-                                                {columnValuesUnsupported[columnKey] ? null : (
-                                                  <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                    {(() => {
-                                                      const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                      const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
-                                                      const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                      const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
-                                                      return (
-                                                        <>
-                                                          <label className="flex items-center gap-2 cursor-pointer">
-                                                            <input
-                                                              type="checkbox"
-                                                              checked={allVisibleSelected}
-                                                              onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                              className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                            />
-                                                            <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                          </label>
-                                                        </>
-                                                      )
-                                                    })()}
+                                                {/* Initial loading - centered when no values yet */}
+                                                {loading && !allValues.length && (
+                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
+                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                   </div>
                                                 )}
 
-                                                {/* Values List - Lazy loading with scroll detection */}
-                                                <div
-                                                  className="flex-1 overflow-y-auto px-3 py-2"
+                                                {/* Search Bar */}
+                                                {allValues.length > 0 && (
+                                                  <div className="px-3 py-2 border-b border-gray-200">
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Search values..."
+                                                      value={searchQuery}
+                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                          e.preventDefault()
+                                                          applyCheckboxFilter(columnKey)
+                                                          setShowFilterDropdown(null)
+                                                        }
+                                                      }}
+                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                    />
+                                                  </div>
+                                                )}
+
+                                                {/* Select Visible and Values List */}
+                                                {allValues.length > 0 && (
+                                                  <>
+                                                    {/* Select Visible Checkbox */}
+                                                    {columnValuesUnsupported[columnKey] ? null : (
+                                                      <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                        {(() => {
+                                                          const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                          const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+                                                          const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
+                                                          const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
+                                                          return (
+                                                            <>
+                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={allVisibleSelected}
+                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                />
+                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                              </label>
+                                                            </>
+                                                          )
+                                                        })()}
+                                                      </div>
+                                                    )}
+
+                                                    {/* Values List - Lazy loading with scroll detection */}
+                                                    <div
+                                                      className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5326,10 +5357,10 @@ const Client2Page = () => {
                                                     }
                                                   }}
                                                 >
-                                                  {loading ? (
-                                                    <div className="py-8 text-center">
-                                                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                                                      <p className="text-xs text-gray-500 mt-2">Loading values...</p>
+                                                  {columnValuesLoading[columnKey] ? (
+                                                    <div className="flex flex-col items-center justify-center py-12">
+                                                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                      <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                     </div>
                                                   ) : (
                                                     <>
@@ -5368,10 +5399,18 @@ const Client2Page = () => {
                                                     </>
                                                   )}
                                                 </div>
+                                                  </>
+                                                )}
                                               </div>
 
                                               {/* OK/Close Buttons */}
                                               <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                <button
+                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                >
+                                                  Close
+                                                </button>
                                                 <button
                                                   onClick={() => {
                                                     applyCheckboxFilter(columnKey)
@@ -5380,12 +5419,6 @@ const Client2Page = () => {
                                                   className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                 >
                                                   OK
-                                                </button>
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
                                                 </button>
                                               </div>
                                             </>
@@ -5487,10 +5520,13 @@ const Client2Page = () => {
                               'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut',
                               'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut',
                               'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut',
+                              'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap',
                               'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut',
                               'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut',
+                              'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap',
                               'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut',
-                              'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut'
+                              'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut',
+                              'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap'
                             ]
                             
                             const fieldKey = percentModeActive && fieldsWithPercentage.includes(col.key) 
