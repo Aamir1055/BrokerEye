@@ -1945,10 +1945,29 @@ const Client2Page = () => {
     requestIdRef.current++
     pausePollingUntilRef.current = Date.now() + 1200
 
+    const columnType = getColumnType(columnKey)
+    const isDateColumn = columnType === 'date'
+
+    // Convert date strings to epoch milliseconds for date columns
+    let value1 = temp.value1
+    let value2 = temp.value2
+
+    if (isDateColumn) {
+      // Convert yyyy-mm-dd to epoch milliseconds
+      if (value1) {
+        const date1 = new Date(value1)
+        value1 = date1.getTime()
+      }
+      if (value2) {
+        const date2 = new Date(value2)
+        value2 = date2.getTime()
+      }
+    }
+
     const filterConfig = {
       operator: temp.operator,
-      value1: parseFloat(temp.value1),
-      value2: temp.value2 ? parseFloat(temp.value2) : null
+      value1: isDateColumn ? value1 : parseFloat(value1),
+      value2: value2 ? (isDateColumn ? value2 : parseFloat(value2)) : null
     }
 
     console.log('[Client2] applyNumberFilter called for', columnKey, 'with config:', filterConfig)
@@ -1970,9 +1989,36 @@ const Client2Page = () => {
 
   const initNumericFilterTemp = (columnKey) => {
     if (!numericFilterTemp[columnKey]) {
+      const existingFilter = columnFilters[`${columnKey}_number`]
+      const columnType = getColumnType(columnKey)
+      const isDateColumn = columnType === 'date'
+      
+      let value1 = ''
+      let value2 = ''
+      let operator = 'equal'
+      
+      if (existingFilter) {
+        operator = existingFilter.operator || 'equal'
+        
+        // Convert epoch milliseconds back to yyyy-mm-dd for date columns
+        if (isDateColumn && existingFilter.value1) {
+          const date1 = new Date(existingFilter.value1)
+          value1 = date1.toISOString().split('T')[0]
+        } else {
+          value1 = existingFilter.value1 || ''
+        }
+        
+        if (isDateColumn && existingFilter.value2) {
+          const date2 = new Date(existingFilter.value2)
+          value2 = date2.toISOString().split('T')[0]
+        } else {
+          value2 = existingFilter.value2 || ''
+        }
+      }
+      
       setNumericFilterTemp(prev => ({
         ...prev,
-        [columnKey]: { operator: 'equal', value1: '', value2: '' }
+        [columnKey]: { operator, value1, value2 }
       }))
     }
   }
