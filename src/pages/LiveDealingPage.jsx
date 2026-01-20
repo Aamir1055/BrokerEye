@@ -1318,22 +1318,22 @@ const LiveDealingPage = () => {
                               <div 
                                 className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
                                 onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('contains')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Contains...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('notContains')
-                                  setShowCustomFilterModal(true)
-                                }}
+                                  e.stopPropagation()].includes(columnKey) 
+                            ? 'rotate(180deg)' 
+                            : 'none'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    {/* Custom Filter Form - Appears directly when clicking Number Filters */}
+                    {showNumberFilterDropdown === columnKey && (
+                      <div
+                        data-number-filter
+                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        style={{
+                          ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage
                               >
                                 Does Not Contain...
                               </div>
