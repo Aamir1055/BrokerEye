@@ -1391,7 +1391,40 @@ export default function Client2Module() {
             ref={scrollContainerRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {orderedCards.map((card, i) => (
+            {isLoading ? (
+              // Skeleton loading for face cards
+              <>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div 
+                    key={`skeleton-card-${i}`}
+                    style={{
+                      boxSizing: 'border-box',
+                      minWidth: '125px',
+                      width: '125px',
+                      height: '60px',
+                      background: '#FFFFFF',
+                      border: '1px solid #F2F2F7',
+                      boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
+                      borderRadius: '12px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      scrollSnapAlign: 'start',
+                      flexShrink: 0,
+                      flex: 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              orderedCards.map((card, i) => (
                 <div 
                   key={`${card.label}-${lastUpdateTime}`}
                   style={{
@@ -1439,10 +1472,11 @@ export default function Client2Module() {
                       color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
                     }}>
                       {card.value === '' || card.value === undefined ? '0.00' : card.value}
-                  </span>
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
