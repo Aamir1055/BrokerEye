@@ -653,7 +653,7 @@ const Client2Page = () => {
     { key: 'registration', label: 'Registration', type: 'date' },
     { key: 'lastAccess', label: 'Last Access', type: 'date' },
     { key: 'accountLastUpdate', label: 'Account Last Update', type: 'integer' },
-    { key: 'userLastUpdate', label: 'User Last Update', type: 'integer' },
+    { key: 'userLastUpdate', label: 'User Last Update', type: 'date' },
     { key: 'applied_percentage', label: 'Applied Percentage', type: 'float' },
     { key: 'applied_percentage_is_custom', label: 'Is Custom Percentage', type: 'text' },
     { key: 'assets', label: 'Assets', type: 'float' },
@@ -4869,9 +4869,9 @@ const Client2Page = () => {
                                                         <div>
                                                           <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                           <input
-                                                            type="number"
-                                                            step="any"
-                                                            placeholder="Enter value"
+                                                            type={columnType === 'date' ? 'date' : 'number'}
+                                                            step={columnType === 'date' ? undefined : 'any'}
+                                                            placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                             value={tempFilter.value1}
                                                             onChange={(e) => {
                                                               updateNumericFilterTemp(columnKey, 'value1', e.target.value)
@@ -4897,9 +4897,9 @@ const Client2Page = () => {
                                                           <div>
                                                             <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                             <input
-                                                              type="number"
-                                                              step="any"
-                                                              placeholder="Enter value"
+                                                              type={columnType === 'date' ? 'date' : 'number'}
+                                                              step={columnType === 'date' ? undefined : 'any'}
+                                                              placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                               value={tempFilter.value2}
                                                               onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
                                                               onKeyDown={(e) => {
@@ -4969,9 +4969,9 @@ const Client2Page = () => {
                                                     <div>
                                                       <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                       <input
-                                                        type="number"
-                                                        step="any"
-                                                        placeholder="Enter value"
+                                                        type={columnType === 'date' ? 'date' : 'number'}
+                                                        step={columnType === 'date' ? undefined : 'any'}
+                                                        placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                         value={tempFilter.value1}
                                                         onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
                                                         onKeyDown={(e) => {
@@ -4989,9 +4989,9 @@ const Client2Page = () => {
                                                       <div>
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                         <input
-                                                          type="number"
-                                                          step="any"
-                                                          placeholder="Enter value"
+                                                          type={columnType === 'date' ? 'date' : 'number'}
+                                                          step={columnType === 'date' ? undefined : 'any'}
+                                                          placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                           value={tempFilter.value2}
                                                           onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
                                                           onKeyDown={(e) => {
