@@ -451,12 +451,16 @@ const PositionsPage = () => {
     
     const { type, value1, value2 } = filterConfig
 
-    // Handle text filters
-    if (['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
+    // Handle text filters (including equal/notEqual for text comparison)
+    if (['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
       const strValue = String(value || '').toLowerCase()
       const searchValue = String(value1 || '').toLowerCase()
       
       switch (type) {
+        case 'equal':
+          return strValue === searchValue
+        case 'notEqual':
+          return strValue !== searchValue
         case 'startsWith':
           return strValue.startsWith(searchValue)
         case 'endsWith':
@@ -470,25 +474,23 @@ const PositionsPage = () => {
       }
     }
 
-    // Handle number filters
+    // Handle number filters only (lessThan, greaterThan, between, etc.)
     const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
+    const numValue1 = parseFloat(value1)
+    if (isNaN(numValue) || isNaN(numValue1)) return false
 
     switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
       case 'lessThan':
-        return numValue < value1
+        return numValue < numValue1
       case 'lessThanOrEqual':
-        return numValue <= value1
+        return numValue <= numValue1
       case 'greaterThan':
-        return numValue > value1
+        return numValue > numValue1
       case 'greaterThanOrEqual':
-        return numValue >= value1
+        return numValue >= numValue1
       case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
+        const numValue2 = parseFloat(value2)
+        return !isNaN(numValue2) && numValue >= numValue1 && numValue <= numValue2
       default:
         return true
     }
