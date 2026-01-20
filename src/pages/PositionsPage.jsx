@@ -419,8 +419,13 @@ const PositionsPage = () => {
   // Apply custom number filter
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
-
-    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    // Consider equal/notEqual as text when the target column is a string column
+    const isTextFilter = (
+      ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+      || (
+        ['equal', 'notEqual'].includes(customFilterType) && isStringColumn(customFilterColumn)
+      )
+    )
     
     const filterConfig = {
       type: customFilterType,
