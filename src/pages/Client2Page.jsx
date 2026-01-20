@@ -4822,79 +4822,64 @@ const Client2Page = () => {
 
                                               {/* Number Filter Operators */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <button
-                                                  onClick={() => {
-                                                    const btn = document.getElementById(`number-filter-btn-${columnKey}`)
-                                                    const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                    if (menu) {
-                                                      menu.classList.toggle('hidden')
-                                                    }
-                                                  }}
-                                                  id={`number-filter-btn-${col.key}`}
-                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                >
-                                                  <span className="text-gray-700 font-medium">Number Filters</span>
-                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                  </svg>
-                                                </button>
+                                                {(columnValues[columnKey] || []).length > 0 ? (
+                                                  // Collapsible version when there are checkbox values - opens to the right
+                                                  <div className="relative">
+                                                    <button
+                                                      onClick={() => {
+                                                        const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                        if (menu) {
+                                                          menu.classList.toggle('hidden')
+                                                        }
+                                                      }}
+                                                      id={`number-filter-btn-${columnKey}`}
+                                                      className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                    >
+                                                      <span className="text-gray-700 font-medium">Number Filters</span>
+                                                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                      </svg>
+                                                    </button>
 
-                                                {/* Number Filter Submenu */}
-                                                <div
-                                                  id={`number-filter-menu-${columnKey}`}
-                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <div className="p-3 space-y-3">
-                                                      {/* Operator Dropdown */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
-                                                        <select
-                                                          value={tempFilter.operator}
-                                                          onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                        >
-                                                          <option value="equal">Equal...</option>
-                                                          <option value="not_equal">Not Equal...</option>
-                                                          <option value="less_than">Less Than...</option>
-                                                          <option value="less_than_equal">Less Than Or Equal...</option>
-                                                          <option value="greater_than">Greater Than...</option>
-                                                          <option value="greater_than_equal">Greater Than Or Equal...</option>
-                                                          <option value="between">Between...</option>
-                                                        </select>
-                                                      </div>
-
-                                                      {/* Value Input(s) */}
-                                                      <div>
-                                                        <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
-                                                        <input
-                                                          type="number"
-                                                          step="any"
-                                                          placeholder="Enter value"
-                                                          value={tempFilter.value1}
-                                                          onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
-                                                          onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                              e.preventDefault()
-                                                              applyNumberFilter(columnKey)
-                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                              if (menu) menu.classList.add('hidden')
-                                                            }
-                                                          }}
-                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                        />
-                                                      </div>
-
-                                                      {/* Second Value for Between */}
-                                                      {tempFilter.operator === 'between' && (
+                                                    <div
+                                                      id={`number-filter-menu-${columnKey}`}
+                                                      className="hidden absolute top-0 left-full ml-2 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3"
+                                                      onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                      <div className="space-y-3">
+                                                        {/* Operator Dropdown */}
                                                         <div>
-                                                          <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                                                          <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                                                          <select
+                                                            value={tempFilter.operator}
+                                                            onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
+                                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                          >
+                                                            <option value="equal">Equal...</option>
+                                                            <option value="not_equal">Not Equal...</option>
+                                                            <option value="less_than">Less Than...</option>
+                                                            <option value="less_than_equal">Less Than Or Equal...</option>
+                                                            <option value="greater_than">Greater Than...</option>
+                                                            <option value="greater_than_equal">Greater Than Or Equal...</option>
+                                                            <option value="between">Between...</option>
+                                                          </select>
+                                                        </div>
+
+                                                        {/* Value Input(s) */}
+                                                        <div>
+                                                          <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                           <input
                                                             type="number"
                                                             step="any"
                                                             placeholder="Enter value"
-                                                            value={tempFilter.value2}
-                                                            onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
+                                                            value={tempFilter.value1}
+                                                            onChange={(e) => {
+                                                              updateNumericFilterTemp(columnKey, 'value1', e.target.value)
+                                                              // Auto-apply if value is valid (except for between operator)
+                                                              if (e.target.value && tempFilter.operator !== 'between') {
+                                                                setTimeout(() => applyNumberFilter(columnKey), 500)
+                                                              }
+                                                            }}
                                                             onKeyDown={(e) => {
                                                               if (e.key === 'Enter') {
                                                                 e.preventDefault()
@@ -4906,10 +4891,31 @@ const Client2Page = () => {
                                                             className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                           />
                                                         </div>
-                                                      )}
 
-                                                      {/* Apply Button */}
-                                                      <div className="flex gap-2 pt-2 border-t border-gray-200">
+                                                        {/* Second Value for Between */}
+                                                        {tempFilter.operator === 'between' && (
+                                                          <div>
+                                                            <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                                                            <input
+                                                              type="number"
+                                                              step="any"
+                                                              placeholder="Enter value"
+                                                              value={tempFilter.value2}
+                                                              onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
+                                                              onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                  e.preventDefault()
+                                                                  applyNumberFilter(columnKey)
+                                                                  const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                                  if (menu) menu.classList.add('hidden')
+                                                                }
+                                                              }}
+                                                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                            />
+                                                          </div>
+                                                        )}
+
+                                                        {/* Apply Button */}
                                                         <button
                                                           onClick={() => {
                                                             applyNumberFilter(columnKey)
@@ -4923,7 +4929,106 @@ const Client2Page = () => {
                                                       </div>
                                                     </div>
                                                   </div>
+                                                ) : (
+                                                  // Expanded version when there are NO checkbox values
+                                                  <div className="space-y-3">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-xs font-semibold text-gray-700">Number Filters</span>
+                                                      {hasNumberFilter && (
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            clearColumnFilter(columnKey)
+                                                          }}
+                                                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+                                                        >
+                                                          Clear
+                                                        </button>
+                                                      )}
+                                                    </div>
+
+                                                    {/* Operator Dropdown */}
+                                                    <div>
+                                                      <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                                                      <select
+                                                        value={tempFilter.operator}
+                                                        onChange={(e) => updateNumericFilterTemp(columnKey, 'operator', e.target.value)}
+                                                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                      >
+                                                        <option value="equal">Equal...</option>
+                                                        <option value="not_equal">Not Equal...</option>
+                                                        <option value="less_than">Less Than...</option>
+                                                        <option value="less_than_equal">Less Than Or Equal...</option>
+                                                        <option value="greater_than">Greater Than...</option>
+                                                        <option value="greater_than_equal">Greater Than Or Equal...</option>
+                                                        <option value="between">Between...</option>
+                                                      </select>
+                                                    </div>
+
+                                                    {/* Value Input(s) */}
+                                                    <div>
+                                                      <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                                                      <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="Enter value"
+                                                        value={tempFilter.value1}
+                                                        onChange={(e) => updateNumericFilterTemp(columnKey, 'value1', e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                          if (e.key === 'Enter') {
+                                                            e.preventDefault()
+                                                            applyNumberFilter(columnKey)
+                                                          }
+                                                        }}
+                                                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                      />
+                                                    </div>
+
+                                                    {/* Second Value for Between */}
+                                                    {tempFilter.operator === 'between' && (
+                                                      <div>
+                                                        <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                                                        <input
+                                                          type="number"
+                                                          step="any"
+                                                          placeholder="Enter value"
+                                                          value={tempFilter.value2}
+                                                          onChange={(e) => updateNumericFilterTemp(columnKey, 'value2', e.target.value)}
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                              e.preventDefault()
+                                                              applyNumberFilter(columnKey)
+                                                            }
+                                                          }}
+                                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                        />
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
                                               </div>
+
+                                              {/* Close/OK Buttons for non-checkbox columns */}
+                                              {(columnValues[columnKey] || []).length === 0 && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      console.log('[Client2] Applying number filter for column:', columnKey)
+                                                      applyNumberFilter(columnKey)
+                                                      setShowFilterDropdown(null)
+                                                    }}
+                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  >
+                                                    OK
+                                                  </button>
+                                                </div>
+                                              )}
 
                                               {/* Checkbox Value List - Also for numeric columns */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
@@ -5083,24 +5188,26 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* OK/Close Buttons */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
-                                                </button>
-                                                <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                >
-                                                  OK
-                                                </button>
-                                              </div>
+                                              {/* Close/OK Buttons for columns WITH checkboxes */}
+                                              {(columnValues[columnKey] || []).length > 0 && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      applyCheckboxFilter(columnKey)
+                                                      setShowFilterDropdown(null)
+                                                    }}
+                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  >
+                                                    OK
+                                                  </button>
+                                                </div>
+                                              )}
                                             </>
                                           )
                                         })()}
@@ -5147,100 +5254,100 @@ const Client2Page = () => {
 
                                               {/* Text Filters Section */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                <button
-                                                  onClick={() => {
-                                                    const btn = document.getElementById(`text-filter-btn-${columnKey}`)
-                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                    if (menu) {
-                                                      menu.classList.toggle('hidden')
-                                                    }
-                                                  }}
-                                                  id={`text-filter-btn-${columnKey}`}
-                                                  className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                >
-                                                  <span className="text-gray-700 font-medium">Text Filters</span>
-                                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                  </svg>
-                                                </button>
-
-                                                {/* Keep existing text filter submenu for advanced filtering */}
-                                                <div
-                                                  id={`text-filter-menu-${columnKey}`}
-                                                  className="hidden mt-2 bg-gray-50 border border-gray-300 rounded-md p-3"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                  onKeyDown={(e) => {
-                                                      if (e.key === 'Enter') {
-                                                        e.preventDefault()
-                                                        e.stopPropagation()
-                                                        applyTextFilter(columnKey)
+                                                {allValues.length > 0 ? (
+                                                  // Collapsible version when there are checkbox values - opens to the right
+                                                  <div className="relative">
+                                                    <button
+                                                      onClick={() => {
                                                         const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                        if (menu) menu.classList.add('hidden')
-                                                        setShowFilterDropdown(null)
-                                                      }
-                                                    }}
-                                                  >
-                                                    <div className="p-3 space-y-3">
-                                                      {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
-                                                      {(() => {
-                                                        const tempTextFilter = textFilterTemp[columnKey] || { operator: 'equal', value: '', caseSensitive: false }
-                                                        return (
-                                                          <>
-                                                            <div>
-                                                              <label className="block text-xs font-medium text-gray-700 mb-1">Condition</label>
-                                                              <select
-                                                                value={tempTextFilter.operator}
-                                                                onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                  if (e.key === 'Enter') {
-                                                                    e.preventDefault()
-                                                                    applyTextFilter(columnKey)
-                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                                    if (menu) menu.classList.add('hidden')
-                                                                    setShowFilterDropdown(null)
-                                                                  }
-                                                                }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                              >
-                                                                <option value="equal">Equal...</option>
-                                                                <option value="notEqual">Not Equal...</option>
-                                                                <option value="startsWith">Starts With...</option>
-                                                                <option value="endsWith">Ends With...</option>
-                                                                <option value="contains">Contains...</option>
-                                                                <option value="doesNotContain">Does Not Contain...</option>
-                                                              </select>
-                                                            </div>
-                                                            <div>
-                                                              <label className="block text-xs font-medium text-gray-700 mb-1">Value</label>
-                                                              <input
-                                                                type="text"
-                                                                placeholder="Enter text"
-                                                                value={tempTextFilter.value}
-                                                                onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                  if (e.key === 'Enter') {
-                                                                    e.preventDefault()
-                                                                    applyTextFilter(columnKey)
-                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                                    if (menu) menu.classList.add('hidden')
-                                                                    setShowFilterDropdown(null)
-                                                                  }
-                                                                }}
-                                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                              />
-                                                            </div>
-                                                            <div>
-                                                              <label className="flex items-center gap-2 cursor-pointer">
+                                                        if (menu) {
+                                                          menu.classList.toggle('hidden')
+                                                        }
+                                                      }}
+                                                      id={`text-filter-btn-${columnKey}`}
+                                                      className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${columnFilters[`${columnKey}_text`] ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                    >
+                                                      <span className="text-gray-700 font-medium">Text Filters</span>
+                                                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                      </svg>
+                                                    </button>
+
+                                                    <div
+                                                      id={`text-filter-menu-${columnKey}`}
+                                                      className="hidden absolute top-0 left-full ml-2 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3"
+                                                      onClick={(e) => e.stopPropagation()}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                          e.preventDefault()
+                                                          e.stopPropagation()
+                                                          applyTextFilter(columnKey)
+                                                          const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                          if (menu) menu.classList.add('hidden')
+                                                          setShowFilterDropdown(null)
+                                                        }
+                                                      }}
+                                                    >
+                                                      <div className="space-y-3">
+                                                        {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
+                                                        {(() => {
+                                                          const tempTextFilter = textFilterTemp[columnKey] || { operator: 'equal', value: '', caseSensitive: false }
+                                                          return (
+                                                            <>
+                                                              <div>
+                                                                <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                                                                <select
+                                                                  value={tempTextFilter.operator}
+                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
+                                                                  onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                      e.preventDefault()
+                                                                      applyTextFilter(columnKey)
+                                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                      if (menu) menu.classList.add('hidden')
+                                                                      setShowFilterDropdown(null)
+                                                                    }
+                                                                  }}
+                                                                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                                >
+                                                                  <option value="equal">Equal...</option>
+                                                                  <option value="notEqual">Not Equal...</option>
+                                                                  <option value="startsWith">Starts With...</option>
+                                                                  <option value="endsWith">Ends With...</option>
+                                                                  <option value="contains">Contains...</option>
+                                                                  <option value="doesNotContain">Does Not Contain...</option>
+                                                                </select>
+                                                              </div>
+                                                              <div>
+                                                                <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                                 <input
-                                                                  type="checkbox"
-                                                                  checked={tempTextFilter.caseSensitive}
-                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'caseSensitive', e.target.checked)}
-                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                  type="text"
+                                                                  placeholder="Enter text"
+                                                                  value={tempTextFilter.value}
+                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
+                                                                  onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                      e.preventDefault()
+                                                                      applyTextFilter(columnKey)
+                                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                      if (menu) menu.classList.add('hidden')
+                                                                      setShowFilterDropdown(null)
+                                                                    }
+                                                                  }}
+                                                                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                                                                 />
-                                                                <span className="text-xs text-gray-700">Match Case</span>
-                                                              </label>
-                                                            </div>
-                                                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                                                              </div>
+                                                              <div>
+                                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                                  <input
+                                                                    type="checkbox"
+                                                                    checked={tempTextFilter.caseSensitive}
+                                                                    onChange={(e) => updateTextFilterTemp(columnKey, 'caseSensitive', e.target.checked)}
+                                                                    className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                  />
+                                                                  <span className="text-xs text-gray-700">Match Case</span>
+                                                                </label>
+                                                              </div>
                                                               <button
                                                                 onClick={() => {
                                                                   applyTextFilter(columnKey)
@@ -5252,13 +5359,113 @@ const Client2Page = () => {
                                                               >
                                                                 OK
                                                               </button>
-                                                            </div>
-                                                          </>
-                                                        )
-                                                      })()}
+                                                            </>
+                                                          )
+                                                        })()}
+                                                      </div>
                                                     </div>
                                                   </div>
+                                                ) : (
+                                                  // Expanded version when there are NO checkbox values
+                                                  <div className="space-y-3">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-xs font-semibold text-gray-700">Text Filters</span>
+                                                      {columnFilters[`${columnKey}_text`] && (
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            clearColumnFilter(columnKey)
+                                                          }}
+                                                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+                                                        >
+                                                          Clear
+                                                        </button>
+                                                      )}
+                                                    </div>
+
+                                                    {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
+                                                    {(() => {
+                                                      const tempTextFilter = textFilterTemp[columnKey] || { operator: 'equal', value: '', caseSensitive: false }
+                                                      return (
+                                                        <>
+                                                          <div>
+                                                            <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                                                            <select
+                                                              value={tempTextFilter.operator}
+                                                              onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
+                                                              onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                  e.preventDefault()
+                                                                  applyTextFilter(columnKey)
+                                                                  setShowFilterDropdown(null)
+                                                                }
+                                                              }}
+                                                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                            >
+                                                              <option value="equal">Equal...</option>
+                                                              <option value="notEqual">Not Equal...</option>
+                                                              <option value="startsWith">Starts With...</option>
+                                                              <option value="endsWith">Ends With...</option>
+                                                              <option value="contains">Contains...</option>
+                                                              <option value="doesNotContain">Does Not Contain...</option>
+                                                            </select>
+                                                          </div>
+                                                          <div>
+                                                            <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                                                            <input
+                                                              type="text"
+                                                              placeholder="Enter text"
+                                                              value={tempTextFilter.value}
+                                                              onChange={(e) => updateTextFilterTemp(columnKey, 'value', e.target.value)}
+                                                              onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                  e.preventDefault()
+                                                                  applyTextFilter(columnKey)
+                                                                  setShowFilterDropdown(null)
+                                                                }
+                                                              }}
+                                                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                            />
+                                                          </div>
+                                                          <div>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                              <input
+                                                                type="checkbox"
+                                                                checked={tempTextFilter.caseSensitive}
+                                                                onChange={(e) => updateTextFilterTemp(columnKey, 'caseSensitive', e.target.checked)}
+                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                              />
+                                                              <span className="text-xs text-gray-700">Match Case</span>
+                                                            </label>
+                                                          </div>
+                                                        </>
+                                                      )
+                                                    })()}
+                                                  </div>
+                                                )}
                                               </div>
+
+                                              {/* Close/OK Buttons for non-checkbox columns */}
+                                              {allValues.length === 0 && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      console.log('[Client2] Applying text filter for column:', columnKey)
+                                                      applyTextFilter(columnKey)
+                                                      setShowFilterDropdown(null)
+                                                    }}
+                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  >
+                                                    OK
+                                                  </button>
+                                                </div>
+                                              )}
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
@@ -5403,24 +5610,26 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* OK/Close Buttons */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
-                                                </button>
-                                                <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                >
-                                                  OK
-                                                </button>
-                                              </div>
+                                              {/* Close/OK Buttons for columns WITH checkboxes */}
+                                              {allValues.length > 0 && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      applyCheckboxFilter(columnKey)
+                                                      setShowFilterDropdown(null)
+                                                    }}
+                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  >
+                                                    OK
+                                                  </button>
+                                                </div>
+                                              )}
                                             </>
                                           )
                                         })()}

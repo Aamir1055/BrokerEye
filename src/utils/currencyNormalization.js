@@ -125,15 +125,15 @@ export const normalizePosition = (position, clientCurrencyMap = {}) => {
   
   return {
     ...position,
-    profit: (position.profit || 0) / uscDivisor,
-    storage: (position.storage || 0) / uscDivisor,
-    commission: (position.commission || 0) / uscDivisor,
+    profit_usd: (position.profit || 0) / uscDivisor,
+    storage_usd: (position.storage || 0) / uscDivisor,
+    commission_usd: (position.commission || 0) / uscDivisor,
     volume_normalized: normalizeVolume(position.volume, position.symbol),
     currency: isUSC ? 'USC' : 'USD',
     isUSC: isUSC, // Flag for USC client
-    _original_profit: position._original_profit || position.profit * uscDivisor, // Keep original for reference
-    _original_storage: position._original_storage || position.storage * uscDivisor,
-    _original_commission: position._original_commission || position.commission * uscDivisor
+    _original_profit: position.profit, // Keep original for reference
+    _original_storage: position.storage,
+    _original_commission: position.commission
   }
 }
 

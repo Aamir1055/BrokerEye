@@ -167,6 +167,22 @@ export default function PositionModule() {
     updated: true
   })
 
+  // Column filter states
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [columnFilters, setColumnFilters] = useState({})
+  const [filterSearchQuery, setFilterSearchQuery] = useState({})
+  const [customFilters, setCustomFilters] = useState({})
+  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  const [customFilterColumn, setCustomFilterColumn] = useState(null)
+  const [customFilterType, setCustomFilterType] = useState('equal')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
+  const [customFilterValue2, setCustomFilterValue2] = useState('')
+  const filterRefs = useRef({})
+
+  // Define string columns
+  const stringColumns = ['login', 'firstName', 'middleName', 'lastName', 'email', 'phone', 'symbol', 'action', 'netType', 'reason', 'comment']
+  const isStringColumn = (col) => stringColumns.includes(col)
+
   // Listen for global request to open Customize View from child modals
   // Clear all filters on component mount (when navigating to this module)
   useEffect(() => {
@@ -245,6 +261,137 @@ export default function PositionModule() {
       uniqueSymbols
     }
   }, [dateFilteredPositions])
+
+  // Column filter helper functions
+  const getUniqueColumnValues = (columnKey) => {
+    const values = new Set()
+    dateFilteredPositions.forEach(row => {
+      const value = row[columnKey]
+      if (value != null && value !== '') {
+        values.add(String(value))
+      }
+    })
+    const allValues = Array.from(values).sort()
+    const query = filterSearchQuery[columnKey] || ''
+    if (!query) return allValues
+    return allValues.filter(v => v.toLowerCase().includes(query.toLowerCase()))
+  }
+
+  const toggleColumnFilter = (columnKey, value) => {
+    setColumnFilters(prev => {
+      const current = prev[columnKey] || []
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value]
+      return { ...prev, [columnKey]: updated }
+    })
+  }
+
+  const clearColumnFilter = (columnKey) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev }
+      delete newFilters[columnKey]
+      return newFilters
+    })
+    setCustomFilters(prev => {
+      const newFilters = { ...prev }
+      delete newFilters[columnKey]
+      return newFilters
+    })
+    setFilterSearchQuery(prev => {
+      const newQuery = { ...prev }
+      delete newQuery[columnKey]
+      return newQuery
+    })
+  }
+
+  const isAllSelected = (columnKey) => {
+    const uniqueVals = getUniqueColumnValues(columnKey)
+    const selected = columnFilters[columnKey] || []
+    return uniqueVals.length > 0 && uniqueVals.every(v => selected.includes(v))
+  }
+
+  const selectAllFilters = (columnKey) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnKey]: getUniqueColumnValues(columnKey)
+    }))
+  }
+
+  const deselectAllFilters = (columnKey) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev }
+      delete newFilters[columnKey]
+      return newFilters
+    })
+  }
+
+  const applyCustomNumberFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+    setCustomFilters(prev => ({
+      ...prev,
+      [customFilterColumn]: {
+        type: customFilterType,
+        value1: customFilterValue1,
+        value2: customFilterValue2
+      }
+    }))
+  }
+
+  const applyTextFilter = (row, columnKey, filterConfig) => {
+    const cellValue = String(row[columnKey] || '').toLowerCase()
+    const filterValue = String(filterConfig.value1 || '').toLowerCase()
+    
+    switch (filterConfig.type) {
+      case 'equal': return cellValue === filterValue
+      case 'notEqual': return cellValue !== filterValue
+      case 'startsWith': return cellValue.startsWith(filterValue)
+      case 'endsWith': return cellValue.endsWith(filterValue)
+      case 'contains': return cellValue.includes(filterValue)
+      case 'doesNotContain': return !cellValue.includes(filterValue)
+      default: return true
+    }
+  }
+
+  const applyNumberFilter = (row, columnKey, filterConfig) => {
+    const cellValue = Number(row[columnKey])
+    const filterValue1 = Number(filterConfig.value1)
+    const filterValue2 = Number(filterConfig.value2)
+    
+    if (isNaN(cellValue)) return true
+    
+    switch (filterConfig.type) {
+      case 'equal': return cellValue === filterValue1
+      case 'notEqual': return cellValue !== filterValue1
+      case 'greaterThan': return cellValue > filterValue1
+      case 'greaterThanOrEqual': return cellValue >= filterValue1
+      case 'lessThan': return cellValue < filterValue1
+      case 'lessThanOrEqual': return cellValue <= filterValue1
+      case 'between': return cellValue >= filterValue1 && cellValue <= filterValue2
+      default: return true
+    }
+  }
+
+  const applyAllColumnFilters = (positions) => {
+    return positions.filter(row => {
+      for (const [columnKey, selectedValues] of Object.entries(columnFilters)) {
+        if (selectedValues.length > 0) {
+          const cellValue = String(row[columnKey])
+          if (!selectedValues.includes(cellValue)) return false
+        }
+      }
+      
+      for (const [columnKey, filterConfig] of Object.entries(customFilters)) {
+        if (isStringColumn(columnKey)) {
+          if (!applyTextFilter(row, columnKey, filterConfig)) return false
+        } else {
+          if (!applyNumberFilter(row, columnKey, filterConfig)) return false
+        }
+      }
+      
+      return true
+    })
+  }
 
   // Calculate NET positions
   const calculateGlobalNetPositions = (positions) => {
@@ -504,6 +651,9 @@ export default function PositionModule() {
     // Apply search filter (date filter already applied in dateFilteredPositions)
     let filtered = applySearchFilter(dateFilteredPositions, searchInput, ['symbol', 'login'])
     
+    // Apply column filters
+    filtered = applyAllColumnFilters(filtered)
+    
     // Map column keys to actual data fields for sorting
     const columnKeyMapping = {
       'updated': 'timeUpdate',
@@ -518,7 +668,7 @@ export default function PositionModule() {
     filtered = applySorting(filtered, sortKey, sortDirection)
     
     return filtered
-  }, [dateFilteredPositions, searchInput, sortColumn, sortDirection])
+  }, [dateFilteredPositions, searchInput, sortColumn, sortDirection, columnFilters, customFilters])
 
   // Handle column sorting
   const handleSort = (columnKey) => {
@@ -552,9 +702,9 @@ export default function PositionModule() {
     }
   }
 
-  // Calculate totals (memoized to prevent recalculation)
+  // Calculate totals (memoized to prevent recalculation) - always use USD
   const totalProfit = useMemo(() => 
-    filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit) || 0), 0),
+    filteredPositions.reduce((sum, pos) => sum + (Number(pos.profit_usd) || 0), 0),
     [filteredPositions]
   )
 
@@ -592,10 +742,16 @@ export default function PositionModule() {
       if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(e.target)) {
         setClientNetCardFilterOpen(false)
       }
+      
+      // Close filter dropdown if clicking outside
+      if (showFilterDropdown !== null && !e.target.closest('[data-filter-dropdown]')) {
+        setShowFilterDropdown(null)
+        setShowNumberFilterDropdown(null)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [showFilterDropdown])
 
   // Get active columns for dynamic table rendering
   const activeColumns = useMemo(() => {
@@ -666,9 +822,9 @@ export default function PositionModule() {
       case 'profit':
         return (
           <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${
-            (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+            (pos.profit_usd || 0) >= 0 ? 'text-green-600' : 'text-red-600'
           } ${stickyClass}`} style={stickyStyle}>
-            {formatNum(pos.profit || 0)}
+            {formatNum(pos.profit_usd || 0)}
           </div>
         )
       case 'priceOpen':
@@ -683,7 +839,11 @@ export default function PositionModule() {
       case 'profitPercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
       case 'storage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+            {formatNum(pos.storage_usd || 0)}
+          </div>
+        )
       case 'storagePercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
       case 'appliedPercentage':
@@ -693,7 +853,11 @@ export default function PositionModule() {
       case 'tp':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
       case 'commission':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+            {formatNum(pos.commission_usd || 0)}
+          </div>
+        )
       case 'login':
         const handleLoginClick = () => {
           const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -877,9 +1041,7 @@ export default function PositionModule() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  )},
+                  // IB Commissions navigation removed
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -915,8 +1077,8 @@ export default function PositionModule() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons row */}
-        <div className="pt-5 pb-4 px-4">
-          <div className="flex items-center gap-2">
+        <div className="pt-5 pb-4">
+          <div className="flex items-center gap-2 px-2">
             <button 
               onClick={() => setIsCustomizeOpen(true)}
               className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
@@ -944,6 +1106,7 @@ export default function PositionModule() {
                 ) : null;
               })()}
             </button>
+            
             <button 
               onClick={() => {
                 setShowNetPositions((v) => {
@@ -991,10 +1154,10 @@ export default function PositionModule() {
 
         {/* Face Cards Carousel - Hidden in NET views */}
         {!showNetPositions && !showClientNet && (
-        <div className="pb-2 pl-5">
+        <div className="pb-2">
           <div 
             ref={carouselRef}
-            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
+            className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2"
           >
             {loading && loading.positions ? (
               // Skeleton loading for face cards
@@ -1097,7 +1260,7 @@ export default function PositionModule() {
 
         {/* Search and navigation */}
         {!showNetPositions && !showClientNet && (
-        <div className="pb-3 px-4">
+        <div className="pb-3 px-2">
           <div className="flex items-center gap-1">
             <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
@@ -1169,7 +1332,6 @@ export default function PositionModule() {
             <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
-              paddingRight: '8px',
               paddingBottom: '8px',
               maxHeight: 'calc(100vh - 280px)'
             }}>
@@ -1187,37 +1349,280 @@ export default function PositionModule() {
                     {activeColumns.map(col => (
                       <div 
                         key={col.key} 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSort(col.key)
-                        }}
-                        onTouchEnd={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleSort(col.key)
-                        }}
-                        className={`h-[28px] flex items-center justify-start px-1 cursor-pointer ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                        className={`relative h-[28px] flex items-center justify-start px-1 ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
                         style={{
                           border: 'none', 
                           outline: 'none', 
                           boxShadow: 'none',
                           WebkitTapHighlightColor: 'transparent',
-                          userSelect: 'none',
-                          touchAction: 'manipulation',
-                          pointerEvents: 'auto'
+                          userSelect: 'none'
                         }}
                       >
-                        <span>{col.label}</span>
-                        {sortColumn === col.key && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                        <div 
+                          className="flex items-center cursor-pointer flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSort(col.key)
+                          }}
+                          onTouchEnd={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleSort(col.key)
+                          }}
+                          style={{
+                            touchAction: 'manipulation',
+                            pointerEvents: 'auto'
+                          }}
+                        >
+                          <span>{col.label}</span>
+                          {sortColumn === col.key && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="ml-1">
+                              <path 
+                                d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
+                                stroke="white" 
+                                strokeWidth="2" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        
+                        {/* Filter Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShowFilterDropdown(showFilterDropdown === col.key ? null : col.key)
+                          }}
+                          className="ml-auto p-0.5 hover:bg-blue-600 rounded transition-colors relative"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                             <path 
-                              d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
+                              d="M3 4h18M7 12h10M10 20h4" 
                               stroke="white" 
                               strokeWidth="2" 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round"
+                              strokeLinecap="round"
                             />
                           </svg>
+                          {(columnFilters[col.key]?.length > 0 || customFilters[col.key]) && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] flex items-center justify-center">
+                              {columnFilters[col.key]?.length || 1}
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Filter Dropdown */}
+                        {showFilterDropdown === col.key && (
+                          <div
+                            ref={el => filterRefs.current[col.key] = el}
+                            data-filter-dropdown
+                            className="absolute top-full left-0 mt-0.5 w-64 bg-white rounded shadow-lg border border-gray-200 z-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {/* Sort Options */}
+                            <div className="border-b border-gray-200 p-2">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[10px] font-semibold text-gray-700">Sort</span>
+                              </div>
+                              <button
+                                onClick={() => handleSort(col.key)}
+                                className="w-full text-left px-2 py-1 text-[10px] text-gray-700 hover:bg-gray-100 rounded flex items-center justify-between"
+                              >
+                                <span>Sort {sortColumn === col.key && sortDirection === 'asc' ? 'Z-A' : 'A-Z'}</span>
+                                {sortColumn === col.key && (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                    <path 
+                                      d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
+                                      stroke="currentColor" 
+                                      strokeWidth="2" 
+                                      strokeLinecap="round" 
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Number Filters or Text Filters */}
+                            {!isStringColumn(col.key) ? (
+                              <div className="border-b border-gray-200 p-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] font-semibold text-gray-700">Number Filters</span>
+                                  {customFilters[col.key] && (
+                                    <button
+                                      onClick={() => {
+                                        const newFilters = {...customFilters}
+                                        delete newFilters[col.key]
+                                        setCustomFilters(newFilters)
+                                      }}
+                                      className="text-[9px] text-blue-600 hover:text-blue-800"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                                <select
+                                  value={customFilterColumn === col.key ? customFilterType : ''}
+                                  onChange={(e) => {
+                                    setCustomFilterColumn(col.key)
+                                    setCustomFilterType(e.target.value)
+                                    setCustomFilterValue1('')
+                                    setCustomFilterValue2('')
+                                  }}
+                                  className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                >
+                                  <option value="">Select filter type...</option>
+                                  <option value="equals">Equals</option>
+                                  <option value="notEquals">Not Equals</option>
+                                  <option value="greaterThan">Greater Than</option>
+                                  <option value="lessThan">Less Than</option>
+                                  <option value="greaterThanOrEqual">Greater Than or Equal</option>
+                                  <option value="lessThanOrEqual">Less Than or Equal</option>
+                                  <option value="between">Between</option>
+                                </select>
+                                {customFilterColumn === col.key && customFilterType && (
+                                  <>
+                                    <input
+                                      type="number"
+                                      value={customFilterValue1}
+                                      onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                      placeholder={customFilterType === 'between' ? 'Min value' : 'Value'}
+                                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                    />
+                                    {customFilterType === 'between' && (
+                                      <input
+                                        type="number"
+                                        value={customFilterValue2}
+                                        onChange={(e) => setCustomFilterValue2(e.target.value)}
+                                        placeholder="Max value"
+                                        className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                      />
+                                    )}
+                                    <button
+                                      onClick={() => applyCustomNumberFilter(col.key)}
+                                      className="w-full px-2 py-1 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                      Apply Filter
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="border-b border-gray-200 p-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] font-semibold text-gray-700">Text Filters</span>
+                                  {customFilters[col.key] && (
+                                    <button
+                                      onClick={() => {
+                                        const newFilters = {...customFilters}
+                                        delete newFilters[col.key]
+                                        setCustomFilters(newFilters)
+                                      }}
+                                      className="text-[9px] text-blue-600 hover:text-blue-800"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                                <select
+                                  value={customFilterColumn === col.key ? customFilterType : ''}
+                                  onChange={(e) => {
+                                    setCustomFilterColumn(col.key)
+                                    setCustomFilterType(e.target.value)
+                                    setCustomFilterValue1('')
+                                  }}
+                                  className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                >
+                                  <option value="">Select filter type...</option>
+                                  <option value="equals">Equals</option>
+                                  <option value="notEquals">Not Equals</option>
+                                  <option value="contains">Contains</option>
+                                  <option value="doesNotContain">Does Not Contain</option>
+                                  <option value="startsWith">Starts With</option>
+                                  <option value="endsWith">Ends With</option>
+                                </select>
+                                {customFilterColumn === col.key && customFilterType && (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={customFilterValue1}
+                                      onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                      placeholder="Value"
+                                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (customFilterValue1.trim()) {
+                                          setCustomFilters({
+                                            ...customFilters,
+                                            [col.key]: {
+                                              type: customFilterType,
+                                              value: customFilterValue1.trim()
+                                            }
+                                          })
+                                          setCustomFilterColumn(null)
+                                          setCustomFilterType('')
+                                          setCustomFilterValue1('')
+                                        }
+                                      }}
+                                      className="w-full px-2 py-1 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                      Apply Filter
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Search */}
+                            <div className="border-b border-gray-200 p-2">
+                              <input
+                                type="text"
+                                placeholder="Search in column..."
+                                value={filterSearchQuery[col.key] || ''}
+                                onChange={(e) => setFilterSearchQuery({...filterSearchQuery, [col.key]: e.target.value})}
+                                className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded"
+                              />
+                            </div>
+
+                            {/* Checkbox Filters */}
+                            <div className="p-2 max-h-48 overflow-y-auto">
+                              <div className="flex items-center justify-between mb-2">
+                                <button
+                                  onClick={() => selectAllFilters(col.key)}
+                                  className="text-[9px] text-blue-600 hover:text-blue-800"
+                                >
+                                  Select All
+                                </button>
+                                <button
+                                  onClick={() => deselectAllFilters(col.key)}
+                                  className="text-[9px] text-blue-600 hover:text-blue-800"
+                                >
+                                  Deselect All
+                                </button>
+                                {columnFilters[col.key]?.length > 0 && (
+                                  <button
+                                    onClick={() => clearColumnFilter(col.key)}
+                                    className="text-[9px] text-blue-600 hover:text-blue-800"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                              {getUniqueColumnValues(col.key).map(value => (
+                                <label key={value} className="flex items-center py-1 cursor-pointer hover:bg-gray-50">
+                                  <input
+                                    type="checkbox"
+                                    checked={!columnFilters[col.key] || columnFilters[col.key].includes(value)}
+                                    onChange={() => toggleColumnFilter(col.key, value)}
+                                    className="mr-2"
+                                  />
+                                  <span className="text-[10px] text-gray-700">{value}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1313,8 +1718,8 @@ export default function PositionModule() {
         {showNetPositions && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 pl-5">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2">
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1445,7 +1850,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-4">
+            <div className="flex items-center gap-2 pb-3 px-2">
                 {/* Search Bar */}
                 <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1520,7 +1925,6 @@ export default function PositionModule() {
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Body - Scrollable with sticky header */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
-                  paddingRight: '8px',
                   paddingBottom: '8px',
                   maxHeight: 'calc(100vh - 350px)'
                 }}>
@@ -1785,8 +2189,8 @@ export default function PositionModule() {
         {showClientNet && (
           <div className="bg-[#F5F7FA] flex flex-col h-full">
             {/* Face Cards Carousel */}
-            <div className="pb-2 pl-5">
-              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4">
+            <div className="pb-2">
+              <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-2 pr-2">
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1917,7 +2321,7 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-4 pr-8">
+            <div className="flex items-center gap-2 pb-3 px-2">
                 {/* Search Bar */}
                 <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
                   <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1992,7 +2396,6 @@ export default function PositionModule() {
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Table - single scroll container */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
-                  paddingRight: '8px',
                   paddingBottom: '8px',
                   maxHeight: 'calc(100vh - 350px)'
                 }}>
@@ -2146,11 +2549,13 @@ export default function PositionModule() {
                             onClick={() => {
                               const fullClient = clients.find(c => String(c.login) === String(pos.login))
                               setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
+                              setSelectedClientDefaultTab('funds')
                             }}
                             onTouchEnd={(e) => {
                               e.preventDefault()
                               const fullClient = clients.find(c => String(c.login) === String(pos.login))
                               setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
+                              setSelectedClientDefaultTab('funds')
                             }}
                           >
                             {pos.login}
@@ -2571,6 +2976,7 @@ export default function PositionModule() {
       {selectedClient && (
         <ClientDetailsMobileModal
           client={selectedClient}
+          defaultTab={selectedClientDefaultTab}
           onClose={() => setSelectedClient(null)}
           allPositionsCache={positions}
           allOrdersCache={orders}

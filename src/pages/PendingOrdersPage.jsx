@@ -749,7 +749,7 @@ const PendingOrdersPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 192 // w-48
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -769,7 +769,7 @@ const PendingOrdersPage = () => {
                           left: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'calc(100% + 8px)'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 192
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -777,12 +777,12 @@ const PendingOrdersPage = () => {
                           right: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'auto'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 192
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                           })(),
-                          zIndex: 10000001
+                          zIndex: 10000000
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -965,7 +965,7 @@ const PendingOrdersPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 224 // w-56
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -978,14 +978,13 @@ const PendingOrdersPage = () => {
 
                       {/* Text Filter Form - Appears directly when clicking Text Filters */}
                       {showNumberFilterDropdown === columnKey && (
-                        <div
-                          data-number-filter
-                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        <div 
+                          className="absolute top-0 w-56 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 224
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -993,12 +992,12 @@ const PendingOrdersPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 224
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                             })(),
-                            zIndex: 10000001
+                            zIndex: 10000000
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >

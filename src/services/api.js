@@ -1,10 +1,11 @@
 import axios from 'axios'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
-// Base URL: force empty in dev (use Vite proxy), allow override or default in prod
-const BASE_URL = import.meta?.env?.DEV
-  ? ''
-  : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
+// Base URL:
+// - In development: ALWAYS use relative '' so Vite proxy handles CORS
+// - In production: use env override or default to public API domain
+const IS_DEV = !!import.meta?.env?.DEV
+const BASE_URL = IS_DEV ? '' : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
 if (DEBUG_LOGS) console.log('[API] Base URL:', BASE_URL || '(empty - using Vite proxy)')
 
 const api = axios.create({
@@ -14,6 +15,17 @@ const api = axios.create({
   },
   timeout: 30000, // Increased to 30 seconds for slow endpoints
 })
+
+// Helper to compute current base path (for sub-folder deployments)
+const getBasePath = () => {
+  try {
+    const path = window.location?.pathname || '/'
+    const match = path.match(/^\/(amari-capital|broker-branch|broker)\b/)
+    return match ? `/${match[1]}` : ''
+  } catch {
+    return ''
+  }
+}
 
 // A raw axios instance without interceptors, used for token refresh to avoid loops
 const rawApi = axios.create({
@@ -142,7 +154,8 @@ api.interceptors.response.use(
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
                   try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                  window.location.href = '/login'
+                  const base = getBasePath()
+                  window.location.href = `${base}/login`
                 }
                 throw new Error('Refresh token expired')
               }
@@ -171,7 +184,8 @@ api.interceptors.response.use(
                   localStorage.removeItem('user_data')
                   if (typeof window !== 'undefined') {
                     try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                    window.location.href = '/login'
+                    const base = getBasePath()
+                    window.location.href = `${base}/login`
                   }
                   throw new Error('Refresh token expired')
                 }
@@ -201,7 +215,8 @@ api.interceptors.response.use(
         } catch {}
         if (typeof window !== 'undefined') {
           try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-          window.location.href = '/login'
+          const base = getBasePath()
+          window.location.href = `${base}/login`
         }
         return Promise.reject(refreshErr)
       }
@@ -266,7 +281,8 @@ ibApi.interceptors.response.use(
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
                   try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-                  window.location.href = '/login'
+                  const base = getBasePath()
+                  window.location.href = `${base}/login`
                 }
                 requestQueue = []
                 throw new Error('Refresh token expired')
@@ -294,7 +310,8 @@ ibApi.interceptors.response.use(
         } catch {}
         if (typeof window !== 'undefined') {
           try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
-          window.location.href = '/login'
+          const base = getBasePath()
+          window.location.href = `${base}/login`
         }
         return Promise.reject(refreshErr)
       }
