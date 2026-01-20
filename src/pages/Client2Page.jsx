@@ -4735,7 +4735,7 @@ const Client2Page = () => {
                                   {showFilterDropdown === col.key && filterPosition && (() => {
                                     const columnKey = col.key // Capture the column key
                                     const columnType = getColumnType(columnKey)
-                                    const isNumeric = columnType === 'float' || columnType === 'integer'
+                                    const isNumeric = columnType === 'float' || columnType === 'integer' || columnType === 'date'
                                     const isInteger = columnType === 'integer'
 
                                     // Initialize temp state for numeric filter if needed
