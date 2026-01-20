@@ -3759,6 +3759,17 @@ const Client2Page = () => {
       />
 
       <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
+        
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
