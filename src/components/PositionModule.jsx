@@ -342,13 +342,22 @@ export default function PositionModule() {
     const cellValue = String(row[columnKey] || '').toLowerCase()
     const filterValue = String(filterConfig.value1 || filterConfig.value || '').toLowerCase()
     
-    console.log('[PositionModule] applyTextFilter:', { columnKey, filterConfig, cellValue, filterValue, type: filterConfig.type })
-    
+    let result = true
     switch (filterConfig.type) {
       case 'equal':
-      case 'equals': return cellValue === filterValue
+      case 'equals': 
+        result = cellValue === filterValue
+        if (columnKey === 'symbol') {
+          console.log('[PositionModule] EQUAL check:', { cellValue, filterValue, match: result })
+        }
+        return result
       case 'notEqual':
-      case 'notEquals': return cellValue !== filterValue
+      case 'notEquals': 
+        result = cellValue !== filterValue
+        if (columnKey === 'symbol') {
+          console.log('[PositionModule] NOT_EQUAL check:', { cellValue, filterValue, match: result })
+        }
+        return result
       case 'startsWith': return cellValue.startsWith(filterValue)
       case 'endsWith': return cellValue.endsWith(filterValue)
       case 'contains': return cellValue.includes(filterValue)
