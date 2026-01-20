@@ -1318,7 +1318,7 @@ const LiveDealingPage = () => {
                         viewBox="0 0 24 24" 
                         strokeWidth={2.5}
                         style={{
-                          transform: ['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey) 
+                          transform: ['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage'].includes(columnKey) 
                             ? 'rotate(180deg)' 
                             : 'none'
                         }}
@@ -1333,7 +1333,7 @@ const LiveDealingPage = () => {
                         data-number-filter
                         className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
-                          ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey))
+                          ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage'].includes(columnKey))
                             ? { right: 'calc(100% + 8px)', left: 'auto' }
                             : { left: 'calc(100% + 8px)', right: 'auto' }
                           ),
