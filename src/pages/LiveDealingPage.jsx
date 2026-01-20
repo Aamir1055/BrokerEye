@@ -174,7 +174,7 @@ const LiveDealingPage = () => {
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
   const [customFilterType, setCustomFilterType] = useState('equal')
-  const [customFilterValue1, setCustomFilterValue1] =, 'entry' useState('')
+  const [customFilterValue1, setCustomFilterValue1] = useState('')
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
