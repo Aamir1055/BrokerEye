@@ -342,6 +342,8 @@ export default function PositionModule() {
     const cellValue = String(row[columnKey] || '').toLowerCase()
     const filterValue = String(filterConfig.value1 || filterConfig.value || '').toLowerCase()
     
+    console.log('[PositionModule] applyTextFilter:', { columnKey, filterConfig, cellValue, filterValue, type: filterConfig.type })
+    
     switch (filterConfig.type) {
       case 'equal':
       case 'equals': return cellValue === filterValue
@@ -1556,12 +1558,14 @@ export default function PositionModule() {
                                     <button
                                       onClick={() => {
                                         if (customFilterValue1.trim()) {
+                                          const newFilter = {
+                                            type: customFilterType,
+                                            value1: customFilterValue1.trim()
+                                          }
+                                          console.log('[PositionModule] Applying text filter:', { column: col.key, filter: newFilter })
                                           setCustomFilters({
                                             ...customFilters,
-                                            [col.key]: {
-                                              type: customFilterType,
-                                              value1: customFilterValue1.trim()
-                                            }
+                                            [col.key]: newFilter
                                           })
                                           setCustomFilterColumn(null)
                                           setCustomFilterType('')
