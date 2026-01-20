@@ -1483,7 +1483,7 @@ export default function PositionModule() {
                                     setCustomFilterValue1('')
                                     setCustomFilterValue2('')
                                   }}
-                                  className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                  className="w-full px-2 py-1 text-[10px] font-normal border border-gray-300 rounded mb-1"
                                 >
                                   <option value="">Select filter type...</option>
                                   <option value="equals">Equals</option>
@@ -1501,7 +1501,7 @@ export default function PositionModule() {
                                       value={customFilterValue1}
                                       onChange={(e) => setCustomFilterValue1(e.target.value)}
                                       placeholder={customFilterType === 'between' ? 'Min value' : 'Value'}
-                                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                      className="w-full px-2 py-1 text-[10px] font-normal border border-gray-300 rounded mb-1"
                                     />
                                     {customFilterType === 'between' && (
                                       <input
@@ -1509,7 +1509,7 @@ export default function PositionModule() {
                                         value={customFilterValue2}
                                         onChange={(e) => setCustomFilterValue2(e.target.value)}
                                         placeholder="Max value"
-                                        className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                        className="w-full px-2 py-1 text-[10px] font-normal border border-gray-300 rounded mb-1"
                                       />
                                     )}
                                     <button
@@ -1545,7 +1545,7 @@ export default function PositionModule() {
                                     setCustomFilterType(e.target.value)
                                     setCustomFilterValue1('')
                                   }}
-                                  className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                  className="w-full px-2 py-1 text-[10px] font-normal border border-gray-300 rounded mb-1"
                                 >
                                   <option value="">Select filter type...</option>
                                   <option value="equals">Equals</option>
@@ -1562,7 +1562,7 @@ export default function PositionModule() {
                                       value={customFilterValue1}
                                       onChange={(e) => setCustomFilterValue1(e.target.value)}
                                       placeholder="Value"
-                                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
+                                      className="w-full px-2 py-1 text-[10px] font-normal border border-gray-300 rounded mb-1"
                                     />
                                     <button
                                       onClick={() => {
