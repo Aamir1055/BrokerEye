@@ -1034,6 +1034,7 @@ const LiveDealingPage = () => {
     if (columnKey.endsWith('_custom')) {
       // Custom filter (text or number)
       const actualColumnKey = columnKey.replace('_custom', '')
+      console.log('[LiveDealing] Applying custom filter for', actualColumnKey, 'with config:', values)
       ibFilteredDeals = ibFilteredDeals.filter(deal => {
         let dealValue
         if (actualColumnKey === 'login' || actualColumnKey === 'time' || actualColumnKey === 'dealer') {
@@ -1044,14 +1045,21 @@ const LiveDealingPage = () => {
           dealValue = deal.rawData?.[actualColumnKey]
         }
         
+        console.log('[LiveDealing] Deal value for', actualColumnKey, ':', dealValue, 'Type:', typeof dealValue)
+        
         if (values.isText) {
-          return matchesTextFilter(dealValue, values)
+          const result = matchesTextFilter(dealValue, values)
+          console.log('[LiveDealing] Text filter result:', result)
+          return result
         } else {
-          return matchesNumberFilter(dealValue, values)
+          const result = matchesNumberFilter(dealValue, values)
+          console.log('[LiveDealing] Number filter result:', result)
+          return result
         }
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
+      console.log('[LiveDealing] Applying checkbox filter for', columnKey, 'with values:', values)
       ibFilteredDeals = ibFilteredDeals.filter(deal => {
         let dealValue
         if (columnKey === 'login' || columnKey === 'time' || columnKey === 'dealer') {
@@ -1066,6 +1074,8 @@ const LiveDealingPage = () => {
         if (columnKey === 'time' && dealValue) {
           dealValue = formatTime(dealValue)
         }
+        
+        console.log('[LiveDealing] Checkbox filter - Deal value:', dealValue, 'Type:', typeof dealValue, 'Included:', values.includes(dealValue))
         return values.includes(dealValue)
       })
     }
