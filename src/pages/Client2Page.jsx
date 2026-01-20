@@ -1953,13 +1953,37 @@ const Client2Page = () => {
     let value2 = temp.value2
 
     if (isDateColumn) {
-      // Convert yyyy-mm-dd to epoch milliseconds
+      // For date columns, convert yyyy-mm-dd to epoch milliseconds
+      // Important: Date picker gives us dates like "2026-01-20"
+      // We need to handle them based on the operator for proper date filtering
       if (value1) {
         const date1 = new Date(value1)
-        value1 = date1.getTime()
+        // Set to start of day in local timezone
+        date1.setHours(0, 0, 0, 0)
+        
+        // For "equal" operator on dates, we need to match the entire day
+        // So we'll convert "equal" to "between" start and end of day
+        if (temp.operator === 'equal') {
+          value1 = date1.getTime()
+          const endOfDay = new Date(date1)
+          endOfDay.setHours(23, 59, 59, 999)
+          value2 = endOfDay.getTime()
+          // Change operator to between for equal on dates
+          temp.operator = 'between'
+        } else if (temp.operator === 'greater_than' || temp.operator === 'greater_than_equal') {
+          // For greater than, use end of day
+          date1.setHours(23, 59, 59, 999)
+          value1 = date1.getTime()
+        } else {
+          // For less than, less than equal, use start of day
+          value1 = date1.getTime()
+        }
       }
-      if (value2) {
+      
+      if (value2 && temp.operator === 'between') {
         const date2 = new Date(value2)
+        // For between, second date should be end of day
+        date2.setHours(23, 59, 59, 999)
         value2 = date2.getTime()
       }
     }
