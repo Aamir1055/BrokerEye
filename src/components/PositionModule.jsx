@@ -340,11 +340,13 @@ export default function PositionModule() {
 
   const applyTextFilter = (row, columnKey, filterConfig) => {
     const cellValue = String(row[columnKey] || '').toLowerCase()
-    const filterValue = String(filterConfig.value1 || '').toLowerCase()
+    const filterValue = String(filterConfig.value1 || filterConfig.value || '').toLowerCase()
     
     switch (filterConfig.type) {
-      case 'equal': return cellValue === filterValue
-      case 'notEqual': return cellValue !== filterValue
+      case 'equal':
+      case 'equals': return cellValue === filterValue
+      case 'notEqual':
+      case 'notEquals': return cellValue !== filterValue
       case 'startsWith': return cellValue.startsWith(filterValue)
       case 'endsWith': return cellValue.endsWith(filterValue)
       case 'contains': return cellValue.includes(filterValue)
@@ -1558,7 +1560,7 @@ export default function PositionModule() {
                                             ...customFilters,
                                             [col.key]: {
                                               type: customFilterType,
-                                              value: customFilterValue1.trim()
+                                              value1: customFilterValue1.trim()
                                             }
                                           })
                                           setCustomFilterColumn(null)
