@@ -2,9 +2,11 @@ import axios from 'axios'
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 
 // Base URL:
-// - In development: ALWAYS use relative '' so Vite proxy handles CORS
+// - In development or when served from localhost: ALWAYS use relative '' so Vite proxy handles CORS
 // - In production: use env override or default to public API domain
-const IS_DEV = !!import.meta?.env?.DEV
+const IS_DEV_ENV = !!import.meta?.env?.DEV
+const IS_LOCALHOST = (typeof window !== 'undefined') && /^(localhost|127\.0\.0\.1|::1)$/i.test(window.location.hostname)
+const IS_DEV = IS_DEV_ENV || IS_LOCALHOST
 const BASE_URL = IS_DEV ? '' : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
 if (DEBUG_LOGS) console.log('[API] Base URL:', BASE_URL || '(empty - using Vite proxy)')
 

@@ -3670,6 +3670,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 const keys = dealStats ? Object.keys(dealStats) : []
                 const visibleKeys = keys.filter(k => dealStatVisibility[k])
                 const baseKeys = visibleKeys.length ? visibleKeys : Object.keys(defaultDealStatVisibility)
+                // Ensure we have a concrete list to render
+                const filteredBaseKeys = Array.isArray(baseKeys) ? baseKeys : []
                 const preferredOrder = ['totalCommission','totalDeals','totalPnL','totalStorage','totalVolume','winRate','maxLoss','maxProfit']
                 const toRender = [
                   ...preferredOrder.filter(k => filteredBaseKeys.includes(k)),
