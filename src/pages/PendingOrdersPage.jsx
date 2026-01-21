@@ -216,6 +216,35 @@ const PendingOrdersPage = () => {
     setCustomFilterType('equal')
   }
 
+  // Apply custom filter (text or number based on column type)
+  const applyCustomFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+
+    if (isStringColumn(customFilterColumn)) {
+      const filterConfig = {
+        type: customFilterType,
+        value1: String(customFilterValue1).trim().toLowerCase()
+      }
+
+      setColumnFilters(prev => ({
+        ...prev,
+        [`${customFilterColumn}_text`]: filterConfig
+      }))
+
+      // Close dropdowns/forms
+      setShowFilterDropdown(null)
+      setCustomFilterColumn(null)
+
+      // Reset form
+      setCustomFilterValue1('')
+      setCustomFilterValue2('')
+      setCustomFilterType('equal')
+    } else {
+      // Fallback to existing number filter behavior
+      applyCustomNumberFilter()
+    }
+  }
+
   // Check if value matches number filter
   const matchesNumberFilter = (value, filterConfig) => {
     if (!filterConfig) return true
@@ -240,6 +269,31 @@ const PendingOrdersPage = () => {
         return numValue >= value1
       case 'between':
         return value2 !== null && numValue >= value1 && numValue <= value2
+      default:
+        return true
+    }
+  }
+
+  // Check if value matches text filter
+  const matchesTextFilter = (value, filterConfig) => {
+    if (!filterConfig) return true
+    const str = String(value ?? '').trim().toLowerCase()
+    const q = String(filterConfig.value1 ?? '').trim().toLowerCase()
+    if (!q) return true
+
+    switch (filterConfig.type) {
+      case 'equal':
+        return str === q
+      case 'notEqual':
+        return str !== q
+      case 'startsWith':
+        return str.startsWith(q)
+      case 'endsWith':
+        return str.endsWith(q)
+      case 'contains':
+        return str.includes(q)
+      case 'doesNotContain':
+        return !str.includes(q)
       default:
         return true
     }
@@ -457,6 +511,13 @@ const PendingOrdersPage = () => {
       ibFilteredOrders = ibFilteredOrders.filter(order => {
         const orderValue = order[actualColumnKey]
         return matchesNumberFilter(orderValue, values)
+      })
+    } else if (columnKey.endsWith('_text')) {
+      // Text filter
+      const actualColumnKey = columnKey.replace('_text', '')
+      ibFilteredOrders = ibFilteredOrders.filter(order => {
+        const orderValue = order[actualColumnKey]
+        return matchesTextFilter(orderValue, values)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
@@ -794,7 +855,7 @@ const PendingOrdersPage = () => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
                                   if (customFilterType === 'between' && !customFilterValue2) return
-                                  applyCustomNumberFilter()
+                                  applyCustomFilter()
                                   setShowNumberFilterDropdown(null)
                                 }
                               }}
@@ -816,7 +877,7 @@ const PendingOrdersPage = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
-                                    applyCustomNumberFilter()
+                                    applyCustomFilter()
                                     setShowNumberFilterDropdown(null)
                                   }
                                 }}
@@ -842,7 +903,7 @@ const PendingOrdersPage = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                applyCustomNumberFilter()
+                                applyCustomFilter()
                                 setShowNumberFilterDropdown(null)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
@@ -957,7 +1018,7 @@ const PendingOrdersPage = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
-                                    applyCustomNumberFilter()
+                                    applyCustomFilter()
                                     setCustomFilterColumn(null)
                                   }
                                 }}
@@ -982,7 +1043,7 @@ const PendingOrdersPage = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  applyCustomNumberFilter()
+                                  applyCustomFilter()
                                   setCustomFilterColumn(null)
                                 }}
                                 disabled={!customFilterValue1}
