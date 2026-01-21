@@ -3818,18 +3818,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
           {activeTab === 'deals' && displayedDeals.length > 0 && (
             (() => {
-              const totalDeals = displayedDeals.length
               const totalVolume = displayedDeals.reduce((sum, d) => sum + (d.volume || 0), 0)
               const totalCommission = displayedDeals.reduce((sum, d) => sum + (d.commission || 0), 0)
               const totalProfit = displayedDeals.reduce((sum, d) => sum + (d.profit || 0), 0)
               const row = [
-                { label: 'Total Deals', value: String(totalDeals), labelClass: 'text-blue-700', valueClass: 'text-blue-900', accent: 'border-blue-300' },
                 { label: 'Total Volume', value: totalVolume.toFixed(2), labelClass: 'text-indigo-700', valueClass: 'text-indigo-900', accent: 'border-indigo-300' },
                 { label: 'Total Commission', value: formatCurrency(totalCommission), labelClass: 'text-amber-700', valueClass: 'text-amber-900', accent: 'border-amber-400' },
                 { label: 'Floating Profit', value: formatCurrency(totalProfit), labelClass: totalProfit >= 0 ? 'text-emerald-700' : 'text-red-700', valueClass: getProfitColor(totalProfit), accent: totalProfit >= 0 ? 'border-emerald-400' : 'border-red-400' }
               ]
               return (
-                <div className="space-y-2">
+                <div className="space-y-2 px-3 pb-3">
                   <div className="ring-1 ring-gray-300 rounded-sm overflow-hidden bg-white grid divide-x divide-y divide-gray-300" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
                     {row.map((it, idx) => (
                       <div key={`deals-r-${it.label}-${idx}`} className={`p-2 bg-gray-50 border-t-2 ${it.accent || 'border-gray-200'}`}>
