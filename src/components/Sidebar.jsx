@@ -43,6 +43,8 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
     { name: 'Margin Level', path: '/margin-level', icon: 'margin' },
     { name: 'Live Dealing', path: '/live-dealing', icon: 'live-dealing' },
     { name: 'Client Percentage', path: '/client-percentage', icon: 'percentage' },
+    // Amari-capital: expose IB Commissions in sidebar; Broker branch keeps this out
+    { name: 'IB Commissions', path: '/ib-commissions', icon: 'rebate' },
     { name: 'Settings', path: '/settings', icon: 'settings' }
   ]
   

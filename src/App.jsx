@@ -16,8 +16,9 @@ const PendingOrdersPage = lazy(() => import('./pages/PendingOrdersPage'))
 const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
 const LiveDealingPage = lazy(() => import('./pages/LiveDealingPage'))
 const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
-// IB Commissions module removed for broker branch
-const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
+const IBCommissionsPage = lazy(() => import('./pages/IBCommissionsPage'))
+// Broker Rules removed for amari-capital branch
+// const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
 const ClientDashboardDesignCPage = lazy(() => import('./pages/ClientDashboardDesignC'))
@@ -70,8 +71,8 @@ const AppContent = () => {
         <Route path="/margin-level" element={<MarginLevelPage />} />
         <Route path="/live-dealing" element={<LiveDealingPage />} />
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
-        {/** IB Commissions route removed for broker branch */}
-        <Route path="/broker-rules" element={<BrokerRulePage />} />
+        <Route path="/ib-commissions" element={<IBCommissionsPage />} />
+        {/** Broker Rules route removed for amari-capital branch */}
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -92,8 +93,8 @@ function PreloadRoutes() {
         import('./pages/MarginLevelPage')
         import('./pages/LiveDealingPage')
         import('./pages/ClientPercentagePage')
-        import('./pages/BrokerRulePage')
-        // IB Commissions preload removed for broker branch
+        import('./pages/IBCommissionsPage')
+        // Broker Rules preload removed for amari-capital branch
         import('./pages/SettingsPage')
         import('./pages/GraphicalAnalyticsPage')
         import('./pages/ClientDashboardDesignC')
