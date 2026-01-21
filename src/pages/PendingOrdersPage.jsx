@@ -162,7 +162,8 @@ const PendingOrdersPage = () => {
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
-      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      const textFilterKey = `${columnKey}_text`
+      const { [columnKey]: _, [numberFilterKey]: __, [textFilterKey]: ___, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
@@ -180,7 +181,11 @@ const PendingOrdersPage = () => {
     const numberFilterKey = `${columnKey}_number`
     const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
     
-    return checkboxCount + hasNumberFilter
+    // Check for text filter
+    const textFilterKey = `${columnKey}_text`
+    const hasTextFilter = columnFilters[textFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter + hasTextFilter
   }
 
   const isAllSelected = (columnKey) => {
