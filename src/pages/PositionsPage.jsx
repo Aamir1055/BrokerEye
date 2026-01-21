@@ -247,6 +247,7 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const filterDropdownRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
@@ -420,7 +421,12 @@ const PositionsPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    // Treat filters as text-based for string columns (e.g., symbol, action, reason, comment)
+    // and for explicit text operators regardless of column type.
+    const textOperators = ['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain']
+    const isTextColumn = isStringColumn(customFilterColumn)
+    const isExplicitTextOp = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    const isTextFilter = isTextColumn && textOperators.includes(customFilterType) || isExplicitTextOp
     
     const filterConfig = {
       type: customFilterType,
@@ -1169,8 +1175,14 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       
       // Check if clicking outside main filter dropdown
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (showFilterDropdown) {
+        const filterButton = filterRefs.current[showFilterDropdown]
+        const filterDropdown = filterDropdownRefs.current[showFilterDropdown]
+        
+        const clickedInButton = filterButton && filterButton.contains(event.target)
+        const clickedInDropdown = filterDropdown && filterDropdown.contains(event.target)
+        
+        if (!clickedInButton && !clickedInDropdown) {
           setShowFilterDropdown(null)
           setShowNumberFilterDropdown(null)
         }
@@ -1716,7 +1728,12 @@ const PositionsPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div 
+                ref={el => {
+                  if (!filterDropdownRefs.current) filterDropdownRefs.current = {}
+                  filterDropdownRefs.current[columnKey] = el
+                }}
+                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
