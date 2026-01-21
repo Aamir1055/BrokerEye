@@ -892,19 +892,8 @@ const PendingOrdersPage = () => {
                             </div>
                           )}
 
-                          {/* Action Buttons */}
-                          <div className="flex gap-2 pt-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setShowNumberFilterDropdown(null)
-                                setCustomFilterValue1('')
-                                setCustomFilterValue2('')
-                              }}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                            >
-                              Cancel
-                            </button>
+                          {/* Action Button */}
+                          <div className="pt-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -912,7 +901,7 @@ const PendingOrdersPage = () => {
                                 setShowNumberFilterDropdown(null)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -1032,19 +1021,8 @@ const PendingOrdersPage = () => {
                               />
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(null)
-                                  setCustomFilterValue1('')
-                                  setCustomFilterValue2('')
-                                }}
-                                className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                              >
-                                Cancel
-                              </button>
+                            {/* Action Button */}
+                            <div className="pt-2">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -1052,7 +1030,7 @@ const PendingOrdersPage = () => {
                                   setCustomFilterColumn(null)
                                 }}
                                 disabled={!customFilterValue1}
-                                className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
