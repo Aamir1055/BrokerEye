@@ -1490,7 +1490,9 @@ const LiveDealingPage = () => {
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
-                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{
+                          transform: (['entry'].includes(columnKey) ? 'rotate(180deg)' : 'none')
+                        }}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1500,7 +1502,10 @@ const LiveDealingPage = () => {
                           data-number-filter
                           className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
-                            left: 'calc(100% + 8px)',
+                            ...((['entry'].includes(columnKey))
+                              ? { right: 'calc(100% + 8px)', left: 'auto' }
+                              : { left: 'calc(100% + 8px)', right: 'auto' }
+                            ),
                             zIndex: 10000001
                           }}
                           onClick={(e) => e.stopPropagation()}
