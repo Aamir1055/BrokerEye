@@ -179,6 +179,41 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return options
   }
 
+  // Deals tab column visibility controls
+  const dealsColumns = [
+    { key: 'time', label: 'Time' },
+    { key: 'deal', label: 'Deal' },
+    { key: 'order', label: 'Order' },
+    { key: 'position', label: 'Position' },
+    { key: 'symbol', label: 'Symbol' },
+    { key: 'action', label: 'Action' },
+    { key: 'volume', label: 'Volume' },
+    { key: 'price', label: 'Price' },
+    { key: 'commission', label: 'Commission' },
+    { key: 'storage', label: 'Storage' },
+    { key: 'profit', label: 'Profit' },
+    { key: 'comment', label: 'Comment' }
+  ]
+  const [dealsVisibleColumns, setDealsVisibleColumns] = useState({
+    time: true,
+    deal: true,
+    order: true,
+    position: true,
+    symbol: true,
+    action: true,
+    volume: true,
+    price: true,
+    commission: true,
+    storage: true,
+    profit: true,
+    comment: true
+  })
+  const [showDealsColumnSelector, setShowDealsColumnSelector] = useState(false)
+  const dealsColumnSelectorRef = useRef(null)
+  const toggleDealsColumn = (key) => {
+    setDealsVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
   // Build dynamic page-size options for Positions based on total rows
   const getPositionsPageSizeOptions = (total) => {
     const base = [10, 25, 50, 100, 200]
@@ -1648,11 +1683,11 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         {/* Modal Header - Fixed */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b-2 border-slate-200 bg-blue-600">
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">
-              {(client?.name && String(client.name).trim().length > 0)
-                ? `${client.name} - ${client.login}`
-                : client.login}
-            </h2>
+                    <h2 className="text-white text-lg font-semibold">
+                      {(client?.name && String(client.name).trim().length > 0)
+                        ? `${client.name} - ${client.login}`
+                        : client.login}
+                    </h2>
             <div className="flex items-center gap-4 mt-2">
               <p className="text-[11px] text-blue-100">{client.email || 'No email'}</p>
               {client.lastAccess && (
@@ -2859,6 +2894,43 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     >
                       Clear
                     </button>
+                    {/* Deals Columns Button moved next to date */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowDealsColumnSelector(!showDealsColumnSelector)}
+                        className="text-gray-700 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                        Columns
+                      </button>
+                      {showDealsColumnSelector && (
+                        <div
+                          ref={dealsColumnSelectorRef}
+                          className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
+                          style={{ maxHeight: '300px', overflowY: 'auto' }}
+                        >
+                          <div className="px-2 py-1 border-b border-gray-100">
+                            <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                          </div>
+                          {dealsColumns.map(col => (
+                            <label
+                              key={col.key}
+                              className="flex items-center px-2 py-1 hover:bg-blue-50 cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={dealsVisibleColumns[col.key] === true}
+                                onChange={() => toggleDealsColumn(col.key)}
+                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                              />
+                              <span className="ml-2 text-xs text-gray-700">{col.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     
                     {/* Quick Filters Dropdown */}
                     <select
@@ -3109,6 +3181,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         <table className="min-w-full table-fixed divide-y divide-gray-200">
                           <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
+                              {dealsVisibleColumns.time && (
                               <th 
                                 className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                                 style={{ width: dealsColumnWidths['time'] || 'auto', minWidth: '80px' }}
@@ -3165,6 +3238,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'time')}
                           />
                         </th>
+                         )}
+                        {dealsVisibleColumns.deal && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['deal'] || 'auto', minWidth: '80px' }}
@@ -3179,6 +3254,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'deal')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.order && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700" 
                           style={{ width: dealsColumnWidths['order'] || 'auto', minWidth: '80px' }}
@@ -3193,6 +3270,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'order')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.position && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['position'] || 'auto', minWidth: '80px' }}
@@ -3207,6 +3286,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'position')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.symbol && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['symbol'] || 'auto', minWidth: '80px' }}
@@ -3263,6 +3344,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'symbol')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.action && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['action'] || 'auto', minWidth: '80px' }}
@@ -3319,6 +3402,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'action')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.volume && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['volume'] || 'auto', minWidth: '80px' }}
@@ -3333,6 +3418,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'volume')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.price && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['price'] || 'auto', minWidth: '80px' }}
@@ -3347,6 +3434,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'price')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.commission && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['commission'] || 'auto', minWidth: '80px' }}
@@ -3361,6 +3450,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'commission')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.storage && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['storage'] || 'auto', minWidth: '80px' }}
@@ -3375,6 +3466,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'storage')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.profit && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['profit'] || 'auto', minWidth: '80px' }}
@@ -3389,6 +3482,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'profit')}
                           />
                         </th>
+                        )}
+                        {dealsVisibleColumns.comment && (
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
                           style={{ width: dealsColumnWidths['comment'] || 'auto', minWidth: '80px' }}
@@ -3403,49 +3498,74 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             onMouseDown={(e) => handleDealsResizeStart(e, 'comment')}
                           />
                         </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {displayedDeals.map((deal) => (
                         <tr key={deal.deal} className="hover:bg-blue-50 transition-colors">
+                          {dealsVisibleColumns.time && (
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                             {formatDate(deal.time)}
                           </td>
+                          )}
+                          {dealsVisibleColumns.deal && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             #{deal.deal}
                           </td>
+                          )}
+                          {dealsVisibleColumns.order && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {deal.order > 0 ? `#${deal.order}` : '-'}
                           </td>
+                          )}
+                          {dealsVisibleColumns.position && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {deal.position > 0 ? `#${deal.position}` : '-'}
                           </td>
+                          )}
+                          {dealsVisibleColumns.symbol && (
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {deal.symbol || '-'}
                           </td>
+                          )}
+                          {dealsVisibleColumns.action && (
                           <td className="px-3 py-2 text-sm whitespace-nowrap">
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getDealActionColor(deal.action)}`}>
                               {getDealActionLabel(deal.action)}
                             </span>
                           </td>
+                          )}
+                          {dealsVisibleColumns.volume && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {deal.volume > 0 ? deal.volume.toFixed(2) : '-'}
                           </td>
+                          )}
+                          {dealsVisibleColumns.price && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {deal.price > 0 ? deal.price.toFixed(5) : '-'}
                           </td>
+                          )}
+                          {dealsVisibleColumns.commission && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {formatCurrency(deal.commission)}
                           </td>
+                          )}
+                          {dealsVisibleColumns.storage && (
                           <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
                             {formatCurrency(deal.storage)}
                           </td>
+                          )}
+                          {dealsVisibleColumns.profit && (
                           <td className={`px-3 py-2 text-sm font-semibold whitespace-nowrap ${getProfitColor(deal.profit)}`}>
                             {formatCurrency(deal.profit)}
                           </td>
+                          )}
+                          {dealsVisibleColumns.comment && (
                           <td className="px-3 py-2 text-sm text-gray-500 whitespace-nowrap max-w-xs truncate">
                             {deal.comment || '-'}
                           </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
