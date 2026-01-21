@@ -695,7 +695,14 @@ const PendingOrdersPage = () => {
                       }}
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                        if (showNumberFilterDropdown === columnKey) {
+                          setShowNumberFilterDropdown(null)
+                        } else {
+                          setShowNumberFilterDropdown(columnKey)
+                          setCustomFilterType('equal')
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
+                        }
                       }}
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
@@ -710,7 +717,7 @@ const PendingOrdersPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 192 // w-48
+                            const dropdownWidth = 256
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -720,113 +727,8 @@ const PendingOrdersPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
-                    {showNumberFilterDropdown === columnKey && (
-                      <div 
-                        className="absolute top-0 w-48 bg-white border-2 border-slate-300 rounded-lg shadow-xl"
-                        style={{
-                          left: (() => {
-                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
-                            if (!rect) return 'calc(100% + 8px)'
-                            const dropdownWidth = 192
-                            const offset = 8
-                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
-                            return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
-                          })(),
-                          right: (() => {
-                            const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
-                            if (!rect) return 'auto'
-                            const dropdownWidth = 192
-                            const offset = 8
-                            const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
-                            return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
-                          })(),
-                          zIndex: 10000000
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="text-[11px] text-slate-700 py-1">
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('equal')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('notEqual')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Not Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThan')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Less Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('lessThanOrEqual')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Less Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThan')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Greater Than...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('greaterThanOrEqual')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Greater Than Or Equal...
-                          </div>
-                          <div 
-                            className="hover:bg-slate-50 px-3 py-2 cursor-pointer font-medium transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCustomFilterColumn(columnKey)
-                              setCustomFilterType('between')
-                              setShowNumberFilterDropdown(columnKey)
-                            }}
-                          >
-                            Between...
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Inline Custom Filter Form */}
+                    {/* Inline Custom Filter Form - shows directly when button is clicked */}
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
