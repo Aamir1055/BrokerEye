@@ -46,6 +46,7 @@ const IBCommissionsPage = () => {
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
   const { isAuthenticated } = useAuth()
   const [unauthorized, setUnauthorized] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
   
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
@@ -394,6 +395,11 @@ const IBCommissionsPage = () => {
     return <IBCommissionsModule />
   }
 
+  // Sync top header loader with commissions list and totals fetch lifecycle
+  useEffect(() => {
+    setProgressActive(!!loading || !!totalsLoading)
+  }, [loading, totalsLoading])
+
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
@@ -403,6 +409,16 @@ const IBCommissionsPage = () => {
       />
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -692,30 +708,7 @@ const IBCommissionsPage = () => {
                       {/* Filter Panel removed */}
                     </thead>
 
-                    {/* YouTube-style Loading Progress Bar */}
-                    {loading && (
-                      <thead className="sticky z-40" style={{ top: '48px' }}>
-                        <tr>
-                          <th colSpan="8" className="p-0" style={{ height: '3px' }}>
-                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                              <style>{`
-                                @keyframes shimmerSlideIB {
-                                  0% { transform: translateX(-100%); }
-                                  100% { transform: translateX(400%); }
-                                }
-                                .shimmer-loading-bar-ib {
-                                  width: 30%;
-                                  height: 100%;
-                                  background: #2563eb;
-                                  animation: shimmerSlideIB 0.9s linear infinite;
-                                }
-                              `}</style>
-                              <div className="shimmer-loading-bar-ib absolute top-0 left-0 h-full" />
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                    )}
+                    {/* Inline table shimmer removed in favor of global header loader */}
 
                     <tbody className="bg-white divide-y divide-gray-100 text-sm">
                       {loading ? (
