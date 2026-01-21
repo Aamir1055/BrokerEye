@@ -26,6 +26,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [clientData, setClientData] = useState(client)
   // Pull live clients list so the modal reflects current Balance/Equity/Credit/PnL
   const { clients: liveClients } = useData()
+  // Branch-specific tab visibility (amari-capital: hide Balance and Broker Rules)
+  const SHOW_FUNDS_TAB = false
+  const SHOW_RULES_TAB = false
   
   // Funds management state
   const [operationType, setOperationType] = useState('deposit')
@@ -201,6 +204,25 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     { key: 'commission', label: 'Commission' },
     { key: 'comment', label: 'Comment' }
   ]
+  
+  // Map column keys to user-friendly labels for chips
+  const columnKeyToLabel = useMemo(() => ({
+    time: 'Time',
+    symbol: 'Symbol',
+    type: 'Type', // maps to action in table
+  }), [])
+
+  // Active filter chips for Positions tab
+  const activeFilterChips = useMemo(() => {
+    const chips = []
+    Object.entries(columnFilters).forEach(([key, values]) => {
+      const label = columnKeyToLabel[key] || key
+      ;(values || []).forEach((val) => {
+        chips.push({ key, label, value: val })
+      })
+    })
+    return chips
+  }, [columnFilters, columnKeyToLabel])
   
   // Prevent duplicate calls in React StrictMode
   const hasLoadedData = useRef(false)
@@ -1683,26 +1705,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({totalDealsCount || deals.length})
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'funds'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Balance
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
-                activeTab === 'rules'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
-              }`}
-            >
-              Broker Rules
-            </button>
+            {SHOW_FUNDS_TAB && (
+              <button
+                onClick={() => setActiveTab('funds')}
+                className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                  activeTab === 'funds'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Balance
+              </button>
+            )}
+            {SHOW_RULES_TAB && (
+              <button
+                onClick={() => setActiveTab('rules')}
+                className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+                  activeTab === 'rules'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Broker Rules
+              </button>
+            )}
           </div>
 
           {/* Controls for Positions Tab */}
@@ -1848,6 +1874,30 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </div>
               )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'positions' && activeFilterChips.length > 0 && (
+            <div className="px-2 pb-2 flex flex-wrap items-center gap-1.5">
+              {activeFilterChips.map((chip, idx) => (
+                <span key={`${chip.key}-${chip.value}-${idx}`} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+                  <span className="font-semibold">{chip.label}:</span>
+                  <span>{chip.value}</span>
+                  <button
+                    aria-label="Remove filter"
+                    className="ml-1 text-yellow-800 hover:text-yellow-900"
+                    onClick={() => toggleColumnFilter(chip.key, chip.value)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <button
+                onClick={() => { setColumnFilters({}); setSearchQuery('') }}
+                className="ml-1 px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Clear All
+              </button>
             </div>
           )}
 
