@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      setLoading(true)
       setAuthError(null)
       const response = await authAPI.login(username, password)
       
@@ -90,8 +89,6 @@ export const AuthProvider = ({ children }) => {
         success: false, 
         error: errorMessage 
       }
-    } finally {
-      setLoading(false)
     }
   }
 
