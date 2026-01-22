@@ -5359,7 +5359,6 @@ const Client2Page = () => {
                                                         })()}
                                                       </div>
                                                     </div>
-                                                  </div>
                                                 </div>
                                               </div>
 
