@@ -530,9 +530,9 @@ export default function Client2Module() {
           const priority = [
             'Total Clients',
             'Lifetime P&L',
-            'Net Lifetime PnL',
             'NET Lifetime DW',
             'Total Rebate',
+            'Net Lifetime PnL',
             // Commission variants
             'This Week Commission',
             'This Month Commission',
@@ -553,6 +553,14 @@ export default function Client2Module() {
 
     // Append any new labels not in saved order
     labels.forEach(l => { if (!order.includes(l)) order.push(l) })
+
+    // Enforce Net Lifetime PnL at 5th position (index 4)
+    const desiredIndex = 4
+    const nlIndex = order.indexOf('Net Lifetime PnL')
+    if (nlIndex !== -1 && nlIndex !== desiredIndex) {
+      order.splice(nlIndex, 1)
+      order.splice(Math.min(desiredIndex, order.length), 0, 'Net Lifetime PnL')
+    }
 
     // If order differs, update state and persist
     const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
