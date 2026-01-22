@@ -3693,9 +3693,9 @@ const Client2Page = () => {
     localStorage.setItem('client2CardVisibility', JSON.stringify(cardVisibility))
   }, [cardVisibility])
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside or pressing Escape
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleGlobalDismiss = (event) => {
       // Don't close column selector for wheel/mouse interactions inside panel
       const isWheel = event.type === 'wheel'
       if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target) && !isWheel) {
@@ -3719,10 +3719,25 @@ const Client2Page = () => {
         }
       }
     }
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        setShowColumnSelector(false)
+        setShowFilterMenu(false)
+        setShowCardFilterMenu(false)
+        setShowExportMenu(false)
+        setShowFilterDropdown(null)
+      }
+    }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+    document.addEventListener('mousedown', handleGlobalDismiss)
+    document.addEventListener('touchstart', handleGlobalDismiss, { passive: true })
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleGlobalDismiss)
+      document.removeEventListener('touchstart', handleGlobalDismiss)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [showFilterDropdown, showColumnSelector])
 
   // Early return for mobile - render mobile component
   if (isMobile) {
