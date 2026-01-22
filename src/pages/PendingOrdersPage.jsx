@@ -99,14 +99,37 @@ const PendingOrdersPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['login', 'symbol', 'type', 'state']
+  const stringColumns = ['login', 'symbol', 'type', 'state', 'time', 'timeSetup', 'timeUpdate', 'timeCreate']
   const isStringColumn = (key) => stringColumns.includes(key)
+
+  // Helper function to get order value by column key (handles multiple property names)
+  const getOrderValue = (order, columnKey) => {
+    if (columnKey === 'volume') {
+      return order.volumeCurrent ?? order.volume ?? order.volumeInitial
+    }
+    if (columnKey === 'priceOrder') {
+      return order.priceOrder ?? order.price ?? order.priceOpen ?? order.priceOpenExact ?? order.open_price
+    }
+    if (columnKey === 'priceCurrent') {
+      return order.priceTrigger ?? order.trigger
+    }
+    if (columnKey === 'sl') {
+      return order.priceSL ?? order.sl ?? order.stop_loss
+    }
+    if (columnKey === 'tp') {
+      return order.priceTP ?? order.tp ?? order.take_profit
+    }
+    if (columnKey === 'time') {
+      return order.timeSetup ?? order.timeUpdate ?? order.timeCreate ?? order.updated_at
+    }
+    return order[columnKey]
+  }
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
     cachedOrders.forEach(order => {
-      const value = order[columnKey]
+      const value = getOrderValue(order, columnKey)
       if (value !== null && value !== undefined && value !== '') {
         values.add(value)
       }
@@ -281,9 +304,16 @@ const PendingOrdersPage = () => {
   }
 
   // Check if value matches text filter
-  const matchesTextFilter = (value, filterConfig) => {
+  const matchesTextFilter = (value, filterConfig, columnKey = null) => {
     if (!filterConfig) return true
-    const str = String(value ?? '').trim().toLowerCase()
+    
+    // For time columns, format the value before comparison
+    let compareValue = value
+    if (columnKey && ['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey)) {
+      compareValue = formatTime(value)
+    }
+    
+    const str = String(compareValue ?? '').trim().toLowerCase()
     const q = String(filterConfig.value1 ?? '').trim().toLowerCase()
     if (!q) return true
 
@@ -406,6 +436,39 @@ const PendingOrdersPage = () => {
     }
   }
 
+  // Convert timestamp to datetime-local format (YYYY-MM-DDTHH:mm)
+  const timestampToDatetimeLocal = (ts) => {
+    if (!ts) return ''
+    try {
+      const d = new Date(ts * 1000)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
+    } catch {
+      return ''
+    }
+  }
+
+  // Convert datetime-local format to formatted display string
+  const datetimeLocalToDisplay = (dtLocal) => {
+    if (!dtLocal) return ''
+    try {
+      const d = new Date(dtLocal)
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+    } catch {
+      return ''
+    }
+  }
+
   // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
     const baseSizes = [25, 50, 100, 200]
@@ -515,20 +578,20 @@ const PendingOrdersPage = () => {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
       ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[actualColumnKey]
+        const orderValue = getOrderValue(order, actualColumnKey)
         return matchesNumberFilter(orderValue, values)
       })
     } else if (columnKey.endsWith('_text')) {
       // Text filter
       const actualColumnKey = columnKey.replace('_text', '')
       ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[actualColumnKey]
-        return matchesTextFilter(orderValue, values)
+        const orderValue = getOrderValue(order, actualColumnKey)
+        return matchesTextFilter(orderValue, values, actualColumnKey)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
       ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[columnKey]
+        const orderValue = getOrderValue(order, columnKey)
         return values.includes(orderValue)
       })
     }
@@ -766,6 +829,7 @@ const PendingOrdersPage = () => {
                           setShowNumberFilterDropdown(null)
                         } else {
                           setShowNumberFilterDropdown(columnKey)
+                          setCustomFilterColumn(columnKey)
                           setCustomFilterType('equal')
                           setCustomFilterValue1('')
                           setCustomFilterValue2('')
@@ -863,6 +927,7 @@ const PendingOrdersPage = () => {
                                   if (customFilterType === 'between' && !customFilterValue2) return
                                   applyCustomFilter()
                                   setShowNumberFilterDropdown(null)
+                                  setShowFilterDropdown(null)
                                 }
                               }}
                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -885,6 +950,7 @@ const PendingOrdersPage = () => {
                                     e.preventDefault()
                                     applyCustomFilter()
                                     setShowNumberFilterDropdown(null)
+                                    setShowFilterDropdown(null)
                                   }
                                 }}
                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -896,10 +962,13 @@ const PendingOrdersPage = () => {
                           {/* Action Button */}
                           <div className="pt-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation()
+                              onClick={() => {
                                 applyCustomFilter()
-                                setShowNumberFilterDropdown(null)
+                                // Force close both dropdowns immediately
+                                setTimeout(() => {
+                                  setShowNumberFilterDropdown(null)
+                                  setShowFilterDropdown(null)
+                                }, 10)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
                               className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -1007,7 +1076,7 @@ const PendingOrdersPage = () => {
                               <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                               <input
                                 type="text"
-                                placeholder="Enter value"
+                                placeholder={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? 'e.g., 22/01/2026 14:04:10' : 'Enter value'}
                                 value={customFilterValue1}
                                 onChange={(e) => setCustomFilterValue1(e.target.value)}
                                 onKeyDown={(e) => {
@@ -1015,6 +1084,7 @@ const PendingOrdersPage = () => {
                                     e.preventDefault()
                                     applyCustomFilter()
                                     setCustomFilterColumn(null)
+                                    setShowFilterDropdown(null)
                                   }
                                 }}
                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -1025,10 +1095,13 @@ const PendingOrdersPage = () => {
                             {/* Action Button */}
                             <div className="pt-2">
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
+                                onClick={() => {
                                   applyCustomFilter()
-                                  setCustomFilterColumn(null)
+                                  // Force close both dropdowns immediately
+                                  setTimeout(() => {
+                                    setCustomFilterColumn(null)
+                                    setShowFilterDropdown(null)
+                                  }, 10)
                                 }}
                                 disabled={!customFilterValue1}
                                 className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -1112,7 +1185,7 @@ const PendingOrdersPage = () => {
                             className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
                           <span className="text-[11px] text-slate-700 truncate">
-                            {value}
+                            {['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? formatTime(value) : value}
                           </span>
                         </label>
                       ))
