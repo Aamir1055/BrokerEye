@@ -1549,7 +1549,14 @@ const PendingOrdersPage = () => {
                 Cancel
               </button>
               <button
-                onClick={applyCustomNumberFilter}
+                onClick={() => {
+                  applyCustomFilter()
+                  // Force close both dropdowns immediately
+                  setTimeout(() => {
+                    setShowCustomFilterModal(false)
+                    setShowFilterDropdown(null)
+                  }, 10)
+                }}
                 disabled={!customFilterValue1}
                 className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
