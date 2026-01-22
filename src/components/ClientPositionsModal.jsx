@@ -312,16 +312,19 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
       if (positionsColumnSelectorRef.current && !positionsColumnSelectorRef.current.contains(event.target)) {
         setShowPositionsColumnSelector(false)
       }
+      if (dealsColumnSelectorRef.current && !dealsColumnSelectorRef.current.contains(event.target)) {
+        setShowDealsColumnSelector(false)
+      }
       if (dealStatsFilterRef.current && !dealStatsFilterRef.current.contains(event.target)) {
         setShowDealStatsFilter(false)
       }
     }
     
-    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions || showPositionsColumnSelector || showDealStatsFilter) {
+    if (showFilterDropdown || showDealsFilterDropdown || showSearchSuggestions || showDealsSearchSuggestions || showPositionsColumnSelector || showDealsColumnSelector || showDealStatsFilter) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions, showPositionsColumnSelector, showDealStatsFilter])
+  }, [showFilterDropdown, showDealsFilterDropdown, showSearchSuggestions, showDealsSearchSuggestions, showPositionsColumnSelector, showDealsColumnSelector, showDealStatsFilter])
 
   // Persist visibilities
   useEffect(() => {
