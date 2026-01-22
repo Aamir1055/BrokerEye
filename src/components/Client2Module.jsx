@@ -434,6 +434,7 @@ export default function Client2Module() {
       { label: 'Total Clients', value: formatNum(clientCount), unit: 'Count', numericValue: clientCount },
       { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
+      { label: addPercent('Net Lifetime PnL'), value: formatNum((t.lifetimePnL || 0) - (rebateTotals.totalRebate || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) - (rebateTotals.totalRebate || 0) },
       { label: 'Total Rebate', value: formatNum(rebateTotals.totalRebate || 0), unit: 'USD', numericValue: rebateTotals.totalRebate || 0 },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
       { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
@@ -529,6 +530,7 @@ export default function Client2Module() {
           const priority = [
             'Total Clients',
             'Lifetime P&L',
+            'Net Lifetime PnL',
             'NET Lifetime DW',
             'Total Rebate',
             // Commission variants
@@ -578,6 +580,7 @@ export default function Client2Module() {
       'Total Clients': `${baseUrl}Mobile cards icons/Total Clients.svg`,
       'Lifetime P&L': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
       'NET Lifetime DW': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'Net Lifetime PnL': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
       'Total Rebate': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
       'Assets': `${baseUrl}Mobile cards icons/Total Balance.svg`,
       'Balance': `${baseUrl}Mobile cards icons/Total Balance.svg`,
