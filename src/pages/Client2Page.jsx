@@ -4961,7 +4961,7 @@ const Client2Page = () => {
 
                                                       <div
                                                         id={`number-filter-menu-${columnKey}`}
-                                                        className={`hidden absolute ${hasCheckboxValues ? 'top-0 left-full ml-2' : 'top-full mt-2 left-0 right-0'} w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3`}
+                                                        className={`hidden ${hasCheckboxValues ? 'absolute top-0 left-full ml-2 w-64' : 'mt-2 w-full'} bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3`}
                                                         onClick={(e) => e.stopPropagation()}
                                                       >
                                                         <div className="space-y-3">
@@ -5306,7 +5306,7 @@ const Client2Page = () => {
 
                                                       <div
                                                         id={`text-filter-menu-${columnKey}`}
-                                                        className={`hidden absolute ${hasCheckboxValues ? 'top-0 left-full ml-2' : 'top-full mt-2 left-0 right-0'} w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3`}
+                                                        className={`hidden ${hasCheckboxValues ? 'absolute top-0 left-full ml-2 w-64' : 'mt-2 w-full'} bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3`}
                                                         onClick={(e) => e.stopPropagation()}
                                                         onKeyDown={(e) => {
                                                           if (e.key === 'Enter') {
