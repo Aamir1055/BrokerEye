@@ -790,7 +790,7 @@ export default function ClientPercentageModule() {
                     >
                       <span className="truncate">{col.label}</span>
                       {sortColumn === col.key && (
-                        <span className="ml-1">{sortDirection === 'asc' ? 'â†‘' : 'â†“'}</span>
+                        <span className="ml-1">{sortDirection === 'asc' ? 'Gåæ' : 'Gåô'}</span>
                       )}
                     </div>
                   ))}
@@ -1208,4 +1208,5 @@ export default function ClientPercentageModule() {
     </div>
   )
 }
+
 
