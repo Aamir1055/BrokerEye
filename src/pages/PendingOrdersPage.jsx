@@ -250,9 +250,15 @@ const PendingOrdersPage = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
     if (isStringColumn(customFilterColumn)) {
+      // For time columns, convert datetime-local format to display format
+      let filterValue = customFilterValue1
+      if (['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(customFilterColumn)) {
+        filterValue = datetimeLocalToDisplay(customFilterValue1)
+      }
+      
       const filterConfig = {
         type: customFilterType,
-        value1: String(customFilterValue1).trim().toLowerCase()
+        value1: String(filterValue).trim().toLowerCase()
       }
 
       setColumnFilters(prev => ({
@@ -964,8 +970,10 @@ const PendingOrdersPage = () => {
                             <button
                               onClick={() => {
                                 applyCustomFilter()
-                                setShowNumberFilterDropdown(null)
-                                setShowFilterDropdown(null)
+                                Promise.resolve().then(() => {
+                                  setShowNumberFilterDropdown(null)
+                                  setShowFilterDropdown(null)
+                                })
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
                               className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -1073,16 +1081,12 @@ const PendingOrdersPage = () => {
                               <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                               <input
                                 type={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? 'datetime-local' : 'text'}
+                                step={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? '1' : undefined}
                                 placeholder={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? '' : 'Enter value'}
                                 value={customFilterValue1}
                                 onChange={(e) => {
-                                  const val = e.target.value
-                                  // For datetime-local, convert to display format for comparison
-                                  if (['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) && val) {
-                                    setCustomFilterValue1(datetimeLocalToDisplay(val))
-                                  } else {
-                                    setCustomFilterValue1(val)
-                                  }
+                                  // Store the value as-is (datetime-local format or text)
+                                  setCustomFilterValue1(e.target.value)
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -1102,8 +1106,10 @@ const PendingOrdersPage = () => {
                               <button
                                 onClick={() => {
                                   applyCustomFilter()
-                                  setCustomFilterColumn(null)
-                                  setShowFilterDropdown(null)
+                                  Promise.resolve().then(() => {
+                                    setCustomFilterColumn(null)
+                                    setShowFilterDropdown(null)
+                                  })
                                 }}
                                 disabled={!customFilterValue1}
                                 className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
