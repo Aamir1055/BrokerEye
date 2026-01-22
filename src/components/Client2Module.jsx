@@ -1458,13 +1458,13 @@ export default function Client2Module() {
         </div>
 
         {/* Search Bar and Table Container */}
-        <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden mx-4">
+        <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden mx-2">
           {/* Search and Controls Bar */}
-          <div className="border-b border-[#E5E7EB] p-4">
-            <div className="flex items-center gap-2">
+          <div className="border-b border-[#E5E7EB] p-2">
+            <div className="flex items-center gap-1.5">
               {/* Search box */}
-              <div className="flex-1 min-w-0 h-10 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0 text-[#9CA3AF]">
+              <div className="flex-1 min-w-0 h-9 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-2 flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 18 18" fill="none" className="flex-shrink-0 text-[#9CA3AF]">
                   <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
                   <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
@@ -1483,10 +1483,10 @@ export default function Client2Module() {
                     e.stopPropagation()
                     setIsColumnSelectorOpen(true)
                   }}
-                  className="h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="h-8 w-8 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                   title="Show/Hide Columns"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                     <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                   </svg>
@@ -1497,11 +1497,11 @@ export default function Client2Module() {
               <button 
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className={`h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                className={`h-8 w-8 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
                   currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
                 }`}
               >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M12 14L8 10L12 6" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
@@ -1519,7 +1519,7 @@ export default function Client2Module() {
                       setCurrentPage(n)
                     }
                   }}
-                  className="w-12 h-8 border border-[#E5E7EB] rounded-md text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-10 h-7 border border-[#E5E7EB] rounded-md text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label="Current page"
                 />
                 <span className="text-[#9CA3AF]">/</span>
@@ -1530,11 +1530,11 @@ export default function Client2Module() {
               <button 
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className={`h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
+                className={`h-8 w-8 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors ${
                   currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
                 }`}
               >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M8 6L12 10L8 14" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
@@ -1547,8 +1547,8 @@ export default function Client2Module() {
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
-            paddingRight: '16px',
-            paddingLeft: '4px'
+            paddingRight: '8px',
+            paddingLeft: '0px'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
