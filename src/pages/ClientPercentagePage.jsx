@@ -120,10 +120,12 @@ const ClientPercentagePage = () => {
         params.login = searchQuery.trim()
       }
 
-      const response = await brokerAPI.get('/broker/clients/percentages', { params })
-      
-      if (response.data?.status === 'success' && response.data?.data?.clients) {
-        const logins = response.data.data.clients.map(client => client.client_login)
+      // Use API wrapper so Vite proxy handles CORS in development
+      const response = await brokerAPI.getAllClientPercentages(params)
+      const data = response?.data || {}
+      const clientsList = data?.clients || data?.data?.clients || []
+      if (Array.isArray(clientsList)) {
+        const logins = clientsList.map(client => client.client_login)
         // Remove duplicates and sort
         const uniqueLogins = [...new Set(logins)].sort((a, b) => a - b)
         setLoginColumnValues(uniqueLogins)
@@ -723,15 +725,15 @@ const ClientPercentagePage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // If mobile, use mobile module (after all hooks are called)
-  if (isMobile) {
-    return <ClientPercentageModule />
-  }
-
   // Sync top header loader with client percentage fetch lifecycle
   useEffect(() => {
     setProgressActive(!!loading)
   }, [loading])
+
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <ClientPercentageModule />
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -863,7 +865,7 @@ const ClientPercentagePage = () => {
           {/* Table */}
           {clients.length === 0 && !loading ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <div className="text-6xl mb-4">=ѓфи</div>
+              <div className="text-6xl mb-4">=пїЅпїЅпїЅ</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No client data found</h3>
               <p className="text-sm text-gray-500">Client percentage data will appear here</p>
             </div>
