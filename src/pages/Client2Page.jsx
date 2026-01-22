@@ -931,10 +931,12 @@ const Client2Page = () => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
-    // Only cancel if there's already a request in flight to prevent race conditions
-    // Don't cancel user-initiated requests (non-silent) to ensure they always complete
+    // Don't cancel any in-flight requests.
+    // If a silent poll triggers while a request is in-flight, skip starting a new one.
+    // User-triggered requests (non-silent) should always start.
     if (abortControllerRef.current && isFetchingRef.current && silent) {
-      try { abortControllerRef.current.abort() } catch {}
+      try { if (DEBUG_LOGS) console.debug('[Client2] Poll skipped: request already in flight') } catch {}
+      return
     }
     // Create new AbortController for this request
     abortControllerRef.current = new AbortController()
