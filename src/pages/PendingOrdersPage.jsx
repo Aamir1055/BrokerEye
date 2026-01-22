@@ -99,7 +99,7 @@ const PendingOrdersPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['login', 'symbol', 'type', 'state', 'time', 'timeSetup', 'timeUpdate', 'timeCreate']
+  const stringColumns = ['symbol', 'type', 'state', 'time', 'timeSetup', 'timeUpdate', 'timeCreate']
   const isStringColumn = (key) => stringColumns.includes(key)
 
   // Helper function to get order value by column key (handles multiple property names)
@@ -266,10 +266,6 @@ const PendingOrdersPage = () => {
         [`${customFilterColumn}_text`]: filterConfig
       }))
 
-      // Close dropdowns/forms
-      setShowFilterDropdown(null)
-      setCustomFilterColumn(null)
-
       // Reset form
       setCustomFilterValue1('')
       setCustomFilterValue2('')
@@ -278,6 +274,11 @@ const PendingOrdersPage = () => {
       // Fallback to existing number filter behavior
       applyCustomNumberFilter()
     }
+
+    // Ensure all filter UI closes regardless of branch
+    setShowFilterDropdown(null)
+    setShowNumberFilterDropdown(null)
+    setCustomFilterColumn(null)
   }
 
   // Check if value matches number filter
@@ -931,9 +932,10 @@ const PendingOrdersPage = () => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
                                   if (customFilterType === 'between' && !customFilterValue2) return
-                                  applyCustomFilter()
+                                  // Close UI first to avoid any re-open race conditions
                                   setShowNumberFilterDropdown(null)
                                   setShowFilterDropdown(null)
+                                  applyCustomFilter()
                                 }
                               }}
                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -954,9 +956,10 @@ const PendingOrdersPage = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
-                                    applyCustomFilter()
+                                    // Close UI first
                                     setShowNumberFilterDropdown(null)
                                     setShowFilterDropdown(null)
+                                    applyCustomFilter()
                                   }
                                 }}
                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -968,12 +971,13 @@ const PendingOrdersPage = () => {
                           {/* Action Button */}
                           <div className="pt-2">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                // Close menus first, then apply
+                                setShowNumberFilterDropdown(null)
+                                setShowFilterDropdown(null)
                                 applyCustomFilter()
-                                Promise.resolve().then(() => {
-                                  setShowNumberFilterDropdown(null)
-                                  setShowFilterDropdown(null)
-                                })
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
                               className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -1104,13 +1108,14 @@ const PendingOrdersPage = () => {
                             {/* Action Button */}
                             <div className="pt-2">
                               <button
-                                onClick={() => {
-                                  applyCustomFilter()
-                                  Promise.resolve().then(() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    e.preventDefault()
+                                    // Close first to guarantee full dismissal
                                     setCustomFilterColumn(null)
                                     setShowFilterDropdown(null)
-                                  })
-                                }}
+                                    applyCustomFilter()
+                                  }}
                                 disabled={!customFilterValue1}
                                 className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
