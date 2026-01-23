@@ -390,12 +390,18 @@ const IBCommissionsPage = () => {
       
       {/* YouTube-style Loading Bar - Outside main to span full width */}
       {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
-            width: '40%',
-            animation: 'loading 1.5s ease-in-out infinite',
-            transformOrigin: 'left center'
-          }}></div>
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <style>{`
+            @keyframes topHeaderTrackIB {
+              0% { left: -30%; }
+              100% { left: 100%; }
+            }
+          `}</style>
+          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '30%',
+            left: '-30%',
+            animation: 'topHeaderTrackIB 0.9s linear infinite'
+          }} />
         </div>
       )}
 
