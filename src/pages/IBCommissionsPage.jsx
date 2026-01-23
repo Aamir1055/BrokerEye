@@ -366,17 +366,18 @@ const IBCommissionsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
+      {/* YouTube-style Loading Bar - Outside main to span full width */}
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '40%',
+            animation: 'loading 1.5s ease-in-out infinite',
+            transformOrigin: 'left center'
+          }}></div>
+        </div>
+      )}
+
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
-        {/* YouTube-style Loading Bar */}
-        {progressActive && (
-          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
-              width: '40%',
-              animation: 'loading 1.5s ease-in-out infinite',
-              transformOrigin: 'left center'
-            }}></div>
-          </div>
-        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
