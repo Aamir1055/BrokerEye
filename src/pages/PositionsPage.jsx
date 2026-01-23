@@ -527,9 +527,26 @@ const PositionsPage = () => {
   const [progressActive, setProgressActive] = useState(false)
 
   // Sync top header loader with positions fetch
+  const progressStartRef = useRef(0)
+  const progressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(!!loading?.positions)
-  }, [loading?.positions])
+    const active = !!loading?.positions || isRefreshing
+    if (active) {
+      progressStartRef.current = Date.now()
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (progressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+      progressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+    }
+  }, [loading?.positions, isRefreshing])
 
     useEffect(() => {
     if (!isAuthenticated) {

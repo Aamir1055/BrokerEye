@@ -167,9 +167,26 @@ const Client2Page = () => {
     noDeposit: false
   }) // Do not persist quick filters
 
-  // Keep the top header loading bar in sync with page fetches/refreshes
+  // Keep the top header loading bar in sync with page fetches/refreshes (with min visible time)
+  const c2ProgressStartRef = useRef(0)
+  const c2ProgressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(Boolean(loading) || Boolean(isRefreshing) || Boolean(initialLoad))
+    const active = Boolean(loading) || Boolean(isRefreshing) || Boolean(initialLoad)
+    if (active) {
+      c2ProgressStartRef.current = Date.now()
+      if (c2ProgressTimerRef.current) { clearTimeout(c2ProgressTimerRef.current); c2ProgressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (c2ProgressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (c2ProgressTimerRef.current) clearTimeout(c2ProgressTimerRef.current)
+      c2ProgressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (c2ProgressTimerRef.current) { clearTimeout(c2ProgressTimerRef.current); c2ProgressTimerRef.current = null }
+    }
   }, [loading, isRefreshing, initialLoad])
   
   // Networking guards for polling
