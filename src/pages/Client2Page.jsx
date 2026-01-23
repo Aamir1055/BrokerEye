@@ -5422,27 +5422,18 @@ const Client2Page = () => {
                                                             <>
                                                               <div>
                                                                 <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
-                                                                <div className="space-y-1">
-                                                                  {[
-                                                                    { value: 'equal', label: 'Equal...' },
-                                                                    { value: 'notEqual', label: 'Not Equal...' },
-                                                                    { value: 'startsWith', label: 'Starts With...' },
-                                                                    { value: 'endsWith', label: 'Ends With...' },
-                                                                    { value: 'contains', label: 'Contains...' },
-                                                                    { value: 'doesNotContain', label: 'Does Not Contain...' }
-                                                                  ].map(opt => (
-                                                                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-                                                                      <input
-                                                                        type="radio"
-                                                                        name={`text-cond-${columnKey}`}
-                                                                        checked={tempTextFilter.operator === opt.value}
-                                                                        onChange={() => updateTextFilterTemp(columnKey, 'operator', opt.value)}
-                                                                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                      />
-                                                                      <span className="text-xs text-gray-700">{opt.label}</span>
-                                                                    </label>
-                                                                  ))}
-                                                                </div>
+                                                                <select
+                                                                  value={tempTextFilter.operator}
+                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
+                                                                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                                                >
+                                                                  <option value="equal">Equal...</option>
+                                                                  <option value="notEqual">Not Equal...</option>
+                                                                  <option value="startsWith">Starts With...</option>
+                                                                  <option value="endsWith">Ends With...</option>
+                                                                  <option value="contains">Contains...</option>
+                                                                  <option value="doesNotContain">Does Not Contain...</option>
+                                                                </select>
                                                               </div>
                                                               <div>
                                                                 <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
