@@ -524,6 +524,12 @@ const PositionsPage = () => {
   }
   const hasInitialLoad = useRef(false)
   const prevPositionsRef = useRef([])
+  const [progressActive, setProgressActive] = useState(false)
+
+  // Sync top header loader with positions fetch
+  useEffect(() => {
+    setProgressActive(!!loading?.positions)
+  }, [loading?.positions])
 
     useEffect(() => {
     if (!isAuthenticated) {
@@ -2304,6 +2310,18 @@ const PositionsPage = () => {
       />
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
+        {/* YouTube-style loading bar */}
+        {progressActive && (
+          <div
+            className="fixed top-0 left-0 right-0 h-1 z-[100] pointer-events-none"
+            style={{
+              marginLeft: sidebarOpen ? '240px' : '64px',
+              background: 'linear-gradient(90deg, rgba(59,130,246,0.8) 0%, rgba(147,51,234,0.8) 50%, rgba(59,130,246,0.8) 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'loading 1.5s ease-in-out infinite',
+            }}
+          />
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
