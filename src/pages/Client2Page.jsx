@@ -1225,7 +1225,7 @@ const Client2Page = () => {
           return s
         }
 
-        const BIG_LIMIT = Math.max(1000, Number(itemsPerPage) || 100)
+        const BIG_LIMIT = Number(itemsPerPage) || 100
         const mergedMap = new Map()
 
         // Fetch each email with equality to ensure server compatibility
@@ -1364,7 +1364,7 @@ const Client2Page = () => {
 
         const CHUNK_SIZE = LARGE_IN_THRESHOLD // stay within server cap
         const chunks = chunk(primaryLargeFilter.value, CHUNK_SIZE)
-        const BIG_LIMIT = Math.max(1000, Number(itemsPerPage) || 100)
+        const BIG_LIMIT = Number(itemsPerPage) || 100
         const mergedMap = new Map()
 
         console.log(`[Client2] 🚚 Chunking '${primaryLargeFilter.field}' with ${primaryLargeFilter.value.length} values into ${chunks.length} chunks`)
