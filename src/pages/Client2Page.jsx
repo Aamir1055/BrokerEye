@@ -166,6 +166,11 @@ const Client2Page = () => {
     hasCredit: false,
     noDeposit: false
   }) // Do not persist quick filters
+
+  // Keep the top header loading bar in sync with page fetches/refreshes
+  useEffect(() => {
+    setProgressActive(Boolean(loading) || Boolean(isRefreshing) || Boolean(initialLoad))
+  }, [loading, isRefreshing, initialLoad])
   
   // Networking guards for polling
   const fetchAbortRef = useRef(null)
@@ -3758,6 +3763,18 @@ const Client2Page = () => {
         }}
       />
 
+      {/* YouTube-style Loading Bar - fixed at the very top, spans header */}
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '30%',
+            animation: 'loading 1.2s linear infinite',
+            willChange: 'transform',
+            transformOrigin: 'left center'
+          }}></div>
+        </div>
+      )}
+
       <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
@@ -5707,30 +5724,7 @@ const Client2Page = () => {
                       </tr>
                     </thead>
 
-                    {/* YouTube-style Loading Progress Bar - Below table header */}
-                    {(loading || isRefreshing) && (
-                      <thead className="sticky z-40" style={{ top: '48px' }}>
-                        <tr>
-                          <th colSpan={visibleColumnsList.length} className="p-0" style={{ height: '3px' }}>
-                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                              <style>{`
-                                @keyframes headerSlide {
-                                  0% { transform: translateX(-100%); }
-                                  100% { transform: translateX(400%); }
-                                }
-                                .header-loading-bar {
-                                  width: 30%;
-                                  height: 100%;
-                                  background: #2563eb;
-                                  animation: headerSlide 0.9s linear infinite;
-                                }
-                              `}</style>
-                              <div className="header-loading-bar absolute top-0 left-0 h-full" />
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                    )}
+                    {/* Removed below-table header loader: using fixed top header bar */}
 
                     <tbody className="bg-white divide-y divide-slate-100 text-sm md:text-[15px]" key={`tbody-${animationKey}`}>
                       {/* Loading state (match Live Dealing style) */}
