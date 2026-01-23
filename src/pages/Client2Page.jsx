@@ -4995,10 +4995,6 @@ const Client2Page = () => {
                                                               value={tempFilter.value1}
                                                               onChange={(e) => {
                                                                 updateNumericFilterTemp(columnKey, 'value1', e.target.value)
-                                                                // Auto-apply if value is valid (except for between operator)
-                                                                if (e.target.value && tempFilter.operator !== 'between') {
-                                                                  setTimeout(() => applyNumberFilter(columnKey), 500)
-                                                                }
                                                               }}
                                                               onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
