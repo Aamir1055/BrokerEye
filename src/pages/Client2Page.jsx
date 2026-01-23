@@ -5037,18 +5037,30 @@ const Client2Page = () => {
                                                             </div>
                                                           )}
 
-                                                          {/* Apply Button */}
-                                                          <button
-                                                            onClick={() => {
-                                                              applyNumberFilter(columnKey)
-                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                              if (menu) menu.classList.add('hidden')
-                                                              if (!hasCheckboxValues) setShowFilterDropdown(null)
-                                                            }}
-                                                            className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                          >
-                                                            OK
-                                                          </button>
+                                                          {/* Action Buttons */}
+                                                          <div className="flex gap-2">
+                                                            <button
+                                                              onClick={() => {
+                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                                if (menu) menu.classList.add('hidden')
+                                                                if (!hasCheckboxValues) setShowFilterDropdown(null)
+                                                              }}
+                                                              className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                            >
+                                                              Close
+                                                            </button>
+                                                            <button
+                                                              onClick={() => {
+                                                                applyNumberFilter(columnKey)
+                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                                if (menu) menu.classList.add('hidden')
+                                                                if (!hasCheckboxValues) setShowFilterDropdown(null)
+                                                              }}
+                                                              className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                            >
+                                                              OK
+                                                            </button>
+                                                          </div>
                                                         </div>
                                                       </div>
                                                     </div>
