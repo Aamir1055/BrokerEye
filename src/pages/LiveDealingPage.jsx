@@ -2113,30 +2113,7 @@ const LiveDealingPage = () => {
                 </tr>
               </thead>
 
-              {/* YouTube-style Loading Progress Bar - Below table header */}
-              {loading && (
-                <thead>
-                  <tr>
-                    <th colSpan={Object.values(visibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
-                      <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                        <style>{`
-                          @keyframes shimmerSlide {
-                            0% { transform: translateX(-100%); }
-                            100% { transform: translateX(400%); }
-                          }
-                          .shimmer-loading-bar {
-                            width: 30%;
-                            height: 100%;
-                            background: #2563eb;
-                            animation: shimmerSlide 0.9s linear infinite;
-                          }
-                        `}</style>
-                        <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-              )}
+              {/* Removed below-table loading bar to keep only the top header loader */}
 
               <tbody className="bg-white divide-y-2 divide-gray-200 text-sm">
                 {loading ? (
