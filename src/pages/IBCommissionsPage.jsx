@@ -46,6 +46,9 @@ const IBCommissionsPage = () => {
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
   const { isAuthenticated } = useAuth()
   const [unauthorized, setUnauthorized] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
+  const ibProgStartRef = useRef(0)
+  const ibProgTimerRef = useRef(null)
   
   // Sorting states - default to created_at desc as per API
   const [sortColumn, setSortColumn] = useState('created_at')
@@ -352,6 +355,25 @@ const IBCommissionsPage = () => {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Sync top header loader with commissions fetch (min-show + hide-delay)
+  useEffect(() => {
+    if (loading) {
+      ibProgStartRef.current = Date.now()
+      if (ibProgTimerRef.current) { clearTimeout(ibProgTimerRef.current); ibProgTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (ibProgStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (ibProgTimerRef.current) clearTimeout(ibProgTimerRef.current)
+      ibProgTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (ibProgTimerRef.current) { clearTimeout(ibProgTimerRef.current); ibProgTimerRef.current = null }
+    }
+  }, [loading])
 
   // If mobile, use mobile module (after all hooks are called)
   if (isMobile) {

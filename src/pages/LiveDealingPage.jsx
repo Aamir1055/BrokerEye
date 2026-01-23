@@ -75,9 +75,25 @@ const LiveDealingPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
 
-  // Sync top header loader with deals fetch
+  // Sync top header loader with deals fetch (with min-show + hide-delay)
+  const ldProgressStartRef = useRef(0)
+  const ldProgressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(loading)
+    if (loading) {
+      ldProgressStartRef.current = Date.now()
+      if (ldProgressTimerRef.current) { clearTimeout(ldProgressTimerRef.current); ldProgressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (ldProgressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (ldProgressTimerRef.current) clearTimeout(ldProgressTimerRef.current)
+      ldProgressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (ldProgressTimerRef.current) { clearTimeout(ldProgressTimerRef.current); ldProgressTimerRef.current = null }
+    }
   }, [loading])
 
   // Persist recent WebSocket deals across refresh

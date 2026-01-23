@@ -486,9 +486,26 @@ const MarginLevelPage = () => {
   // Show loading only for table data
   const isDataLoading = loading.accounts
 
-  // Sync top header loader with accounts fetch and manual refreshes
+  // Sync top header loader with accounts fetch and manual refreshes (min-show + hide-delay)
+  const mlProgressStartRef = useRef(0)
+  const mlProgressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(!!loading?.accounts || isRefreshing)
+    const active = !!loading?.accounts || isRefreshing
+    if (active) {
+      mlProgressStartRef.current = Date.now()
+      if (mlProgressTimerRef.current) { clearTimeout(mlProgressTimerRef.current); mlProgressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (mlProgressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (mlProgressTimerRef.current) clearTimeout(mlProgressTimerRef.current)
+      mlProgressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (mlProgressTimerRef.current) { clearTimeout(mlProgressTimerRef.current); mlProgressTimerRef.current = null }
+    }
   }, [loading?.accounts, isRefreshing])
 
   // Helper function to render table header with filter
