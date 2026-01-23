@@ -4939,31 +4939,31 @@ const Client2Page = () => {
                                                   const hasCheckboxValues = (columnValues[columnKey] || []).length > 0
                                                   return (
                                                     <div className="relative">
-                                                      <button
-                                                        onClick={() => {
-                                                          const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                          if (menu) {
-                                                            menu.classList.toggle('hidden')
-                                                          }
-                                                        }}
-                                                        id={`number-filter-btn-${columnKey}`}
-                                                        className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
-                                                      >
-                                                        <span className="text-gray-700 font-medium">Number Filters</span>
-                                                        {hasCheckboxValues ? (
+                                                      {hasCheckboxValues && (
+                                                        <button
+                                                          onClick={() => {
+                                                            const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                            if (menu) {
+                                                              menu.classList.toggle('hidden')
+                                                            }
+                                                          }}
+                                                          id={`number-filter-btn-${columnKey}`}
+                                                          className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded border ${hasNumberFilter ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'} hover:bg-gray-100`}
+                                                        >
+                                                          <span className="text-gray-700 font-medium">Number Filters</span>
                                                           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                           </svg>
-                                                        ) : (
-                                                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                          </svg>
-                                                        )}
-                                                      </button>
+                                                        </button>
+                                                      )}
+
+                                                      {!hasCheckboxValues && (
+                                                        <div className="text-xs font-semibold text-gray-700 mb-2">Number Filters</div>
+                                                      )}
 
                                                       <div
                                                         id={`number-filter-menu-${columnKey}`}
-                                                        className={`hidden ${hasCheckboxValues ? 'absolute top-0 left-full ml-2 w-64' : 'mt-2 w-full'} bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3`}
+                                                        className={`${hasCheckboxValues ? 'hidden absolute top-0 left-full ml-2 w-64' : 'mt-2 w-full'} bg-white ${hasCheckboxValues ? 'border-2 border-gray-300 rounded-lg shadow-xl' : ''} z-[10000000] ${hasCheckboxValues ? 'p-3' : ''}`}
                                                         onClick={(e) => e.stopPropagation()}
                                                       >
                                                         <div className="space-y-3">
