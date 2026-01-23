@@ -1184,7 +1184,7 @@ const Client2Page = () => {
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
       const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
-      const LARGE_IN_THRESHOLD = 20 // Lower threshold for better backend compatibility, especially with text fields
+      const LARGE_IN_THRESHOLD = Number.MAX_SAFE_INTEGER // Disable chunking: send full IN list in a single request
       const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
 
       if (largeInFilters.length > 0) {
@@ -3200,7 +3200,7 @@ const Client2Page = () => {
   const fetchAllPagesForPayload = useCallback(async (payload) => {
     // If payload contains a large IN filter, chunk it and merge all pages
     const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
-    const LARGE_IN_THRESHOLD = 50
+    const LARGE_IN_THRESHOLD = Number.MAX_SAFE_INTEGER
     const largeIn = inFilters.find(f => f.value.length > LARGE_IN_THRESHOLD)
     if (largeIn) {
       const baseFilters = (payload.filters || []).filter(f => f !== largeIn)
