@@ -1207,6 +1207,147 @@ const Client2Page = () => {
 
       // Detect large IN-filters that exceed backend limit and enable chunked merging
       const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
+
+      // Special handling: some backends do not support string IN filters reliably (e.g., email)
+      // When an email checkbox filter is present, fetch per-value using equality and merge results.
+      const emailInFilter = inFilters.find(f => String(f.field) === 'email')
+      if (emailInFilter && Array.isArray(emailInFilter.value) && emailInFilter.value.length > 0) {
+        const baseFilters = (payload.filters || []).filter(f => f !== emailInFilter)
+
+        // Helper to sum numeric fields safely
+        const sumField = (rows, key) => {
+          let s = 0
+          for (const r of rows) {
+            const v = r?.[key]
+            const n = typeof v === 'string' ? parseFloat(v) : (Number(v) || 0)
+            if (!Number.isNaN(n)) s += n
+          }
+          return s
+        }
+
+        const BIG_LIMIT = Math.max(1000, Number(itemsPerPage) || 100)
+        const mergedMap = new Map()
+
+        // Fetch each email with equality to ensure server compatibility
+        for (const emailVal of emailInFilter.value) {
+          const eqPayload = { ...payload, page: 1, limit: BIG_LIMIT, filters: [...baseFilters, { field: 'email', operator: 'equal', value: String(emailVal) }] }
+          try {
+            let pageNum = 1
+            let totalPagesForEmail = 1
+            do {
+              eqPayload.page = pageNum
+              const resp = await brokerAPI.searchClients(eqPayload, { signal: abortControllerRef.current.signal })
+              if (abortControllerRef.current.signal.aborted || currentRequestId !== requestIdRef.current) {
+                console.log('[Client2] ⏹️ Abort/replace detected during email-equality merge; stopping early')
+                return
+              }
+              const data = extractData(resp)
+              const list = (data?.clients || []).filter(c => c != null && c.login != null)
+              list.forEach(row => { if (!mergedMap.has(row.login)) mergedMap.set(row.login, row) })
+              totalPagesForEmail = Math.max(1, Number(data?.pages || 1))
+              pageNum += 1
+            } while (pageNum <= totalPagesForEmail)
+          } catch (e) {
+            console.warn('[Client2] Email equality fetch failed for', emailVal, e?.message || e)
+          }
+        }
+
+        // Convert to array
+        let mergedRows = Array.from(mergedMap.values())
+
+        // Apply sort client-side to preserve UX
+        if (sortBy) {
+          const dir = (String(sortOrder || 'asc').toLowerCase() === 'desc') ? -1 : 1
+          mergedRows.sort((a, b) => {
+            const va = a?.[sortBy]
+            const vb = b?.[sortBy]
+            const na = Number(va), nb = Number(vb)
+            if (Number.isFinite(na) && Number.isFinite(nb)) return (na - nb) * dir
+            const sa = String(va ?? '').toLowerCase()
+            const sb = String(vb ?? '').toLowerCase()
+            if (sa < sb) return -1 * dir
+            if (sa > sb) return 1 * dir
+            return 0
+          })
+        }
+
+        // Client-side pagination
+        const totalMerged = mergedRows.length
+        const limit = Number(itemsPerPage) || 100
+        const page = Number(currentPage) || 1
+        const start = (page - 1) * limit
+        const end = start + limit
+        const paged = mergedRows.slice(start, end)
+        const pages = Math.max(1, Math.ceil(totalMerged / limit))
+
+        // Compute totals from merged rows so face cards remain populated
+        const totalsFromRows = {
+          assets: sumField(mergedRows, 'assets'),
+          balance: sumField(mergedRows, 'balance'),
+          blockedCommission: sumField(mergedRows, 'blockedCommission'),
+          blockedProfit: sumField(mergedRows, 'blockedProfit'),
+          commission: sumField(mergedRows, 'commission'),
+          credit: sumField(mergedRows, 'credit'),
+          dailyBonusIn: sumField(mergedRows, 'dailyBonusIn'),
+          dailyBonusOut: sumField(mergedRows, 'dailyBonusOut'),
+          dailyCreditIn: sumField(mergedRows, 'dailyCreditIn'),
+          dailyCreditOut: sumField(mergedRows, 'dailyCreditOut'),
+          dailyDeposit: sumField(mergedRows, 'dailyDeposit'),
+          dailyPnL: sumField(mergedRows, 'dailyPnL'),
+          dailySOCompensationIn: sumField(mergedRows, 'dailySOCompensationIn'),
+          dailySOCompensationOut: sumField(mergedRows, 'dailySOCompensationOut'),
+          dailyWithdrawal: sumField(mergedRows, 'dailyWithdrawal'),
+          equity: sumField(mergedRows, 'equity'),
+          floating: sumField(mergedRows, 'floating'),
+          liabilities: sumField(mergedRows, 'liabilities'),
+          lifetimeBonusIn: sumField(mergedRows, 'lifetimeBonusIn'),
+          lifetimeBonusOut: sumField(mergedRows, 'lifetimeBonusOut'),
+          lifetimeCreditIn: sumField(mergedRows, 'lifetimeCreditIn'),
+          lifetimeCreditOut: sumField(mergedRows, 'lifetimeCreditOut'),
+          lifetimeDeposit: sumField(mergedRows, 'lifetimeDeposit'),
+          lifetimePnL: sumField(mergedRows, 'lifetimePnL'),
+          lifetimeSOCompensationIn: sumField(mergedRows, 'lifetimeSOCompensationIn'),
+          lifetimeSOCompensationOut: sumField(mergedRows, 'lifetimeSOCompensationOut'),
+          lifetimeWithdrawal: sumField(mergedRows, 'lifetimeWithdrawal'),
+          margin: sumField(mergedRows, 'margin'),
+          marginFree: sumField(mergedRows, 'marginFree'),
+          marginInitial: sumField(mergedRows, 'marginInitial'),
+          marginLevel: sumField(mergedRows, 'marginLevel'),
+          marginMaintenance: sumField(mergedRows, 'marginMaintenance'),
+          pnl: sumField(mergedRows, 'pnl'),
+          previousEquity: sumField(mergedRows, 'previousEquity'),
+          profit: sumField(mergedRows, 'profit'),
+          storage: sumField(mergedRows, 'storage'),
+          thisMonthBonusIn: sumField(mergedRows, 'thisMonthBonusIn'),
+          thisMonthBonusOut: sumField(mergedRows, 'thisMonthBonusOut'),
+          thisMonthCreditIn: sumField(mergedRows, 'thisMonthCreditIn'),
+          thisMonthCreditOut: sumField(mergedRows, 'thisMonthCreditOut'),
+          thisMonthDeposit: sumField(mergedRows, 'thisMonthDeposit'),
+          thisMonthPnL: sumField(mergedRows, 'thisMonthPnL'),
+          thisMonthSOCompensationIn: sumField(mergedRows, 'thisMonthSOCompensationIn'),
+          thisMonthSOCompensationOut: sumField(mergedRows, 'thisMonthSOCompensationOut'),
+          thisMonthWithdrawal: sumField(mergedRows, 'thisMonthWithdrawal'),
+          thisWeekBonusIn: sumField(mergedRows, 'thisWeekBonusIn'),
+          thisWeekBonusOut: sumField(mergedRows, 'thisWeekBonusOut'),
+          thisWeekCreditIn: sumField(mergedRows, 'thisWeekCreditIn'),
+          thisWeekCreditOut: sumField(mergedRows, 'thisWeekCreditOut'),
+          thisWeekDeposit: sumField(mergedRows, 'thisWeekDeposit'),
+          thisWeekPnL: sumField(mergedRows, 'thisWeekPnL'),
+          thisWeekSOCompensationIn: sumField(mergedRows, 'thisWeekSOCompensationIn'),
+          thisWeekSOCompensationOut: sumField(mergedRows, 'thisWeekSOCompensationOut'),
+          thisWeekWithdrawal: sumField(mergedRows, 'thisWeekWithdrawal')
+        }
+
+        setClients(paged)
+        setTotalClients(totalMerged)
+        setTotalPages(pages)
+        setTotals(totalsFromRows)
+        setTotalsPercent({})
+        setError('')
+
+        // Done via email-equality chunked mode; skip single-request path
+        return
+      }
       const LARGE_IN_THRESHOLD = 20 // Lower threshold for better backend compatibility, especially with text fields
       const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
 
