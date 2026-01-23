@@ -3791,7 +3791,7 @@ const Client2Page = () => {
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
             {/* Title + Actions */}
-            <div className="mb-2.5 pb-2.5 border-b border-gray-200 flex items-center justify-between gap-3">
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
               <div>
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
                 <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
