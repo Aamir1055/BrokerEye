@@ -968,8 +968,18 @@ const PendingOrdersPage = () => {
                             </div>
                           )}
 
-                          {/* Action Button */}
-                          <div className="pt-2">
+                          {/* Actions */}
+                          <div className="pt-2 flex gap-2 border-t border-gray-200">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                setShowNumberFilterDropdown(null)
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                            >
+                              Close
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -980,7 +990,7 @@ const PendingOrdersPage = () => {
                                 applyCustomFilter()
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -1105,8 +1115,18 @@ const PendingOrdersPage = () => {
                               />
                             </div>
 
-                            {/* Action Button */}
-                            <div className="pt-2">
+                            {/* Actions */}
+                            <div className="pt-2 flex gap-2 border-t border-gray-200">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  e.preventDefault()
+                                  setCustomFilterColumn(null)
+                                }}
+                                className="flex-1 px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                              >
+                                Close
+                              </button>
                               <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -1117,7 +1137,7 @@ const PendingOrdersPage = () => {
                                     applyCustomFilter()
                                   }}
                                 disabled={!customFilterValue1}
-                                className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -1213,19 +1233,21 @@ const PendingOrdersPage = () => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                    className={(((showNumberFilterDropdown === columnKey) || (customFilterColumn === columnKey)) ? 'w-full' : 'flex-1') + " px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"}
                   >
                     Close
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowFilterDropdown(null)
-                    }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-                  >
-                    OK
-                  </button>
+                  {!(showNumberFilterDropdown === columnKey || customFilterColumn === columnKey) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(null)
+                      }}
+                      className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    >
+                      OK
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1251,8 +1273,25 @@ const PendingOrdersPage = () => {
   }
 
   // Top header loader synced with orders fetch lifecycle
+  const progressStartRef = useRef(0)
+  const progressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(!!loading?.orders)
+    const active = !!loading?.orders
+    if (active) {
+      progressStartRef.current = Date.now()
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (progressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+      progressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+    }
   }, [loading?.orders])
 
   return (
@@ -1262,18 +1301,24 @@ const PendingOrdersPage = () => {
         onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
+      {/* YouTube-style Loading Bar - Outside main to span full width */}
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <style>{`
+            @keyframes topHeaderTrackPendingOrders {
+              0% { left: -30%; }
+              100% { left: 100%; }
+            }
+          `}</style>
+          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '30%',
+            left: '-30%',
+            animation: 'topHeaderTrackPendingOrders 0.9s linear infinite'
+          }} />
+        </div>
+      )}
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
-        {/* YouTube-style Loading Bar */}
-        {progressActive && (
-          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
-              width: '40%',
-              animation: 'loading 1.5s ease-in-out infinite',
-              transformOrigin: 'left center'
-            }}></div>
-          </div>
-        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -1605,7 +1650,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
                                 {priceDelta !== undefined && priceDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {priceDelta > 0 ? 'Gû¦' : 'Gû+'} {Math.abs(priceDelta).toFixed(3)}
+                                    {priceDelta > 0 ? 'Gï¿½ï¿½' : 'Gï¿½+'} {Math.abs(priceDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1620,7 +1665,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
                                 {slDelta !== undefined && slDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {slDelta > 0 ? 'Gû¦' : 'Gû+'} {Math.abs(slDelta).toFixed(3)}
+                                    {slDelta > 0 ? 'Gï¿½ï¿½' : 'Gï¿½+'} {Math.abs(slDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1632,7 +1677,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
                                 {tpDelta !== undefined && tpDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {tpDelta > 0 ? 'Gû¦' : 'Gû+'} {Math.abs(tpDelta).toFixed(3)}
+                                    {tpDelta > 0 ? 'Gï¿½ï¿½' : 'Gï¿½+'} {Math.abs(tpDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>

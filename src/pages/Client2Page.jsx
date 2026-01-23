@@ -151,6 +151,9 @@ const Client2Page = () => {
   const [columnSortOrder, setColumnSortOrder] = useState({}) // Track sort order per column: 'asc', 'desc', or null
   const [filterPosition, setFilterPosition] = useState(null) // Track filter button position for portal
   const [columnValues, setColumnValues] = useState({}) // Store unique values for each column
+  // Track inline submenus to avoid duplicate footer OK buttons
+  const [openNumberFilterColumn, setOpenNumberFilterColumn] = useState(null)
+  const [openTextFilterColumn, setOpenTextFilterColumn] = useState(null)
   const [columnValuesLoading, setColumnValuesLoading] = useState({}) // Track first-load state for column values
   const [columnValuesLoadingMore, setColumnValuesLoadingMore] = useState({}) // Track incremental load state
   const [columnValuesPage, setColumnValuesPage] = useState({}) // Track current page per column
@@ -4819,10 +4822,16 @@ const Client2Page = () => {
                                         })
                                         setShowFilterDropdown(col.key)
 
-                                        // Fetch column values for ALL columns (including login) - always refresh to ensure fresh data
-                                        const columnType = getColumnType(col.key)
-                                        // Always fetch values for checkbox filtering with forceRefresh=true to avoid "No values available"
-                                        fetchColumnValues(col.key, true)
+                                        // Fetch column values only for columns that support checkbox lists
+                                        const CHECKBOX_VALUE_COLUMNS = [
+                                          'login','id','name','lastName','middleName','email','phone',
+                                          'group','accountType','status','currency','leverage','comment',
+                                          'country','city','state','address','zipCode','company',
+                                          'leadSource','leadCampaign','processorType'
+                                        ]
+                                        if (CHECKBOX_VALUE_COLUMNS.includes(col.key)) {
+                                          fetchColumnValues(col.key, true)
+                                        }
                                         // Don't initialize selectedColumnValues - let it stay undefined so we read from columnFilters
                                         // This ensures checkboxes show the correct state immediately when dropdown opens
                                       }
@@ -4938,7 +4947,9 @@ const Client2Page = () => {
                                                       onClick={() => {
                                                         const menu = document.getElementById(`number-filter-menu-${columnKey}`)
                                                         if (menu) {
+                                                          const willOpen = menu.classList.contains('hidden')
                                                           menu.classList.toggle('hidden')
+                                                          setOpenNumberFilterColumn(willOpen ? columnKey : null)
                                                         }
                                                       }}
                                                       id={`number-filter-btn-${columnKey}`}
@@ -4956,7 +4967,7 @@ const Client2Page = () => {
                                                       onClick={(e) => e.stopPropagation()}
                                                     >
                                                       <div className="space-y-3">
-                                                        {/* Operator Dropdown */}
+                                                        {/* Operator Selection (dropdown) */}
                                                         <div>
                                                           <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
                                                           <select
@@ -5024,17 +5035,30 @@ const Client2Page = () => {
                                                           </div>
                                                         )}
 
-                                                        {/* Apply Button */}
-                                                        <button
-                                                          onClick={() => {
-                                                            applyNumberFilter(columnKey)
-                                                            const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                            if (menu) menu.classList.add('hidden')
-                                                          }}
-                                                          className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                        >
-                                                          OK
-                                                        </button>
+                                                        {/* Actions */}
+                                                        <div className="flex gap-2 pt-1 border-t border-gray-200">
+                                                          <button
+                                                            onClick={() => {
+                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                              if (menu) menu.classList.add('hidden')
+                                                              setOpenNumberFilterColumn(null)
+                                                            }}
+                                                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                          >
+                                                            Close
+                                                          </button>
+                                                          <button
+                                                            onClick={() => {
+                                                              applyNumberFilter(columnKey)
+                                                              const menu = document.getElementById(`number-filter-menu-${columnKey}`)
+                                                              if (menu) menu.classList.add('hidden')
+                                                              setOpenNumberFilterColumn(null)
+                                                            }}
+                                                            className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                          >
+                                                            OK
+                                                          </button>
+                                                        </div>
                                                       </div>
                                                     </div>
                                                   </div>
@@ -5114,16 +5138,28 @@ const Client2Page = () => {
                                                       </div>
                                                     )}
 
-                                                    {/* Apply Button */}
-                                                    <button
-                                                      onClick={() => {
-                                                        console.log('[Client2] Applying number filter for column:', columnKey)
-                                                        applyNumberFilter(columnKey)
-                                                      }}
-                                                      className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                    >
-                                                      OK
-                                                    </button>
+                                                    {/* Actions */}
+                                                    <div className="flex gap-2 pt-1 border-t border-gray-200">
+                                                      <button
+                                                        onClick={() => {
+                                                          // No submenu in this branch; close the whole panel
+                                                          setShowFilterDropdown(null)
+                                                        }}
+                                                        className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                      >
+                                                        Close
+                                                      </button>
+                                                      <button
+                                                        onClick={() => {
+                                                          console.log('[Client2] Applying number filter for column:', columnKey)
+                                                          applyNumberFilter(columnKey)
+                                                          setShowFilterDropdown(null)
+                                                        }}
+                                                        className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                      >
+                                                        OK
+                                                      </button>
+                                                    </div>
                                                   </div>
                                                 )}
                                               </div>
@@ -5161,27 +5197,21 @@ const Client2Page = () => {
                                                           const allVals = columnValues[columnKey] || []
                                                           const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
                                                           const visibleVals = searchQ ? allVals.filter(v => String(v).toLowerCase().includes(searchQ)) : allVals
-                                                          // Always read from columnFilters to show currently applied filters
                                                           const existingFilter = columnFilters[`${columnKey}_checkbox`]
                                                           const filterValues = existingFilter?.values || []
-                                                          // Use selectedColumnValues only if user has interacted (different from applied filter)
                                                           const interactiveSelected = selectedColumnValues[columnKey]
-                                                          // Show filterValues by default, or interactiveSelected if it differs from filter
                                                           const selected = interactiveSelected !== undefined ? interactiveSelected : filterValues
                                                           const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                          const hasActiveSearch = columnValueSearch[columnKey] && columnValueSearch[columnKey].trim().length > 0
                                                           return (
-                                                            <>
-                                                              <label className="flex items-center gap-2 cursor-pointer">
-                                                                <input
-                                                                  type="checkbox"
-                                                                  checked={allVisibleSelected}
-                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                />
-                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                              </label>
-                                                            </>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                              <input
+                                                                type="checkbox"
+                                                                checked={allVisibleSelected}
+                                                                onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                              />
+                                                              <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                            </label>
                                                           )
                                                         })()}
                                                       </div>
@@ -5286,24 +5316,23 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* OK/Close Buttons */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
-                                                </button>
-                                                <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                >
-                                                  OK
-                                                </button>
-                                              </div>
+                                              {/* Footer actions (hidden when inline submenu open) */}
+                                              {(openNumberFilterColumn !== columnKey && openTextFilterColumn !== columnKey && !(isNumeric && !((columnValues[columnKey]||[]).length))) && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                               
+                                                  {(columnValues[columnKey]||[]).length > 0 && (
+                                                    <button
+                                                      onClick={() => {
+                                                        applyCheckboxFilter(columnKey)
+                                                        setShowFilterDropdown(null)
+                                                      }}
+                                                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                    >
+                                                      OK
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              )}
                                             </>
                                           )
                                         })()}
@@ -5352,12 +5381,14 @@ const Client2Page = () => {
                                               <div className="px-3 py-2 border-b border-gray-200">
                                                 {allValues.length > 0 ? (
                                                   // Collapsible version when there are checkbox values - opens to the right
-                                                  <div className="relative">
+                                                    <div className="relative">
                                                     <button
                                                       onClick={() => {
                                                         const menu = document.getElementById(`text-filter-menu-${columnKey}`)
                                                         if (menu) {
+                                                          const willOpen = menu.classList.contains('hidden')
                                                           menu.classList.toggle('hidden')
+                                                          setOpenTextFilterColumn(willOpen ? columnKey : null)
                                                         }
                                                       }}
                                                       id={`text-filter-btn-${columnKey}`}
@@ -5368,7 +5399,6 @@ const Client2Page = () => {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                       </svg>
                                                     </button>
-
                                                     <div
                                                       id={`text-filter-menu-${columnKey}`}
                                                       className="hidden absolute top-0 left-full ml-2 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl z-[10000000] p-3"
@@ -5392,27 +5422,27 @@ const Client2Page = () => {
                                                             <>
                                                               <div>
                                                                 <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
-                                                                <select
-                                                                  value={tempTextFilter.operator}
-                                                                  onChange={(e) => updateTextFilterTemp(columnKey, 'operator', e.target.value)}
-                                                                  onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter') {
-                                                                      e.preventDefault()
-                                                                      applyTextFilter(columnKey)
-                                                                      const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                                      if (menu) menu.classList.add('hidden')
-                                                                      setShowFilterDropdown(null)
-                                                                    }
-                                                                  }}
-                                                                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-                                                                >
-                                                                  <option value="equal">Equal...</option>
-                                                                  <option value="notEqual">Not Equal...</option>
-                                                                  <option value="startsWith">Starts With...</option>
-                                                                  <option value="endsWith">Ends With...</option>
-                                                                  <option value="contains">Contains...</option>
-                                                                  <option value="doesNotContain">Does Not Contain...</option>
-                                                                </select>
+                                                                <div className="space-y-1">
+                                                                  {[
+                                                                    { value: 'equal', label: 'Equal...' },
+                                                                    { value: 'notEqual', label: 'Not Equal...' },
+                                                                    { value: 'startsWith', label: 'Starts With...' },
+                                                                    { value: 'endsWith', label: 'Ends With...' },
+                                                                    { value: 'contains', label: 'Contains...' },
+                                                                    { value: 'doesNotContain', label: 'Does Not Contain...' }
+                                                                  ].map(opt => (
+                                                                    <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                                                                      <input
+                                                                        type="radio"
+                                                                        name={`text-cond-${columnKey}`}
+                                                                        checked={tempTextFilter.operator === opt.value}
+                                                                        onChange={() => updateTextFilterTemp(columnKey, 'operator', opt.value)}
+                                                                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                      />
+                                                                      <span className="text-xs text-gray-700">{opt.label}</span>
+                                                                    </label>
+                                                                  ))}
+                                                                </div>
                                                               </div>
                                                               <div>
                                                                 <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
@@ -5444,17 +5474,30 @@ const Client2Page = () => {
                                                                   <span className="text-xs text-gray-700">Match Case</span>
                                                                 </label>
                                                               </div>
-                                                              <button
-                                                                onClick={() => {
-                                                                  applyTextFilter(columnKey)
-                                                                  const menu = document.getElementById(`text-filter-menu-${columnKey}`)
-                                                                  if (menu) menu.classList.add('hidden')
-                                                                  setShowFilterDropdown(null)
-                                                                }}
-                                                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                              >
-                                                                OK
-                                                              </button>
+                                                              <div className="flex gap-2 pt-1 border-t border-gray-200">
+                                                                <button
+                                                                  onClick={() => {
+                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                    if (menu) menu.classList.add('hidden')
+                                                                    setOpenTextFilterColumn(null)
+                                                                  }}
+                                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                                >
+                                                                  Close
+                                                                </button>
+                                                                <button
+                                                                  onClick={() => {
+                                                                    applyTextFilter(columnKey)
+                                                                    const menu = document.getElementById(`text-filter-menu-${columnKey}`)
+                                                                    if (menu) menu.classList.add('hidden')
+                                                                    setShowFilterDropdown(null)
+                                                                    setOpenTextFilterColumn(null)
+                                                                  }}
+                                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                                >
+                                                                  OK
+                                                                </button>
+                                                              </div>
                                                             </>
                                                           )
                                                         })()}
@@ -5696,24 +5739,28 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* OK/Close Buttons */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
-                                                </button>
-                                                <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                >
-                                                  OK
-                                                </button>
-                                              </div>
+                                              {/* Footer actions (hidden when inline submenu open) */}
+                                              {(openNumberFilterColumn !== columnKey && openTextFilterColumn !== columnKey) && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className={allValues.length > 0 ? "flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300" : "w-full px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"}
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  {allValues.length > 0 && (
+                                                    <button
+                                                      onClick={() => {
+                                                        applyCheckboxFilter(columnKey)
+                                                        setShowFilterDropdown(null)
+                                                      }}
+                                                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                    >
+                                                      OK
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              )}
                                             </>
                                           )
                                         })()}

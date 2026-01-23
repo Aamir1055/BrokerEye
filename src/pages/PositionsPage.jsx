@@ -2047,8 +2047,17 @@ const PositionsPage = () => {
                             </div>
                           )}
 
-                          {/* Apply Button */}
+                          {/* Actions */}
                           <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            <button
+                              onClick={() => {
+                                setShowNumberFilterDropdown(null)
+                                setShowCustomFilterModal(false)
+                              }}
+                              className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                            >
+                              Close
+                            </button>
                             <button
                               onClick={() => {
                                 applyCustomNumberFilter()
@@ -2056,7 +2065,7 @@ const PositionsPage = () => {
                                 setShowCustomFilterModal(false)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -2179,8 +2188,17 @@ const PositionsPage = () => {
                               />
                             </div>
 
-                            {/* Apply Button */}
+                            {/* Actions */}
                             <div className="flex gap-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => {
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }}
+                                className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                              >
+                                Close
+                              </button>
                               <button
                                 onClick={() => {
                                   applyCustomNumberFilter()
@@ -2188,7 +2206,7 @@ const PositionsPage = () => {
                                   setShowCustomFilterModal(false)
                                 }}
                                 disabled={!customFilterValue1}
-                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -2284,19 +2302,21 @@ const PositionsPage = () => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                    className={(showNumberFilterDropdown === columnKey ? 'w-full' : 'flex-1') + " px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"}
                   >
                     Close
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowFilterDropdown(null)
-                    }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-                  >
-                    OK
-                  </button>
+                  {showNumberFilterDropdown !== columnKey && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(null)
+                      }}
+                      className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    >
+                      OK
+                    </button>
+                  )}
                 </div>
               </div>
             )}
