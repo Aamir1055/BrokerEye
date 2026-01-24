@@ -124,6 +124,7 @@ export default function PendingOrdersModule() {
 
   // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredOrders = useMemo(() => {
+    if (!orders || !Array.isArray(orders)) return []
     return applyCumulativeFilters(orders, {
       customizeFilters: filters,
       filterByActiveIB,
@@ -135,6 +136,7 @@ export default function PendingOrdersModule() {
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) return []
     const values = ibFilteredOrders
       .map(order => {
         if (columnKey === 'volume') return order.volumeCurrent || order.volume
