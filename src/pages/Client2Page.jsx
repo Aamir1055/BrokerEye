@@ -956,9 +956,9 @@ const Client2Page = () => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
-    // Only cancel if there's already a request in flight to prevent race conditions
-    // Don't cancel user-initiated requests (non-silent) to ensure they always complete
-    if (abortControllerRef.current && isFetchingRef.current && silent) {
+    // Only cancel silent polling requests if there's already one in flight
+    // Never cancel user-initiated or mobile requests to prevent data loss
+    if (abortControllerRef.current && isFetchingRef.current && silent && !isMobile) {
       try { abortControllerRef.current.abort() } catch {}
     }
     // Create new AbortController for this request
@@ -1623,7 +1623,7 @@ const Client2Page = () => {
       setInitialLoad(false)
       setIsSorting(false)
     }
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters])
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, filters, columnFilters, mt5Accounts, accountRangeMin, accountRangeMax, sortBy, sortOrder, percentModeActive, activeGroup, selectedIB, ibMT5Accounts, quickFilters, isMobile])
 
   // Resume after successful token refresh
   useEffect(() => {
