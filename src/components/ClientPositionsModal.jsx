@@ -2548,7 +2548,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                               {positionsVisibleColumns.priceCurrent && (
                               <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
-                                -
+                                {(order.priceTrigger && order.priceTrigger > 0) ? order.priceTrigger.toFixed(5) : '-'}
                               </td>
                               )}
                               {positionsVisibleColumns.sl && (
