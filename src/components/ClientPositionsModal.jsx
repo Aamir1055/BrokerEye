@@ -2547,8 +2547,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               </td>
                               )}
                               {positionsVisibleColumns.priceCurrent && (
-                              <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
-                                {order.priceCurrent ? order.priceCurrent.toFixed(5) : '-'}
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
                               </td>
                               )}
                               {positionsVisibleColumns.sl && (
@@ -2562,12 +2562,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               </td>
                               )}
                               {positionsVisibleColumns.profit && (
-                              <td className="px-3 py-2 text-sm whitespace-nowrap">
-                                {order.profit != null ? (
-                                  <span className={order.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                    {order.profit >= 0 ? '+' : ''}{order.profit.toFixed(2)}
-                                  </span>
-                                ) : '-'}
+                              <td className="px-3 py-2 text-sm text-gray-400 whitespace-nowrap">
+                                -
                               </td>
                               )}
                               {positionsVisibleColumns.storage && (
