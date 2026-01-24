@@ -1035,7 +1035,7 @@ export default function LiveDealingModule() {
         </div>
 
         {/* Table with Search Inside */}
-        <div className="px-4">
+        <div className="">
           <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden">
             {/* Search and Pagination Controls - Inside table container */}
             <div className="border-b border-[#E5E7EB] p-4">

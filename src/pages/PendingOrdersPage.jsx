@@ -1656,7 +1656,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
                                 {priceDelta !== undefined && priceDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {priceDelta > 0 ? 'G��' : 'G�+'} {Math.abs(priceDelta).toFixed(3)}
+                                    {priceDelta > 0 ? '' : 'G�+'} {Math.abs(priceDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1671,7 +1671,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
                                 {slDelta !== undefined && slDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {slDelta > 0 ? 'G��' : 'G�+'} {Math.abs(slDelta).toFixed(3)}
+                                    {slDelta > 0 ? '' : 'G�+'} {Math.abs(slDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1683,7 +1683,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
                                 {tpDelta !== undefined && tpDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {tpDelta > 0 ? 'G��' : 'G�+'} {Math.abs(tpDelta).toFixed(3)}
+                                    {tpDelta > 0 ? '' : 'G�+'} {Math.abs(tpDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
