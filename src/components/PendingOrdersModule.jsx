@@ -489,7 +489,7 @@ export default function PendingOrdersModule() {
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
             onClick={() => {
-              const fullClient = clients.find(c => String(c.login) === String(order.login))
+              const fullClient = clients?.find(c => String(c.login) === String(order.login))
               setSelectedClient(fullClient || { login: order.login, email: order.email || '', name: '' })
               setSelectedClientDefaultTab('positions')
             }}
