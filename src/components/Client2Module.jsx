@@ -43,6 +43,7 @@ export default function Client2Module() {
   const columnSelectorButtonRef = useRef(null)
   const abortControllerRef = useRef(null)
   const requestIdRef = useRef(0)
+  const isFetchingRef = useRef(false)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -218,6 +219,14 @@ export default function Client2Module() {
     const currentRequestId = ++requestIdRef.current
     
     try {
+      // Prevent overlapping fetches which can cause network cancellations
+      if (isFetchingRef.current) {
+        if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+          console.log('[Client2Module] Skipping fetch — previous request in-flight')
+        }
+        return
+      }
+      isFetchingRef.current = true
       // Only show loading on initial load, not on periodic refreshes
       if (isInitialLoad) {
         setIsLoading(true)
@@ -324,14 +333,8 @@ export default function Client2Module() {
         payload.sortOrder = sortDirection
       }
       
-      // Cancel previous pending request to prevent API collision
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-      abortControllerRef.current = new AbortController()
-      
-      // Use searchClients to get totals data with percentage parameter
-      const response = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
+      // Use searchClients to get totals data with percentage parameter (no AbortController in mobile)
+      const response = await brokerAPI.searchClients(payload)
       
       // Ignore response if it's from an outdated request (stale data)
       if (currentRequestId !== requestIdRef.current) {
@@ -363,22 +366,15 @@ export default function Client2Module() {
       // Update total pages from API response if available
       const apiPages = data.pages ? Number(data.pages) : null
       setLastUpdateTime(Date.now())
-      if (isInitialLoad) {
-        setIsLoading(false)
-      }
+      // Always set loading to false after successful fetch
+      setIsLoading(false)
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
-      // Ignore request cancellations caused by AbortController
-      const isCanceled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(error?.message || '')
-      if (isCanceled) {
-        console.log('[Client2Module] Request canceled (expected during rapid filtering)')
-        return
-      }
       console.error('Failed to fetch clients:', error)
-      if (isInitialLoad) {
-        setIsLoading(false)
-      }
+      setIsLoading(false)
+    } finally {
+      isFetchingRef.current = false
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
@@ -403,17 +399,24 @@ export default function Client2Module() {
     setCurrentPage(1)
   }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2')])
 
-  // Initial fetch and periodic refresh every 1 second (matching desktop)
+  // Initial fetch and periodic refresh (reduced frequency). Pause auto-refresh during active search.
   useEffect(() => {
-    fetchClients(null, true) // Initial load with loading state
-    fetchRebateTotals() // Fetch rebate totals on mount
-    const interval = setInterval(() => fetchClients(null, false), 1000) // Periodic refresh without loading state
-    const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000) // Refresh rebate every 1 hour
+    fetchClients(null, true)
+    fetchRebateTotals()
+
+    const hasSearch = !!(debouncedSearchInput && debouncedSearchInput.trim())
+    const interval = hasSearch ? null : setInterval(() => {
+      if (!isFetchingRef.current) {
+        fetchClients(null, false)
+      }
+    }, 3000)
+
+    const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000)
     return () => {
-      clearInterval(interval)
+      if (interval) clearInterval(interval)
       clearInterval(rebateInterval)
     }
-  }, [fetchClients, fetchRebateTotals])
+  }, [fetchClients, fetchRebateTotals, debouncedSearchInput])
 
   // Return clients as-is since search is handled server-side via API
   const filteredClients = useMemo(() => {
@@ -436,7 +439,8 @@ export default function Client2Module() {
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
       { label: 'Total Rebate', value: formatNum(rebateTotals.totalRebate || 0), unit: 'USD', numericValue: rebateTotals.totalRebate || 0 },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
-      { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
+      // Balance card is not shown on amari-capital branch (mobile)
+      // { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
       { label: addPercent('Blocked Commission'), value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
       { label: addPercent('Blocked Profit'), value: formatNum(t.blockedProfit || 0), unit: 'USD', numericValue: t.blockedProfit || 0 },
       { label: addPercent('Commission'), value: formatNum(t.commission || 0), unit: 'USD', numericValue: t.commission || 0 },
