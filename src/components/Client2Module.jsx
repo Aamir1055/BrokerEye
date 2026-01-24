@@ -324,14 +324,16 @@ export default function Client2Module() {
         payload.sortOrder = sortDirection
       }
       
-      // Cancel previous pending request to prevent API collision
-      if (abortControllerRef.current) {
+      // Cancel previous pending request to prevent API collision (desktop only - mobile needs all requests to complete)
+      if (abortControllerRef.current && !isMobile) {
         abortControllerRef.current.abort()
       }
-      abortControllerRef.current = new AbortController()
+      if (!isMobile) {
+        abortControllerRef.current = new AbortController()
+      }
       
       // Use searchClients to get totals data with percentage parameter
-      const response = await brokerAPI.searchClients(payload, { signal: abortControllerRef.current.signal })
+      const response = await brokerAPI.searchClients(payload, !isMobile ? { signal: abortControllerRef.current.signal } : {})
       
       // Ignore response if it's from an outdated request (stale data)
       if (currentRequestId !== requestIdRef.current) {
