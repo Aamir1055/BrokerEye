@@ -242,51 +242,8 @@ export default function PendingOrdersModule() {
     }
   }
 
-  const applyAllColumnFilters = (orders) => {
-    return orders.filter(order => {
-      // Check checkbox filters
-      for (const [columnKey, selectedValues] of Object.entries(columnFilters)) {
-        if (selectedValues && selectedValues.length > 0) {
-          let orderValue
-          if (columnKey === 'volume') orderValue = order.volumeCurrent || order.volume
-          else if (columnKey === 'priceOrder') orderValue = order.priceOrder || order.price
-          else if (columnKey === 'priceTrigger') orderValue = order.priceTrigger || order.trigger
-          else if (columnKey === 'priceSL') orderValue = order.priceSL || order.sl
-          else if (columnKey === 'priceTP') orderValue = order.priceTP || order.tp
-          else if (columnKey === 'timeSetup') orderValue = order.timeSetup || order.timeUpdate || order.timeCreate
-          else orderValue = order[columnKey]
-          
-          if (!selectedValues.includes(String(orderValue))) {
-            return false
-          }
-        }
-      }
-      
-      // Check custom filters
-      for (const [columnKey, filter] of Object.entries(customFilters)) {
-        let orderValue
-        if (columnKey === 'volume') orderValue = order.volumeCurrent || order.volume
-        else if (columnKey === 'priceOrder') orderValue = order.priceOrder || order.price
-        else if (columnKey === 'priceTrigger') orderValue = order.priceTrigger || order.trigger
-        else if (columnKey === 'priceSL') orderValue = order.priceSL || order.sl
-        else if (columnKey === 'priceTP') orderValue = order.priceTP || order.tp
-        else if (columnKey === 'timeSetup') orderValue = order.timeSetup || order.timeUpdate || order.timeCreate
-        else orderValue = order[columnKey]
-        
-        if (isStringColumn(columnKey)) {
-          if (!applyTextFilter(orderValue, filter)) {
-            return false
-          }
-        } else {
-          if (!applyNumberFilter(orderValue, filter)) {
-            return false
-          }
-        }
-      }
-      
-      return true
-    })
-  }
+  // Mobile request: disable per-column filters in Pending Orders view
+  const applyAllColumnFilters = (orders) => orders
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
