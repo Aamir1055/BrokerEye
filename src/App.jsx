@@ -112,9 +112,9 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Deployed to /amari-capital/ subdirectory
+  // Deployed to root directory (htdocs)
   const getBasename = () => {
-    return '/amari-capital'
+    return '/'
   }
 
   return (

@@ -4,8 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Deployed to /amari-capital/ subdirectory
-  base: '/amari-capital/',
+  // Deployed to root directory (htdocs)
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
