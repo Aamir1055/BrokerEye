@@ -324,16 +324,9 @@ export default function Client2Module() {
         payload.sortOrder = sortDirection
       }
       
-      // Cancel previous pending request to prevent API collision (desktop only - mobile needs all requests to complete)
-      if (abortControllerRef.current && !isMobile) {
-        abortControllerRef.current.abort()
-      }
-      if (!isMobile) {
-        abortControllerRef.current = new AbortController()
-      }
-      
+      // Note: AbortController not used in mobile view - all requests should complete
       // Use searchClients to get totals data with percentage parameter
-      const response = await brokerAPI.searchClients(payload, !isMobile ? { signal: abortControllerRef.current.signal } : {})
+      const response = await brokerAPI.searchClients(payload)
       
       // Ignore response if it's from an outdated request (stale data)
       if (currentRequestId !== requestIdRef.current) {
@@ -371,12 +364,6 @@ export default function Client2Module() {
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
-      // Ignore request cancellations caused by AbortController
-      const isCanceled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || /aborted|canceled/i.test(error?.message || '')
-      if (isCanceled) {
-        console.log('[Client2Module] Request canceled (expected during rapid filtering)')
-        return
-      }
       console.error('Failed to fetch clients:', error)
       if (isInitialLoad) {
         setIsLoading(false)
