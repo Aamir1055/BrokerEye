@@ -935,11 +935,17 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                         </span>
                       </td>
                     )}
-                    {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(order.volume || 0)}</td>}
+                    {positionColumns.volume && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(order.volumeCurrent ?? order.volume ?? order.volumeInitial ?? 0)}</td>}
                     {positionColumns.priceOpen && <td className="px-3 py-2 text-xs text-gray-900">{formatNum(order.priceOrder || order.price || 0, 5)}</td>}
                     {positionColumns.profit && (
-                      <td className="px-3 py-2 text-xs text-gray-400">
-                        -
+                      <td className="px-3 py-2 text-xs">
+                        {order.profit != null ? (
+                          <span className={order.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {order.profit >= 0 ? '+' : ''}{formatNum(order.profit, 2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                     )}
                   </tr>
