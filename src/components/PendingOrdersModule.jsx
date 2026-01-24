@@ -290,6 +290,15 @@ export default function PendingOrdersModule() {
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) {
+      return {
+        totalOrders: 0,
+        uniqueLogins: 0,
+        uniqueSymbols: 0,
+        totalVolume: 0
+      }
+    }
+    
     const totalOrders = ibFilteredOrders.length
     const uniqueLogins = new Set(ibFilteredOrders.map(o => o.login)).size
     const uniqueSymbols = new Set(ibFilteredOrders.map(o => o.symbol)).size
@@ -305,6 +314,8 @@ export default function PendingOrdersModule() {
 
   // Filter orders based on search
   const filteredOrders = useMemo(() => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) return []
+    
     let filtered = ibFilteredOrders.filter(order => {
       if (!searchInput.trim()) return true
       const query = searchInput.toLowerCase()
@@ -394,7 +405,7 @@ export default function PendingOrdersModule() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [ibFilteredOrders.length, searchInput])
+  }, [ibFilteredOrders?.length, searchInput])
 
   // Click outside handler for filter dropdowns
   useEffect(() => {
