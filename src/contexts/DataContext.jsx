@@ -646,20 +646,11 @@ export const DataProvider = ({ children }) => {
       return accounts
     }
 
-    setLoading(prev => ({ ...prev, accounts: true }))
-    
-    try {
-      const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getAccounts(getClients)' })
-      const data = response.data?.clients || []
-      setAccounts(data)
-      setLastFetch(prev => ({ ...prev, accounts: Date.now() }))
-      return data
-    } catch (error) {
-      console.error('[DataContext] Failed to fetch accounts:', error)
-      throw error
-    } finally {
-      setLoading(prev => ({ ...prev, accounts: false }))
-    }
+    // Accounts endpoint is not available on the backend currently.
+    // Mirror fetchClients behavior: skip network call and avoid noisy retries/logs.
+    console.warn('[DataContext] fetchAccounts skipped - endpoint not available')
+    setLoading(prev => ({ ...prev, accounts: false }))
+    return accounts
   }, [accounts, isAuthenticated, fetchWithRetry])
 
   // Setup WebSocket subscriptions (only after initial data is loaded)
