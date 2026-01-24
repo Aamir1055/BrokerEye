@@ -352,22 +352,29 @@ export default function Client2Module() {
         })
       }
       
-      setClients(data.clients || [])
+      const clientsData = data.clients || []
+      setClients(clientsData)
       setTotals(t)
-      setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
+      setTotalClients(data.total || data.totalClients || clientsData.length || 0)
       // Update total pages from API response if available
       const apiPages = data.pages ? Number(data.pages) : null
       setLastUpdateTime(Date.now())
-      if (isInitialLoad) {
-        setIsLoading(false)
-      }
+      
+      // Always set loading to false after successful fetch (not just on initial load)
+      setIsLoading(false)
+      
+      console.log('[Client2Module] Fetched clients:', {
+        count: clientsData.length,
+        total: data.total || data.totalClients || 0,
+        isInitialLoad,
+        requestId: currentRequestId
+      })
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
       console.error('Failed to fetch clients:', error)
-      if (isInitialLoad) {
-        setIsLoading(false)
-      }
+      // Always set loading to false after error (not just on initial load)
+      setIsLoading(false)
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
