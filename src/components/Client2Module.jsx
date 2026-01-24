@@ -43,6 +43,7 @@ export default function Client2Module() {
   const columnSelectorButtonRef = useRef(null)
   const abortControllerRef = useRef(null)
   const requestIdRef = useRef(0)
+  const isFetchingRef = useRef(false)
   const [filters, setFilters] = useState({ hasFloating: false, hasCredit: false, noDeposit: false })
   const [hasPendingFilterChanges, setHasPendingFilterChanges] = useState(false)
   const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
@@ -218,6 +219,14 @@ export default function Client2Module() {
     const currentRequestId = ++requestIdRef.current
     
     try {
+      // Prevent overlapping fetches which can lead to browser/network cancellations
+      if (isFetchingRef.current) {
+        if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+          console.log('[Client2Module] Skipping fetch — previous request in-flight')
+        }
+        return
+      }
+      isFetchingRef.current = true
       // Only show loading on initial load, not on periodic refreshes
       if (isInitialLoad) {
         setIsLoading(true)
@@ -375,6 +384,8 @@ export default function Client2Module() {
       console.error('Failed to fetch clients:', error)
       // Always set loading to false after error (not just on initial load)
       setIsLoading(false)
+    } finally {
+      isFetchingRef.current = false
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
@@ -399,17 +410,26 @@ export default function Client2Module() {
     setCurrentPage(1)
   }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2')])
 
-  // Initial fetch and periodic refresh every 1 second (matching desktop)
+  // Initial fetch and periodic refresh (reduced frequency on mobile). Pause auto-refresh while searching.
   useEffect(() => {
     fetchClients(null, true) // Initial load with loading state
     fetchRebateTotals() // Fetch rebate totals on mount
-    const interval = setInterval(() => fetchClients(null, false), 1000) // Periodic refresh without loading state
+
+    // Only run periodic refresh when no active search query
+    const hasSearch = !!(debouncedSearchInput && debouncedSearchInput.trim())
+    const interval = hasSearch ? null : setInterval(() => {
+      // Skip if a fetch is already in progress
+      if (!isFetchingRef.current) {
+        fetchClients(null, false)
+      }
+    }, 3000) // Refresh every 3s on mobile to reduce overlapping requests
+
     const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000) // Refresh rebate every 1 hour
     return () => {
-      clearInterval(interval)
+      if (interval) clearInterval(interval)
       clearInterval(rebateInterval)
     }
-  }, [fetchClients, fetchRebateTotals])
+  }, [fetchClients, fetchRebateTotals, debouncedSearchInput])
 
   // Return clients as-is since search is handled server-side via API
   const filteredClients = useMemo(() => {
