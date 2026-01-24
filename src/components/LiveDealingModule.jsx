@@ -1038,46 +1038,43 @@ export default function LiveDealingModule() {
         <div className="">
           <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden">
             {/* Search and Pagination Controls - Inside table container */}
-            <div className="border-b border-[#E5E7EB] p-4">
-              <div className="flex items-center gap-2">
-              <div className="flex-1 min-w-0 h-[32px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg flex items-center px-3 gap-2">
+            <div className="border-b border-[#E5E7EB] pb-3 px-4 pt-4">
+              <div className="flex items-center gap-1">
+              <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
                 <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
-                  <circle cx="8" cy="8" r="6.5" stroke="#9CA3AF" strokeWidth="1.5"/>
-                  <path d="M13 13L16 16" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+                  <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <input 
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search"
-                  className="flex-1 min-w-0 text-sm text-[#1F2937] placeholder-[#9CA3AF] outline-none bg-transparent"
+                  className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
                 />
               </div>
               <button 
                 onClick={() => setIsColumnSelectorOpen(true)}
-                className="w-10 h-10 bg-white border border-[#E5E7EB] rounded-lg shadow-sm flex items-center justify-center transition-colors hover:bg-gray-50"
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
                 title="Show/Hide Columns">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
-                  <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
                 </svg>
               </button>
               <button 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  currentPage === 1
-                    ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                    : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                }`}
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
 
               {/* Page indicator */}
-              <div className="px-3 py-1.5 text-sm font-medium text-[#374151] flex items-center gap-1">
+              <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
                 <input
                   type="number"
                   min="1"
@@ -1089,24 +1086,20 @@ export default function LiveDealingModule() {
                       setCurrentPage(page);
                     }
                   }}
-                  className="w-12 h-7 border border-[#E5E7EB] rounded-lg text-center text-sm font-semibold text-[#1F2937]"
+                  className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
                   aria-label="Current page"
                 />
                 <span className="text-[#9CA3AF]">/</span>
-                <span className="text-[#6B7280]">{Math.ceil(sortedDeals.length / itemsPerPage)}</span>
+                <span>{Math.ceil(sortedDeals.length / itemsPerPage)}</span>
               </div>
 
               <button 
                 onClick={() => setCurrentPage(prev => Math.min(Math.ceil(sortedDeals.length / itemsPerPage), prev + 1))}
                 disabled={currentPage >= Math.ceil(sortedDeals.length / itemsPerPage)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  currentPage >= Math.ceil(sortedDeals.length / itemsPerPage)
-                    ? 'text-[#D1D5DB] bg-[#F9FAFB] cursor-not-allowed'
-                    : 'text-[#374151] bg-white border border-[#E5E7EB] hover:bg-gray-50'
-                }`}
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
