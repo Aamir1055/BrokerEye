@@ -113,9 +113,9 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Broker runs at root - no subpath detection
+  // Deployed to /amari-capital/ subdirectory in production
   const getBasename = () => {
-    return '/'
+    return '/amari-capital'
   }
 
   return (
