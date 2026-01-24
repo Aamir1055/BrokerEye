@@ -648,7 +648,9 @@ export const DataProvider = ({ children }) => {
 
     // Accounts endpoint is not available on the backend currently.
     // Mirror fetchClients behavior: skip network call and avoid noisy retries/logs.
-    console.warn('[DataContext] fetchAccounts skipped - endpoint not available')
+    if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+      console.log('[DataContext] fetchAccounts skipped - endpoint not available')
+    }
     setLoading(prev => ({ ...prev, accounts: false }))
     return accounts
   }, [accounts, isAuthenticated, fetchWithRetry])

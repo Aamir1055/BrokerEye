@@ -12,8 +12,14 @@ import IBSelector from '../components/IBSelector'
 import PendingOrdersModule from '../components/PendingOrdersModule'
 
 const PendingOrdersPage = () => {
-  // Detect mobile device
-  const [isMobile, setIsMobile] = useState(false)
+  // Detect mobile device (init from window to avoid first-render desktop path on mobile)
+  const [isMobile, setIsMobile] = useState(() => {
+    try {
+      return typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    } catch {
+      return false
+    }
+  })
 
   // Use cached data from DataContext - MUST be called before conditional return
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
