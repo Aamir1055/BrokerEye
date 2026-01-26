@@ -847,17 +847,14 @@ const MarginLevelPage = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Use mobile view on small screens
-  if (isMobile) {
-    return <MarginLevelModule />
-  }
-
   // Sync top header loader with accounts fetch and manual refreshes
   useEffect(() => {
     setProgressActive(!!loading?.accounts || isRefreshing)
   }, [loading?.accounts, isRefreshing])
 
-  return (
+  return isMobile ? (
+    <MarginLevelModule />
+  ) : (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}

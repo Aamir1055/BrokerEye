@@ -25,6 +25,69 @@ const formatDateToValue = (displayStr) => {
   return `${fullYear}-${month}-${day}`
 }
 
+// Sort helper function
+const sortData = (data, key, direction) => {
+  if (!key || !data || data.length === 0) return data
+  
+  return [...data].sort((a, b) => {
+    let aValue, bValue
+    
+    switch (key) {
+      case 'position':
+        aValue = Number(a.position ?? a.order ?? 0)
+        bValue = Number(b.position ?? b.order ?? 0)
+        break
+      case 'symbol':
+        aValue = String(a.symbol || '').toLowerCase()
+        bValue = String(b.symbol || '').toLowerCase()
+        break
+      case 'action':
+        aValue = String(a.action || a.type || '').toLowerCase()
+        bValue = String(b.action || b.type || '').toLowerCase()
+        break
+      case 'volume':
+        aValue = Number(a.volume || 0)
+        bValue = Number(b.volume || 0)
+        break
+      case 'priceOpen':
+        aValue = Number(a.priceOpen || a.priceOrder || a.price || 0)
+        bValue = Number(b.priceOpen || b.priceOrder || b.price || 0)
+        break
+      case 'profit':
+        aValue = Number(a.profit || 0)
+        bValue = Number(b.profit || 0)
+        break
+      case 'deal':
+        aValue = Number(a.deal || 0)
+        bValue = Number(b.deal || 0)
+        break
+      case 'time':
+        aValue = Number(a.time || a.timeCreate || 0)
+        bValue = Number(b.time || b.timeCreate || 0)
+        break
+      case 'netType':
+        aValue = String(a.netType || '').toLowerCase()
+        bValue = String(b.netType || '').toLowerCase()
+        break
+      case 'avgPrice':
+        aValue = Number(a.avgPrice || 0)
+        bValue = Number(b.avgPrice || 0)
+        break
+      case 'positions':
+        aValue = Number(a.positions || a.positionCount || 0)
+        bValue = Number(b.positions || b.positionCount || 0)
+        break
+      default:
+        return 0
+    }
+    
+    if (typeof aValue === 'string') {
+      return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+    }
+    return direction === 'asc' ? aValue - bValue : bValue - aValue
+  })
+}
+
 const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrdersCache = [] }) => {
   const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
@@ -43,7 +106,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   const [selectedTimeParam, setSelectedTimeParam] = useState({})
   
   // Funds management state
-  const [operationType, setOperationType] = useState('deposit')
+  const [operationType, setOperationType] = useState('')
   const [amount, setAmount] = useState('')
   const [comment, setComment] = useState('')
   const [operationLoading, setOperationLoading] = useState(false)
@@ -153,115 +216,45 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     setCurrentPage(1)
   }, [activeTab])
 
-  // Fetch deals when page changes in deals tab
+  // Refetch deals when page changes (only if filter is applied)
   useEffect(() => {
-    if (activeTab === 'deals' && hasAppliedFilter && currentDateFilter.from !== 0) {
-      fetchDealsWithDateFilter(currentDateFilter.from, currentDateFilter.to, currentPage)
+    if (activeTab === 'deals' && hasAppliedFilter && currentPage > 1) {
+      fetchDealsWithDateFilter(
+        currentDateFilter.from,
+        currentDateFilter.to,
+        currentPage
+      )
     }
   }, [currentPage, activeTab])
-
-  // Handle column sorting (toggle asc/desc; default desc on first click)
-  const handleSort = (key) => {
-    if (sortConfig.key === key) {
-      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })
-    } else {
-      setSortConfig({ key, direction: 'desc' })
-    }
-  }
-
-  // Helper: normalize action label for positions/orders (hoisted before usage)
-  function getActionText(item) {
-    const val = (item.action ?? item.type)
-    if (val === 0 || String(val).toLowerCase() === 'buy') return 'Buy'
-    if (val === 1 || String(val).toLowerCase() === 'sell') return 'Sell'
-    return String(val ?? '').toString()
-  }
-
-  // Sort function for flat arrays
-  const sortData = (data, key, direction) => {
-    if (!key) return data
-    
-    return [...data].sort((a, b) => {
-      let aVal = a[key]
-      let bVal = b[key]
-      
-      // Handle numeric values
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return direction === 'asc' ? aVal - bVal : bVal - aVal
-      }
-      
-      // Normalize derived keys for mobile schemas
-      if (key === 'action') {
-        aVal = getActionText(a)
-        bVal = getActionText(b)
-      }
-      if (key === 'priceOpen') {
-        aVal = a.priceOpen ?? a.priceOrder ?? a.price
-        bVal = b.priceOpen ?? b.priceOrder ?? b.price
-      }
-      if (key === 'position') {
-        aVal = a.position ?? a.order
-        bVal = b.position ?? b.order
-      }
-
-      // Handle string values uniformly
-      aVal = String(aVal ?? '').toLowerCase()
-      bVal = String(bVal ?? '').toLowerCase()
-      
-      if (aVal < bVal) return direction === 'asc' ? -1 : 1
-      if (aVal > bVal) return direction === 'asc' ? 1 : -1
-      return 0
-    })
-  }
 
   const fetchPositionsAndInitDeals = async () => {
     try {
       setLoading(true)
-      
-      // Use cached positions and orders
-      const positionsData = allPositionsCache ? allPositionsCache.filter(pos => pos.login === client.login) : []
+
+      // Fetch client positions from cache or API
+      const positionsRes = allPositionsCache || []
+      const positionsData = positionsRes.filter(p => p.login === client.login)
       setPositions(positionsData)
-      
-      const ordersData = allOrdersCache ? allOrdersCache.filter(order => order.login === client.login) : []
+
+      // Fetch client orders
+      const ordersRes = allOrdersCache || []
+      const ordersData = ordersRes.filter(o => o.login === client.login)
       setOrders(ordersData)
 
-      // Calculate net positions per symbol (desktop parity) - combine positions and orders
+      // Calculate NET positions from positions
       const netPosMap = new Map()
-      
-      // Process regular positions
-      positionsData.forEach(pos => {
-        const symbol = pos.symbol
-        if (!symbol) return
-        if (!netPosMap.has(symbol)) {
-          netPosMap.set(symbol, {
-            symbol,
-            buyPositions: [],
-            sellPositions: []
-          })
+      positionsData.forEach(p => {
+        const sym = p.symbol
+        if (!netPosMap.has(sym)) {
+          netPosMap.set(sym, { symbol: sym, buyPositions: [], sellPositions: [] })
         }
-        const bucket = netPosMap.get(symbol)
-        const action = (pos.action || pos.type || '').toString().toLowerCase()
-        if (action === 'buy' || pos.action === 0 || pos.type === 0) bucket.buyPositions.push(pos)
-        else bucket.sellPositions.push(pos)
-      })
-      
-      // Process pending orders
-      ordersData.forEach(order => {
-        const symbol = order.symbol
-        if (!symbol) return
-        if (!netPosMap.has(symbol)) {
-          netPosMap.set(symbol, {
-            symbol,
-            buyPositions: [],
-            sellPositions: []
-          })
+        const group = netPosMap.get(sym)
+        const actionStr = String(p.action || p.type || '').toLowerCase()
+        if (actionStr === 'buy' || p.action === 0 || p.type === 0) {
+          group.buyPositions.push(p)
+        } else {
+          group.sellPositions.push(p)
         }
-        const bucket = netPosMap.get(symbol)
-        const action = (order.action || order.type || '').toString().toLowerCase()
-        // BUY_LIMIT, BUY_STOP are buy types
-        if (action.includes('buy')) bucket.buyPositions.push(order)
-        // SELL_LIMIT, SELL_STOP are sell types
-        else if (action.includes('sell')) bucket.sellPositions.push(order)
       })
 
       const computedNet = []
@@ -368,9 +361,19 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       const endOfDay = new Date(today)
       endOfDay.setHours(23, 59, 59, 999)
       
-      await fetchDealsWithDateFilter(Math.floor(startOfDay.getTime() / 1000), Math.floor(endOfDay.getTime() / 1000), 1, positionsData)
-      
-      setLoading(false)
+      fetchDealsWithDateFilter(
+        Math.floor(startOfDay.getTime() / 1000),
+        Math.floor(endOfDay.getTime() / 1000),
+        1,
+        positionsData
+      )
+        .then(() => {
+          setLoading(false)
+        })
+        .catch((error) => {
+          console.error('Error fetching client details:', error)
+          setLoading(false)
+        });
     } catch (error) {
       console.error('Error fetching client details:', error)
       setLoading(false)
@@ -587,6 +590,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   const handleFundsOperation = async (e) => {
     e.preventDefault()
     
+    if (!operationType) {
+      setOperationError('Please select an operation type')
+      return
+    }
     if (!amount || parseFloat(amount) <= 0) {
       setOperationError('Please enter a valid amount')
       return
@@ -1047,7 +1054,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
   const renderDeals = () => (
     <>
-      <table className="w-full">
+      <table className="min-w-max" style={{ width: 'max-content' }}>
         <thead className="bg-blue-500 sticky top-0 z-20">
           <tr>
             {dealColumns.deal && (
@@ -1201,10 +1208,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1214,7 +1221,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1224,7 +1231,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -1402,7 +1409,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         )}
 
         {/* Table Content - Scrollable Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50" style={{ touchAction: 'auto' }}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -1412,197 +1419,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="bg-white relative min-w-full">
+            <div className="bg-white relative" style={{ minWidth: 'max-content', userSelect: 'none', WebkitUserSelect: 'none' }}>
               {activeTab === 'positions' && renderPositions()}
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
-              
-              {/* Money Transactions Tab */}
-              {activeTab === 'funds' && (
-                <div className="p-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
-                    
-                    {operationSuccess && (
-                      <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-green-700 text-xs">{operationSuccess}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {operationError && (
-                      <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-red-700 text-xs">{operationError}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <form onSubmit={handleFundsOperation} className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Operation Type</label>
-                        <select
-                          value={operationType}
-                          onChange={(e) => {
-                            setOperationType(e.target.value)
-                            setOperationSuccess('')
-                            setOperationError('')
-                          }}
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
-                        >
-                          <option value="deposit">Deposit Funds</option>
-                          <option value="withdrawal">Withdraw Funds</option>
-                          <option value="credit_in">Credit In</option>
-                          <option value="credit_out">Credit Out</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Amount ($)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Enter amount"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Comment (Optional)</label>
-                        <textarea
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder="Add a comment"
-                          rows="2"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAmount('')
-                            setComment('')
-                            setOperationSuccess('')
-                            setOperationError('')
-                          }}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={operationLoading}
-                          className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center gap-1.5"
-                        >
-                          {operationLoading ? (
-                            <>
-                              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              Execute
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* Broker Rules Tab */}
-              {activeTab === 'rules' && (
-                <div className="p-4">
-                  {rulesLoading ? (
-                    <div className="text-center py-8">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Rule</th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
-                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Toggle</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {availableRules.filter(r => r.is_active).map((rule) => {
-                              const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
-                              const isApplied = clientRule && clientRule.is_active === true
-                              const requiresTimeParam = rule.requires_time_parameter
-                              const timeOptions = rule.available_time_parameters || []
-                              const currentTimeParam = clientRule?.time_parameter || ''
-                              
-                              return (
-                                <tr key={rule.id} className="bg-white hover:bg-gray-50">
-                                  <td className="px-3 py-2 text-xs text-gray-900 font-medium">{rule.rule_name}</td>
-                                  <td className="px-3 py-2">
-                                    {requiresTimeParam ? (
-                                      <select
-                                        value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
-                                        onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                        className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-900 w-full"
-                                      >
-                                        <option value="">Select</option>
-                                        {timeOptions.map((time) => (
-                                          <option key={time} value={time}>{time}</option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <span className="text-xs text-gray-400">-</span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <div className="flex justify-center">
-                                      <button
-                                        onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
-                                        disabled={rulesLoading}
-                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                          isApplied ? 'bg-blue-600' : 'bg-gray-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            isApplied ? 'translate-x-5' : 'translate-x-0.5'
-                                          }`}
-                                        />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>

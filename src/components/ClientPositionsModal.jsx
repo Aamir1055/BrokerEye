@@ -3180,8 +3180,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     </div>
                   ) : (
                     <>
-                      <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative">
-                        <table className="min-w-full table-fixed divide-y divide-gray-200">
+                      <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative" style={{ overflowX: 'scroll' }}>
+                        <table className="min-w-max divide-y divide-gray-200" style={{ width: 'max-content' }}>
                           <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
                               {dealsVisibleColumns.time && (

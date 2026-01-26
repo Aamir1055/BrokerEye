@@ -1484,95 +1484,94 @@ export default function Client2Module() {
           </div>
         </div>
 
-        {/* Search Bar and Table Container */}
-        <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden mx-4">
-          {/* Search and Controls Bar (compact like Pending Orders) */}
-          <div className="border-b border-[#E5E7EB] pb-3 px-4 pt-4">
-            <div className="flex items-center gap-1">
-              {/* Search box */}
-              <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
-                  <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-                  <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <input 
-                  placeholder="Search" 
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
-                />
-              </div>
+        {/* Search and Controls Bar */}
+        <div className="pb-3 px-2">
+          <div className="flex items-center gap-1">
+            {/* Search box */}
+            <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+                <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+                <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input 
+                placeholder="Search" 
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
+              />
+            </div>
 
-              {/* Column selector button */}
-              <div className="relative" ref={columnSelectorButtonRef}>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsColumnSelectorOpen(true)
-                  }}
-                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
-                  title="Show/Hide Columns"
-                >
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                    <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                    <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                  </svg>
-                </button>
-              </div>
-
-              {/* Previous button */}
+            {/* Column selector button */}
+            <div className="relative" ref={columnSelectorButtonRef}>
               <button 
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsColumnSelectorOpen(true)
+                }}
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
+                title="Show/Hide Columns"
               >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-
-              {/* Page indicator */}
-              <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
-                <input
-                  type="number"
-                  min={1}
-                  max={totalPages}
-                  value={currentPage}
-                  onChange={(e) => {
-                    const n = Number(e.target.value)
-                    if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                      setCurrentPage(n)
-                    }
-                  }}
-                  className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
-                  aria-label="Current page"
-                />
-                <span className="text-[#9CA3AF]">/</span>
-                <span>{totalPages}</span>
-              </div>
-
-              {/* Next button */}
-              <button 
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
                 </svg>
               </button>
             </div>
-          </div>
 
-          {/* Table area */}
+            {/* Previous button */}
+            <button 
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+
+            {/* Page indicator */}
+            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={currentPage}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                    setCurrentPage(n)
+                  }
+                }}
+                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                aria-label="Current page"
+              />
+              <span className="text-[#9CA3AF]">/</span>
+              <span>{totalPages}</span>
+            </div>
+
+            {/* Next button */}
+            <button 
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Table Container */}
+        <div className="bg-white shadow-sm border border-[#E5E7EB] overflow-hidden mx-0">
           <div className="relative">
             <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
-            paddingRight: '16px',
-            paddingLeft: '4px'
+            paddingRight: '0px',
+            paddingLeft: '0px'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}

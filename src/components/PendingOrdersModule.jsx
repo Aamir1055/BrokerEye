@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+﻿import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -124,6 +124,7 @@ export default function PendingOrdersModule() {
 
   // Apply cumulative filters: Customize View -> IB -> Group
   const ibFilteredOrders = useMemo(() => {
+    if (!orders || !Array.isArray(orders)) return []
     return applyCumulativeFilters(orders, {
       customizeFilters: filters,
       filterByActiveIB,
@@ -135,6 +136,7 @@ export default function PendingOrdersModule() {
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) return []
     const values = ibFilteredOrders
       .map(order => {
         if (columnKey === 'volume') return order.volumeCurrent || order.volume
@@ -240,54 +242,20 @@ export default function PendingOrdersModule() {
     }
   }
 
-  const applyAllColumnFilters = (orders) => {
-    return orders.filter(order => {
-      // Check checkbox filters
-      for (const [columnKey, selectedValues] of Object.entries(columnFilters)) {
-        if (selectedValues && selectedValues.length > 0) {
-          let orderValue
-          if (columnKey === 'volume') orderValue = order.volumeCurrent || order.volume
-          else if (columnKey === 'priceOrder') orderValue = order.priceOrder || order.price
-          else if (columnKey === 'priceTrigger') orderValue = order.priceTrigger || order.trigger
-          else if (columnKey === 'priceSL') orderValue = order.priceSL || order.sl
-          else if (columnKey === 'priceTP') orderValue = order.priceTP || order.tp
-          else if (columnKey === 'timeSetup') orderValue = order.timeSetup || order.timeUpdate || order.timeCreate
-          else orderValue = order[columnKey]
-          
-          if (!selectedValues.includes(String(orderValue))) {
-            return false
-          }
-        }
-      }
-      
-      // Check custom filters
-      for (const [columnKey, filter] of Object.entries(customFilters)) {
-        let orderValue
-        if (columnKey === 'volume') orderValue = order.volumeCurrent || order.volume
-        else if (columnKey === 'priceOrder') orderValue = order.priceOrder || order.price
-        else if (columnKey === 'priceTrigger') orderValue = order.priceTrigger || order.trigger
-        else if (columnKey === 'priceSL') orderValue = order.priceSL || order.sl
-        else if (columnKey === 'priceTP') orderValue = order.priceTP || order.tp
-        else if (columnKey === 'timeSetup') orderValue = order.timeSetup || order.timeUpdate || order.timeCreate
-        else orderValue = order[columnKey]
-        
-        if (isStringColumn(columnKey)) {
-          if (!applyTextFilter(orderValue, filter)) {
-            return false
-          }
-        } else {
-          if (!applyNumberFilter(orderValue, filter)) {
-            return false
-          }
-        }
-      }
-      
-      return true
-    })
-  }
+  // Mobile request: disable per-column filters in Pending Orders view
+  const applyAllColumnFilters = (orders) => orders
 
   // Calculate summary statistics
   const summaryStats = useMemo(() => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) {
+      return {
+        totalOrders: 0,
+        uniqueLogins: 0,
+        uniqueSymbols: 0,
+        totalVolume: 0
+      }
+    }
+    
     const totalOrders = ibFilteredOrders.length
     const uniqueLogins = new Set(ibFilteredOrders.map(o => o.login)).size
     const uniqueSymbols = new Set(ibFilteredOrders.map(o => o.symbol)).size
@@ -303,6 +271,8 @@ export default function PendingOrdersModule() {
 
   // Filter orders based on search
   const filteredOrders = useMemo(() => {
+    if (!ibFilteredOrders || !Array.isArray(ibFilteredOrders)) return []
+    
     let filtered = ibFilteredOrders.filter(order => {
       if (!searchInput.trim()) return true
       const query = searchInput.toLowerCase()
@@ -392,7 +362,7 @@ export default function PendingOrdersModule() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [ibFilteredOrders.length, searchInput])
+  }, [ibFilteredOrders?.length, searchInput])
 
   // Click outside handler for filter dropdowns
   useEffect(() => {
@@ -476,7 +446,7 @@ export default function PendingOrdersModule() {
               boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
             }}
             onClick={() => {
-              const fullClient = clients.find(c => String(c.login) === String(order.login))
+              const fullClient = clients?.find(c => String(c.login) === String(order.login))
               setSelectedClient(fullClient || { login: order.login, email: order.email || '', name: '' })
               setSelectedClientDefaultTab('positions')
             }}
@@ -623,7 +593,12 @@ export default function PendingOrdersModule() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  // IB Commissions navigation removed
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke="#404040"/>
+                      <path d="M12 7v10M8 10h8" stroke="#404040"/>
+                    </svg>
+                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -885,242 +860,6 @@ export default function PendingOrdersModule() {
                           </svg>
                         )}
                       </div>
-                      
-                      {/* Filter Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setShowFilterDropdown(showFilterDropdown === col.key ? null : col.key)
-                        }}
-                        className="ml-auto p-0.5 hover:bg-blue-600 rounded transition-colors relative"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <path 
-                            d="M3 4h18M7 12h10M10 20h4" 
-                            stroke="white" 
-                            strokeWidth="2" 
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        {(columnFilters[col.key]?.length > 0 || customFilters[col.key]) && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] flex items-center justify-center">
-                            {columnFilters[col.key]?.length || 1}
-                          </span>
-                        )}
-                      </button>
-
-                      {/* Filter Dropdown */}
-                      {showFilterDropdown === col.key && (
-                        <div
-                          ref={el => filterRefs.current[col.key] = el}
-                          data-filter-dropdown
-                          className="absolute top-full left-0 mt-0.5 w-64 bg-white rounded shadow-lg border border-gray-200 z-50"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {/* Sort Options */}
-                          <div className="border-b border-gray-200 p-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-semibold text-gray-700">Sort</span>
-                            </div>
-                            <button
-                              onClick={() => handleSort(col.key)}
-                              className="w-full text-left px-2 py-1 text-[10px] text-gray-700 hover:bg-gray-100 rounded flex items-center justify-between"
-                            >
-                              <span>Sort {sortColumn === col.key && sortDirection === 'asc' ? 'Z-A' : 'A-Z'}</span>
-                              {sortColumn === col.key && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                                  <path 
-                                    d={sortDirection === 'asc' ? 'M5 15l7-7 7 7' : 'M5 9l7 7 7-7'} 
-                                    stroke="currentColor" 
-                                    strokeWidth="2" 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Number Filters or Text Filters */}
-                          {!isStringColumn(col.key) ? (
-                            <div className="border-b border-gray-200 p-2">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-semibold text-gray-700">Number Filters</span>
-                                {customFilters[col.key] && (
-                                  <button
-                                    onClick={() => {
-                                      const newFilters = {...customFilters}
-                                      delete newFilters[col.key]
-                                      setCustomFilters(newFilters)
-                                    }}
-                                    className="text-[9px] text-blue-600 hover:text-blue-800"
-                                  >
-                                    Clear
-                                  </button>
-                                )}
-                              </div>
-                              <select
-                                value={customFilterColumn === col.key ? customFilterType : ''}
-                                onChange={(e) => {
-                                  setCustomFilterColumn(col.key)
-                                  setCustomFilterType(e.target.value)
-                                  setCustomFilterValue1('')
-                                  setCustomFilterValue2('')
-                                }}
-                                className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
-                              >
-                                <option value="">Select filter type...</option>
-                                <option value="equals">Equals</option>
-                                <option value="notEquals">Not Equals</option>
-                                <option value="greaterThan">Greater Than</option>
-                                <option value="lessThan">Less Than</option>
-                                <option value="greaterThanOrEqual">Greater Than or Equal</option>
-                                <option value="lessThanOrEqual">Less Than or Equal</option>
-                                <option value="between">Between</option>
-                              </select>
-                              {customFilterColumn === col.key && customFilterType && (
-                                <>
-                                  <input
-                                    type="number"
-                                    value={customFilterValue1}
-                                    onChange={(e) => setCustomFilterValue1(e.target.value)}
-                                    placeholder={customFilterType === 'between' ? 'Min value' : 'Value'}
-                                    className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
-                                  />
-                                  {customFilterType === 'between' && (
-                                    <input
-                                      type="number"
-                                      value={customFilterValue2}
-                                      onChange={(e) => setCustomFilterValue2(e.target.value)}
-                                      placeholder="Max value"
-                                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
-                                    />
-                                  )}
-                                  <button
-                                    onClick={() => applyCustomNumberFilter(col.key)}
-                                    className="w-full px-2 py-1 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700"
-                                  >
-                                    Apply Filter
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="border-b border-gray-200 p-2">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-semibold text-gray-700">Text Filters</span>
-                                {customFilters[col.key] && (
-                                  <button
-                                    onClick={() => {
-                                      const newFilters = {...customFilters}
-                                      delete newFilters[col.key]
-                                      setCustomFilters(newFilters)
-                                    }}
-                                    className="text-[9px] text-blue-600 hover:text-blue-800"
-                                  >
-                                    Clear
-                                  </button>
-                                )}
-                              </div>
-                              <select
-                                value={customFilterColumn === col.key ? customFilterType : ''}
-                                onChange={(e) => {
-                                  setCustomFilterColumn(col.key)
-                                  setCustomFilterType(e.target.value)
-                                  setCustomFilterValue1('')
-                                }}
-                                className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
-                              >
-                                <option value="">Select filter type...</option>
-                                <option value="equals">Equals</option>
-                                <option value="notEquals">Not Equals</option>
-                                <option value="contains">Contains</option>
-                                <option value="doesNotContain">Does Not Contain</option>
-                                <option value="startsWith">Starts With</option>
-                                <option value="endsWith">Ends With</option>
-                              </select>
-                              {customFilterColumn === col.key && customFilterType && (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={customFilterValue1}
-                                    onChange={(e) => setCustomFilterValue1(e.target.value)}
-                                    placeholder="Value"
-                                    className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded mb-1"
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      if (customFilterValue1.trim()) {
-                                        setCustomFilters({
-                                          ...customFilters,
-                                          [col.key]: {
-                                            type: customFilterType,
-                                            value: customFilterValue1.trim()
-                                          }
-                                        })
-                                        setCustomFilterColumn(null)
-                                        setCustomFilterType('')
-                                        setCustomFilterValue1('')
-                                      }
-                                    }}
-                                    className="w-full px-2 py-1 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700"
-                                  >
-                                    Apply Filter
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Search */}
-                          <div className="border-b border-gray-200 p-2">
-                            <input
-                              type="text"
-                              placeholder="Search in column..."
-                              value={filterSearchQuery[col.key] || ''}
-                              onChange={(e) => setFilterSearchQuery({...filterSearchQuery, [col.key]: e.target.value})}
-                              className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded"
-                            />
-                          </div>
-
-                          {/* Checkbox Filters */}
-                          <div className="p-2 max-h-48 overflow-y-auto">
-                            <div className="flex items-center justify-between mb-2">
-                              <button
-                                onClick={() => selectAllFilters(col.key)}
-                                className="text-[9px] text-blue-600 hover:text-blue-800"
-                              >
-                                Select All
-                              </button>
-                              <button
-                                onClick={() => deselectAllFilters(col.key)}
-                                className="text-[9px] text-blue-600 hover:text-blue-800"
-                              >
-                                Deselect All
-                              </button>
-                              {columnFilters[col.key]?.length > 0 && (
-                                <button
-                                  onClick={() => clearColumnFilter(col.key)}
-                                  className="text-[9px] text-blue-600 hover:text-blue-800"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-                            {getUniqueColumnValues(col.key).map(value => (
-                              <label key={value} className="flex items-center py-1 cursor-pointer hover:bg-gray-50">
-                                <input
-                                  type="checkbox"
-                                  checked={!columnFilters[col.key] || columnFilters[col.key].includes(value)}
-                                  onChange={() => toggleColumnFilter(col.key, value)}
-                                  className="mr-2"
-                                />
-                                <span className="text-[10px] text-gray-700">{value}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>

@@ -1745,17 +1745,14 @@ const LiveDealingPage = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Use mobile view on small screens
-  if (isMobile) {
-    return <LiveDealingModule />
-  }
-
   // Sync top header loader with initial API load and any subsequent loads
   useEffect(() => {
     setProgressActive(!!loading)
   }, [loading])
 
-  return (
+  return isMobile ? (
+    <LiveDealingModule />
+  ) : (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}

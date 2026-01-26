@@ -723,17 +723,14 @@ const ClientPercentagePage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // If mobile, use mobile module (after all hooks are called)
-  if (isMobile) {
-    return <ClientPercentageModule />
-  }
-
   // Sync top header loader with client percentage fetch lifecycle
   useEffect(() => {
     setProgressActive(!!loading)
   }, [loading])
 
-  return (
+  return isMobile ? (
+    <ClientPercentageModule />
+  ) : (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarOpen}

@@ -231,9 +231,19 @@ export const DataProvider = ({ children }) => {
         const isTransient = code === 'ECONNABORTED' || code === 'ETIMEDOUT' || (typeof code === 'number' && code >= 500)
         const jitter = Math.random() * 0.3 + 0.85 // 0.85x - 1.15x
         const delay = Math.min(maxDelayMs, Math.round((baseDelayMs * (2 ** (attempt - 1))) * jitter))
-        console.warn(`[DataContext] Retry ${attempt}/${retries} after ${delay}ms for ${label}`, err?.message || err)
-        if (!isTransient) break
-        await new Promise(res => setTimeout(res, delay))
+        if (isTransient) {
+          console.warn(`[DataContext] Retry ${attempt}/${retries} after ${delay}ms for ${label}`, err?.message || err)
+          await new Promise(res => setTimeout(res, delay))
+        } else {
+          // Non-transient error (e.g., 4xx). Avoid noisy retry logs.
+          const status = typeof code === 'number' ? code : undefined
+          if (status === 404 || status === 400) {
+            console.info(`[DataContext] Non-fatal ${status} for ${label}; not retrying`)
+          } else {
+            console.warn(`[DataContext] Request failed for ${label} (status=${status || code}); not retrying`)
+          }
+          break
+        }
       }
     }
     throw lastError
@@ -655,6 +665,13 @@ export const DataProvider = ({ children }) => {
       setLastFetch(prev => ({ ...prev, accounts: Date.now() }))
       return data
     } catch (error) {
+      const status = error?.response?.status
+      if (status === 404) {
+        console.info('[DataContext] Accounts endpoint returned 404; treating as empty and continuing')
+        setAccounts([])
+        setLastFetch(prev => ({ ...prev, accounts: Date.now() }))
+        return []
+      }
       console.error('[DataContext] Failed to fetch accounts:', error)
       throw error
     } finally {

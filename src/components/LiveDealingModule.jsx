@@ -857,7 +857,12 @@ export default function LiveDealingModule() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  // IB Commissions navigation removed
+                  {label:'IB Commissions', path:'/ib-commissions', icon:(
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke="#404040"/>
+                      <path d="M12 7v10M8 10h8" stroke="#404040"/>
+                    </svg>
+                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -1035,30 +1040,26 @@ export default function LiveDealingModule() {
           </div>
         </div>
 
-        {/* Table with Search Inside */}
-        <div className="px-4">
-          <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden">
-            {/* Search and Pagination Controls - Inside table container (compact, aligned with Pending Orders) */}
-            <div className="border-b border-[#E5E7EB] pb-3 px-4 pt-4">
-              <div className="flex items-center gap-1">
-              <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+          {/* Search and navigation */}
+          <div className="pb-3 px-4">
+            <div className="flex items-center gap-1">
+              <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
                   <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
                   <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
                 <input 
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search"
-                  className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
+                  placeholder="Search" 
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
                 />
               </div>
               <button 
                 onClick={() => setIsColumnSelectorOpen(true)}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
+                className="w-[26px] h-[26px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
                 title="Show/Hide Columns">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                   <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
                   <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
                   <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
@@ -1067,14 +1068,12 @@ export default function LiveDealingModule() {
               <button 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-[26px] h-[26px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-
-              {/* Page indicator */}
               <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
                 <input
                   type="number"
@@ -1087,24 +1086,27 @@ export default function LiveDealingModule() {
                       setCurrentPage(page);
                     }
                   }}
-                  className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                  className="w-9 h-5 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
                   aria-label="Current page"
                 />
                 <span className="text-[#9CA3AF]">/</span>
                 <span>{Math.ceil(sortedDeals.length / itemsPerPage)}</span>
               </div>
-
               <button 
                 onClick={() => setCurrentPage(prev => Math.min(Math.ceil(sortedDeals.length / itemsPerPage), prev + 1))}
                 disabled={currentPage >= Math.ceil(sortedDeals.length / itemsPerPage)}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-[26px] h-[26px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                   <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
           </div>
+
+        {/* Table with Search Inside */}
+          <div className="">
+            <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
 
           <div className="w-full overflow-x-auto overflow-y-visible" style={{
             WebkitOverflowScrolling: 'touch',

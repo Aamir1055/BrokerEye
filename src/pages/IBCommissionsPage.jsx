@@ -390,17 +390,16 @@ const IBCommissionsPage = () => {
     }
   }, [showFilterDropdown, showNumberFilterDropdown])
 
-  // If mobile, use mobile module (after all hooks are called)
-  if (isMobile) {
-    return <IBCommissionsModule />
-  }
+  // Removed early return for mobile; use final conditional render instead
 
   // Sync top header loader with commissions list and totals fetch lifecycle
   useEffect(() => {
     setProgressActive(!!loading || !!totalsLoading)
   }, [loading, totalsLoading])
 
-  return (
+  return isMobile ? (
+    <IBCommissionsModule />
+  ) : (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}

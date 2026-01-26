@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DataProvider } from './contexts/DataContext'
 import { GroupProvider } from './contexts/GroupContext'
 import { IBProvider } from './contexts/IBContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage'
 import LoginMobile from './pages/LoginMobile'
 import LoadingSpinner from './components/LoadingSpinner'
@@ -67,11 +68,11 @@ const AppContent = () => {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/client2" element={<Client2Page />} />
         <Route path="/positions" element={<PositionsPage />} />
-        <Route path="/pending-orders" element={<PendingOrdersPage />} />
-        <Route path="/margin-level" element={<MarginLevelPage />} />
-        <Route path="/live-dealing" element={<LiveDealingPage />} />
-        <Route path="/client-percentage" element={<ClientPercentagePage />} />
-        <Route path="/ib-commissions" element={<IBCommissionsPage />} />
+        <Route path="/pending-orders" element={<ErrorBoundary><PendingOrdersPage /></ErrorBoundary>} />
+        <Route path="/margin-level" element={<ErrorBoundary><MarginLevelPage /></ErrorBoundary>} />
+        <Route path="/live-dealing" element={<ErrorBoundary><LiveDealingPage /></ErrorBoundary>} />
+        <Route path="/client-percentage" element={<ErrorBoundary><ClientPercentagePage /></ErrorBoundary>} />
+        <Route path="/ib-commissions" element={<ErrorBoundary><IBCommissionsPage /></ErrorBoundary>} />
         {/** Broker Rules route removed for amari-capital branch */}
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />

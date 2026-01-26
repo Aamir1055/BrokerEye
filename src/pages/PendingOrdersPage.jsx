@@ -479,7 +479,7 @@ const PendingOrdersPage = () => {
   // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
     const baseSizes = [25, 50, 100, 200]
-    const totalCount = cachedOrders.length
+    const totalCount = Array.isArray(cachedOrders) ? cachedOrders.length : 0
     return baseSizes.filter(size => size <= totalCount)
   }
   
@@ -1245,17 +1245,14 @@ const PendingOrdersPage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // If mobile, use mobile module (after all hooks are called)
-  if (isMobile) {
-    return <PendingOrdersModule />
-  }
-
   // Top header loader synced with orders fetch lifecycle
   useEffect(() => {
     setProgressActive(!!loading?.orders)
   }, [loading?.orders])
 
-  return (
+  return isMobile ? (
+    <PendingOrdersModule />
+  ) : (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
