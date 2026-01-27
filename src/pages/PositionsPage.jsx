@@ -256,6 +256,7 @@ const PositionsPage = () => {
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
   const [pendingDateDraft, setPendingDateDraft] = useState(null)
+  const dateFilterRef = useRef(null)
   
   // Sorting states for ALL positions view
   const [sortColumn, setSortColumn] = useState(null)
@@ -547,6 +548,22 @@ const PositionsPage = () => {
       if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
     }
   }, [loading?.positions, isRefreshing])
+
+  // Handle click outside to close date filter modal
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target)) {
+        setIsDateFilterOpen(false)
+      }
+    }
+
+    if (isDateFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [isDateFilterOpen])
 
     useEffect(() => {
     if (!isAuthenticated) {
@@ -2426,20 +2443,40 @@ const PositionsPage = () => {
               </button>
 
               {/* Date Filter Button */}
-              <button
-                onClick={() => setIsDateFilterOpen(true)}
-                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
-                  dateFilter 
-                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
-                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
-                }`}
-                title="Filter by Date Range"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
-              </button>
+              <div className="relative" ref={dateFilterRef}>
+                <button
+                  onClick={() => setIsDateFilterOpen(true)}
+                  className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                    dateFilter 
+                      ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
+                      : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                  title="Filter by Date Range"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
+                </button>
+                
+                {/* Date Filter Modal - Desktop dropdown */}
+                {isDateFilterOpen && (
+                  <DateFilterModal
+                    isOpen={isDateFilterOpen}
+                    onClose={() => setIsDateFilterOpen(false)}
+                    onApply={(days) => {
+                      setDateFilter(days)
+                      setIsDateFilterOpen(false)
+                    }}
+                    currentFilter={dateFilter}
+                    onPendingChange={(hasPending, draft) => {
+                      setHasPendingDateChanges(hasPending)
+                      setPendingDateDraft(draft)
+                    }}
+                    isMobile={false}
+                  />
+                )}
+              </div>
 
               {/* Percentage View Dropdown */}
               <div className="relative">
@@ -4017,20 +4054,7 @@ const PositionsPage = () => {
         />
       )}
 
-      {/* Date Filter Modal */}
-      <DateFilterModal
-        isOpen={isDateFilterOpen}
-        onClose={() => setIsDateFilterOpen(false)}
-        onApply={(days) => {
-          setDateFilter(days)
-          setIsDateFilterOpen(false)
-        }}
-        currentFilter={dateFilter}
-        onPendingChange={(pendingValue) => {
-          setPendingDateDraft(pendingValue)
-          setHasPendingDateChanges(pendingValue !== dateFilter)
-        }}
-      />
+      {/* Date Filter Modal moved inside button container for desktop positioning */}
     </div>
   )
 }

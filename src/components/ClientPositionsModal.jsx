@@ -84,6 +84,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column visibility for positions
   const [showPositionsColumnSelector, setShowPositionsColumnSelector] = useState(false)
   const positionsColumnSelectorRef = useRef(null)
+  const positionsTableRef = useRef(null)
+  const ordersTableRef = useRef(null)
   const [positionsVisibleColumns, setPositionsVisibleColumns] = useState({
     position: true,
     time: true,
@@ -1619,17 +1621,17 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }, [])
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[95vh] flex flex-col overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start md:items-center justify-center p-0 md:p-4">
+      <div className="bg-white rounded-none md:rounded-2xl shadow-2xl max-w-7xl w-full h-screen md:h-auto md:max-h-[95vh] flex flex-col overflow-y-auto border-0 md:border md:border-slate-200">
         {/* Modal Header - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b-2 border-slate-200 bg-blue-600">
+        <div className="flex-shrink-0 flex items-center justify-between p-0.5 md:p-4 border-b border-slate-200 bg-blue-600">
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">
+            <h2 className="text-xs md:text-lg font-bold text-white tracking-tight">
               {(client?.name && String(client.name).trim().length > 0)
                 ? `${client.name} - ${client.login}`
                 : client.login}
             </h2>
-            <div className="flex items-center gap-4 mt-2">
+            <div className="hidden md:flex items-center gap-4 mt-2">
               <p className="text-[11px] text-blue-100">{client.email || 'No email'}</p>
               {client.lastAccess && (
                 <p className="text-[11px] text-blue-100">
@@ -1640,20 +1642,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-blue-100 p-2.5 rounded-xl hover:bg-blue-700 transition-all duration-200"
+            className="text-white hover:text-blue-100 p-0.5 md:p-2.5 rounded-xl hover:bg-blue-700 transition-all duration-200"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Tabs - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 px-2 bg-white shadow-sm">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 px-0.5 md:px-2 bg-white shadow-sm">
           <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+              className={`px-2 py-1 md:px-6 md:py-3.5 text-xs md:text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'positions'
                   ? 'border-blue-600 text-blue-600 bg-blue-50'
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
@@ -1663,7 +1665,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
             <button
               onClick={() => setActiveTab('netpositions')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+              className={`px-2 py-1 md:px-6 md:py-3.5 text-xs md:text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'netpositions'
                   ? 'border-blue-600 text-blue-600 bg-blue-50'
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
@@ -1673,7 +1675,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+              className={`px-2 py-1 md:px-6 md:py-3.5 text-xs md:text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'deals'
                   ? 'border-blue-600 text-blue-600 bg-blue-50'
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
@@ -1683,7 +1685,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
             <button
               onClick={() => setActiveTab('funds')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+              className={`px-2 py-1 md:px-6 md:py-3.5 text-xs md:text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'funds'
                   ? 'border-blue-600 text-blue-600 bg-blue-50'
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
@@ -1693,7 +1695,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
             <button
               onClick={() => setActiveTab('rules')}
-              className={`px-6 py-3.5 text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
+              className={`px-2 py-1 md:px-6 md:py-3.5 text-xs md:text-sm font-semibold transition-all duration-200 border-b-3 whitespace-nowrap relative ${
                 activeTab === 'rules'
                   ? 'border-blue-600 text-blue-600 bg-blue-50'
                   : 'border-transparent text-slate-600 hover:text-blue-600 hover:bg-slate-50'
@@ -1970,9 +1972,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         </div>
 
         {/* Tab Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 min-h-0 bg-white">
+        <div className="flex-1 p-1 md:p-6 min-h-0 bg-white">
           {activeTab === 'positions' && (
-            <div>
+            <div className="relative">
               {loading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -2416,7 +2418,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       {/* Regular Positions Section */}
                       {paginatedGroupedData.regularPositions.length > 0 && (
                         <>
-                          <tr className="bg-gray-100">
+                          <tr className="bg-gray-100" ref={positionsTableRef}>
                             <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-2">
                               <div className="text-sm font-bold text-gray-700">Positions</div>
                             </td>
@@ -2507,7 +2509,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       {/* Pending Orders Section */}
                       {paginatedGroupedData.pendingOrders.length > 0 && (
                         <>
-                          <tr className="bg-gray-100">
+                          <tr className="bg-gray-100" ref={ordersTableRef}>
                             <td colSpan={Object.values(positionsVisibleColumns).filter(Boolean).length} className="px-3 py-2">
                               <div className="text-sm font-bold text-gray-700">Pending Orders</div>
                             </td>
@@ -2599,6 +2601,66 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </div>
                   )}
                 </>
+)}
+              {/* Floating Navigation Buttons - Inside Positions tab with absolute positioning */}
+              {!loading && groupedDisplayData?.regularPositions?.length > 0 && groupedDisplayData?.pendingOrders?.length > 0 && (
+                <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1.5 z-50">
+                  <button
+                    onClick={() => {
+                      setPositionsCurrentPage(1)
+                      setTimeout(() => {
+                        if (positionsTableRef.current) {
+                          const container = positionsTableRef.current.closest('.overflow-y-auto')
+                          const thead = positionsTableRef.current.closest('table')?.querySelector('thead')
+                          if (container && thead) {
+                            const theadHeight = thead.offsetHeight
+                            const containerRect = container.getBoundingClientRect()
+                            const elementRect = positionsTableRef.current.getBoundingClientRect()
+                            const scrollOffset = elementRect.top - containerRect.top + container.scrollTop - theadHeight
+                            container.scrollTo({ top: scrollOffset, behavior: 'smooth' })
+                          }
+                        }
+                      }, 100)
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                    title="Jump to Positions Section"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <span className="whitespace-nowrap">Positions</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const allItems = [...groupedDisplayData.regularPositions, ...groupedDisplayData.pendingOrders]
+                      const firstPendingOrderIndex = allItems.findIndex(item => item.order)
+                      if (firstPendingOrderIndex >= 0) {
+                        const targetPage = Math.floor(firstPendingOrderIndex / positionsItemsPerPage) + 1
+                        setPositionsCurrentPage(targetPage)
+                        setTimeout(() => {
+                          if (ordersTableRef.current) {
+                            const container = ordersTableRef.current.closest('.overflow-y-auto')
+                            const thead = ordersTableRef.current.closest('table')?.querySelector('thead')
+                            if (container && thead) {
+                              const theadHeight = thead.offsetHeight
+                              const containerRect = container.getBoundingClientRect()
+                              const elementRect = ordersTableRef.current.getBoundingClientRect()
+                              const scrollOffset = elementRect.top - containerRect.top + container.scrollTop - theadHeight
+                              container.scrollTo({ top: scrollOffset, behavior: 'smooth' })
+                            }
+                          }
+                        }, 200)
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                    title="Jump to Pending Orders Section"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="whitespace-nowrap">Pending Orders</span>
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -3769,7 +3831,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
               )
             })()
           )}
-
 
         </div>
 

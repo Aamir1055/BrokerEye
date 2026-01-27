@@ -1338,8 +1338,40 @@ export default function Client2Module() {
                     <rect x="4" y="15" width="12" height="2" rx="1" fill="#374151"/>
                   </svg>
                 </button>
-                {/* Dropdown menu - simple absolute positioning */}
-                {isColumnDropdownOpen && (
+              </div>
+              {/* Refresh button */}
+              <button 
+                onClick={() => window.location.reload()}
+                disabled={isLoading}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh data"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="#6B7280" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+            {/* Right side - Column selector */}
+            <div>
+              <button
+                ref={columnSelectorButtonRef}
+                onClick={() => setIsColumnSelectorOpen(!isColumnSelectorOpen)}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <rect x="1" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
+                  <rect x="10" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
+                  <rect x="1" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
+                  <rect x="10" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative" ref={columnDropdownRef}>
+          {/* Moved outside button parent div - Dropdown menu */}
+          {isColumnDropdownOpen && (
                   <>
                     <div
                       className="fixed inset-0 z-40"
@@ -1383,33 +1415,6 @@ export default function Client2Module() {
                     </div>
                   </>
                 )}
-              </div>
-              {/* Refresh button */}
-              <button
-                onClick={() => window.location.reload()}
-                disabled={isLoading}
-                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="#1A63BC"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Right side - View All only */}
-            <span
-              ref={viewAllRef}
-              className="text-[#1A63BC] text-[12px] font-semibold leading-[15px] cursor-pointer"
-            >
-              View All
-            </span>
-          </div>
         </div>
 
         {/* Face Cards Carousel */}

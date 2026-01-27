@@ -2447,6 +2447,7 @@ export default function PositionModule() {
           setHasPendingDateChanges(hasPending)
           setPendingDateDraft(draft)
         }}
+        isMobile={true}
       />
 
       {/* IB Filter Modal */}

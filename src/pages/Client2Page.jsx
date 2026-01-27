@@ -3946,7 +3946,7 @@ const Client2Page = () => {
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
             {/* Title + Actions */}
-            <div className="mb-2.5 pb-2.5 border-b border-gray-200 flex items-center justify-between gap-3">
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
               <div>
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Clients</h1>
                 <p className="text-xs text-[#6B7280] mt-0.5">Manage and view all client accounts...</p>
@@ -4114,6 +4114,18 @@ const Client2Page = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Refresh Button */}
+                <button 
+                  onClick={() => window.location.reload()}
+                  disabled={loading}
+                  className="h-8 w-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh data"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="#6B7280" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
 
                 {/* Card Filter Button */}
                 <div className="relative flex items-center" ref={cardFilterMenuRef}>
