@@ -43,12 +43,13 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   const [selectedTimeParam, setSelectedTimeParam] = useState({})
   
   // Funds management state
-  const [operationType, setOperationType] = useState('deposit')
+  const [operationType, setOperationType] = useState('')
   const [amount, setAmount] = useState('')
   const [comment, setComment] = useState('')
   const [operationLoading, setOperationLoading] = useState(false)
   const [operationSuccess, setOperationSuccess] = useState('')
   const [operationError, setOperationError] = useState('')
+  const [isOperationDropdownOpen, setIsOperationDropdownOpen] = useState(false)
   
   // Date filter states for deals
   const [fromDate, setFromDate] = useState('')
@@ -1177,10 +1178,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       `}</style>
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
 
-        <div className="bg-white w-full h-[90vh] rounded-t-2xl flex flex-col">
+        <div className="bg-white w-full h-[70vh] rounded-t-2xl flex flex-col">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
-          <button onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
+        <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M15 18l-6-6 6-6" stroke="#404040" strokeWidth="2" strokeLinecap="round"/>
             </svg>
@@ -1190,58 +1191,79 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
         </div>
 
         {/* Client Info Card */}
-        <div className="px-4 py-4 bg-white border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-              <span className="text-lg font-semibold text-gray-600">
+        <div className="px-3 py-2 bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+              <span className="text-base font-semibold text-gray-600">
                 {(client.name || client.fullName || 'U')[0].toUpperCase()}
               </span>
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900">
                 {client.name || client.fullName || 'Unknown'}
               </h3>
-              <p className="text-sm text-gray-600">{client.login}</p>
-              <p className="text-xs text-gray-500">{client.email || '-'}</p>
+              <p className="text-xs text-gray-600">{client.login}</p>
+              <p className="text-[10px] text-gray-500">{client.email || '-'}</p>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
             <button
               onClick={() => setActiveTab('positions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'positions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Positions ({filteredPositions.length})
+              Positions <span className="text-[9px] opacity-75">({filteredPositions.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('netPositions')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'netPositions'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Net Positions ({filteredNetPositions.length})
+              Net Positions <span className="text-[9px] opacity-75">({filteredNetPositions.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('deals')}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'deals'
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Deals ({hasAppliedFilter ? totalDealsCount : 0})
+              Deals <span className="text-[9px] opacity-75">({hasAppliedFilter ? totalDealsCount : 0})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('funds')}
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'funds'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Balance
+            </button>
+            <button
+              onClick={() => setActiveTab('rules')}
+              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'rules'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Broker Rules
             </button>
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search - Hidden for Balance and Rules tabs */}
+        {activeTab !== 'funds' && activeTab !== 'rules' && (
         <div className="px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <div className="flex-1 min-w-0 h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center px-2 gap-1">
@@ -1312,6 +1334,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             )}
           </div>
         </div>
+        )}
 
         {/* Date Filter for Deals Tab - Single Row Compact Design */}
         {activeTab === 'deals' && (
@@ -1426,113 +1449,196 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
               {/* Money Transactions Tab */}
               {activeTab === 'funds' && (
                 <div className="p-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Money Transactions</h3>
-                    
-                    {operationSuccess && (
-                      <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-green-700 text-xs">{operationSuccess}</span>
-                        </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Balance</h3>
+                  
+                  {operationSuccess && (
+                    <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-700 text-xs">{operationSuccess}</span>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {operationError && (
-                      <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-red-700 text-xs">{operationError}</span>
-                        </div>
+                  {operationError && (
+                    <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-red-700 text-xs">{operationError}</span>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <form onSubmit={handleFundsOperation} className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Operation Type</label>
-                        <select
-                          value={operationType}
-                          onChange={(e) => {
-                            setOperationType(e.target.value)
-                            setOperationSuccess('')
-                            setOperationError('')
-                          }}
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white text-gray-900"
+                  <form onSubmit={handleFundsOperation} className="space-y-4 mb-40">
+                    {/* Operation Type and Amount - Side by Side */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
+                        <div
+                          onClick={() => setIsOperationDropdownOpen(!isOperationDropdownOpen)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm bg-white text-gray-700 cursor-pointer flex items-center justify-between"
                         >
-                          <option value="deposit">Deposit Funds</option>
-                          <option value="withdrawal">Withdraw Funds</option>
-                          <option value="credit_in">Credit In</option>
-                          <option value="credit_out">Credit Out</option>
-                        </select>
+                          <span className={operationType ? 'text-gray-900' : 'text-gray-400'}>
+                            {operationType === 'deposit' ? 'Deposite Funds' : 
+                             operationType === 'withdrawal' ? 'Withdraw Funds' :
+                             operationType === 'credit_in' ? 'Credit In' :
+                             operationType === 'credit_out' ? 'Credit Out' : 'Select'}
+                          </span>
+                          <svg 
+                            className={`w-5 h-5 text-gray-500 transition-transform ${isOperationDropdownOpen ? 'rotate-180' : ''}`}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                        
+                        {/* Custom Dropdown */}
+                        {isOperationDropdownOpen && (
+                          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                            <div
+                              onClick={() => {
+                                setOperationType('')
+                                setIsOperationDropdownOpen(false)
+                                setOperationSuccess('')
+                                setOperationError('')
+                              }}
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-400"
+                            >
+                              Select
+                            </div>
+                            <div
+                              onClick={() => {
+                                setOperationType('deposit')
+                                setIsOperationDropdownOpen(false)
+                                setOperationSuccess('')
+                                setOperationError('')
+                              }}
+                              className={`px-4 py-3 cursor-pointer text-sm ${
+                                operationType === 'deposit' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'hover:bg-gray-50 text-gray-900'
+                              }`}
+                            >
+                              Deposite Funds
+                            </div>
+                            <div
+                              onClick={() => {
+                                setOperationType('withdrawal')
+                                setIsOperationDropdownOpen(false)
+                                setOperationSuccess('')
+                                setOperationError('')
+                              }}
+                              className={`px-4 py-3 cursor-pointer text-sm ${
+                                operationType === 'withdrawal' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'hover:bg-gray-50 text-gray-900'
+                              }`}
+                            >
+                              Withdraw Funds
+                            </div>
+                            <div
+                              onClick={() => {
+                                setOperationType('credit_in')
+                                setIsOperationDropdownOpen(false)
+                                setOperationSuccess('')
+                                setOperationError('')
+                              }}
+                              className={`px-4 py-3 cursor-pointer text-sm ${
+                                operationType === 'credit_in' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'hover:bg-gray-50 text-gray-900'
+                              }`}
+                            >
+                              Credit In
+                            </div>
+                            <div
+                              onClick={() => {
+                                setOperationType('credit_out')
+                                setIsOperationDropdownOpen(false)
+                                setOperationSuccess('')
+                                setOperationError('')
+                              }}
+                              className={`px-4 py-3 cursor-pointer text-sm ${
+                                operationType === 'credit_out' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'hover:bg-gray-50 text-gray-900'
+                              }`}
+                            >
+                              Credit Out
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Amount ($)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
                         <input
                           type="number"
                           step="0.01"
                           min="0.01"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          placeholder="Enter amount"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
+                          placeholder="Enter Amount"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
                           required
                         />
                       </div>
+                    </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Comment (Optional)</label>
-                        <textarea
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder="Add a comment"
-                          rows="2"
-                          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
-                        />
-                      </div>
+                    {/* Comment */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                      <textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Add a comment for this transaction"
+                        rows="5"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm text-gray-700 placeholder-gray-400 resize-none"
+                      />
+                    </div>
 
-                      <div className="flex justify-end gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAmount('')
-                            setComment('')
-                            setOperationSuccess('')
-                            setOperationError('')
-                          }}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={operationLoading}
-                          className="px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-md hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 inline-flex items-center gap-1.5"
-                        >
-                          {operationLoading ? (
-                            <>
-                              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 my-4"></div>
+
+                    {/* Buttons */}
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAmount('')
+                          setComment('')
+                          setOperationSuccess('')
+                          setOperationError('')
+                        }}
+                        className="flex-1 px-4 py-3 text-sm font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={operationLoading}
+                        className="flex-1 px-4 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 transition-colors inline-flex items-center justify-center gap-1.5"
+                      >
+                        {operationLoading ? (
+                          <>
+                            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
                               Processing...
                             </>
                           ) : (
-                            <>
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              Execute
-                            </>
+                            'Submit'
                           )}
                         </button>
                       </div>
                     </form>
-                  </div>
                 </div>
               )}
 
@@ -1545,65 +1651,73 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
                       <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Rule</th>
-                              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
-                              <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">Toggle</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {availableRules.filter(r => r.is_active).map((rule) => {
-                              const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
-                              const isApplied = clientRule && clientRule.is_active === true
-                              const requiresTimeParam = rule.requires_time_parameter
-                              const timeOptions = rule.available_time_parameters || []
-                              const currentTimeParam = clientRule?.time_parameter || ''
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      {/* Table Header */}
+                      <div className="grid grid-cols-[2fr,1.5fr,1fr] gap-4 pb-3 px-4 py-3 -mx-4 -mt-4 mb-4 rounded-t-xl border-b border-gray-200" style={{ backgroundColor: '#EFF6FF' }}>
+                        <div className="text-xs font-medium text-gray-600">Rule Name</div>
+                        <div className="text-xs font-medium text-gray-600">Time Parameter</div>
+                        <div className="text-xs font-medium text-gray-600 text-center">Toggle</div>
+                      </div>
+                      
+                      {/* Table Body */}
+                      <div className="space-y-1 mt-1">
+                        {availableRules.filter(r => r.is_active).map((rule) => {
+                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          const isApplied = clientRule && clientRule.is_active === true
+                          const requiresTimeParam = rule.requires_time_parameter
+                          const timeOptions = rule.available_time_parameters || []
+                          const currentTimeParam = clientRule?.time_parameter || ''
+                          
+                          return (
+                            <div key={rule.id} className="grid grid-cols-[2fr,1.5fr,1fr] gap-4 py-4 items-center">
+                              {/* Rule Name */}
+                              <div className="text-sm text-gray-900">{rule.rule_name}</div>
                               
-                              return (
-                                <tr key={rule.id} className="bg-white hover:bg-gray-50">
-                                  <td className="px-3 py-2 text-xs text-gray-900 font-medium">{rule.rule_name}</td>
-                                  <td className="px-3 py-2">
-                                    {requiresTimeParam ? (
-                                      <select
-                                        value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
-                                        onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                        className="px-2 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-900 w-full"
-                                      >
-                                        <option value="">Select</option>
-                                        {timeOptions.map((time) => (
-                                          <option key={time} value={time}>{time}</option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <span className="text-xs text-gray-400">-</span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <div className="flex justify-center">
-                                      <button
-                                        onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
-                                        disabled={rulesLoading}
-                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                          isApplied ? 'bg-blue-600' : 'bg-gray-300'
-                                        }`}
-                                      >
-                                        <span
-                                          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            isApplied ? 'translate-x-5' : 'translate-x-0.5'
-                                          }`}
-                                        />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
+                              {/* Time Parameter */}
+                              <div>
+                                {requiresTimeParam ? (
+                                  <div className="relative">
+                                    <select
+                                      value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
+                                      onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 appearance-none cursor-pointer pr-8"
+                                      style={{
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 0.5rem center',
+                                        backgroundSize: '1rem'
+                                      }}
+                                    >
+                                      <option value="">Select</option>
+                                      {timeOptions.map((time) => (
+                                        <option key={time} value={time}>{time}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">-</span>
+                                )}
+                              </div>
+                              
+                              {/* Toggle Switch */}
+                              <div className="flex justify-center">
+                                <button
+                                  onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
+                                  disabled={rulesLoading}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    isApplied ? 'bg-blue-600' : 'bg-gray-300'
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
+                                      isApplied ? 'translate-x-6' : 'translate-x-0.5'
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
