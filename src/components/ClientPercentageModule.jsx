@@ -118,6 +118,18 @@ export default function ClientPercentageModule() {
     setCurrentPage(1)
   }, [searchInput, sortColumn, sortDirection, hasCustomFilter])
 
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (selectedClientForDetails) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [selectedClientForDetails])
+
   // Fetch data when page changes or on initial mount
   useEffect(() => {
     // Debounce search to avoid too many API calls

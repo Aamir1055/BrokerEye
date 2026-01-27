@@ -64,6 +64,10 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
   const fromDateInputRef = useRef(null)
   const toDateInputRef = useRef(null)
   
+  // Ref for pending orders section
+  const pendingOrdersRef = useRef(null)
+  const [showScrollButton, setShowScrollButton] = useState(false)
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12)
@@ -801,6 +805,15 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
     return filteredDeals
   }, [filteredDeals])
 
+  // Show scroll button when in positions tab and there are pending orders
+  useEffect(() => {
+    if (activeTab === 'positions' && paginatedGroupedPositions?.pendingOrders?.length > 0) {
+      setShowScrollButton(true)
+    } else {
+      setShowScrollButton(false)
+    }
+  }, [activeTab, paginatedGroupedPositions?.pendingOrders?.length])
+
   const renderPositions = () => {
     const regularPositions = paginatedGroupedPositions.regularPositions
     const pendingOrders = paginatedGroupedPositions.pendingOrders
@@ -918,7 +931,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {/* Pending Orders Section */}
             {pendingOrders.length > 0 && (
               <>
-                <tr className="bg-gray-100">
+                <tr className="bg-gray-100" ref={pendingOrdersRef}>
                   <td colSpan={Object.values(positionColumns).filter(Boolean).length} className="px-3 py-2">
                     <div className="text-sm font-semibold text-gray-700">Pending Orders</div>
                   </td>
@@ -1178,7 +1191,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
       `}</style>
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
 
-        <div className="bg-white w-full h-[70vh] rounded-t-2xl flex flex-col">
+        <div className="bg-white w-full h-[80vh] rounded-t-2xl flex flex-col">
         {/* Header */}
         <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between bg-white z-10 flex-shrink-0">
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -1442,7 +1455,37 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             </div>
           ) : (
             <div className="bg-white relative min-w-full">
-              {activeTab === 'positions' && renderPositions()}
+              {activeTab === 'positions' && (
+                <>
+                  {renderPositions()}
+                  {/* Floating Button to Scroll to Pending Orders */}
+                  {paginatedGroupedPositions.pendingOrders.length > 0 && showScrollButton && (
+                    <button
+                      onClick={() => {
+                        if (pendingOrdersRef.current) {
+                          // Find the scrollable container (modal's scroll container)
+                          const scrollableContainer = document.querySelector('.flex-1.min-h-0.overflow-y-auto')
+                          if (scrollableContainer) {
+                            const element = pendingOrdersRef.current
+                            const containerTop = scrollableContainer.getBoundingClientRect().top
+                            const elementTop = element.getBoundingClientRect().top
+                            const scrollOffset = elementTop - containerTop - 20 // 20px space above heading
+                            
+                            scrollableContainer.scrollTo({
+                              top: scrollableContainer.scrollTop + scrollOffset,
+                              behavior: 'smooth'
+                            })
+                          }
+                        }
+                      }}
+                      className="fixed top-[60%] right-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg flex items-center justify-center z-30 transition-all hover:scale-105 text-xs font-semibold"
+                      title="Scroll to Pending Orders"
+                    >
+                      Orders
+                    </button>
+                  )}
+                </>
+              )}
               {activeTab === 'netPositions' && renderNetPositions()}
               {activeTab === 'deals' && renderDeals()}
               

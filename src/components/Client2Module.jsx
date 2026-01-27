@@ -1289,9 +1289,9 @@ export default function Client2Module() {
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                {/* <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+                </svg> */}
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
                 {(() => {
                   const filterCount = [
@@ -1351,20 +1351,14 @@ export default function Client2Module() {
                 </svg>
               </button>
             </div>
-            {/* Right side - Column selector */}
+            {/* Right side - View All text */}
             <div>
-              <button
-                ref={columnSelectorButtonRef}
-                onClick={() => setIsColumnSelectorOpen(!isColumnSelectorOpen)}
-                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+              <span
+                onClick={() => setShowViewAllModal(true)}
+                className="text-[10px] font-medium text-[#1A63BC] cursor-pointer hover:underline"
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <rect x="1" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="10" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="1" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="10" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                </svg>
-              </button>
+                View All
+              </span>
             </div>
           </div>
         </div>

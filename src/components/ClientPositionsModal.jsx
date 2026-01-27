@@ -112,6 +112,27 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const [dealsColumnWidths, setDealsColumnWidths] = useState({})
   const [resizingDealsColumn, setResizingDealsColumn] = useState(null)
 
+  const DEALS_DEFAULT_WIDTHS = {
+    time: 140,
+    deal: 120,
+    order: 120,
+    position: 120,
+    symbol: 140,
+    action: 120,
+    volume: 110,
+    price: 120,
+    commission: 130,
+    storage: 120,
+    profit: 120,
+    comment: 180
+  }
+
+  useEffect(() => {
+    if (!dealsColumnWidths || Object.keys(dealsColumnWidths).length === 0) {
+      setDealsColumnWidths(DEALS_DEFAULT_WIDTHS)
+    }
+  }, [])
+
   // Sorting states for positions
   const [positionsSortColumn, setPositionsSortColumn] = useState(null)
   const [positionsSortDirection, setPositionsSortDirection] = useState('asc')
@@ -1490,6 +1511,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column resize handlers for positions
   const handlePositionsResizeStart = (e, columnKey) => {
     e.preventDefault()
+    e.stopPropagation()
     setResizingPositionsColumn(columnKey)
     resizeStartX.current = e.clientX
     resizeStartWidth.current = positionsColumnWidths[columnKey] || 150
@@ -1512,6 +1534,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column resize handlers for deals
   const handleDealsResizeStart = (e, columnKey) => {
     e.preventDefault()
+    e.stopPropagation()
     setResizingDealsColumn(columnKey)
     resizeStartX.current = e.clientX
     resizeStartWidth.current = dealsColumnWidths[columnKey] || 150
@@ -1549,7 +1572,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
         document.removeEventListener('mouseup', handleEnd)
       }
     }
-  }, [resizingPositionsColumn, resizingDealsColumn, positionsColumnWidths, dealsColumnWidths])
+  }, [resizingPositionsColumn, resizingDealsColumn])
 
   const handleFundsOperation = async (e) => {
     e.preventDefault()
@@ -3115,6 +3138,20 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     <>
                       <div className="overflow-x-auto overflow-y-auto max-h-[60vh] md:max-h-96 relative">
                         <table className="min-w-full table-fixed divide-y divide-gray-200">
+                          <colgroup>
+                            <col style={{ width: (dealsColumnWidths['time'] ?? 140) }} />
+                            <col style={{ width: (dealsColumnWidths['deal'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['order'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['position'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['symbol'] ?? 140) }} />
+                            <col style={{ width: (dealsColumnWidths['action'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['volume'] ?? 110) }} />
+                            <col style={{ width: (dealsColumnWidths['price'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['commission'] ?? 130) }} />
+                            <col style={{ width: (dealsColumnWidths['storage'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['profit'] ?? 120) }} />
+                            <col style={{ width: (dealsColumnWidths['comment'] ?? 180) }} />
+                          </colgroup>
                           <thead className="bg-blue-600 sticky top-0 z-10 shadow-md">
                             <tr>
                               <th 
@@ -3168,10 +3205,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'time')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3182,10 +3215,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Deal
                             <SortIcon column="deal" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'deal')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700" 
@@ -3196,10 +3225,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Order
                             <SortIcon column="order" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'order')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3210,10 +3235,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Position
                             <SortIcon column="position" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'position')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3266,10 +3287,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'symbol')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3322,10 +3339,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               )}
                             </div>
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'action')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3336,10 +3349,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Volume
                             <SortIcon column="volume" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'volume')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3350,10 +3359,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Price
                             <SortIcon column="price" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'price')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3364,10 +3369,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Commission
                             <SortIcon column="commission" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'commission')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3378,10 +3379,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Storage
                             <SortIcon column="storage" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'storage')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3392,10 +3389,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Profit
                             <SortIcon column="profit" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'profit')}
-                          />
                         </th>
                         <th 
                           className="px-3 py-3 text-left text-xs font-bold text-white uppercase relative cursor-pointer hover:bg-blue-700"
@@ -3406,10 +3399,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             Comment
                             <SortIcon column="comment" currentColumn={dealsSortColumn} direction={dealsSortDirection} />
                           </div>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-blue-300/50 hover:bg-yellow-400 active:bg-yellow-500"
-                            onMouseDown={(e) => handleDealsResizeStart(e, 'comment')}
-                          />
                         </th>
                       </tr>
                     </thead>
