@@ -34,6 +34,7 @@ const LiveDealingPage = () => {
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [progressActive, setProgressActive] = useState(false)
   
   const [deals, setDeals] = useState([])
   const [newDealIds, setNewDealIds] = useState(new Set()) // Track new deals for blinking
@@ -45,7 +46,6 @@ const LiveDealingPage = () => {
   const [unauthorized, setUnauthorized] = useState(false)
   const hasInitialLoad = useRef(false)
   const isInitialMount = useRef(true)
-  const [progressActive, setProgressActive] = useState(false)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -74,27 +74,6 @@ const LiveDealingPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
-
-  // Sync top header loader with deals fetch (with min-show + hide-delay)
-  const ldProgressStartRef = useRef(0)
-  const ldProgressTimerRef = useRef(null)
-  useEffect(() => {
-    if (loading) {
-      ldProgressStartRef.current = Date.now()
-      if (ldProgressTimerRef.current) { clearTimeout(ldProgressTimerRef.current); ldProgressTimerRef.current = null }
-      setProgressActive(true)
-    } else {
-      const MIN_SHOW_MS = 500
-      const HIDE_DELAY_MS = 150
-      const elapsed = Date.now() - (ldProgressStartRef.current || 0)
-      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
-      if (ldProgressTimerRef.current) clearTimeout(ldProgressTimerRef.current)
-      ldProgressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
-    }
-    return () => {
-      if (ldProgressTimerRef.current) { clearTimeout(ldProgressTimerRef.current); ldProgressTimerRef.current = null }
-    }
-  }, [loading])
 
   // Persist recent WebSocket deals across refresh
   const WS_CACHE_KEY = 'liveDealsWsCache'
@@ -191,6 +170,13 @@ const LiveDealingPage = () => {
   const filterRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
+  
+  // Track if component is mounted to prevent updates after unmount
+  const isMountedRef = useRef(true)
+  
+  // Define string columns that should show text filters instead of number filters
+  const stringColumns = ['symbol', 'action', 'reason', 'entry']
+  const isStringColumn = (key) => stringColumns.includes(key)
   
   // Custom filter modal states
   const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
@@ -307,7 +293,7 @@ const LiveDealingPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextColumn = ['login', 'symbol', 'action', 'reason'].includes(customFilterColumn)
+    const isTextColumn = ['login', 'symbol', 'action', 'reason', 'entry'].includes(customFilterColumn)
     
     const filterConfig = {
       type: customFilterType,
@@ -391,6 +377,13 @@ const LiveDealingPage = () => {
         return true
     }
   }
+
+  // Critical: Set unmounted flag ASAP to unblock route transitions
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Save visible columns to localStorage whenever they change
   useEffect(() => {
@@ -1132,11 +1125,30 @@ const LiveDealingPage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (!isMountedRef.current) return
+      
+      // Check if click is inside any filter-related element
+      const isInsideMainFilter = showFilterDropdown && filterRefs.current[showFilterDropdown] && 
+                                  filterRefs.current[showFilterDropdown].contains(event.target)
+      
+      const numberFilterElements = document.querySelectorAll('[data-number-filter]')
+      let isInsideNumberFilter = false
+      numberFilterElements.forEach(el => {
+        if (el.contains(event.target)) {
+          isInsideNumberFilter = true
+        }
+      })
+      
+      // If click is outside both main filter and number filter dropdowns, close them
+      if (!isInsideMainFilter && !isInsideNumberFilter) {
+        if (showFilterDropdown) {
           setShowFilterDropdown(null)
         }
+        if (showNumberFilterDropdown) {
+          setShowNumberFilterDropdown(null)
+        }
       }
+      
       // Close module filter dropdown when clicking outside
       if (showModuleFilter && moduleFilterRef.current && !moduleFilterRef.current.contains(event.target)) {
         setShowModuleFilter(false)
@@ -1145,7 +1157,7 @@ const LiveDealingPage = () => {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, showModuleFilter])
+  }, [showFilterDropdown, showModuleFilter, showNumberFilterDropdown])
 
   // Helper function to render table header with filter
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
@@ -1186,27 +1198,29 @@ const LiveDealingPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border border-gray-300 rounded-lg shadow-2xl z-[9999] w-48" 
+              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
-                  top: `${filterRefs.current[columnKey]?.getBoundingClientRect().bottom + 5}px`,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 192 // 48 * 4 (w-48 in pixels)
-                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
+                    const dropdownWidth = 256 // w-64 in pixels
+                    const offset = 30 // Offset to the right to keep filter icon visible
+                    const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
-                      : `${rect.left}px`
+                      : `${rect.left + offset}px`
                   })()
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
+                    <span className="text-xs text-gray-700">Filter Menu</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1214,7 +1228,7 @@ const LiveDealingPage = () => {
                       }}
                       className="text-gray-400 hover:text-gray-600"
                     >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -1222,17 +1236,17 @@ const LiveDealingPage = () => {
                 </div>
 
                 {/* Sort Options */}
-                <div className="border-b border-gray-200">
+                <div className="border-b border-slate-200 py-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] text-gray-700 hover:bg-gray-50 flex items-center gap-1.5"
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
-                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                     </svg>
                     Sort Smallest to Largest
                   </button>
@@ -1242,218 +1256,323 @@ const LiveDealingPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100"
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
-                    <svg className="w-2.5 h-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                     </svg>
                     Sort Largest to Smallest
                   </button>
+                </div>
+
+                {/* Quick Clear Filter */}
+                <div className="border-b border-slate-200 py-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="w-full px-2 py-1 text-left text-[10px] hover:bg-gray-50 flex items-center gap-1.5 border-t border-gray-100 text-gray-600"
+                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
                   >
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                     Clear Filter
                   </button>
                 </div>
 
-                {/* Number/Text Filters */}
-                <div className="border-b border-gray-200">
-                  <div className="px-2 py-1 relative group">
+                {/* Number Filters (only for numeric columns) */}
+                {!isStringColumn(columnKey) && (
+                <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                  <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowNumberFilterDropdown(showNumberFilterDropdown === columnKey ? null : columnKey)
+                        if (showNumberFilterDropdown === columnKey) {
+                          setShowNumberFilterDropdown(null)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
+                        } else {
+                          setShowNumberFilterDropdown(columnKey)
+                          setCustomFilterColumn(columnKey)
+                          setCustomFilterValue1('')
+                          setCustomFilterValue2('')
+                        }
                       }}
-                      className="w-full flex items-center justify-between px-2 py-1 text-[10px] text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
-                      <span>{['login', 'symbol', 'action', 'reason'].includes(columnKey) ? 'Text Filters' : 'Number Filters'}</span>
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <span>Number Filters</span>
+                      <svg 
+                        className="w-3.5 h-3.5 text-slate-500 transition-transform" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={2.5}
+                        style={{
+                          transform: ['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey) 
+                            ? 'rotate(180deg)' 
+                            : 'none'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
-                    
-                    {/* Number/Text Filter Dropdown - Opens to the right or left based on column position */}
+
+                    {/* Custom Filter Form - Appears directly when clicking Number Filters */}
                     {showNumberFilterDropdown === columnKey && (
-                      <div 
-                        className={`absolute top-0 w-40 bg-white border border-gray-300 rounded shadow-lg z-50 ${
-                          ['commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry', 'order', 'position', 'reason'].includes(columnKey)
-                            ? 'right-full mr-1'  // Open to the left for rightmost columns
-                            : 'left-full ml-1'   // Open to the right for other columns
-                        }`}
+                      <div
+                        data-number-filter
+                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        style={{
+                          ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey))
+                            ? { right: 'calc(100% + 8px)', left: 'auto' }
+                            : { left: 'calc(100% + 8px)', right: 'auto' }
+                          ),
+                          zIndex: 10000001
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="text-[10px] text-gray-600 py-0.5">
-                          {/* Text columns show text-specific filters */}
-                          {['login', 'symbol', 'action', 'reason'].includes(columnKey) ? (
-                            <>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('equal')
-                                  setShowCustomFilterModal(true)
+                        <div className="p-3 space-y-3">
+                          <div>
+                            <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                            <select
+                              value={customFilterType}
+                              onChange={(e) => setCustomFilterType(e.target.value)}
+                              className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                            >
+                              <option value="equal">Equal...</option>
+                              <option value="notEqual">Not Equal...</option>
+                              <option value="lessThan">Less Than...</option>
+                              <option value="lessThanOrEqual">Less Than Or Equal...</option>
+                              <option value="greaterThan">Greater Than...</option>
+                              <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
+                              <option value="between">Between...</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                            <input
+                              type={columnKey === 'time' ? 'datetime-local' : 'number'}
+                              step={columnKey === 'time' ? '1' : 'any'}
+                              placeholder={columnKey === 'time' ? 'Select date and time' : 'Enter value'}
+                              value={columnKey === 'time' && customFilterValue1 ? 
+                                (() => {
+                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                  const timestamp = Number(customFilterValue1)
+                                  if (isNaN(timestamp)) return customFilterValue1
+                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                  const year = date.getFullYear()
+                                  const month = String(date.getMonth() + 1).padStart(2, '0')
+                                  const day = String(date.getDate()).padStart(2, '0')
+                                  const hours = String(date.getHours()).padStart(2, '0')
+                                  const minutes = String(date.getMinutes()).padStart(2, '0')
+                                  const seconds = String(date.getSeconds()).padStart(2, '0')
+                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                })() 
+                                : customFilterValue1
+                              }
+                              onChange={(e) => {
+                                if (columnKey === 'time') {
+                                  // Convert datetime-local to Unix timestamp
+                                  const dateValue = e.target.value
+                                  if (dateValue) {
+                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                    setCustomFilterValue1(String(timestamp))
+                                  } else {
+                                    setCustomFilterValue1('')
+                                  }
+                                } else {
+                                  setCustomFilterValue1(e.target.value)
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  if (customFilterType === 'between' && !customFilterValue2) return
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }
+                              }}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                            />
+                          </div>
+
+                          {customFilterType === 'between' && (
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
+                              <input
+                                type={columnKey === 'time' ? 'datetime-local' : 'number'}
+                                step={columnKey === 'time' ? '1' : 'any'}
+                                placeholder={columnKey === 'time' ? 'Select date and time' : 'Enter value'}
+                                value={columnKey === 'time' && customFilterValue2 ? 
+                                  (() => {
+                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
+                                    const timestamp = Number(customFilterValue2)
+                                    if (isNaN(timestamp)) return customFilterValue2
+                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
+                                    const year = date.getFullYear()
+                                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                                    const day = String(date.getDate()).padStart(2, '0')
+                                    const hours = String(date.getHours()).padStart(2, '0')
+                                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                                    const seconds = String(date.getSeconds()).padStart(2, '0')
+                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+                                  })() 
+                                  : customFilterValue2
+                                }
+                                onChange={(e) => {
+                                  if (columnKey === 'time') {
+                                    // Convert datetime-local to Unix timestamp
+                                    const dateValue = e.target.value
+                                    if (dateValue) {
+                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
+                                      setCustomFilterValue2(String(timestamp))
+                                    } else {
+                                      setCustomFilterValue2('')
+                                    }
+                                  } else {
+                                    setCustomFilterValue2(e.target.value)
+                                  }
                                 }}
-                              >
-                                Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('notEqual')
-                                  setShowCustomFilterModal(true)
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    if (!customFilterValue1 || !customFilterValue2) return
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
                                 }}
-                              >
-                                Not Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('startsWith')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Starts With...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('endsWith')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Ends With...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('contains')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Contains...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('notContains')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Does Not Contain...
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {/* Numeric columns show number-specific filters */}
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('equal')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('notEqual')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Not Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('lessThan')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Less Than...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('lessThanOrEqual')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Less Than Or Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('greaterThan')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Greater Than...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('greaterThanOrEqual')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Greater Than Or Equal...
-                              </div>
-                              <div 
-                                className="hover:bg-gray-50 px-2 py-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCustomFilterColumn(columnKey)
-                                  setCustomFilterType('between')
-                                  setShowCustomFilterModal(true)
-                                }}
-                              >
-                                Between...
-                              </div>
-                            </>
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              />
+                            </div>
                           )}
+
+                          <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            <button
+                              onClick={() => {
+                                applyCustomNumberFilter()
+                                setShowNumberFilterDropdown(null)
+                                setShowCustomFilterModal(false)
+                              }}
+                              disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
+                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                              OK
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
+                )}
+
+                {/* Text Filters (only for string columns) */}
+                {isStringColumn(columnKey) && (
+                  <div className="border-b border-slate-200 py-1" style={{ overflow: 'visible' }}>
+                    <div className="px-2 py-1 relative group text-[11px]" style={{ overflow: 'visible' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (showNumberFilterDropdown === columnKey) {
+                            setShowNumberFilterDropdown(null)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          } else {
+                            setShowNumberFilterDropdown(columnKey)
+                            setCustomFilterColumn(columnKey)
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      >
+                        <span>Text Filters</span>
+                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{
+                          transform: (['entry'].includes(columnKey) ? 'rotate(180deg)' : 'none')
+                        }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+
+                      {showNumberFilterDropdown === columnKey && (
+                        <div
+                          data-number-filter
+                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          style={{
+                            ...((['entry'].includes(columnKey))
+                              ? { right: 'calc(100% + 8px)', left: 'auto' }
+                              : { left: 'calc(100% + 8px)', right: 'auto' }
+                            ),
+                            zIndex: 10000001
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="p-3 space-y-3">
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                              <select
+                                value={customFilterType}
+                                onChange={(e) => setCustomFilterType(e.target.value)}
+                                className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              >
+                                <option value="equal">Equal...</option>
+                                <option value="notEqual">Not Equal...</option>
+                                <option value="startsWith">Starts With...</option>
+                                <option value="endsWith">Ends With...</option>
+                                <option value="contains">Contains...</option>
+                                <option value="doesNotContain">Does Not Contain...</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                              <input
+                                type="text"
+                                placeholder="Enter value"
+                                value={customFilterValue1}
+                                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    applyCustomNumberFilter()
+                                    setShowNumberFilterDropdown(null)
+                                    setShowCustomFilterModal(false)
+                                  }
+                                }}
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              />
+                            </div>
+
+                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => {
+                                  applyCustomNumberFilter()
+                                  setShowNumberFilterDropdown(null)
+                                  setShowCustomFilterModal(false)
+                                }}
+                                disabled={!customFilterValue1}
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              >
+                                OK
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Search Box */}
-                <div className="p-1 border-b border-gray-200">
+                <div className="p-2 border-b border-slate-200">
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search values..."
                       value={filterSearchQuery[columnKey] || ''}
                       onChange={(e) => {
                         e.stopPropagation()
@@ -1463,10 +1582,10 @@ const LiveDealingPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
-                    <svg className="absolute right-1.5 top-1.5 w-2.5 h-2.5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
                 </div>
@@ -1488,15 +1607,15 @@ const LiveDealingPage = () => {
                       onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
                     />
-                    <span className="text-[10px] font-medium text-gray-700">Select All</span>
+                    <span className="text-[11px] font-medium text-gray-700">Select All</span>
                   </label>
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-32 overflow-y-auto">
+                <div className="max-h-64 overflow-y-auto">
                   <div className="p-1 space-y-0.5">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
-                      <div className="px-2 py-2 text-center text-[10px] text-gray-500">
+                      <div className="px-2 py-2 text-center text-[11px] text-gray-500">
                         No items found
                       </div>
                     ) : (
@@ -1516,8 +1635,22 @@ const LiveDealingPage = () => {
                             onClick={(e) => e.stopPropagation()}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
                           />
-                          <span className="text-[9px] text-gray-700 truncate">
-                            {value}
+                          <span className="text-[11px] text-gray-700 truncate">
+                            {columnKey === 'time' && !isNaN(Number(value)) 
+                              ? (() => {
+                                  const date = new Date(Number(value) * 1000)
+                                  return date.toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false
+                                  })
+                                })()
+                              : value
+                            }
                           </span>
                         </label>
                       ))
@@ -1526,22 +1659,22 @@ const LiveDealingPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center justify-end gap-1.5">
+                <div className="px-2 py-1 border-t border-gray-200 bg-gray-50 rounded-b-lg flex items-center gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      clearColumnFilter(columnKey)
+                      setShowFilterDropdown(null)
                     }}
-                    className="px-2 py-1 text-[10px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    className="flex-1 px-2 py-1 text-[11px] text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                   >
-                    Clear
+                    Close
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                    className="flex-1 px-2 py-1 text-[10px] text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
                   >
                     OK
                   </button>
@@ -1612,12 +1745,14 @@ const LiveDealingPage = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Use mobile view on small screens
-  if (isMobile) {
-    return <LiveDealingModule />
-  }
+  // Sync top header loader with initial API load and any subsequent loads
+  useEffect(() => {
+    setProgressActive(!!loading)
+  }, [loading])
 
-  return (
+  return isMobile ? (
+    <LiveDealingModule />
+  ) : (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
@@ -1632,24 +1767,17 @@ const LiveDealingPage = () => {
         })}
       />
       
-      {/* YouTube-style Loading Bar - Outside main to span full width */}
-      {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-          <style>{`
-            @keyframes topHeaderTrackLive {
-              0% { left: -30%; }
-              100% { left: 100%; }
-            }
-          `}</style>
-          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
-            width: '30%',
-            left: '-30%',
-            animation: 'topHeaderTrackLive 0.9s linear infinite'
-          }} />
-        </div>
-      )}
-
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -2113,7 +2241,7 @@ const LiveDealingPage = () => {
                 </tr>
               </thead>
 
-              {/* Removed below-table loading bar to keep only the top header loader */}
+              {/* Top header loader replaces inline shimmer */}
 
               <tbody className="bg-white divide-y-2 divide-gray-200 text-sm">
                 {loading ? (
