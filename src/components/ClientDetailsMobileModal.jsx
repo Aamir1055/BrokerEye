@@ -1054,7 +1054,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
 
   const renderDeals = () => (
     <>
-      <table className="min-w-max" style={{ width: 'max-content' }}>
+      <table className="w-full">
         <thead className="bg-blue-500 sticky top-0 z-20">
           <tr>
             {dealColumns.deal && (
