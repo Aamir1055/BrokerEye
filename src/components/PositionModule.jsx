@@ -413,8 +413,9 @@ export default function PositionModule() {
         if (customFilters[columnKey]) continue
         if (selectedValues.length > 0) {
           const raw = row[columnKey]
-          const cellValue = typeof raw === 'string' ? raw.trim() : String(raw || '').trim()
-          if (!selectedValues.includes(cellValue)) return false
+          const cellValue = (typeof raw === 'string' ? raw.trim() : String(raw || '').trim()).toLowerCase()
+          const selectedLower = selectedValues.map(v => (typeof v === 'string' ? v.trim() : String(v || '').trim()).toLowerCase())
+          if (!selectedLower.includes(cellValue)) return false
         }
       }
       
