@@ -5209,19 +5209,8 @@ const Client2Page = () => {
                                                 ) : (
                                                   // Expanded version when there are NO checkbox values
                                                   <div className="space-y-3">
-                                                    <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center mb-2">
                                                       <span className="text-xs font-semibold text-gray-700">Number Filters</span>
-                                                      {hasNumberFilter && (
-                                                        <button
-                                                          onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            clearColumnFilter(columnKey)
-                                                          }}
-                                                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
-                                                        >
-                                                          Clear
-                                                        </button>
-                                                      )}
                                                     </div>
 
                                                     {/* Operator Dropdown */}
