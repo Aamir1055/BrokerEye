@@ -2830,15 +2830,19 @@ const PositionsPage = () => {
                           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                         </button>
                         {netShowColumnSelector && (
-                          <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
-                            <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
-                            {Object.keys(netVisibleColumns).map(k => (
-                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                                <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                <span className="text-[11px] text-gray-700">{netColumnLabels[k] || k}</span>
-                              </label>
-                            ))}
-                          </div>
+                          <>
+                            {/* Click-away overlay to close when clicking anywhere outside */}
+                            <div className="fixed inset-0 z-40" onClick={() => setNetShowColumnSelector(false)}></div>
+                            <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
+                              <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
+                              {Object.keys(netVisibleColumns).map(k => (
+                                <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                  <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                  <span className="text-[11px] text-gray-700">{netColumnLabels[k] || k}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
