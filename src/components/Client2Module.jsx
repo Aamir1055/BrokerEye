@@ -1551,8 +1551,8 @@ export default function Client2Module() {
             </div>
           </div>
 
-        {/* Table - full width (own scroll) */}
-        <div className="flex-1 min-h-0 px-2">
+        {/* Table - full width (own scroll, no side margins) */}
+        <div className="flex-1 min-h-0">
           <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden h-full">
             {/* Single scroll container with sticky header */}
             <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
