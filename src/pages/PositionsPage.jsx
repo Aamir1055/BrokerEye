@@ -3340,6 +3340,9 @@ const PositionsPage = () => {
                         Card Filter
                       </button>
                       {clientNetCardFilterOpen && (
+                        <>
+                        {/* Click-away overlay to close when clicking anywhere outside */}
+                        <div className="fixed inset-0 z-40" onClick={() => setClientNetCardFilterOpen(false)}></div>
                         <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
                           <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
                           {Object.entries(clientNetCardsVisible).map(([k,v]) => (
@@ -3353,6 +3356,7 @@ const PositionsPage = () => {
                             </label>
                           ))}
                         </div>
+                        </>
                       )}
                     </div>
                     
