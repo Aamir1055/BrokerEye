@@ -1172,11 +1172,11 @@ export default function PositionModule() {
             ref={carouselRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-6 pr-4"
           >
-            <div className="w-4 flex-shrink-0" />
+            <div className="w-5 flex-shrink-0 snap-start" />
             {loading && loading.positions ? (
               // Skeleton loading for face cards
               <>
-                <div className="w-4 flex-shrink-0" />
+                <div className="w-5 flex-shrink-0 snap-start" />
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div 
                     key={`skeleton-card-${i}`}
@@ -1489,7 +1489,7 @@ export default function PositionModule() {
             {/* Face Cards Carousel */}
             <div className="pb-2">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-6 pr-4">
-                <div className="w-4 flex-shrink-0" />
+                <div className="w-5 flex-shrink-0 snap-start" />
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
@@ -1961,7 +1961,7 @@ export default function PositionModule() {
             {/* Face Cards Carousel */}
             <div className="pb-2">
               <div className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pl-6 pr-4">
-                <div className="w-4 flex-shrink-0" />
+                <div className="w-5 flex-shrink-0 snap-start" />
                 <div style={{
                   boxSizing: 'border-box',
                   minWidth: '125px',
