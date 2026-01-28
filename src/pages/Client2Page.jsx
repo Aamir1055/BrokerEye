@@ -5028,12 +5028,11 @@ const Client2Page = () => {
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') {
                                             e.preventDefault()
-                                            if (isNumeric) {
-                                              applyNumberFilter(columnKey)
-                                            } else {
+                                            // Do not auto-apply numeric filters on Enter; require explicit OK
+                                            if (!isNumeric) {
                                               applyCheckboxFilter(columnKey)
+                                              setShowFilterDropdown(null)
                                             }
-                                            setShowFilterDropdown(null)
                                           }
                                         }}
                                         style={{
@@ -5148,17 +5147,11 @@ const Client2Page = () => {
                                                             value={tempFilter.value1}
                                                             onChange={(e) => {
                                                               updateNumericFilterTemp(columnKey, 'value1', e.target.value)
-                                                              // Auto-apply if value is valid (except for between operator)
-                                                              if (e.target.value && tempFilter.operator !== 'between') {
-                                                                setTimeout(() => applyNumberFilter(columnKey), 500)
-                                                              }
                                                             }}
                                                             onKeyDown={(e) => {
                                                               if (e.key === 'Enter') {
                                                                 e.preventDefault()
-                                                                applyNumberFilter(columnKey)
-                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                                if (menu) menu.classList.add('hidden')
+                                                                // Do not apply on Enter; wait for OK
                                                               }
                                                             }}
                                                             className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5178,9 +5171,7 @@ const Client2Page = () => {
                                                               onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
                                                                   e.preventDefault()
-                                                                  applyNumberFilter(columnKey)
-                                                                  const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                                  if (menu) menu.classList.add('hidden')
+                                                                  // Do not apply on Enter; wait for OK
                                                                 }
                                                               }}
                                                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5263,7 +5254,7 @@ const Client2Page = () => {
                                                         onKeyDown={(e) => {
                                                           if (e.key === 'Enter') {
                                                             e.preventDefault()
-                                                            applyNumberFilter(columnKey)
+                                                            // Do not apply on Enter; wait for OK
                                                           }
                                                         }}
                                                         className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5283,7 +5274,7 @@ const Client2Page = () => {
                                                           onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                               e.preventDefault()
-                                                              applyNumberFilter(columnKey)
+                                                              // Do not apply on Enter; wait for OK
                                                             }
                                                           }}
                                                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
