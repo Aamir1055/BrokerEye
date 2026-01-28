@@ -2431,6 +2431,9 @@ const PositionsPage = () => {
                   %
                 </button>
                 {showDisplayMenu && (
+                  <>
+                  {/* Click-away overlay to ensure closing on outside click */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDisplayMenu(false)}></div>
                   <div
                     ref={displayMenuRef}
                     className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
@@ -2474,6 +2477,7 @@ const PositionsPage = () => {
                       </label>
                     </div>
                   </div>
+                  </>
                 )}
               </div>
 
