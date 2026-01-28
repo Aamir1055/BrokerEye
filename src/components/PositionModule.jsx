@@ -358,9 +358,10 @@ export default function PositionModule() {
         cellValue = ''
       }
     } else {
-      cellValue = String(row[columnKey] || '').toLowerCase()
+      const raw = row[columnKey]
+      cellValue = (typeof raw === 'string' ? raw.trim() : String(raw || '').trim()).toLowerCase()
     }
-    const filterValue = String(filterConfig.value1 || filterConfig.value || '').toLowerCase()
+    const filterValue = String(filterConfig.value1 || filterConfig.value || '').trim().toLowerCase()
     
     let result = true
     switch (filterConfig.type) {
@@ -407,13 +408,17 @@ export default function PositionModule() {
 
   const applyAllColumnFilters = (positions) => {
     return positions.filter(row => {
+      // Apply checkbox filters, but skip a column if a custom condition exists for it
       for (const [columnKey, selectedValues] of Object.entries(columnFilters)) {
+        if (customFilters[columnKey]) continue
         if (selectedValues.length > 0) {
-          const cellValue = String(row[columnKey])
+          const raw = row[columnKey]
+          const cellValue = typeof raw === 'string' ? raw.trim() : String(raw || '').trim()
           if (!selectedValues.includes(cellValue)) return false
         }
       }
       
+      // Apply custom condition filters
       for (const [columnKey, filterConfig] of Object.entries(customFilters)) {
         if (isStringColumn(columnKey)) {
           if (!applyTextFilter(row, columnKey, filterConfig)) return false
@@ -1490,9 +1495,15 @@ export default function PositionModule() {
                                       className="h-7 px-2 rounded bg-[#2563EB] text-white text-[10px]"
                                       onClick={() => {
                                         if (!customFilterColumn) return
+                                        const v1 = String(customFilterValue1 || '').trim()
+                                        const v2 = String(customFilterValue2 || '').trim()
+                                        if (v1.length === 0 && (customFilterType !== 'between' || v2.length === 0)) {
+                                          setShowFilterDropdown(null)
+                                          return
+                                        }
                                         setCustomFilters(prev => ({
                                           ...prev,
-                                          [col.key]: { type: customFilterType, value1: customFilterValue1, value2: customFilterValue2 }
+                                          [col.key]: { type: customFilterType, value1: v1, value2: v2 }
                                         }))
                                         setShowFilterDropdown(null)
                                       }}
