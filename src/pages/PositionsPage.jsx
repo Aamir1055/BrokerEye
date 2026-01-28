@@ -146,6 +146,7 @@ const PositionsPage = () => {
   const displayButtonRef = useRef(null)
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     position: false,
     time: true,
@@ -247,6 +248,7 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const filterDropdownRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
@@ -256,7 +258,6 @@ const PositionsPage = () => {
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
   const [pendingDateDraft, setPendingDateDraft] = useState(null)
-  const dateFilterRef = useRef(null)
   
   // Sorting states for ALL positions view
   const [sortColumn, setSortColumn] = useState(null)
@@ -421,7 +422,12 @@ const PositionsPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    // Treat filters as text-based for string columns (e.g., symbol, action, reason, comment)
+    // and for explicit text operators regardless of column type.
+    const textOperators = ['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain']
+    const isTextColumn = isStringColumn(customFilterColumn)
+    const isExplicitTextOp = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    const isTextFilter = isTextColumn && textOperators.includes(customFilterType) || isExplicitTextOp
     
     const filterConfig = {
       type: customFilterType,
@@ -452,12 +458,16 @@ const PositionsPage = () => {
     
     const { type, value1, value2 } = filterConfig
 
-    // Handle text filters
-    if (['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
+    // Handle text filters (including equal/notEqual for text comparison)
+    if (['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
       const strValue = String(value || '').toLowerCase()
       const searchValue = String(value1 || '').toLowerCase()
       
       switch (type) {
+        case 'equal':
+          return strValue === searchValue
+        case 'notEqual':
+          return strValue !== searchValue
         case 'startsWith':
           return strValue.startsWith(searchValue)
         case 'endsWith':
@@ -471,25 +481,23 @@ const PositionsPage = () => {
       }
     }
 
-    // Handle number filters
+    // Handle number filters only (lessThan, greaterThan, between, etc.)
     const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
+    const numValue1 = parseFloat(value1)
+    if (isNaN(numValue) || isNaN(numValue1)) return false
 
     switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
       case 'lessThan':
-        return numValue < value1
+        return numValue < numValue1
       case 'lessThanOrEqual':
-        return numValue <= value1
+        return numValue <= numValue1
       case 'greaterThan':
-        return numValue > value1
+        return numValue > numValue1
       case 'greaterThanOrEqual':
-        return numValue >= value1
+        return numValue >= numValue1
       case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
+        const numValue2 = parseFloat(value2)
+        return !isNaN(numValue2) && numValue >= numValue1 && numValue <= numValue2
       default:
         return true
     }
@@ -525,45 +533,6 @@ const PositionsPage = () => {
   }
   const hasInitialLoad = useRef(false)
   const prevPositionsRef = useRef([])
-  const [progressActive, setProgressActive] = useState(false)
-
-  // Sync top header loader with positions fetch
-  const progressStartRef = useRef(0)
-  const progressTimerRef = useRef(null)
-  useEffect(() => {
-    const active = !!loading?.positions || isRefreshing
-    if (active) {
-      progressStartRef.current = Date.now()
-      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
-      setProgressActive(true)
-    } else {
-      const MIN_SHOW_MS = 500
-      const HIDE_DELAY_MS = 150
-      const elapsed = Date.now() - (progressStartRef.current || 0)
-      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
-      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
-      progressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
-    }
-    return () => {
-      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
-    }
-  }, [loading?.positions, isRefreshing])
-
-  // Handle click outside to close date filter modal
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target)) {
-        setIsDateFilterOpen(false)
-      }
-    }
-
-    if (isDateFilterOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside)
-      }
-    }
-  }, [isDateFilterOpen])
 
     useEffect(() => {
     if (!isAuthenticated) {
@@ -1207,8 +1176,14 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       
       // Check if clicking outside main filter dropdown
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (showFilterDropdown) {
+        const filterButton = filterRefs.current[showFilterDropdown]
+        const filterDropdown = filterDropdownRefs.current[showFilterDropdown]
+        
+        const clickedInButton = filterButton && filterButton.contains(event.target)
+        const clickedInDropdown = filterDropdown && filterDropdown.contains(event.target)
+        
+        if (!clickedInButton && !clickedInDropdown) {
           setShowFilterDropdown(null)
           setShowNumberFilterDropdown(null)
         }
@@ -1754,7 +1729,12 @@ const PositionsPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div 
+                ref={el => {
+                  if (!filterDropdownRefs.current) filterDropdownRefs.current = {}
+                  filterDropdownRefs.current[columnKey] = el
+                }}
+                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -2064,17 +2044,8 @@ const PositionsPage = () => {
                             </div>
                           )}
 
-                          {/* Actions */}
+                          {/* Apply Button */}
                           <div className="flex gap-2 pt-2 border-t border-gray-200">
-                            <button
-                              onClick={() => {
-                                setShowNumberFilterDropdown(null)
-                                setShowCustomFilterModal(false)
-                              }}
-                              className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                            >
-                              Close
-                            </button>
                             <button
                               onClick={() => {
                                 applyCustomNumberFilter()
@@ -2082,7 +2053,7 @@ const PositionsPage = () => {
                                 setShowCustomFilterModal(false)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -2205,17 +2176,8 @@ const PositionsPage = () => {
                               />
                             </div>
 
-                            {/* Actions */}
+                            {/* Apply Button */}
                             <div className="flex gap-2 pt-2 border-t border-gray-200">
-                              <button
-                                onClick={() => {
-                                  setShowNumberFilterDropdown(null)
-                                  setShowCustomFilterModal(false)
-                                }}
-                                className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                              >
-                                Close
-                              </button>
                               <button
                                 onClick={() => {
                                   applyCustomNumberFilter()
@@ -2223,7 +2185,7 @@ const PositionsPage = () => {
                                   setShowCustomFilterModal(false)
                                 }}
                                 disabled={!customFilterValue1}
-                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -2319,21 +2281,19 @@ const PositionsPage = () => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className={(showNumberFilterDropdown === columnKey ? 'w-full' : 'flex-1') + " px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"}
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
                     Close
                   </button>
-                  {showNumberFilterDropdown !== columnKey && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowFilterDropdown(null)
-                      }}
-                      className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-                    >
-                      OK
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(null)
+                    }}
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                  >
+                    OK
+                  </button>
                 </div>
               </div>
             )}
@@ -2345,6 +2305,11 @@ const PositionsPage = () => {
 
   // Only show local loading inside cards/tables; keep the page chrome interactive
   const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
+
+  // Sync top header loader with any positions fetch and manual refreshes
+  useEffect(() => {
+    setProgressActive(!!loading?.positions || isRefreshing)
+  }, [loading?.positions, isRefreshing])
 
   // Early return for mobile - render mobile component
   if (isMobile) {
@@ -2365,18 +2330,12 @@ const PositionsPage = () => {
 
       {/* YouTube-style Loading Bar - Outside main to span full width */}
       {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-          <style>{`
-            @keyframes topHeaderTrackPositions {
-              0% { left: -30%; }
-              100% { left: 100%; }
-            }
-          `}</style>
-          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
-            width: '30%',
-            left: '-30%',
-            animation: 'topHeaderTrackPositions 0.9s linear infinite'
-          }} />
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '40%',
+            animation: 'loading 1.5s ease-in-out infinite',
+            transformOrigin: 'left center'
+          }}></div>
         </div>
       )}
 
@@ -2443,40 +2402,20 @@ const PositionsPage = () => {
               </button>
 
               {/* Date Filter Button */}
-              <div className="relative" ref={dateFilterRef}>
-                <button
-                  onClick={() => setIsDateFilterOpen(true)}
-                  className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
-                    dateFilter 
-                      ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
-                      : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
-                  }`}
-                  title="Filter by Date Range"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
-                </button>
-                
-                {/* Date Filter Modal - Desktop dropdown */}
-                {isDateFilterOpen && (
-                  <DateFilterModal
-                    isOpen={isDateFilterOpen}
-                    onClose={() => setIsDateFilterOpen(false)}
-                    onApply={(days) => {
-                      setDateFilter(days)
-                      setIsDateFilterOpen(false)
-                    }}
-                    currentFilter={dateFilter}
-                    onPendingChange={(hasPending, draft) => {
-                      setHasPendingDateChanges(hasPending)
-                      setPendingDateDraft(draft)
-                    }}
-                    isMobile={false}
-                  />
-                )}
-              </div>
+              <button
+                onClick={() => setIsDateFilterOpen(true)}
+                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                  dateFilter 
+                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
+                }`}
+                title="Filter by Date Range"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
+              </button>
 
               {/* Percentage View Dropdown */}
               <div className="relative">
@@ -3189,7 +3128,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
 
-                      {/* Removed below-table loading bar to keep only header loader */}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {netDisplayedPositions.map((netPos, idx) => (
@@ -3622,7 +3561,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
 
-                      {/* Removed below-table loading bar to keep only header loader */}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {clientNetDisplayedPositions.map((row, idx) => {
@@ -3902,7 +3841,7 @@ const PositionsPage = () => {
                     </tr>
                   </thead>
 
-                  {/* Removed below-table loading bar to keep only header loader */}
+                  {/* Top header loader replaces inline shimmer */}
 
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.length === 0 && !isInitialPositionsLoading ? (
@@ -4054,7 +3993,20 @@ const PositionsPage = () => {
         />
       )}
 
-      {/* Date Filter Modal moved inside button container for desktop positioning */}
+      {/* Date Filter Modal */}
+      <DateFilterModal
+        isOpen={isDateFilterOpen}
+        onClose={() => setIsDateFilterOpen(false)}
+        onApply={(days) => {
+          setDateFilter(days)
+          setIsDateFilterOpen(false)
+        }}
+        currentFilter={dateFilter}
+        onPendingChange={(pendingValue) => {
+          setPendingDateDraft(pendingValue)
+          setHasPendingDateChanges(pendingValue !== dateFilter)
+        }}
+      />
     </div>
   )
 }
