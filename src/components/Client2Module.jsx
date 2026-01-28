@@ -1274,8 +1274,8 @@ export default function Client2Module() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Main Content: prevent page-level scroll; table will scroll */}
+      <div className="flex-1 overflow-x-hidden overflow-y-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-between">
@@ -1283,7 +1283,7 @@ export default function Client2Module() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
-                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                className={`h-8 px-4 min-w-[64px] rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2'))
                     ? 'bg-blue-50 border-blue-200' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
@@ -1551,14 +1551,15 @@ export default function Client2Module() {
             </div>
           </div>
 
-        {/* Table - full width */}
-        <div>
-          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+        {/* Table - full width (own scroll) */}
+        <div className="flex-1 min-h-0 px-2">
+          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden h-full">
             {/* Single scroll container with sticky header */}
             <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
-              paddingBottom: '8px'
+              paddingBottom: '8px',
+              maxHeight: '60vh'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
