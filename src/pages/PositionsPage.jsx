@@ -3377,6 +3377,9 @@ const PositionsPage = () => {
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                       </button>
                       {clientNetShowColumnSelector && (
+                        <>
+                        {/* Click-away overlay to close dropdown when clicking anywhere */}
+                        <div className="fixed inset-0 z-40" onClick={() => setClientNetShowColumnSelector(false)}></div>
                         <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
                           <p className="text-[10px] font-semibold text-gray-600 mb-1">Client NET Columns</p>
                           {Object.keys(clientNetVisibleColumns).map(k => (
@@ -3393,6 +3396,7 @@ const PositionsPage = () => {
                             </label>
                           ))}
                         </div>
+                        </>
                       )}
                     </div>
                   </div>
