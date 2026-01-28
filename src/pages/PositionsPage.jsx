@@ -2793,15 +2793,19 @@ const PositionsPage = () => {
                           Card Filter
                         </button>
                         {netCardFilterOpen && (
-                          <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
-                            <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
-                            {Object.entries(netCardsVisible).map(([k,v]) => (
-                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                                <input type="checkbox" checked={v} onChange={()=>setNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                <span className="text-[11px] text-gray-700">{k==='netSymbols'?'NET Symbols':k==='totalNetVolume'?'Total NET Volume':k==='totalNetPL'?'Total NET P/L':'Total Logins'}</span>
-                              </label>
-                            ))}
-                          </div>
+                          <>
+                            {/* Click-away overlay to close when clicking anywhere outside */}
+                            <div className="fixed inset-0 z-40" onClick={() => setNetCardFilterOpen(false)}></div>
+                            <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
+                              <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
+                              {Object.entries(netCardsVisible).map(([k,v]) => (
+                                <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                  <input type="checkbox" checked={v} onChange={()=>setNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                  <span className="text-[11px] text-gray-700">{k==='netSymbols'?'NET Symbols':k==='totalNetVolume'?'Total NET Volume':k==='totalNetPL'?'Total NET P/L':'Total Logins'}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                       
