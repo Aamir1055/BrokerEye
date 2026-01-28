@@ -339,7 +339,27 @@ export default function PositionModule() {
   }
 
   const applyTextFilter = (row, columnKey, filterConfig) => {
-    const cellValue = String(row[columnKey] || '').toLowerCase()
+    let cellValue = ''
+    // Normalize action to buy/sell for text filters
+    if (columnKey === 'action') {
+      const rawType = row.type
+      const rawAction = row.action
+      if (rawType !== undefined && rawType !== null) {
+        if (rawType === 0 || rawType === 'Buy') cellValue = 'buy'
+        else if (rawType === 1 || rawType === 'Sell') cellValue = 'sell'
+        else if (typeof rawType === 'string') cellValue = rawType.toLowerCase()
+        else cellValue = String(rawType).toLowerCase()
+      } else if (rawAction !== undefined && rawAction !== null) {
+        if (rawAction === 0 || rawAction === '0') cellValue = 'buy'
+        else if (rawAction === 1 || rawAction === '1') cellValue = 'sell'
+        else if (typeof rawAction === 'string') cellValue = rawAction.toLowerCase()
+        else cellValue = String(rawAction).toLowerCase()
+      } else {
+        cellValue = ''
+      }
+    } else {
+      cellValue = String(row[columnKey] || '').toLowerCase()
+    }
     const filterValue = String(filterConfig.value1 || filterConfig.value || '').toLowerCase()
     
     let result = true
@@ -1400,6 +1420,91 @@ export default function PositionModule() {
                             </svg>
                           )}
                         </div>
+                        {/* Condition Filter button and dropdown for Symbol/Action */}
+                        {['symbol','action'].includes(col.key) && (
+                          <div className="ml-1 relative">
+                            <button
+                              className="w-5 h-5 flex items-center justify-center rounded hover:bg-blue-600/20"
+                              title="Condition Filter"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCustomFilterColumn(col.key)
+                                const cf = customFilters[col.key] || { type: 'equal', value1: '', value2: '' }
+                                setCustomFilterType(cf.type || 'equal')
+                                setCustomFilterValue1(cf.value1 || '')
+                                setCustomFilterValue2(cf.value2 || '')
+                                setShowFilterDropdown(col.key)
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 5h18l-7 8v6l-4-2v-4L3 5z" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                            {showFilterDropdown === col.key && (
+                              <div
+                                data-filter-dropdown
+                                className="absolute top-full right-0 mt-1 z-[999] bg-white text-[#1B2D45] border border-[#E5E7EB] rounded-lg shadow-lg p-2 w-56"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="text-[10px] font-semibold mb-2 text-[#4B4B4B]">Condition</div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <select
+                                    className="flex-1 h-7 border border-[#ECECEC] rounded px-1 text-[10px]"
+                                    value={customFilterType}
+                                    onChange={(e) => setCustomFilterType(e.target.value)}
+                                  >
+                                    <option value="equal">Equals</option>
+                                    <option value="notEqual">Not Equals</option>
+                                    <option value="startsWith">Starts With</option>
+                                    <option value="endsWith">Ends With</option>
+                                    <option value="contains">Contains</option>
+                                    <option value="doesNotContain">Does Not Contain</option>
+                                  </select>
+                                </div>
+                                <div className="mb-2">
+                                  <input
+                                    className="w-full h-7 border border-[#ECECEC] rounded px-2 text-[10px]"
+                                    placeholder="Value"
+                                    value={customFilterValue1}
+                                    onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <button
+                                    className="h-7 px-2 rounded bg-[#E5E7EB] text-[#6B7280] text-[10px]"
+                                    onClick={() => {
+                                      clearColumnFilter(col.key)
+                                      setShowFilterDropdown(null)
+                                    }}
+                                  >
+                                    Clear
+                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      className="h-7 px-2 rounded border border-[#E5E7EB] text-[#4B4B4B] text-[10px] bg-white"
+                                      onClick={() => setShowFilterDropdown(null)}
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      className="h-7 px-2 rounded bg-[#2563EB] text-white text-[10px]"
+                                      onClick={() => {
+                                        if (!customFilterColumn) return
+                                        setCustomFilters(prev => ({
+                                          ...prev,
+                                          [col.key]: { type: customFilterType, value1: customFilterValue1, value2: customFilterValue2 }
+                                        }))
+                                        setShowFilterDropdown(null)
+                                      }}
+                                    >
+                                      OK
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
