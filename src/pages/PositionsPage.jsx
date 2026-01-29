@@ -145,6 +145,9 @@ const PositionsPage = () => {
   const displayMenuRef = useRef(null)
   const displayButtonRef = useRef(null)
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
+  const [showDateFilterMenu, setShowDateFilterMenu] = useState(false)
+  const dateFilterMenuRef = useRef(null)
+  const dateFilterButtonRef = useRef(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [progressActive, setProgressActive] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
@@ -255,9 +258,6 @@ const PositionsPage = () => {
   
   // Date filter states
   const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
-  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
-  const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
-  const [pendingDateDraft, setPendingDateDraft] = useState(null)
   
   // Sorting states for ALL positions view
   const [sortColumn, setSortColumn] = useState(null)
@@ -639,6 +639,7 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       if (event.key === 'Escape') {
         if (showDisplayMenu) setShowDisplayMenu(false)
+        if (showDateFilterMenu) setShowDateFilterMenu(false)
         if (showColumnSelector) setShowColumnSelector(false)
         if (netShowSuggestions) setNetShowSuggestions(false)
         if (clientNetShowSuggestions) setClientNetShowSuggestions(false)
@@ -649,7 +650,7 @@ const PositionsPage = () => {
       }
     }
 
-    if (showDisplayMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
+    if (showDisplayMenu || showDateFilterMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside, true)
       document.addEventListener('keydown', handleKeyDown)
       return () => {
@@ -657,7 +658,7 @@ const PositionsPage = () => {
         document.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [showDisplayMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
+  }, [showDisplayMenu, showDateFilterMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -2402,21 +2403,76 @@ const PositionsPage = () => {
                 Client Net
               </button>
 
-              {/* Date Filter Button */}
-              <button
-                onClick={() => setIsDateFilterOpen(true)}
-                className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
-                  dateFilter 
-                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
-                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
-                }`}
-                title="Filter by Date Range"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
-              </button>
+              {/* Date Filter Dropdown */}
+              <div className="relative">
+                <button
+                  ref={dateFilterButtonRef}
+                  onClick={() => setShowDateFilterMenu(!showDateFilterMenu)}
+                  className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
+                    dateFilter 
+                      ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
+                      : 'bg-white text-[#374151] border-[#E5E7EB] hover:bg-gray-50'
+                  }`}
+                  title="Filter by Date Range"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
+                </button>
+                {showDateFilterMenu && (
+                  <>
+                  {/* Click-away overlay */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDateFilterMenu(false)}></div>
+                  <div
+                    ref={dateFilterMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-48"
+                  >
+                    <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                      <p className="text-xs font-semibold text-[#1F2937]">Date Filter</p>
+                    </div>
+                    <div className="px-3 py-2 space-y-2">
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 3}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 3 ? null : 3)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>3 Days</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 5}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 5 ? null : 5)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>5 Days</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 7}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 7 ? null : 7)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>7 Days</span>
+                      </label>
+                    </div>
+                  </div>
+                  </>
+                )}
+              </div>
 
               {/* Percentage View Dropdown */}
               <div className="relative">
@@ -4097,20 +4153,6 @@ const PositionsPage = () => {
         />
       )}
 
-      {/* Date Filter Modal */}
-      <DateFilterModal
-        isOpen={isDateFilterOpen}
-        onClose={() => setIsDateFilterOpen(false)}
-        onApply={(days) => {
-          setDateFilter(days)
-          setIsDateFilterOpen(false)
-        }}
-        currentFilter={dateFilter}
-        onPendingChange={(pendingValue) => {
-          setPendingDateDraft(pendingValue)
-          setHasPendingDateChanges(pendingValue !== dateFilter)
-        }}
-      />
     </div>
   )
 }
