@@ -1062,19 +1062,26 @@ const Client2Page = () => {
           const op = cfg.operator
           let v1 = cfg.value1
           let v2 = cfg.value2
-          if (uiKey === 'phone' && typeof v1 !== 'number') {
-            v1 = v1 != null ? String(v1).replace(/[+\s]/g, '') : v1
-          }
-          if (uiKey === 'phone' && typeof v2 !== 'number') {
-            v2 = v2 != null ? String(v2).replace(/[+\s]/g, '') : v2
-          }
-          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
-          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
-          if (op === 'between') {
-            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
-            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
-          } else if (op && num1 != null && Number.isFinite(num1)) {
-            combinedFilters.push({ field, operator: op, value: String(num1) })
+          // For phone column, preserve raw values with + and spaces
+          if (uiKey === 'phone') {
+            const raw1 = v1 !== '' && v1 != null ? String(v1) : null
+            const raw2 = v2 !== '' && v2 != null ? String(v2) : null
+            if (op === 'between') {
+              if (raw1 != null) combinedFilters.push({ field, operator: 'greater_than_equal', value: raw1 })
+              if (raw2 != null) combinedFilters.push({ field, operator: 'less_than_equal', value: raw2 })
+            } else if (op && raw1 != null) {
+              combinedFilters.push({ field, operator: op, value: raw1 })
+            }
+          } else {
+            // For other numeric columns, parse as numbers
+            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+            if (op === 'between') {
+              if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+              if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+            } else if (op && num1 != null && Number.isFinite(num1)) {
+              combinedFilters.push({ field, operator: op, value: String(num1) })
+            }
           }
         }
       })
@@ -2358,17 +2365,19 @@ const Client2Page = () => {
               combinedFilters.push({ field, operator: op, value: String(num1) })
             }
           }
+          // Mark numeric filter applied for this column to prevent duplicate checkbox filters
+          numberFilteredFields.add(uiKey)
           if (uiKey === columnKey) return
-          const field = columnKeyToAPIField(uiKey)
+          const checkboxField = columnKeyToAPIField(uiKey)
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
           const rawValues = cfg.values.map(v => String(v).trim()).filter(v => v.length > 0)
           if (rawValues.length === 0) return
           if (rawValues.length === 1) {
-            combinedFilters.push({ field, operator: 'equal', value: rawValues[0] })
+            combinedFilters.push({ field: checkboxField, operator: 'equal', value: rawValues[0] })
           } else {
             // Provide array for backend; treat multi-value as OR by storing values list
-            if (multiOrField && multiOrField !== field) multiOrConflict = true
-            else { multiOrField = field; multiOrValues = rawValues }
+            if (multiOrField && multiOrField !== checkboxField) multiOrConflict = true
+            else { multiOrField = checkboxField; multiOrValues = rawValues }
           }
         }
       })
