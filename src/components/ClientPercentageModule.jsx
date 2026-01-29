@@ -200,10 +200,12 @@ export default function ClientPercentageModule() {
       })
       
       setLoading(false)
+      setProgressActive(false)
     } catch (err) {
       console.error('Error fetching client percentages:', err)
       setError('Failed to load client percentages')
       setLoading(false)
+      setProgressActive(false)
     }
   }
 
@@ -285,6 +287,8 @@ export default function ClientPercentageModule() {
   }, [ibFilteredData, searchInput])
 
   const handleSort = (columnKey) => {
+    // Show top loader for sort-triggered fetch
+    setProgressActive(true)
     if (sortColumn === columnKey) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
