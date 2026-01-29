@@ -1443,8 +1443,8 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           </div>
         )}
 
-        {/* Table Content - Scrollable Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto bg-gray-50">
+        {/* Table Content - Scrollable Area (no vertical scroll in Balance tab) */}
+        <div className={`flex-1 min-h-0 ${activeTab === 'funds' ? 'overflow-y-hidden' : 'overflow-y-auto'} overflow-x-auto bg-gray-50`}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
