@@ -2337,7 +2337,6 @@ const Client2Page = () => {
           if (uiKey === columnKey) return
           const field = columnKeyToAPIField(uiKey)
           const op = cfg.operator
-          const v1 = cfg.value1
           let v1 = cfg.value1
           let v2 = cfg.value2
           if (uiKey === 'phone') {
