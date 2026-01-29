@@ -1492,7 +1492,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     e.preventDefault()
     setResizingPositionsColumn(columnKey)
     resizeStartX.current = e.clientX
-    resizeStartWidth.current = positionsColumnWidths[columnKey] || 150
+    // Get the actual computed width from the th element
+    const th = e.target.closest('th')
+    const currentWidth = positionsColumnWidths[columnKey]
+    resizeStartWidth.current = currentWidth ? parseInt(currentWidth) : th.offsetWidth
   }
 
   const handlePositionsResizeMove = (e) => {
@@ -1501,7 +1504,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     const newWidth = Math.max(80, resizeStartWidth.current + diff)
     setPositionsColumnWidths(prev => ({
       ...prev,
-      [resizingPositionsColumn]: newWidth
+      [resizingPositionsColumn]: `${newWidth}px`
     }))
   }
 
@@ -1512,18 +1515,24 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column resize handlers for deals
   const handleDealsResizeStart = (e, columnKey) => {
     e.preventDefault()
+    console.log('Deals resize start:', columnKey)
     setResizingDealsColumn(columnKey)
     resizeStartX.current = e.clientX
-    resizeStartWidth.current = dealsColumnWidths[columnKey] || 150
+    // Get the actual computed width from the th element
+    const th = e.target.closest('th')
+    const currentWidth = dealsColumnWidths[columnKey]
+    resizeStartWidth.current = currentWidth ? parseInt(currentWidth) : th.offsetWidth
+    console.log('Deals start width:', resizeStartWidth.current)
   }
 
   const handleDealsResizeMove = (e) => {
     if (!resizingDealsColumn) return
     const diff = e.clientX - resizeStartX.current
     const newWidth = Math.max(80, resizeStartWidth.current + diff)
+    console.log('Deals resizing:', resizingDealsColumn, 'to width:', newWidth)
     setDealsColumnWidths(prev => ({
       ...prev,
-      [resizingDealsColumn]: newWidth
+      [resizingDealsColumn]: `${newWidth}px`
     }))
   }
 
