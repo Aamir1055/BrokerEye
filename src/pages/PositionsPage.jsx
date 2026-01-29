@@ -1736,7 +1736,7 @@ const PositionsPage = () => {
                   if (!filterDropdownRefs.current) filterDropdownRefs.current = {}
                   filterDropdownRefs.current[columnKey] = el
                 }}
-                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999]" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -1744,83 +1744,30 @@ const PositionsPage = () => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // w-64 in pixels
+                    const dropdownWidth = 280 // unified with Client2 module
                     const offset = 30 // Offset to the right to keep filter icon visible
                     const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
                       : `${rect.left + offset}px`
-                  })()
+                  })(),
+                  width: '280px',
+                  overflow: 'visible'
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-700">Text Filters</span>
+                    <span className="text-xs font-bold text-gray-700">Text Filters</span>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowFilterDropdown(null)
-                      }}
-                      className="text-gray-400 hover:text-gray-600"
+                      onClick={() => clearColumnFilter(columnKey)}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      Clear
                     </button>
                   </div>
-                </div>
-
-                {/* Sort Options */}
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSort(columnKey, 'asc')
-                      setShowFilterDropdown(null)
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
-                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                    </svg>
-                    Sort A to Z
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSort(columnKey, 'desc')
-                      setShowFilterDropdown(null)
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
-                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-                    </svg>
-                    Sort Z to A
-                  </button>
-                </div>
-
-                {/* Clear Filter Button */}
-                <div className="px-3 py-2 border-b border-gray-200">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      clearColumnFilter(columnKey)
-                    }}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Clear Filter
-                  </button>
                 </div>
                 <div className="border-b border-slate-200 py-1">
                   <button
@@ -1829,7 +1776,7 @@ const PositionsPage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -1842,7 +1789,7 @@ const PositionsPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
@@ -1873,7 +1820,7 @@ const PositionsPage = () => {
                           setCustomFilterValue2('')
                         }
                       }}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
                       <svg 
@@ -1886,7 +1833,7 @@ const PositionsPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -1901,12 +1848,12 @@ const PositionsPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
-                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'calc(100% + 8px)'
-                            const dropdownWidth = 256 // 16rem in pixels
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -1914,12 +1861,13 @@ const PositionsPage = () => {
                           right: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'auto'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                           })(),
-                          zIndex: 10000001
+                          zIndex: 10000001,
+                          width: '280px'
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -2089,7 +2037,7 @@ const PositionsPage = () => {
                             setCustomFilterValue2('')
                           }
                         }}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
                         <svg 
@@ -2102,7 +2050,7 @@ const PositionsPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -2117,12 +2065,12 @@ const PositionsPage = () => {
                       {showNumberFilterDropdown === columnKey && (
                         <div
                           data-number-filter
-                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 256 // 16rem in pixels
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -2130,12 +2078,13 @@ const PositionsPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                             })(),
-                            zIndex: 10000001
+                            zIndex: 10000001,
+                            width: '280px'
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -2214,7 +2163,7 @@ const PositionsPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -2223,7 +2172,7 @@ const PositionsPage = () => {
                 </div>
 
                 {/* Select All / Deselect All */}
-                <div className="px-3 py-1.5 border-b border-slate-200 bg-slate-50">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                   <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
@@ -2237,15 +2186,15 @@ const PositionsPage = () => {
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className="text-[11px] font-medium text-slate-700">Select All</span>
+                    <span className="text-xs font-bold text-gray-700">Select visible ({getUniqueColumnValues(columnKey).length})</span>
                   </label>
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-40 overflow-y-auto">
-                  <div className="p-2 space-y-1">
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="px-3 py-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-3 py-2 text-center text-[11px] text-slate-500">
                         No items found
@@ -2333,10 +2282,9 @@ const PositionsPage = () => {
       {/* YouTube-style Loading Bar - Outside main to span full width */}
       {progressActive && (
         <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
             width: '40%',
-            animation: 'loading 1.5s ease-in-out infinite',
-            transformOrigin: 'left center'
+            animation: 'loading 1.5s ease-in-out infinite'
           }}></div>
         </div>
       )}

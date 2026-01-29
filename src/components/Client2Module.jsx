@@ -138,6 +138,7 @@ export default function Client2Module() {
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [isLoading, setIsLoading] = useState(true)
+  const [progressActive, setProgressActive] = useState(false)
   // Visible columns state (restored)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -214,7 +215,7 @@ export default function Client2Module() {
   })
 
   // Fetch clients data via API
-  const fetchClients = useCallback(async (overridePercent = null, isInitialLoad = false) => {
+  const fetchClients = useCallback(async (overridePercent = null, showProgress = false) => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
@@ -227,8 +228,9 @@ export default function Client2Module() {
         return
       }
       isFetchingRef.current = true
+      if (showProgress) setProgressActive(true)
       // Only show loading on initial load, not on periodic refreshes
-      if (isInitialLoad) {
+      if (showProgress) {
         setIsLoading(true)
       }
       const usePercent = overridePercent !== null ? overridePercent : showPercent
@@ -386,6 +388,8 @@ export default function Client2Module() {
       setIsLoading(false)
     } finally {
       isFetchingRef.current = false
+      // Let the bar show briefly even for fast requests
+      setTimeout(() => setProgressActive(false), 200)
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
@@ -412,7 +416,7 @@ export default function Client2Module() {
 
   // Initial fetch and periodic refresh (reduced frequency on mobile). Pause auto-refresh while searching.
   useEffect(() => {
-    fetchClients(null, true) // Initial load with loading state
+    fetchClients(null, true) // Initial load with progress bar
     fetchRebateTotals() // Fetch rebate totals on mount
 
     // Only run periodic refresh when no active search query
@@ -420,6 +424,7 @@ export default function Client2Module() {
     const interval = hasSearch ? null : setInterval(() => {
       // Skip if a fetch is already in progress
       if (!isFetchingRef.current) {
+        // Background refresh without showing the top loader
         fetchClients(null, false)
       }
     }, 3000) // Refresh every 3s on mobile to reduce overlapping requests
@@ -1173,6 +1178,14 @@ export default function Client2Module() {
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] flex flex-col lg:hidden">
+      {(isLoading || progressActive) && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg"
+            style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }}
+          />
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-30">
         <div className="px-4 py-4 flex items-center justify-between">
@@ -1310,7 +1323,7 @@ export default function Client2Module() {
                   const next = !showPercent
                   setShowPercent(next)
                   // Immediately refetch with the next percentage state
-                  fetchClients(next)
+                  fetchClients(next, true)
                 }}
                 className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'

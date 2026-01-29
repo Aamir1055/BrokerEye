@@ -10,7 +10,7 @@ const LoadingSpinner = () => {
         }
       `}</style>
       <div className="fixed top-0 left-0 w-full h-0.5 bg-transparent overflow-hidden">
-        <div style={{ position: 'relative', height: '100%', backgroundColor: '#FF0000', animation: 'yt-bar 1.2s ease-in-out infinite' }} />
+        <div style={{ position: 'relative', height: '100%', backgroundColor: '#2563EB', animation: 'yt-bar 1.2s ease-in-out infinite' }} />
       </div>
 
       <div className="text-center">
