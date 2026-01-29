@@ -2160,15 +2160,10 @@ const Client2Page = () => {
       }
     }
 
-    if (!isDateColumn && columnKey === 'phone') {
-      value1 = value1 != null ? String(value1).replace(/[+\s]/g, '') : value1
-      value2 = value2 != null ? String(value2).replace(/[+\s]/g, '') : value2
-    }
-
     const filterConfig = {
       operator: temp.operator,
-      value1: isDateColumn ? value1 : parseFloat(value1),
-      value2: value2 ? (isDateColumn ? value2 : parseFloat(value2)) : null
+      value1: isDateColumn ? value1 : (columnKey === 'phone' ? String(value1) : parseFloat(value1)),
+      value2: value2 ? (isDateColumn ? value2 : (columnKey === 'phone' ? String(value2) : parseFloat(value2))) : null
     }
 
     console.log('[Client2] applyNumberFilter called for', columnKey, 'with config:', filterConfig)
@@ -2343,22 +2338,27 @@ const Client2Page = () => {
           const field = columnKeyToAPIField(uiKey)
           const op = cfg.operator
           const v1 = cfg.value1
-          const v2 = cfg.value2
-          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
-          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
-          if (op === 'between') {
-            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
-            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
-          } else if (op && num1 != null && Number.isFinite(num1)) {
-            combinedFilters.push({ field, operator: op, value: String(num1) })
+          let v1 = cfg.value1
+          let v2 = cfg.value2
+          if (uiKey === 'phone') {
+            const raw1 = v1 !== '' && v1 != null ? String(v1) : null
+            const raw2 = v2 !== '' && v2 != null ? String(v2) : null
+            if (op === 'between') {
+              if (raw1 != null) combinedFilters.push({ field, operator: 'greater_than_equal', value: raw1 })
+              if (raw2 != null) combinedFilters.push({ field, operator: 'less_than_equal', value: raw2 })
+            } else if (op && raw1 != null) {
+              combinedFilters.push({ field, operator: op, value: raw1 })
+            }
+          } else {
+            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+            if (op === 'between') {
+              if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+              if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+            } else if (op && num1 != null && Number.isFinite(num1)) {
+              combinedFilters.push({ field, operator: op, value: String(num1) })
+            }
           }
-          numberFilteredFields.add(uiKey)
-          return
-        }
-      })
-      Object.entries(columnFilters).forEach(([key, cfg]) => {
-        if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
-          const uiKey = key.replace('_checkbox', '')
           if (uiKey === columnKey) return
           const field = columnKeyToAPIField(uiKey)
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
