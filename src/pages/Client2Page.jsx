@@ -1060,8 +1060,14 @@ const Client2Page = () => {
           const field = columnKeyToAPIField(uiKey)
           numberFilteredFields.add(field) // Track that this field has a number filter
           const op = cfg.operator
-          const v1 = cfg.value1
-          const v2 = cfg.value2
+          let v1 = cfg.value1
+          let v2 = cfg.value2
+          if (uiKey === 'phone' && typeof v1 !== 'number') {
+            v1 = v1 != null ? String(v1).replace(/[+\s]/g, '') : v1
+          }
+          if (uiKey === 'phone' && typeof v2 !== 'number') {
+            v2 = v2 != null ? String(v2).replace(/[+\s]/g, '') : v2
+          }
           const num1 = v1 !== '' && v1 != null ? Number(v1) : null
           const num2 = v2 !== '' && v2 != null ? Number(v2) : null
           if (op === 'between') {
@@ -2152,6 +2158,11 @@ const Client2Page = () => {
         date2.setHours(23, 59, 59, 999)
         value2 = date2.getTime()
       }
+    }
+
+    if (!isDateColumn && columnKey === 'phone') {
+      value1 = value1 != null ? String(value1).replace(/[+\s]/g, '') : value1
+      value2 = value2 != null ? String(value2).replace(/[+\s]/g, '') : value2
     }
 
     const filterConfig = {
@@ -5141,7 +5152,9 @@ const Client2Page = () => {
                                                         <div>
                                                           <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                           <input
-                                                            type={columnType === 'date' ? 'date' : 'number'}
+                                                            type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                            inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                            pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                             step={columnType === 'date' ? undefined : 'any'}
                                                             placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                             value={tempFilter.value1}
@@ -5151,7 +5164,6 @@ const Client2Page = () => {
                                                             onKeyDown={(e) => {
                                                               if (e.key === 'Enter') {
                                                                 e.preventDefault()
-                                                                // Do not apply on Enter; wait for OK
                                                               }
                                                             }}
                                                             className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5163,7 +5175,9 @@ const Client2Page = () => {
                                                           <div>
                                                             <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                             <input
-                                                              type={columnType === 'date' ? 'date' : 'number'}
+                                                              type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                              inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                              pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                               step={columnType === 'date' ? undefined : 'any'}
                                                               placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                               value={tempFilter.value2}
@@ -5171,7 +5185,6 @@ const Client2Page = () => {
                                                               onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
                                                                   e.preventDefault()
-                                                                  // Do not apply on Enter; wait for OK
                                                                 }
                                                               }}
                                                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5235,7 +5248,9 @@ const Client2Page = () => {
                                                     <div>
                                                       <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                       <input
-                                                        type={columnType === 'date' ? 'date' : 'number'}
+                                                        type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                        inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                        pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                         step={columnType === 'date' ? undefined : 'any'}
                                                         placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                         value={tempFilter.value1}
@@ -5243,7 +5258,6 @@ const Client2Page = () => {
                                                         onKeyDown={(e) => {
                                                           if (e.key === 'Enter') {
                                                             e.preventDefault()
-                                                            // Do not apply on Enter; wait for OK
                                                           }
                                                         }}
                                                         className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5255,7 +5269,9 @@ const Client2Page = () => {
                                                       <div>
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                         <input
-                                                          type={columnType === 'date' ? 'date' : 'number'}
+                                                          type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                          inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                          pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                           step={columnType === 'date' ? undefined : 'any'}
                                                           placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                           value={tempFilter.value2}
@@ -5263,7 +5279,6 @@ const Client2Page = () => {
                                                           onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                               e.preventDefault()
-                                                              // Do not apply on Enter; wait for OK
                                                             }
                                                           }}
                                                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
