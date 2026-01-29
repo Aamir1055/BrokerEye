@@ -2668,7 +2668,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 )}
               {/* Floating Navigation Buttons - Smart visibility based on scroll position */}
               {!loading && groupedDisplayData?.regularPositions?.length > 0 && groupedDisplayData?.pendingOrders?.length > 0 && (
-                <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1.5 z-50">
+                <div className="absolute top-1/2 -translate-y-1/2 right-4 md:right-6 flex flex-col gap-3 z-50">
                   {/* Show Pending Orders button only if positions visible and orders NOT visible (or both not visible) */}
                   {positionsVisible && !ordersVisible && (
                     <button
@@ -2693,13 +2693,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           }, 200)
                         }
                       }}
-                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                      className="group relative bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 hover:from-orange-600 hover:via-red-600 hover:to-pink-700 text-white pl-3 pr-4 py-2.5 md:py-3 rounded-full shadow-[0_8px_30px_rgb(239,68,68,0.4)] hover:shadow-[0_12px_40px_rgb(239,68,68,0.6)] transition-all duration-300 flex items-center gap-2 hover:scale-110 hover:-translate-x-1 active:scale-100 backdrop-blur-sm border border-white/20"
                       title="Jump to Pending Orders Section"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="whitespace-nowrap">Pending Orders</span>
+                      <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative flex items-center gap-2">
+                        <div className="bg-white/20 p-1.5 rounded-full">
+                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs md:text-sm font-bold tracking-wide whitespace-nowrap drop-shadow-sm">Pending Orders</span>
+                        <svg className="w-3 h-3 md:w-4 md:h-4 opacity-70 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
                     </button>
                   )}
                   
@@ -2722,13 +2730,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                           }
                         }, 100)
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                      className="group relative bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 hover:from-blue-600 hover:via-indigo-700 hover:to-purple-700 text-white pl-3 pr-4 py-2.5 md:py-3 rounded-full shadow-[0_8px_30px_rgb(59,130,246,0.4)] hover:shadow-[0_12px_40px_rgb(59,130,246,0.6)] transition-all duration-300 flex items-center gap-2 hover:scale-110 hover:-translate-x-1 active:scale-100 backdrop-blur-sm border border-white/20"
                       title="Jump to Positions Section"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="whitespace-nowrap">Positions</span>
+                      <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative flex items-center gap-2">
+                        <div className="bg-white/20 p-1.5 rounded-full">
+                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                        </div>
+                        <span className="text-xs md:text-sm font-bold tracking-wide whitespace-nowrap drop-shadow-sm">Positions</span>
+                        <svg className="w-3 h-3 md:w-4 md:h-4 opacity-70 group-hover:opacity-100 group-hover:-translate-y-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </div>
                     </button>
                   )}
                   {/* If both visible, show nothing as per requirement */}
