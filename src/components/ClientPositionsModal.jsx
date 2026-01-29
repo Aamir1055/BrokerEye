@@ -86,6 +86,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   const positionsColumnSelectorRef = useRef(null)
   const positionsTableRef = useRef(null)
   const ordersTableRef = useRef(null)
+  const [positionsVisible, setPositionsVisible] = useState(false)
+  const [ordersVisible, setOrdersVisible] = useState(false)
   const [positionsVisibleColumns, setPositionsVisibleColumns] = useState({
     position: true,
     time: true,
@@ -1643,6 +1645,45 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [])
 
+  // Track visibility of positions and orders sections using IntersectionObserver
+  useEffect(() => {
+    if (activeTab !== 'positions') {
+      setPositionsVisible(false)
+      setOrdersVisible(false)
+      return
+    }
+
+    const observerOptions = {
+      root: null,
+      threshold: 0.1, // Consider visible if 10% is in viewport
+      rootMargin: '0px'
+    }
+
+    const positionsObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        setPositionsVisible(entry.isIntersecting)
+      })
+    }, observerOptions)
+
+    const ordersObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        setOrdersVisible(entry.isIntersecting)
+      })
+    }, observerOptions)
+
+    if (positionsTableRef.current) {
+      positionsObserver.observe(positionsTableRef.current)
+    }
+    if (ordersTableRef.current) {
+      ordersObserver.observe(ordersTableRef.current)
+    }
+
+    return () => {
+      positionsObserver.disconnect()
+      ordersObserver.disconnect()
+    }
+  }, [activeTab, positions, orders])
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start md:items-center justify-center p-0 md:p-4">
       <div className="bg-white rounded-none md:rounded-2xl shadow-2xl max-w-7xl w-full h-screen md:h-auto md:max-h-[95vh] flex flex-col overflow-y-auto border-0 md:border md:border-slate-200">
@@ -2625,64 +2666,72 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   )}
                 </>
 )}
-              {/* Floating Navigation Buttons - Inside Positions tab with absolute positioning */}
+              {/* Floating Navigation Buttons - Smart visibility based on scroll position */}
               {!loading && groupedDisplayData?.regularPositions?.length > 0 && groupedDisplayData?.pendingOrders?.length > 0 && (
                 <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1.5 z-50">
-                  <button
-                    onClick={() => {
-                      setPositionsCurrentPage(1)
-                      setTimeout(() => {
-                        if (positionsTableRef.current) {
-                          const container = positionsTableRef.current.closest('.overflow-y-auto')
-                          const thead = positionsTableRef.current.closest('table')?.querySelector('thead')
-                          if (container && thead) {
-                            const theadHeight = thead.offsetHeight
-                            const containerRect = container.getBoundingClientRect()
-                            const elementRect = positionsTableRef.current.getBoundingClientRect()
-                            const scrollOffset = elementRect.top - containerRect.top + container.scrollTop - theadHeight
-                            container.scrollTo({ top: scrollOffset, behavior: 'smooth' })
-                          }
+                  {/* Show Pending Orders button only if positions visible and orders NOT visible (or both not visible) */}
+                  {positionsVisible && !ordersVisible && (
+                    <button
+                      onClick={() => {
+                        const allItems = [...groupedDisplayData.regularPositions, ...groupedDisplayData.pendingOrders]
+                        const firstPendingOrderIndex = allItems.findIndex(item => item.order)
+                        if (firstPendingOrderIndex >= 0) {
+                          const targetPage = Math.floor(firstPendingOrderIndex / positionsItemsPerPage) + 1
+                          setPositionsCurrentPage(targetPage)
+                          setTimeout(() => {
+                            if (ordersTableRef.current) {
+                              const container = ordersTableRef.current.closest('.overflow-y-auto')
+                              const thead = ordersTableRef.current.closest('table')?.querySelector('thead')
+                              if (container && thead) {
+                                const theadHeight = thead.offsetHeight
+                                const containerRect = container.getBoundingClientRect()
+                                const elementRect = ordersTableRef.current.getBoundingClientRect()
+                                const scrollOffset = elementRect.top - containerRect.top + container.scrollTop - theadHeight
+                                container.scrollTo({ top: scrollOffset, behavior: 'smooth' })
+                              }
+                            }
+                          }, 200)
                         }
-                      }, 100)
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
-                    title="Jump to Positions Section"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                    <span className="whitespace-nowrap">Positions</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const allItems = [...groupedDisplayData.regularPositions, ...groupedDisplayData.pendingOrders]
-                      const firstPendingOrderIndex = allItems.findIndex(item => item.order)
-                      if (firstPendingOrderIndex >= 0) {
-                        const targetPage = Math.floor(firstPendingOrderIndex / positionsItemsPerPage) + 1
-                        setPositionsCurrentPage(targetPage)
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                      title="Jump to Pending Orders Section"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="whitespace-nowrap">Pending Orders</span>
+                    </button>
+                  )}
+                  
+                  {/* Show Positions button only if orders visible and positions NOT visible (or both not visible) */}
+                  {ordersVisible && !positionsVisible && (
+                    <button
+                      onClick={() => {
+                        setPositionsCurrentPage(1)
                         setTimeout(() => {
-                          if (ordersTableRef.current) {
-                            const container = ordersTableRef.current.closest('.overflow-y-auto')
-                            const thead = ordersTableRef.current.closest('table')?.querySelector('thead')
+                          if (positionsTableRef.current) {
+                            const container = positionsTableRef.current.closest('.overflow-y-auto')
+                            const thead = positionsTableRef.current.closest('table')?.querySelector('thead')
                             if (container && thead) {
                               const theadHeight = thead.offsetHeight
                               const containerRect = container.getBoundingClientRect()
-                              const elementRect = ordersTableRef.current.getBoundingClientRect()
+                              const elementRect = positionsTableRef.current.getBoundingClientRect()
                               const scrollOffset = elementRect.top - containerRect.top + container.scrollTop - theadHeight
                               container.scrollTo({ top: scrollOffset, behavior: 'smooth' })
                             }
                           }
-                        }, 200)
-                      }
-                    }}
-                    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
-                    title="Jump to Pending Orders Section"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="whitespace-nowrap">Pending Orders</span>
-                  </button>
+                        }, 100)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
+                      title="Jump to Positions Section"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      <span className="whitespace-nowrap">Positions</span>
+                    </button>
+                  )}
+                  {/* If both visible, show nothing as per requirement */}
                 </div>
               )}
             </div>
