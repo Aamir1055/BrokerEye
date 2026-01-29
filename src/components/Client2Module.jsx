@@ -71,12 +71,6 @@ export default function Client2Module() {
   const [touchHoverLabel, setTouchHoverLabel] = useState(null)
   const scrollContainerRef = useRef(null)
   const [columnSearchQuery, setColumnSearchQuery] = useState('')
-  // Column-level filters (ClickUp-style)
-  const [columnFilters, setColumnFilters] = useState({})
-  const [isColumnFilterOpen, setIsColumnFilterOpen] = useState(false)
-  const [activeFilterColumn, setActiveFilterColumn] = useState(null)
-  const [columnFilterDraft, setColumnFilterDraft] = useState(null)
-  const [columnFilterOptions, setColumnFilterOptions] = useState([])
 
   // Function to swap card order
   const swapOrder = (fromLabel, toLabel) => {
@@ -259,18 +253,6 @@ export default function Client2Module() {
       if (filters.noDeposit) {
         apiFilters.push({ field: 'lifetimeDeposit', operator: 'equal', value: '0' })
       }
-      // Column-level filters -> append to payload
-      try {
-        Object.entries(columnFilters || {}).forEach(([key, cfg]) => {
-          if (!cfg || cfg.value === '' || cfg.value === undefined || cfg.value === null) return
-          const field = apiFieldMap[key] || key
-          const filterEntry = { field, operator: cfg.operator || 'equals', value: cfg.value }
-          if (cfg.operator === 'between' && cfg.value2 != null) filterEntry.value2 = cfg.value2
-          apiFilters.push(filterEntry)
-        })
-      } catch (e) {
-        console.warn('[Client2] Column filters parse failed:', e?.message)
-      }
       if (apiFilters.length > 0) {
         payload.filters = apiFilters
       }
@@ -409,7 +391,7 @@ export default function Client2Module() {
       // Let the bar show briefly even for fast requests
       setTimeout(() => setProgressActive(false), 200)
     }
-  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput, columnFilters])
+  }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
   // Fetch rebate totals from API
   const fetchRebateTotals = useCallback(async () => {
@@ -430,7 +412,7 @@ export default function Client2Module() {
   // Reset to page 1 when filters, search, or IB changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2'), columnFilters])
+  }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2')])
 
   // Initial fetch and periodic refresh (reduced frequency on mobile). Pause auto-refresh while searching.
   useEffect(() => {
@@ -743,57 +725,6 @@ export default function Client2Module() {
     'lifetimeSwap': 'lifetimeSwap_percentage',
     'thisMonthSwap': 'thisMonthSwap_percentage',
     'thisWeekSwap': 'thisWeekSwap_percentage'
-  }
-
-  // Map UI column keys to API field names (snake_case where needed)
-  const apiFieldMap = {
-    lastName: 'last_name',
-    middleName: 'middle_name',
-    zipCode: 'zip_code',
-    clientID: 'client_id',
-    accountLastUpdate: 'account_last_update',
-    userLastUpdate: 'user_last_update',
-    thisWeekPnL: 'this_week_pnl',
-    thisMonthPnL: 'this_month_pnl',
-    thisWeekCommission: 'this_week_commission',
-    thisMonthCommission: 'this_month_commission',
-    lifetimeCommission: 'lifetime_commission',
-    thisWeekCorrection: 'this_week_correction',
-    thisMonthCorrection: 'this_month_correction',
-    lifetimeCorrection: 'lifetime_correction',
-    thisWeekSwap: 'this_week_swap',
-    thisMonthSwap: 'this_month_swap',
-    lifetimeSwap: 'lifetime_swap',
-  }
-
-  // Columns treated as numeric for filtering ops
-  const numericKeys = new Set([
-    'balance','credit','equity','profit','marginFree','margin','assets','storage','pnl',
-    'dailyDeposit','dailyWithdrawal','lifetimePnL','thisMonthPnL','thisWeekPnL',
-    'lifetimeCommission','thisMonthCommission','thisWeekCommission',
-    'lifetimeCorrection','thisMonthCorrection','thisWeekCorrection',
-    'lifetimeSwap','thisMonthSwap','thisWeekSwap',
-    'blockedCommission','blockedProfit','liabilities','marginLevel','marginInitial','marginMaintenance','marginLeverage','leverage'
-  ])
-
-  // Open column filter sheet for a header
-  const openColumnFilter = async (col) => {
-    setActiveFilterColumn(col)
-    const existing = columnFilters[col.key] || null
-    setColumnFilterDraft(existing ? { ...existing } : { operator: numericKeys.has(col.key) ? 'greater_than' : 'contains', value: '' })
-    setIsColumnFilterOpen(true)
-    setColumnFilterOptions([])
-    if (!numericKeys.has(col.key)) {
-      try {
-        const params = { field: apiFieldMap[col.key] || col.key, q: '', limit: 25 }
-        const resp = await brokerAPI.getClientFields(params)
-        const data = resp?.data?.data || resp?.data || []
-        const values = Array.isArray(data?.values) ? data.values : (Array.isArray(data) ? data : [])
-        setColumnFilterOptions(values.filter(v => v != null && v !== ''))
-      } catch (e) {
-        console.warn('[Client2] Column filter options fetch failed for', col.key, e?.message)
-      }
-    }
   }
 
   // Helper function to get the value from client object based on percentage mode
@@ -1353,144 +1284,6 @@ export default function Client2Module() {
         </div>
       )}
 
-      {/* Column Filter Sheet (per-column) */}
-      {isColumnFilterOpen && activeFilterColumn && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end" onClick={() => setIsColumnFilterOpen(false)}>
-          <div className="bg-white w-full rounded-t-[24px] max-h-[80vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
-              <h3 className="text-base font-semibold text-[#000000]">Filter: {activeFilterColumn.label}</h3>
-              <button onClick={() => setIsColumnFilterOpen(false)}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
-                </svg>
-              </button>
-            </div>
-            <div className="px-5 py-4 flex flex-col gap-3">
-              {/* Operator selector */}
-              <div className="flex items-center gap-2">
-                <label className="text-[12px] text-[#4B4B4B] w-20">Operator</label>
-                <select
-                  value={columnFilterDraft?.operator || (numericKeys.has(activeFilterColumn.key) ? 'greater_than' : 'contains')}
-                  onChange={(e) => setColumnFilterDraft(prev => ({ ...(prev||{}), operator: e.target.value }))}
-                  className="flex-1 h-9 bg-gray-100 border-0 rounded-lg text-[12px] text-black px-3"
-                >
-                  {numericKeys.has(activeFilterColumn.key) ? (
-                    <>
-                      <option value="equals">Equals</option>
-                      <option value="greater_than">Greater Than</option>
-                      <option value="less_than">Less Than</option>
-                      <option value="between">Between</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="contains">Contains</option>
-                      <option value="equals">Equals</option>
-                      <option value="not_equal">Not Equals</option>
-                    </>
-                  )}
-                </select>
-              </div>
-              {/* Value input */}
-              {numericKeys.has(activeFilterColumn.key) ? (
-                <div className="flex items-center gap-2">
-                  <label className="text-[12px] text-[#4B4B4B] w-20">Value</label>
-                  <input
-                    type="number"
-                    value={columnFilterDraft?.value ?? ''}
-                    onChange={(e) => setColumnFilterDraft(prev => ({ ...(prev||{}), value: e.target.value }))}
-                    className="flex-1 h-9 bg-gray-100 border-0 rounded-lg text-[12px] text-black px-3"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <label className="text-[12px] text-[#4B4B4B] w-20">Search</label>
-                    <input
-                      type="text"
-                      value={columnFilterDraft?.value ?? ''}
-                      onChange={async (e) => {
-                        const v = e.target.value
-                        setColumnFilterDraft(prev => ({ ...(prev||{}), value: v }))
-                        try {
-                          const params = { field: apiFieldMap[activeFilterColumn.key] || activeFilterColumn.key, q: v, limit: 25 }
-                          const resp = await brokerAPI.getClientFields(params)
-                          const data = resp?.data?.data || resp?.data || []
-                          const values = Array.isArray(data?.values) ? data.values : (Array.isArray(data) ? data : [])
-                          setColumnFilterOptions(values.filter(val => val != null && val !== ''))
-                        } catch {}
-                      }}
-                      placeholder={`Type to search ${activeFilterColumn.label}`}
-                      className="flex-1 h-9 bg-gray-100 border-0 rounded-lg text-[12px] text-black px-3"
-                    />
-                  </div>
-                  {columnFilterOptions.length > 0 && (
-                    <div className="max-h-40 overflow-auto border border-[#E5E7EB] rounded-lg">
-                      {columnFilterOptions.map((opt, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setColumnFilterDraft(prev => ({ ...(prev||{}), value: opt }))}
-                          className={`w-full text-left px-3 py-2 text-[12px] ${columnFilterDraft?.value===opt ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}
-                        >
-                          {String(opt)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Between second value */}
-              {numericKeys.has(activeFilterColumn.key) && columnFilterDraft?.operator === 'between' && (
-                <div className="flex items-center gap-2">
-                  <label className="text-[12px] text-[#4B4B4B] w-20">And</label>
-                  <input
-                    type="number"
-                    value={columnFilterDraft?.value2 ?? ''}
-                    onChange={(e) => setColumnFilterDraft(prev => ({ ...(prev||{}), value2: e.target.value }))}
-                    className="flex-1 h-9 bg-gray-100 border-0 rounded-lg text-[12px] text-black px-3"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="px-5 py-4 border-t border-[#E5E7EB] flex items-center justify-between">
-              <button
-                onClick={() => {
-                  if (activeFilterColumn) {
-                    setColumnFilters(prev => {
-                      const next = { ...prev }
-                      delete next[activeFilterColumn.key]
-                      return next
-                    })
-                  }
-                  setIsColumnFilterOpen(false)
-                }}
-                className="h-9 px-4 rounded-lg border border-[#E5E7EB] text-[12px]"
-              >
-                Clear
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsColumnFilterOpen(false)}
-                  className="h-9 px-4 rounded-lg border border-[#E5E7EB] text-[12px]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (activeFilterColumn && columnFilterDraft) {
-                      setColumnFilters(prev => ({ ...prev, [activeFilterColumn.key]: { ...columnFilterDraft } }))
-                      fetchClients(null, true)
-                    }
-                    setIsColumnFilterOpen(false)
-                  }}
-                  className="h-9 px-4 rounded-lg bg-blue-600 text-white text-[12px]"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Main Content: prevent page-level scroll; table will scroll */}
       <div className="flex-1 overflow-x-hidden overflow-y-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
@@ -1795,18 +1588,7 @@ export default function Client2Module() {
                       touchAction: 'manipulation'
                     }}
                   >
-                    <span className="flex items-center gap-1">
-                      {col.label}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openColumnFilter(col) }}
-                        title="Filter"
-                        className={`ml-1 w-4 h-4 rounded-sm flex items-center justify-center ${columnFilters[col.key] ? 'bg-white/20' : 'bg-transparent'} hover:bg-white/20`}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 20 20" fill="none" className="text-white/90">
-                          <path d="M3 5h14l-5.5 6v4l-3-2v-2L3 5z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                        </svg>
-                      </button>
-                    </span>
+                    <span>{col.label}</span>
                     {sortColumn === col.key && (
                       <svg className={`w-3 h-3 transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
