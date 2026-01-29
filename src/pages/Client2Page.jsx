@@ -4538,22 +4538,18 @@ const Client2Page = () => {
                   {/* Left: Search and Columns */}
                 <div className="flex items-center gap-2 flex-1">
                   <div className="relative flex-1 max-w-md">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4B5563]" fill="none" viewBox="0 0 18 18">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
                     <input
                       type="text"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search"
-                      className="w-full h-10 pl-10 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full h-10 pl-3 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
-                    {/* Search Icon (inside input) */}
+                    {/* Search action button (right) */}
                     <button
                       onClick={handleSearch}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 text-[#374151] bg-transparent border border-[#E5E7EB] hover:bg-gray-50 transition-colors z-0 rounded-md p-1.5"
                       title="Search"
                     >
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
