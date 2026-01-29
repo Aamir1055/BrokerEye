@@ -59,7 +59,7 @@ let requestQueue = [] // queued resolvers waiting for new token
 const broadcastTokenRefreshed = (accessToken) => {
   try {
     window.dispatchEvent(new CustomEvent('auth:token_refreshed', { detail: { accessToken } }))
-  } catch {}
+  } catch { /* no-op */ }
 }
 
 // Add request interceptor to include auth token
@@ -158,7 +158,7 @@ api.interceptors.response.use(
                 localStorage.removeItem('refresh_token')
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
-                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch { /* no-op */ }
                   const base = getBasePath()
                   window.location.href = `${base}/login`
                 }
@@ -188,7 +188,7 @@ api.interceptors.response.use(
                   localStorage.removeItem('refresh_token')
                   localStorage.removeItem('user_data')
                   if (typeof window !== 'undefined') {
-                    try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                    try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch { /* no-op */ }
                     const base = getBasePath()
                     window.location.href = `${base}/login`
                   }
@@ -217,9 +217,9 @@ api.interceptors.response.use(
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('user_data')
-        } catch {}
+        } catch { /* no-op */ }
         if (typeof window !== 'undefined') {
-          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch { /* no-op */ }
           const base = getBasePath()
           window.location.href = `${base}/login`
         }
@@ -285,7 +285,7 @@ ibApi.interceptors.response.use(
                 localStorage.removeItem('refresh_token')
                 localStorage.removeItem('user_data')
                 if (typeof window !== 'undefined') {
-                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+                  try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch { /* no-op */ }
                   const base = getBasePath()
                   window.location.href = `${base}/login`
                 }
@@ -312,9 +312,9 @@ ibApi.interceptors.response.use(
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('user_data')
-        } catch {}
+        } catch { /* no-op */ }
         if (typeof window !== 'undefined') {
-          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
+          try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch { /* no-op */ }
           const base = getBasePath()
           window.location.href = `${base}/login`
         }
@@ -422,7 +422,7 @@ export const brokerAPI = {
         const q = qs.length ? `?${qs.join('&')}` : ''
         const response = await api.get(`/api/broker/clients/${login}/deals/stats${q}`)
         return response.data
-      } catch (e) {
+      } catch {
         throw err
       }
     }

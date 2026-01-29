@@ -28,7 +28,7 @@ export default function PositionModule() {
   const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
   const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activeCardIndex, setActiveCardIndex] = useState(0)
+  const [_activeCardIndex, setActiveCardIndex] = useState(0)
   const [searchInput, setSearchInput] = useState('')
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -42,7 +42,7 @@ export default function PositionModule() {
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
   const [pendingDateDraft, setPendingDateDraft] = useState(null)
-  const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+  
     // Pending apply tracking for Customize View
     const [hasPendingIBChanges, setHasPendingIBChanges] = useState(false)
     const [pendingIBDraft, setPendingIBDraft] = useState(null)
@@ -70,8 +70,7 @@ export default function PositionModule() {
   
   const [selectedClientDefaultTab, setSelectedClientDefaultTab] = useState('positions')
   const carouselRef = useRef(null)
-  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
-  const [columnSearch, setColumnSearch] = useState('')
+  
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 12
   const [sortColumn, setSortColumn] = useState(null)
@@ -84,13 +83,6 @@ export default function PositionModule() {
   const netItemsPerPage = 12
   const [netSortColumn, setNetSortColumn] = useState(null)
   const [netSortDirection, setNetSortDirection] = useState('asc')
-  const [netCardsVisible, setNetCardsVisible] = useState({
-    netSymbols: true,
-    totalNetVolume: true,
-    totalNetPL: true,
-    totalLogins: true
-  })
-  const [netCardFilterOpen, setNetCardFilterOpen] = useState(false)
   const netCardFilterRef = useRef(null)
   const [netVisibleColumns, setNetVisibleColumns] = useState({
     login: false,
@@ -109,19 +101,12 @@ export default function PositionModule() {
   const [groupByBaseSymbol, setGroupByBaseSymbol] = useState(false)
   const [expandedNetSymbols, setExpandedNetSymbols] = useState(new Set())
   const [netSearchInput, setNetSearchInput] = useState('')
-  
+
   // Client NET states
   const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
   const clientNetItemsPerPage = 12
   const [clientNetSortColumn, setClientNetSortColumn] = useState(null)
   const [clientNetSortDirection, setClientNetSortDirection] = useState('asc')
-  const [clientNetCardsVisible, setClientNetCardsVisible] = useState({
-    clientNetRows: true,
-    totalNetVolume: true,
-    totalNetPL: true,
-    totalLogins: true
-  })
-  const [clientNetCardFilterOpen, setClientNetCardFilterOpen] = useState(false)
   const clientNetCardFilterRef = useRef(null)
   const [clientNetVisibleColumns, setClientNetVisibleColumns] = useState({
     login: true,
@@ -136,7 +121,7 @@ export default function PositionModule() {
   })
   const [clientNetShowColumnSelector, setClientNetShowColumnSelector] = useState(false)
   const [clientNetSearchInput, setClientNetSearchInput] = useState('')
-  
+
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     firstName: false,
@@ -166,18 +151,13 @@ export default function PositionModule() {
     commission: false,
     updated: true
   })
+  const [baseShowColumnSelector, setBaseShowColumnSelector] = useState(false)
 
   // Column filter states
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const [columnFilters, setColumnFilters] = useState({})
-  const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [customFilters, setCustomFilters] = useState({})
-  const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
-  const [customFilterColumn, setCustomFilterColumn] = useState(null)
-  const [customFilterType, setCustomFilterType] = useState('equal')
-  const [customFilterValue1, setCustomFilterValue1] = useState('')
-  const [customFilterValue2, setCustomFilterValue2] = useState('')
-  const filterRefs = useRef({})
+  
 
   // Define string columns
   const stringColumns = ['login', 'firstName', 'middleName', 'lastName', 'email', 'phone', 'symbol', 'action', 'netType', 'reason', 'comment']
@@ -210,12 +190,7 @@ export default function PositionModule() {
     }
   }, [])
 
-  // Detect mobile view
-  useEffect(() => {
-    const handleResize = () => setIsMobileView(window.innerWidth <= 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  
 
   // Apply all filters in cumulative order: Customize View -> IB -> Group
   const ibFilteredPositions = useMemo(() => {
@@ -413,7 +388,7 @@ export default function PositionModule() {
     const symbolMap = new Map()
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -553,7 +528,7 @@ export default function PositionModule() {
 
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -749,17 +724,9 @@ export default function PositionModule() {
   // Click outside handlers
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (netCardFilterRef.current && !netCardFilterRef.current.contains(e.target)) {
-        setNetCardFilterOpen(false)
-      }
-      if (clientNetCardFilterRef.current && !clientNetCardFilterRef.current.contains(e.target)) {
-        setClientNetCardFilterOpen(false)
-      }
-      
       // Close filter dropdown if clicking outside
       if (showFilterDropdown !== null && !e.target.closest('[data-filter-dropdown]')) {
         setShowFilterDropdown(null)
-        setShowNumberFilterDropdown(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -831,15 +798,6 @@ export default function PositionModule() {
             </span>
           </div>
         )
-      case 'totalProfit':
-      case 'profit':
-        return (
-          <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${
-            (pos.profit_usd || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-          } ${stickyClass}`} style={stickyStyle}>
-            {formatNum(pos.profit_usd || 0)}
-          </div>
-        )
       case 'priceOpen':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
       case 'priceCurrent':
@@ -872,27 +830,44 @@ export default function PositionModule() {
           </div>
         )
       case 'login':
-        const handleLoginClick = () => {
-          const fullClient = clients.find(c => String(c.login) === String(pos.login))
-          setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
-        }
         return (
           <div 
             className={`h-[38px] flex items-center justify-start px-2 text-[#1A63BC] font-semibold ${stickyClass} cursor-pointer hover:underline`} 
             style={stickyStyle}
-            onClick={handleLoginClick}
+            onClick={() => {
+              const fullClient = clients.find(c => String(c.login) === String(pos.login))
+              setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
+            }}
             onTouchEnd={(e) => {
               e.preventDefault()
-              handleLoginClick()
+              const fullClient = clients.find(c => String(c.login) === String(pos.login))
+              setSelectedClient(fullClient || { login: pos.login, email: pos.email || '', name: '' })
             }}
           >
             {pos.login || '-'}
           </div>
         )
+      
       case 'updated':
-        const timeValue = pos.timeUpdate || pos.timeCreate
-        const formattedTime = timeValue ? new Date(timeValue * 1000).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '-'
-        return <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${stickyClass}`} style={stickyStyle}>{formattedTime}</div>
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 text-[10px] ${stickyClass}`} style={stickyStyle}>
+            {(() => {
+              const timeValue = pos.timeUpdate || pos.timeCreate
+              return timeValue
+                ? new Date(timeValue * 1000)
+                    .toLocaleString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })
+                    .replace(',', '')
+                : '-'
+            })()}
+          </div>
+        )
       case 'firstName':
       case 'middleName':
       case 'lastName':
@@ -1289,6 +1264,13 @@ export default function PositionModule() {
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
+            <button onClick={() => setBaseShowColumnSelector(true)} className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50" title="Show/Hide Columns">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+              </svg>
+            </button>
             <button 
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
@@ -1620,48 +1602,53 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-2">
+            <div className="pb-2 px-2">
+              <div className="flex items-center gap-1">
                 {/* Search Bar */}
-                <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
-                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+                    <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+                    <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                  <input
-                    type="text"
-                    placeholder="Search"
+                  <input 
+                    placeholder="Search" 
                     value={netSearchInput}
                     onChange={(e) => setNetSearchInput(e.target.value)}
-                    className="flex-1 text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent"
+                    className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
                   />
                 </div>
 
                 {/* Group Base Symbols */}
                 <button
                   onClick={() => setGroupByBaseSymbol(v => !v)}
-                  className={`h-[36px] px-3 rounded-lg border text-[10px] font-medium flex items-center gap-1 min-w-[60px] ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-indigo-200'}`}
+                  className={`h-[28px] px-2 rounded-[10px] border text-[10px] font-medium flex items-center gap-1 min-w-[52px] flex-shrink-0 ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-[#4B4B4B] border-[#ECECEC]'}`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                   Base
                 </button>
 
                 {/* Columns */}
                 <div>
-                  <button onClick={() => setNetShowColumnSelector(true)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                  <button onClick={() => setNetShowColumnSelector(true)} className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50" title="Show/Hide Columns">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                      <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                      <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                    </svg>
                   </button>
                 </div>
 
                 {/* Pagination */}
-                <button
+                <button 
                   onClick={() => setNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={netCurrentPage === 1}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${netCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700 flex items-center gap-1">
+                <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
                   <input
                     type="number"
                     min={1}
@@ -1673,25 +1660,26 @@ export default function PositionModule() {
                         setNetCurrentPage(n)
                       }
                     }}
-                    className="w-10 h-6 border border-gray-300 rounded-lg text-center text-[10px]"
+                    className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
                     aria-label="Current page"
                   />
-                  <span className="text-gray-400">/</span>
+                  <span className="text-[#9CA3AF]">/</span>
                   <span>{netTotalPages}</span>
                 </div>
-                <button
+                <button 
                   onClick={() => setNetCurrentPage(p => Math.min(netTotalPages, p + 1))}
                   disabled={netCurrentPage === netTotalPages}
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${netCurrentPage === netTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
+              </div>
             </div>
 
             {/* NET Positions Table */}
-            <div className="pt-3">
+            <div className="pt-0">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Body - Scrollable with sticky header */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
@@ -2092,48 +2080,53 @@ export default function PositionModule() {
             </div>
 
             {/* Controls with Search */}
-            <div className="flex items-center gap-2 pb-3 px-2">
+            <div className="pb-2 px-2">
+              <div className="flex items-center gap-1">
                 {/* Search Bar */}
-                <div className="h-[36px] w-[155px] bg-white border border-gray-300 rounded-lg px-2 flex items-center gap-1 flex-shrink-0">
-                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+                    <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+                    <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                  <input
-                    type="text"
-                    placeholder="Search"
+                  <input 
+                    placeholder="Search" 
                     value={clientNetSearchInput}
                     onChange={(e) => setClientNetSearchInput(e.target.value)}
-                    className="flex-1 text-[11px] text-gray-700 placeholder-gray-400 outline-none bg-transparent w-full"
+                    className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
                   />
                 </div>
 
                 {/* Group Base Symbols */}
                 <button
                   onClick={() => setGroupByBaseSymbol(v => !v)}
-                  className={`h-[36px] px-2 rounded-lg border text-[10px] font-medium flex items-center gap-1 flex-shrink-0 ${groupByBaseSymbol ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-blue-200'}`}
+                  className={`h-[28px] px-2 rounded-[10px] border text-[10px] font-medium flex items-center gap-1 min-w-[52px] flex-shrink-0 ${groupByBaseSymbol ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-[#4B4B4B] border-[#ECECEC]'}`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 10h10M10 14h7M13 18h4"/></svg>
                   Base
                 </button>
 
                 {/* Columns */}
-                <div className="flex-shrink-0">
-                  <button onClick={() => setClientNetShowColumnSelector(true)} className="h-[36px] w-[36px] rounded-lg border border-purple-200 bg-white flex items-center justify-center text-gray-700">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                <div>
+                  <button onClick={() => setClientNetShowColumnSelector(true)} className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50" title="Show/Hide Columns">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                      <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                      <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                    </svg>
                   </button>
                 </div>
 
                 {/* Pagination */}
-                <button
+                <button 
                   onClick={() => setClientNetCurrentPage(p => Math.max(1, p - 1))}
                   disabled={clientNetCurrentPage === 1}
-                  className={`w-5 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === 1 ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <div className="text-[10px] font-medium text-gray-700 flex items-center gap-1">
+                <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
                   <input
                     type="number"
                     min={1}
@@ -2145,25 +2138,26 @@ export default function PositionModule() {
                         setClientNetCurrentPage(n)
                       }
                     }}
-                    className="w-10 h-6 border border-gray-300 rounded-lg text-center text-[10px]"
+                    className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
                     aria-label="Current page"
                   />
-                  <span className="text-gray-400">/</span>
+                  <span className="text-[#9CA3AF]">/</span>
                   <span>{clientNetTotalPages}</span>
                 </div>
-                <button
+                <button 
                   onClick={() => setClientNetCurrentPage(p => Math.min(clientNetTotalPages, p + 1))}
                   disabled={clientNetCurrentPage === clientNetTotalPages}
-                  className={`w-5 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${clientNetCurrentPage === clientNetTotalPages ? 'text-gray-300 bg-gray-100' : 'text-gray-700 bg-white border border-gray-300'}`}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
+              </div>
             </div>
 
             {/* Client NET Table */}
-            <div className="pt-3">
+            <div className="pt-0">
               <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
                 {/* Table - single scroll container */}
                 <div className="overflow-x-auto overflow-y-auto scrollbar-hide" style={{
@@ -2531,6 +2525,76 @@ export default function PositionModule() {
         }}
         editGroup={editingGroup}
       />
+
+      {/* Base Positions Column Selector Modal */}
+      {baseShowColumnSelector && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setBaseShowColumnSelector(false)}>
+          <div 
+            className="bg-white w-full rounded-t-[24px] max-h-[75vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
+              <h3 className="text-base font-semibold text-[#000000]">Show/Hide Columns</h3>
+              <button onClick={() => setBaseShowColumnSelector(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#404040" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-5 py-3">
+                {[
+                  { key: 'login', label: 'Login' },
+                  { key: 'updated', label: 'Time' },
+                  { key: 'firstName', label: 'First Name' },
+                  { key: 'middleName', label: 'Middle Name' },
+                  { key: 'lastName', label: 'Last Name' },
+                  { key: 'email', label: 'Email' },
+                  { key: 'phone', label: 'Phone' },
+                  { key: 'position', label: 'Position' },
+                  { key: 'symbol', label: 'Symbol' },
+                  { key: 'action', label: 'Action' },
+                  { key: 'netType', label: 'Net Type' },
+                  { key: 'volume', label: 'Volume' },
+                  { key: 'volumePercentage', label: 'Volume %' },
+                  { key: 'priceOpen', label: 'Avg Price' },
+                  { key: 'priceCurrent', label: 'Price Current' },
+                  { key: 'netVolume', label: 'Net Volume' },
+                  { key: 'sl', label: 'S/L' },
+                  { key: 'tp', label: 'T/P' },
+                  { key: 'profit', label: 'Profit' },
+                  { key: 'totalProfit', label: 'Total Profit' },
+                  { key: 'profitPercentage', label: 'Profit %' },
+                  { key: 'storage', label: 'Storage' },
+                  { key: 'storagePercentage', label: 'Storage %' },
+                  { key: 'appliedPercentage', label: 'Applied %' },
+                  { key: 'reason', label: 'Reason' },
+                  { key: 'comment', label: 'Comment' },
+                  { key: 'commission', label: 'Commission' }
+                ].map(({ key, label }) => (
+                  <label 
+                    key={key} 
+                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                  >
+                    <span className="text-sm text-[#000000] font-outfit">{label}</span>
+                    <div className="relative inline-block w-12 h-6">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[key]}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NET Position Column Selector Modal */}
       {netShowColumnSelector && (

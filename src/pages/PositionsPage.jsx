@@ -495,9 +495,10 @@ const PositionsPage = () => {
         return numValue > numValue1
       case 'greaterThanOrEqual':
         return numValue >= numValue1
-      case 'between':
+      case 'between': {
         const numValue2 = parseFloat(value2)
         return !isNaN(numValue2) && numValue >= numValue1 && numValue <= numValue2
+      }
       default:
         return true
     }
@@ -553,7 +554,7 @@ const PositionsPage = () => {
       try {
         flashTimeouts.current.forEach((to) => clearTimeout(to))
         flashTimeouts.current.clear()
-      } catch {}
+      } catch { /* no-op */ }
     }
   },  [isAuthenticated])
 
@@ -756,7 +757,7 @@ const PositionsPage = () => {
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
       // Split on first dot or hyphen to collapse variants like XAUUSD.f, XAUUSD-z, etc.
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -967,7 +968,7 @@ const PositionsPage = () => {
     return positionsToSearch.filter(position => {
       // Search through all primitive fields
       for (const key in position) {
-        if (position.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(position, key)) {
           const value = position[key]
           
           // Handle action field specially (0=Buy, 1=Sell)
@@ -1291,7 +1292,7 @@ const PositionsPage = () => {
   const handleNetItemsPerPageChange = (v) => {
     const next = v === 'All' ? 'All' : parseInt(v)
     setNetItemsPerPage(next)
-    try { localStorage.setItem('net_items_per_page', String(next)) } catch {}
+    try { localStorage.setItem('net_items_per_page', String(next)) } catch { /* no-op */ }
     setNetCurrentPage(1)
   }
 
@@ -1304,7 +1305,7 @@ const PositionsPage = () => {
     const loginMap = new Map()
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -1472,7 +1473,7 @@ const PositionsPage = () => {
   const handleClientNetItemsPerPageChange = (v) => {
     const next = v === 'All' ? 'All' : parseInt(v)
     setClientNetItemsPerPage(next)
-    try { localStorage.setItem('client_net_items_per_page', String(next)) } catch {}
+    try { localStorage.setItem('client_net_items_per_page', String(next)) } catch { /* no-op */ }
     setClientNetCurrentPage(1)
   }
 

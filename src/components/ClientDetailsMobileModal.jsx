@@ -1189,7 +1189,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
           }
         }
       `}</style>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:hidden">
+      <div className="fixed inset-0 bg-black/50 z-[999] flex items-end lg:hidden">
 
         <div className="bg-white w-full h-[80vh] rounded-t-2xl flex flex-col">
         {/* Header */}

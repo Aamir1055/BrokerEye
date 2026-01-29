@@ -29,7 +29,7 @@ class WebSocketService {
           this.connect()
         }
       })
-    } catch {}
+    } catch { /* no-op */ }
   }
 
   // Get WebSocket URL with token

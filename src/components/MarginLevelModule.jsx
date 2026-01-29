@@ -270,10 +270,11 @@ export default function MarginLevelModule() {
       case 'marginFree':
         value = formatNum(account.margin_free || account.marginFree || 0, 2)
         break
-      case 'marginLevel':
+      case 'marginLevel': {
         const ml = getMarginLevelPercent(account)
         value = ml !== undefined ? formatNum(ml, 2) + '%' : '-'
         break
+      }
       case 'profit':
         value = formatNum(account.profit || 0, 2)
         break

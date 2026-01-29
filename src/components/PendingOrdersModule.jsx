@@ -460,7 +460,7 @@ export default function PendingOrdersModule() {
       case 'symbol':
         value = order.symbol || '-'
         break
-      case 'type':
+      case 'type': {
         value = order.type || '-'
         const isBuy = value.toUpperCase().includes('BUY')
         const isSell = value.toUpperCase().includes('SELL')
@@ -482,6 +482,7 @@ export default function PendingOrdersModule() {
             </span>
           </div>
         )
+      }
       case 'volume':
         value = formatNum(order.volumeCurrent || order.volume || 0, 2)
         break

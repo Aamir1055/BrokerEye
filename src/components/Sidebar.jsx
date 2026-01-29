@@ -50,10 +50,14 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
     // Clear cross-module filters on navigation (desktop parity with mobile)
     try {
       setActiveGroupFilter('client2', null)
-    } catch {}
+    } catch {
+      /* no-op */
+    }
     try {
       clearIBSelection()
-    } catch {}
+    } catch {
+      /* no-op */
+    }
     navigate(path)
     // Close sidebar after navigation only on mobile (below lg breakpoint)
     if (typeof onClose === 'function' && window.innerWidth < 1024) {
