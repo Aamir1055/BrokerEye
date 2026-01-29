@@ -651,7 +651,7 @@ const Client2Page = () => {
     { key: 'lastName', label: 'Last Name', type: 'text' },
     { key: 'middleName', label: 'Middle Name', type: 'text' },
     { key: 'email', label: 'Email', type: 'text' },
-    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'phone', label: 'Phone', type: 'integer' },
     { key: 'group', label: 'Group', type: 'text' },
     { key: 'country', label: 'Country', type: 'text' },
     { key: 'city', label: 'City', type: 'text' },
