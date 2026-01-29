@@ -1578,7 +1578,7 @@ export default function Client2Module() {
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30 border-r border-blue-600/70' : ''}`}
                     style={{
                       border: 'none', 
                       outline: 'none', 
@@ -1608,7 +1608,7 @@ export default function Client2Module() {
                         <div 
                           key={col.key}
                           className={`h-[38px] flex items-center justify-start px-2 ${
-                            col.sticky ? 'sticky left-0 bg-white z-10' : ''
+                            col.sticky ? 'sticky left-0 bg-inherit z-10 border-r border-[#E1E1E1]' : ''
                           }`}
                           style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                         >
@@ -1681,8 +1681,8 @@ export default function Client2Module() {
                             key={col.key}
                             onClick={() => col.key === 'login' && setSelectedClient(client)}
                             className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-                              col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
-                            }`}
+                              col.sticky ? 'sticky left-0 bg-inherit z-20 border-r border-[#E1E1E1]' : ''
+                            } ${col.key === 'login' ? 'text-[#1A63BC] font-semibold cursor-pointer hover:underline' : ''}`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
                             {col.key === 'processorType' ? (
@@ -1728,7 +1728,7 @@ export default function Client2Module() {
                         {visibleColumnsList.map((col, idx) => (
                           <div 
                             key={col.key}
-                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10 border-r border-[#D6E3F5]' : ''}`}
                             style={{
                               border: 'none', 
                               outline: 'none', 
