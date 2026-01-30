@@ -12,8 +12,14 @@ import IBSelector from '../components/IBSelector'
 import PendingOrdersModule from '../components/PendingOrdersModule'
 
 const PendingOrdersPage = () => {
-  // Detect mobile device
-  const [isMobile, setIsMobile] = useState(false)
+  // Detect mobile device (init from window to avoid first-render desktop path on mobile)
+  const [isMobile, setIsMobile] = useState(() => {
+    try {
+      return typeof window !== 'undefined' ? window.innerWidth < 768 : false
+    } catch {
+      return false
+    }
+  })
 
   // Use cached data from DataContext - MUST be called before conditional return
   const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
@@ -479,7 +485,7 @@ const PendingOrdersPage = () => {
   // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
     const baseSizes = [25, 50, 100, 200]
-    const totalCount = Array.isArray(cachedOrders) ? cachedOrders.length : 0
+    const totalCount = cachedOrders.length
     return baseSizes.filter(size => size <= totalCount)
   }
   
@@ -739,17 +745,16 @@ const PendingOrdersPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-64" 
+              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999]" 
                 style={{
+                  width: '280px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
-                    // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // updated width for w-64
+                    const dropdownWidth = 280
                     const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
-                    // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
                       : `${rect.left}px`
@@ -758,37 +763,19 @@ const PendingOrdersPage = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
+                <div className="px-2 py-1 border-b border-gray-200 bg-gray-50 rounded-t">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-semibold text-gray-700">Filter Menu</span>
+                    <span className="text-[11px] text-gray-700">Text Filters</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowFilterDropdown(null)
+                        clearColumnFilter(columnKey)
                       }}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-[11px] text-red-600 hover:underline"
                     >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      Clear
                     </button>
                   </div>
-                </div>
-
-                {/* Quick Clear Filter */}
-                <div className="border-b border-slate-200 py-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      clearColumnFilter(columnKey)
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Clear Filter
-                  </button>
                 </div>
 
                 {/* Sort Options */}
@@ -799,7 +786,7 @@ const PendingOrdersPage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -812,7 +799,7 @@ const PendingOrdersPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
@@ -842,7 +829,7 @@ const PendingOrdersPage = () => {
                           setCustomFilterValue2('')
                         }
                       }}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
                       <svg 
@@ -855,7 +842,7 @@ const PendingOrdersPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 320
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -870,12 +857,13 @@ const PendingOrdersPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
-                        className="absolute top-0 w-80 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
+                          width: '280px',
                           left: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'calc(100% + 8px)'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -883,7 +871,7 @@ const PendingOrdersPage = () => {
                           right: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'auto'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
@@ -895,7 +883,7 @@ const PendingOrdersPage = () => {
                         <div className="p-3 space-y-3">
                           {/* Operator Dropdown */}
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                            <label className="block text-xs text-gray-700 mb-1">CONDITION</label>
                             <select
                               value={customFilterType}
                               onChange={(e) => setCustomFilterType(e.target.value)}
@@ -921,7 +909,7 @@ const PendingOrdersPage = () => {
 
                           {/* Value Input */}
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                            <label className="block text-xs text-gray-700 mb-1">VALUE</label>
                             <input
                               type={isStringColumn(columnKey) || ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
                               step="any"
@@ -946,7 +934,7 @@ const PendingOrdersPage = () => {
                           {/* Second Value for Between */}
                           {customFilterType === 'between' && (
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
+                              <label className="block text-xs text-gray-700 mb-1">AND</label>
                               <input
                                 type={isStringColumn(columnKey) ? 'text' : 'number'}
                                 step="any"
@@ -968,8 +956,18 @@ const PendingOrdersPage = () => {
                             </div>
                           )}
 
-                          {/* Action Button */}
-                          <div className="pt-2">
+                          {/* Actions */}
+                          <div className="pt-2 flex gap-2 border-t border-gray-200">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                e.preventDefault()
+                                setShowNumberFilterDropdown(null)
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                            >
+                              Close
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -980,7 +978,7 @@ const PendingOrdersPage = () => {
                                 applyCustomFilter()
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="flex-1 px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -1012,7 +1010,7 @@ const PendingOrdersPage = () => {
                             setCustomFilterValue2('')
                           }
                         }}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
                         <svg 
@@ -1025,7 +1023,7 @@ const PendingOrdersPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 320
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -1040,12 +1038,13 @@ const PendingOrdersPage = () => {
                       {customFilterColumn === columnKey && (
                         <div
                           data-number-filter
-                          className="absolute top-0 w-80 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
+                            width: '280px',
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 320
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -1053,7 +1052,7 @@ const PendingOrdersPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 320
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
@@ -1065,7 +1064,7 @@ const PendingOrdersPage = () => {
                           <div className="p-3 space-y-3">
                             {/* Operator Dropdown */}
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
+                              <label className="block text-xs text-gray-700 mb-1">CONDITION</label>
                               <select
                                 value={customFilterType}
                                 onChange={(e) => setCustomFilterType(e.target.value)}
@@ -1082,7 +1081,7 @@ const PendingOrdersPage = () => {
 
                             {/* Value Input */}
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
+                              <label className="block text-xs text-gray-700 mb-1">VALUE</label>
                               <input
                                 type={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? 'datetime-local' : 'text'}
                                 step={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? '1' : undefined}
@@ -1105,8 +1104,18 @@ const PendingOrdersPage = () => {
                               />
                             </div>
 
-                            {/* Action Button */}
-                            <div className="pt-2">
+                            {/* Actions */}
+                            <div className="pt-2 flex gap-2 border-t border-gray-200">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  e.preventDefault()
+                                  setCustomFilterColumn(null)
+                                }}
+                                className="flex-1 px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                              >
+                                Close
+                              </button>
                               <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -1117,7 +1126,7 @@ const PendingOrdersPage = () => {
                                     applyCustomFilter()
                                   }}
                                 disabled={!customFilterValue1}
-                                className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="flex-1 px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -1144,7 +1153,7 @@ const PendingOrdersPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1169,12 +1178,12 @@ const PendingOrdersPage = () => {
                       onClick={(e) => e.stopPropagation()}
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                     />
-                    <span className="text-[11px] font-medium text-slate-700">Select All</span>
+                    <span className="text-[11px] font-semibold text-slate-700">Select visible ({getUniqueColumnValues(columnKey).length})</span>
                   </label>
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-40 overflow-y-auto">
+                <div className="max-h-56 overflow-y-auto">
                   <div className="p-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-3 py-2 text-center text-[11px] text-slate-500">
@@ -1213,7 +1222,7 @@ const PendingOrdersPage = () => {
                       e.stopPropagation()
                       clearColumnFilter(columnKey)
                     }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
                     Close
                   </button>
@@ -1222,7 +1231,7 @@ const PendingOrdersPage = () => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                    className="flex-1 px-3 py-1.5 text-[11px] text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
                     OK
                   </button>
@@ -1245,32 +1254,51 @@ const PendingOrdersPage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <PendingOrdersModule />
+  }
+
   // Top header loader synced with orders fetch lifecycle
+  const progressStartRef = useRef(0)
+  const progressTimerRef = useRef(null)
   useEffect(() => {
-    setProgressActive(!!loading?.orders)
+    const active = !!loading?.orders
+    if (active) {
+      progressStartRef.current = Date.now()
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (progressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+      progressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
+    }
   }, [loading?.orders])
 
-  return isMobile ? (
-    <PendingOrdersModule />
-  ) : (
+  return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
+      {/* YouTube-style Loading Bar - Match Clients 2 fixed-width slider */}
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+            width: '40%',
+            animation: 'loading 1.5s ease-in-out infinite'
+          }}></div>
+        </div>
+      )}
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
-        {/* YouTube-style Loading Bar */}
-        {progressActive && (
-          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
-              width: '40%',
-              animation: 'loading 1.5s ease-in-out infinite',
-              transformOrigin: 'left center'
-            }}></div>
-          </div>
-        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -1602,7 +1630,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceOrder ?? o.price ?? o.priceOpen ?? o.priceOpenExact ?? o.open_price, 3)}
                                 {priceDelta !== undefined && priceDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${priceDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {priceDelta > 0 ? '▲' : '▼'} {Math.abs(priceDelta).toFixed(3)}
+                                    {priceDelta > 0 ? '' : 'G�+'} {Math.abs(priceDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1617,7 +1645,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceSL ?? o.sl ?? o.stop_loss, 3)}
                                 {slDelta !== undefined && slDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${slDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {slDelta > 0 ? '▲' : '▼'} {Math.abs(slDelta).toFixed(3)}
+                                    {slDelta > 0 ? '' : 'G�+'} {Math.abs(slDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1629,7 +1657,7 @@ const PendingOrdersPage = () => {
                                 {formatNumber(o.priceTP ?? o.tp ?? o.take_profit, 3)}
                                 {tpDelta !== undefined && tpDelta !== 0 ? (
                                   <span className={`ml-1 text-[11px] font-medium ${tpDelta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {tpDelta > 0 ? '▲' : '▼'} {Math.abs(tpDelta).toFixed(3)}
+                                    {tpDelta > 0 ? '' : 'G�+'} {Math.abs(tpDelta).toFixed(3)}
                                   </span>
                                 ) : null}
                               </div>
@@ -1680,3 +1708,5 @@ const PendingOrdersPage = () => {
 }
 
 export default PendingOrdersPage
+
+
