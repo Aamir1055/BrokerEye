@@ -1,26 +1,24 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { DataProvider } from './contexts/DataContext'
-import { GroupProvider } from './contexts/GroupContext'
-import { IBProvider } from './contexts/IBContext'
-import LoginPage from './pages/LoginPage'
-import LoginMobile from './pages/LoginMobile'
-import LoadingSpinner from './components/LoadingSpinner'
+import { AuthProvider, useAuth } from './shared/contexts/AuthContext'
+import { DataProvider } from './shared/contexts/DataContext'
+import { GroupProvider } from './shared/contexts/GroupContext'
+import { IBProvider } from './shared/contexts/IBContext'
+import { LoginPage, LoginMobile } from './modules/auth'
+import { DashboardPage, ClientDashboardDesignC } from './modules/dashboard'
+import { PositionsPage } from './modules/positions'
+import { Client2Page } from './modules/clients'
+import { PendingOrdersPage } from './modules/pending-orders'
+import { LiveDealingPage, GraphicalAnalyticsPage } from './modules/live-dealing'
+import { MarginLevelPage } from './modules/margin-level'
+import { ClientPercentagePage } from './modules/client-percentage'
+import { SettingsPage } from './modules/settings'
+import { BrokerRulePage } from './modules/broker-rules'
+import { IBCommissionsPage } from './modules/ib-commissions'
+import LoadingSpinner from './shared/components/feedback/LoadingSpinner'
 
 // Lazy load heavy components for code splitting and faster navigation
-const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-const Client2Page = lazy(() => import('./pages/Client2Page'))
-const PositionsPage = lazy(() => import('./pages/PositionsPage'))
-const PendingOrdersPage = lazy(() => import('./pages/PendingOrdersPage'))
-const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
-const LiveDealingPage = lazy(() => import('./pages/LiveDealingPage'))
-const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
 // IB Commissions module removed for broker branch
-const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
-const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
-const ClientDashboardDesignCPage = lazy(() => import('./pages/ClientDashboardDesignC'))
 
 // Main App Content Component
 const AppContent = () => {
@@ -73,7 +71,7 @@ const AppContent = () => {
         {/** IB Commissions route removed for broker branch */}
         <Route path="/broker-rules" element={<BrokerRulePage />} />
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
-          <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />
+          <Route path="/client-dashboard-c" element={<ClientDashboardDesignC />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<DashboardPage />} />
       </Routes>
@@ -83,31 +81,7 @@ const AppContent = () => {
 
 // Preloads lazy routes after initial render to make navigation snappy
 function PreloadRoutes() {
-  useEffect(() => {
-    const preload = () => {
-      try {
-        // Preload commonly navigated pages
-        import('./pages/Client2Page')
-        import('./pages/PendingOrdersPage')
-        import('./pages/MarginLevelPage')
-        import('./pages/LiveDealingPage')
-        import('./pages/ClientPercentagePage')
-        import('./pages/BrokerRulePage')
-        // IB Commissions preload removed for broker branch
-        import('./pages/SettingsPage')
-        import('./pages/GraphicalAnalyticsPage')
-        import('./pages/ClientDashboardDesignC')
-      } catch {}
-    }
-    if ('requestIdleCallback' in window) {
-      // Prefer idle time so we don't impact interactivity
-      window.requestIdleCallback(preload, { timeout: 2000 })
-    } else {
-      // Fallback to a short delay
-      const t = setTimeout(preload, 1200)
-      return () => clearTimeout(t)
-    }
-  }, [])
+  // All pages now directly imported via modules - no lazy loading needed
   return null
 }
 
