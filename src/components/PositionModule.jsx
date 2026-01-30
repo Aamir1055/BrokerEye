@@ -1264,8 +1264,6 @@ export default function PositionModule() {
                 className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
               />
             </div>
-<<<<<<< HEAD
-=======
             <button onClick={() => setBaseShowColumnSelector(true)} className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50" title="Show/Hide Columns">
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                 <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
@@ -1273,7 +1271,6 @@ export default function PositionModule() {
                 <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
               </svg>
             </button>
->>>>>>> broker
             <button 
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
@@ -1383,39 +1380,7 @@ export default function PositionModule() {
                   </div>
 
                   {/* Table Rows */}
-                  {loading && loading.positions ? (
-                    // YouTube-style skeleton loading
-                  <>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <div 
-                        key={`skeleton-row-${i}`}
-                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1]"
-                        style={{
-                          gap: '0px', 
-                          gridGap: '0px', 
-                          columnGap: '0px',
-                          gridTemplateColumns
-                        }}
-                      >
-                        {activeColumns.map((col, colIdx) => (
-                          <div 
-                            key={col.key}
-                            className={`h-[38px] flex items-center justify-center px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
-                            style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
-                          >
-                            <div 
-                              className="h-3 w-full max-w-[80%] bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded"
-                              style={{
-                                backgroundSize: '200% 100%',
-                                animation: 'shimmer 1.5s infinite'
-                              }}
-                            ></div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </>
-                ) : filteredPositions.length === 0 ? (
+                  {filteredPositions.length === 0 ? (
                   <div className="text-center py-8 text-[#6B7280] text-sm">
                     {(filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('positions')) 
                       ? 'No positions match the applied filters' 
@@ -2529,8 +2494,6 @@ export default function PositionModule() {
         editGroup={editingGroup}
       />
 
-<<<<<<< HEAD
-=======
       {/* Base Positions Column Selector Modal */}
       {baseShowColumnSelector && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setBaseShowColumnSelector(false)}>
@@ -2600,8 +2563,6 @@ export default function PositionModule() {
           </div>
         </div>
       )}
-
->>>>>>> broker
       {/* NET Position Column Selector Modal */}
       {netShowColumnSelector && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setNetShowColumnSelector(false)}>
