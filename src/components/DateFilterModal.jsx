@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-const DateFilterModal = ({ isOpen, onClose, onApply, currentFilter, onPendingChange }) => {
+const DateFilterModal = ({ isOpen, onClose, onApply, currentFilter, onPendingChange, isMobile = true }) => {
   const [tempSelectedFilter, setTempSelectedFilter] = useState(null)
 
   useEffect(() => {
@@ -42,6 +42,124 @@ const DateFilterModal = ({ isOpen, onClose, onApply, currentFilter, onPendingCha
 
   if (!isOpen) return null
 
+  // Desktop dropdown style (like GroupSelector)
+  if (!isMobile) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 'calc(100% + 8px)',
+          width: '280px',
+          background: '#FFFFFF',
+          borderRadius: '12px',
+          border: '1px solid #E5E7EB',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          zIndex: 9999,
+          padding: '12px',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          paddingBottom: '12px',
+          borderBottom: '1px solid #F2F2F7',
+          marginBottom: '12px',
+        }}>
+          <h3
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 600,
+              fontSize: '14px',
+              color: '#374151',
+              margin: 0,
+            }}
+          >
+            Date Filter
+          </h3>
+        </div>
+
+        {/* Options */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                background: tempSelectedFilter === option.value ? '#EFF6FF' : '#F9FAFB',
+                border: tempSelectedFilter === option.value ? '1.5px solid #3B82F6' : '1px solid #E5E7EB',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '13px',
+                fontWeight: tempSelectedFilter === option.value ? 600 : 400,
+                color: '#374151',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>{option.label}</span>
+              {tempSelectedFilter === option.value && (
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#3B82F6" />
+                  <path d="M6 10L8.5 12.5L14 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: '8px', paddingTop: '8px', borderTop: '1px solid #F2F2F7' }}>
+          <button
+            onClick={handleReset}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              background: '#F3F4F6',
+              border: '1px solid #D1D5DB',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '12px',
+              color: '#6B7280',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Reset
+          </button>
+          <button
+            onClick={handleApply}
+            disabled={tempSelectedFilter === null}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              background: tempSelectedFilter !== null ? '#3B82F6' : '#E5E7EB',
+              border: '1px solid ' + (tempSelectedFilter !== null ? '#3B82F6' : '#D1D5DB'),
+              borderRadius: '8px',
+              cursor: tempSelectedFilter !== null ? 'pointer' : 'not-allowed',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: 500,
+              fontSize: '12px',
+              color: tempSelectedFilter !== null ? '#FFFFFF' : '#9CA3AF',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Mobile bottom sheet style
   return (
     <>
       {/* Backdrop */}
@@ -67,6 +185,8 @@ const DateFilterModal = ({ isOpen, onClose, onApply, currentFilter, onPendingCha
           transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: '412px',
+          height: 'auto',
+          maxHeight: '50vh',
           background: '#FFFFFF',
           borderRadius: '20px 20px 0 0',
           zIndex: 9999,

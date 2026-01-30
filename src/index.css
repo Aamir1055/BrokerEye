@@ -34,6 +34,13 @@ body {
   50% { transform: translateY(-20px); }
 }
 
+/* YouTube-style loading bar: fixed-width segment slides horizontally */
+@keyframes loading {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(120%); }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }

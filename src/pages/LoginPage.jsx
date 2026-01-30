@@ -63,6 +63,14 @@ const LoginPage = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-white relative flex">
+      {isLoading && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+            width: '40%',
+            animation: 'loading 1.5s ease-in-out infinite'
+          }}></div>
+        </div>
+      )}
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 relative z-10">
         <div className={`w-[372px] transition-all duration-1000 transform lg:-translate-x-40 xl:-translate-x-64 2xl:-translate-x-80 ${
@@ -177,14 +185,7 @@ const LoginPage = () => {
               disabled={isLoading}
               className="w-full h-[55px] bg-[#2563EB] hover:bg-[#1E55D0] disabled:bg-gray-400 text-white font-bold rounded-[12px] transition-all duration-300 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-[16px]"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
-                  <span>Signing in...</span>
-                </div>
-              ) : (
-                'Log In'
-              )}
+              Log In
             </button>
           </form>
 

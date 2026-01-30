@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      setLoading(true)
       setAuthError(null)
       const response = await authAPI.login(username, password)
       
@@ -91,7 +90,7 @@ export const AuthProvider = ({ children }) => {
         error: errorMessage 
       }
     } finally {
-      setLoading(false)
+      // Do not toggle global loading here; let the login page manage its own spinner
     }
   }
 
