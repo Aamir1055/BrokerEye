@@ -379,7 +379,6 @@ export default function Client2Module() {
       console.log('[Client2Module] Fetched clients:', {
         count: clientsData.length,
         total: data.total || data.totalClients || 0,
-        isInitialLoad,
         requestId: currentRequestId
       })
       
