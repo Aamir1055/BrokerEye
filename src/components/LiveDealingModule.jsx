@@ -17,39 +17,8 @@ import websocketService from '../services/websocket'
 import { brokerAPI } from '../services/api'
 import { applyCumulativeFilters } from '../utils/mobileFilters'
 
-const formatNum = (n, decimals = 2) => {
-  const v = Number(n || 0)
-  if (!isFinite(v)) return '0.00'
-  return v.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-}
-
-const formatTime = (timestamp) => {
-  if (!timestamp) return '-'
-  const date = new Date(timestamp * 1000)
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
-}
-
-export default function LiveDealingModule() {
-  const navigate = useNavigate()
-  const { logout } = useAuth()
-  const { positions: cachedPositions, clients, orders } = useData()
-  const { selectedIB, selectIB, clearIBSelection, filterByActiveIB, ibMT5Accounts } = useIB()
-  const { groups, deleteGroup, getActiveGroupFilter, setActiveGroupFilter, filterByActiveGroup, activeGroupFilters } = useGroups()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [activeCardIndex, setActiveCardIndex] = useState(0)
-  const [searchInput, setSearchInput] = useState('')
-  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false)
-  const [isDealsFilterOpen, setIsDealsFilterOpen] = useState(false)
-  const [isIBFilterOpen, setIsIBFilterOpen] = useState(false)
-  const [isGroupOpen, setIsGroupOpen] = useState(false)
+const LiveDealingModule = () => {
+ 
   const [isLoginGroupsOpen, setIsLoginGroupsOpen] = useState(false)
   const [isLoginGroupModalOpen, setIsLoginGroupModalOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
@@ -68,7 +37,6 @@ export default function LiveDealingModule() {
   
   // Deals state
   const [deals, setDeals] = useState([])
-  const [newDealIds, setNewDealIds] = useState(new Set()) // Track new deals for blinking
   const [connectionState, setConnectionState] = useState('disconnected')
   const [timeFilter, setTimeFilter] = useState('24h') // '24h', '7d', 'custom'
   const [moduleFilter, setModuleFilter] = useState('both') // 'deal', 'money', 'both'
@@ -1160,58 +1128,24 @@ export default function LiveDealingModule() {
                 </div>
 
                 {/* Table Rows */}
-                {loading ? (
-                  // YouTube-style skeleton loading
-                  <>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <div 
-                        key={`skeleton-row-${i}`}
-                        className="grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1]"
-                        style={{
-                          gap: '0px', 
-                          gridGap: '0px', 
-                          columnGap: '0px',
-                          gridTemplateColumns
-                        }}
-                      >
-                        {activeColumns.map((col) => (
-                          <div 
-                            key={col.key}
-                            className={`h-[38px] flex items-center justify-start px-1 ${col.sticky ? 'sticky left-0 bg-white z-10' : ''}`}
-                            style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
-                          >
-                            <div 
-                              className="h-3 w-full max-w-[80%] bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded"
-                              style={{
-                                backgroundSize: '200% 100%',
-                                animation: 'shimmer 1.5s infinite'
-                              }}
-                            ></div>
-                          </div>
-                        ))}
-                      </div>
+                {sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal) => (
+                  <div 
+                    key={deal.id} 
+                    className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] ${newDealIds.has(deal.id) ? 'new-deal-blink' : 'hover:bg-[#F8FAFC] transition-colors'}`}
+                    style={{
+                      gap: '0px', 
+                      gridGap: '0px', 
+                      columnGap: '0px',
+                      gridTemplateColumns
+                    }}
+                  >
+                    {activeColumns.map(col => (
+                      <React.Fragment key={`${col.key}-${displayMode}`}>
+                        {renderCellValue(deal, col.key, col.sticky)}
+                      </React.Fragment>
                     ))}
-                  </>
-                ) : (
-                  sortedDeals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((deal) => (
-                    <div 
-                      key={deal.id} 
-                      className={`grid text-[10px] text-[#4B4B4B] font-outfit bg-white border-b border-[#E1E1E1] ${newDealIds.has(deal.id) ? 'new-deal-blink' : 'hover:bg-[#F8FAFC] transition-colors'}`}
-                      style={{
-                        gap: '0px', 
-                        gridGap: '0px', 
-                        columnGap: '0px',
-                        gridTemplateColumns
-                      }}
-                    >
-                      {activeColumns.map(col => (
-                        <React.Fragment key={`${col.key}-${displayMode}`}>
-                          {renderCellValue(deal, col.key, col.sticky)}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  ))
-                )}
+                  </div>
+                ))}
 
                 {/* Total Row */}
                 {sortedDeals.length > 0 && !loading && (
@@ -1572,4 +1506,6 @@ export default function LiveDealingModule() {
     </div>
   )
 }
+
+export default LiveDealingModule
 
