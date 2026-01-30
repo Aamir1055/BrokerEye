@@ -533,14 +533,6 @@ export default function PendingOrdersModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-hidden" style={{ height: '100dvh' }}>
-      {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
-          <div
-            className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg"
-            style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }}
-          />
-        </div>
-      )}
       {/* Header */}
       <div className="flex items-center px-4 py-4 bg-white border-b border-[#ECECEC] relative">
         <button 
