@@ -284,7 +284,7 @@ self.onmessage = function(e) {
         result = deduplicateClients(payload.clients)
         break
         
-      case 'FULL_PIPELINE':
+      case 'FULL_PIPELINE': {
         // Complete processing pipeline
         let processed = payload.clients
         
@@ -310,6 +310,7 @@ self.onmessage = function(e) {
           count: processed.length
         }
         break
+      }
         
       default:
         throw new Error(`Unknown worker task type: ${type}`)

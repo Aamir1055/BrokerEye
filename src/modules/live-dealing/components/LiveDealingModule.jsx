@@ -66,6 +66,7 @@ export default function LiveDealingModule() {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+  const [progressActive, setProgressActive] = useState(false)
   
   // Deals state
   const [deals, setDeals] = useState([])
@@ -118,6 +119,10 @@ export default function LiveDealingModule() {
     setCustomToDate('')
     setAppliedFromDate('')
     setAppliedToDate('')
+    // Brief top loader on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -791,6 +796,11 @@ export default function LiveDealingModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-x-hidden overflow-y-hidden max-w-full" style={{ height: '100dvh', width: '100vw', maxWidth: '100vw', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }} />
+        </div>
+      )}
       <div className="flex items-center px-4 py-4 bg-white border-b border-[#ECECEC] relative">
         <button 
           onClick={() => setIsSidebarOpen(true)}
@@ -858,12 +868,6 @@ export default function LiveDealingModule() {
                   )},
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
-                  )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="9" stroke="#404040"/>
-                      <path d="M12 7v10M8 10h8" stroke="#404040"/>
-                    </svg>
                   )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>

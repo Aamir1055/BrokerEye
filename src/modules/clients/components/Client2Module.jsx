@@ -140,6 +140,7 @@ export default function Client2Module() {
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [isLoading, setIsLoading] = useState(true)
+  const [progressActive, setProgressActive] = useState(false)
   // Visible columns state (restored)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -216,7 +217,7 @@ export default function Client2Module() {
   })
 
   // Fetch clients data via API
-  const fetchClients = useCallback(async (overridePercent = null, isInitialLoad = false) => {
+  const fetchClients = useCallback(async (overridePercent = null, showProgress = false) => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
@@ -229,8 +230,9 @@ export default function Client2Module() {
         return
       }
       isFetchingRef.current = true
+      if (showProgress) setProgressActive(true)
       // Only show loading on initial load, not on periodic refreshes
-      if (isInitialLoad) {
+      if (showProgress) {
         setIsLoading(true)
       }
       const usePercent = overridePercent !== null ? overridePercent : showPercent
@@ -388,6 +390,8 @@ export default function Client2Module() {
       setIsLoading(false)
     } finally {
       isFetchingRef.current = false
+      // Let the bar show briefly even for fast requests
+      setTimeout(() => setProgressActive(false), 200)
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
@@ -414,7 +418,7 @@ export default function Client2Module() {
 
   // Initial fetch and periodic refresh (reduced frequency on mobile). Pause auto-refresh while searching.
   useEffect(() => {
-    fetchClients(null, true) // Initial load with loading state
+    fetchClients(null, true) // Initial load with progress bar
     fetchRebateTotals() // Fetch rebate totals on mount
 
     // Only run periodic refresh when no active search query
@@ -422,6 +426,7 @@ export default function Client2Module() {
     const interval = hasSearch ? null : setInterval(() => {
       // Skip if a fetch is already in progress
       if (!isFetchingRef.current) {
+        // Background refresh without showing the top loader
         fetchClients(null, false)
       }
     }, 3000) // Refresh every 3s on mobile to reduce overlapping requests
@@ -1175,6 +1180,14 @@ export default function Client2Module() {
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] flex flex-col lg:hidden">
+      {(isLoading || progressActive) && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg"
+            style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }}
+          />
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-30">
         <div className="px-4 py-4 flex items-center justify-between">
@@ -1238,9 +1251,6 @@ export default function Client2Module() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -1276,8 +1286,8 @@ export default function Client2Module() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Main Content: prevent page-level scroll; table will scroll */}
+      <div className="flex-1 overflow-x-hidden overflow-y-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-between">
@@ -1285,15 +1295,15 @@ export default function Client2Module() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
-                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                className={`h-8 px-4 min-w-[64px] rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2'))
                     ? 'bg-blue-50 border-blue-200' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                {/* <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+                </svg> */}
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
                 {(() => {
                   const filterCount = [
@@ -1315,7 +1325,7 @@ export default function Client2Module() {
                   const next = !showPercent
                   setShowPercent(next)
                   // Immediately refetch with the next percentage state
-                  fetchClients(next)
+                  fetchClients(next, true)
                 }}
                 className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
@@ -1353,20 +1363,14 @@ export default function Client2Module() {
                 </svg>
               </button>
             </div>
-            {/* Right side - Column selector */}
+            {/* Right side - View All text */}
             <div>
-              <button
-                ref={columnSelectorButtonRef}
-                onClick={() => setIsColumnSelectorOpen(!isColumnSelectorOpen)}
-                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+              <span
+                onClick={() => setShowViewAllModal(true)}
+                className="text-[10px] font-medium text-[#1A63BC] cursor-pointer hover:underline"
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <rect x="1" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="10" y="1" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="1" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                  <rect x="10" y="10" width="5" height="5" rx="1" stroke="#666666" strokeWidth="1.5"/>
-                </svg>
-              </button>
+                View All
+              </span>
             </div>
           </div>
         </div>
@@ -1559,14 +1563,15 @@ export default function Client2Module() {
             </div>
           </div>
 
-        {/* Table - full width */}
-        <div>
-          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden">
+        {/* Table - full width (own scroll, no side margins) */}
+        <div className="flex-1 min-h-0">
+          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden h-full">
             {/* Single scroll container with sticky header */}
             <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
-              paddingBottom: '8px'
+              paddingBottom: '8px',
+              maxHeight: '60vh'
             }}>
               <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
@@ -1575,7 +1580,7 @@ export default function Client2Module() {
                   <div 
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30' : ''}`}
+                    className={`h-[28px] flex items-center justify-start px-1 gap-1 ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${col.sticky ? 'sticky left-0 bg-blue-500 z-30 border-r border-blue-600/70' : ''}`}
                     style={{
                       border: 'none', 
                       outline: 'none', 
@@ -1605,7 +1610,7 @@ export default function Client2Module() {
                         <div 
                           key={col.key}
                           className={`h-[38px] flex items-center justify-start px-2 ${
-                            col.sticky ? 'sticky left-0 bg-white z-10' : ''
+                            col.sticky ? 'sticky left-0 bg-inherit z-10 border-r border-[#E1E1E1]' : ''
                           }`}
                           style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                         >
@@ -1678,8 +1683,8 @@ export default function Client2Module() {
                             key={col.key}
                             onClick={() => col.key === 'login' && setSelectedClient(client)}
                             className={`h-[38px] flex items-center justify-start px-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-                              col.key === 'login' ? 'text-[#1A63BC] font-semibold sticky left-0 bg-white z-10 cursor-pointer hover:underline' : ''
-                            }`}
+                              col.sticky ? 'sticky left-0 bg-inherit z-20 border-r border-[#E1E1E1]' : ''
+                            } ${col.key === 'login' ? 'text-[#1A63BC] font-semibold cursor-pointer hover:underline' : ''}`}
                             style={{border: 'none', outline: 'none', boxShadow: col.sticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'}}
                           >
                             {col.key === 'processorType' ? (
@@ -1725,7 +1730,7 @@ export default function Client2Module() {
                         {visibleColumnsList.map((col, idx) => (
                           <div 
                             key={col.key}
-                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10' : ''}`}
+                            className={`h-[38px] flex items-center justify-start px-2 font-semibold ${col.key === 'login' ? 'font-bold sticky left-0 bg-[#EFF4FB] z-10 border-r border-[#D6E3F5]' : ''}`}
                             style={{
                               border: 'none', 
                               outline: 'none', 

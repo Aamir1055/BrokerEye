@@ -650,7 +650,7 @@ const Client2Page = () => {
     { key: 'lastName', label: 'Last Name', type: 'text' },
     { key: 'middleName', label: 'Middle Name', type: 'text' },
     { key: 'email', label: 'Email', type: 'text' },
-    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'phone', label: 'Phone', type: 'integer' },
     { key: 'group', label: 'Group', type: 'text' },
     { key: 'country', label: 'Country', type: 'text' },
     { key: 'city', label: 'City', type: 'text' },
@@ -1059,15 +1059,28 @@ const Client2Page = () => {
           const field = columnKeyToAPIField(uiKey)
           numberFilteredFields.add(field) // Track that this field has a number filter
           const op = cfg.operator
-          const v1 = cfg.value1
-          const v2 = cfg.value2
-          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
-          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
-          if (op === 'between') {
-            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
-            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
-          } else if (op && num1 != null && Number.isFinite(num1)) {
-            combinedFilters.push({ field, operator: op, value: String(num1) })
+          let v1 = cfg.value1
+          let v2 = cfg.value2
+          // For phone column, preserve raw values with + and spaces
+          if (uiKey === 'phone') {
+            const raw1 = v1 !== '' && v1 != null ? String(v1) : null
+            const raw2 = v2 !== '' && v2 != null ? String(v2) : null
+            if (op === 'between') {
+              if (raw1 != null) combinedFilters.push({ field, operator: 'greater_than_equal', value: raw1 })
+              if (raw2 != null) combinedFilters.push({ field, operator: 'less_than_equal', value: raw2 })
+            } else if (op && raw1 != null) {
+              combinedFilters.push({ field, operator: op, value: raw1 })
+            }
+          } else {
+            // For other numeric columns, parse as numbers
+            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+            if (op === 'between') {
+              if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+              if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+            } else if (op && num1 != null && Number.isFinite(num1)) {
+              combinedFilters.push({ field, operator: op, value: String(num1) })
+            }
           }
         }
       })
@@ -2155,8 +2168,8 @@ const Client2Page = () => {
 
     const filterConfig = {
       operator: temp.operator,
-      value1: isDateColumn ? value1 : parseFloat(value1),
-      value2: value2 ? (isDateColumn ? value2 : parseFloat(value2)) : null
+      value1: isDateColumn ? value1 : (columnKey === 'phone' ? String(value1) : parseFloat(value1)),
+      value2: value2 ? (isDateColumn ? value2 : (columnKey === 'phone' ? String(value2) : parseFloat(value2))) : null
     }
 
     console.log('[Client2] applyNumberFilter called for', columnKey, 'with config:', filterConfig)
@@ -2330,34 +2343,40 @@ const Client2Page = () => {
           if (uiKey === columnKey) return
           const field = columnKeyToAPIField(uiKey)
           const op = cfg.operator
-          const v1 = cfg.value1
-          const v2 = cfg.value2
-          const num1 = v1 !== '' && v1 != null ? Number(v1) : null
-          const num2 = v2 !== '' && v2 != null ? Number(v2) : null
-          if (op === 'between') {
-            if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
-            if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
-          } else if (op && num1 != null && Number.isFinite(num1)) {
-            combinedFilters.push({ field, operator: op, value: String(num1) })
+          let v1 = cfg.value1
+          let v2 = cfg.value2
+          if (uiKey === 'phone') {
+            const raw1 = v1 !== '' && v1 != null ? String(v1) : null
+            const raw2 = v2 !== '' && v2 != null ? String(v2) : null
+            if (op === 'between') {
+              if (raw1 != null) combinedFilters.push({ field, operator: 'greater_than_equal', value: raw1 })
+              if (raw2 != null) combinedFilters.push({ field, operator: 'less_than_equal', value: raw2 })
+            } else if (op && raw1 != null) {
+              combinedFilters.push({ field, operator: op, value: raw1 })
+            }
+          } else {
+            const num1 = v1 !== '' && v1 != null ? Number(v1) : null
+            const num2 = v2 !== '' && v2 != null ? Number(v2) : null
+            if (op === 'between') {
+              if (num1 != null && Number.isFinite(num1)) combinedFilters.push({ field, operator: 'greater_than_equal', value: String(num1) })
+              if (num2 != null && Number.isFinite(num2)) combinedFilters.push({ field, operator: 'less_than_equal', value: String(num2) })
+            } else if (op && num1 != null && Number.isFinite(num1)) {
+              combinedFilters.push({ field, operator: op, value: String(num1) })
+            }
           }
+          // Mark numeric filter applied for this column to prevent duplicate checkbox filters
           numberFilteredFields.add(uiKey)
-          return
-        }
-      })
-      Object.entries(columnFilters).forEach(([key, cfg]) => {
-        if (key.endsWith('_checkbox') && cfg && Array.isArray(cfg.values) && cfg.values.length > 0) {
-          const uiKey = key.replace('_checkbox', '')
           if (uiKey === columnKey) return
-          const field = columnKeyToAPIField(uiKey)
+          const checkboxField = columnKeyToAPIField(uiKey)
           if (textFilteredFields.has(uiKey) || numberFilteredFields.has(uiKey)) return
           const rawValues = cfg.values.map(v => String(v).trim()).filter(v => v.length > 0)
           if (rawValues.length === 0) return
           if (rawValues.length === 1) {
-            combinedFilters.push({ field, operator: 'equal', value: rawValues[0] })
+            combinedFilters.push({ field: checkboxField, operator: 'equal', value: rawValues[0] })
           } else {
             // Provide array for backend; treat multi-value as OR by storing values list
-            if (multiOrField && multiOrField !== field) multiOrConflict = true
-            else { multiOrField = field; multiOrValues = rawValues }
+            if (multiOrField && multiOrField !== checkboxField) multiOrConflict = true
+            else { multiOrField = checkboxField; multiOrValues = rawValues }
           }
         }
       })
@@ -4518,22 +4537,18 @@ const Client2Page = () => {
                   {/* Left: Search and Columns */}
                 <div className="flex items-center gap-2 flex-1">
                   <div className="relative flex-1 max-w-md">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4B5563]" fill="none" viewBox="0 0 18 18">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
                     <input
                       type="text"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Search"
-                      className="w-full h-10 pl-10 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full h-10 pl-3 pr-20 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
-                    {/* Search Icon (inside input) */}
+                    {/* Search action button (right) */}
                     <button
                       onClick={handleSearch}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-blue-600 text-white hover:bg-blue-700 transition-colors z-0 rounded-md p-1.5"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 text-[#374151] bg-transparent border border-[#E5E7EB] hover:bg-gray-50 transition-colors z-0 rounded-md p-1.5"
                       title="Search"
                     >
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -5027,12 +5042,11 @@ const Client2Page = () => {
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') {
                                             e.preventDefault()
-                                            if (isNumeric) {
-                                              applyNumberFilter(columnKey)
-                                            } else {
+                                            // Do not auto-apply numeric filters on Enter; require explicit OK
+                                            if (!isNumeric) {
                                               applyCheckboxFilter(columnKey)
+                                              setShowFilterDropdown(null)
                                             }
-                                            setShowFilterDropdown(null)
                                           }
                                         }}
                                         style={{
@@ -5141,23 +5155,18 @@ const Client2Page = () => {
                                                         <div>
                                                           <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                           <input
-                                                            type={columnType === 'date' ? 'date' : 'number'}
+                                                            type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                            inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                            pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                             step={columnType === 'date' ? undefined : 'any'}
                                                             placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                             value={tempFilter.value1}
                                                             onChange={(e) => {
                                                               updateNumericFilterTemp(columnKey, 'value1', e.target.value)
-                                                              // Auto-apply if value is valid (except for between operator)
-                                                              if (e.target.value && tempFilter.operator !== 'between') {
-                                                                setTimeout(() => applyNumberFilter(columnKey), 500)
-                                                              }
                                                             }}
                                                             onKeyDown={(e) => {
                                                               if (e.key === 'Enter') {
                                                                 e.preventDefault()
-                                                                applyNumberFilter(columnKey)
-                                                                const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                                if (menu) menu.classList.add('hidden')
                                                               }
                                                             }}
                                                             className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5169,7 +5178,9 @@ const Client2Page = () => {
                                                           <div>
                                                             <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                             <input
-                                                              type={columnType === 'date' ? 'date' : 'number'}
+                                                              type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                              inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                              pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                               step={columnType === 'date' ? undefined : 'any'}
                                                               placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                               value={tempFilter.value2}
@@ -5177,9 +5188,6 @@ const Client2Page = () => {
                                                               onKeyDown={(e) => {
                                                                 if (e.key === 'Enter') {
                                                                   e.preventDefault()
-                                                                  applyNumberFilter(columnKey)
-                                                                  const menu = document.getElementById(`number-filter-menu-${columnKey}`)
-                                                                  if (menu) menu.classList.add('hidden')
                                                                 }
                                                               }}
                                                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5217,19 +5225,8 @@ const Client2Page = () => {
                                                 ) : (
                                                   // Expanded version when there are NO checkbox values
                                                   <div className="space-y-3">
-                                                    <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center mb-2">
                                                       <span className="text-xs font-semibold text-gray-700">Number Filters</span>
-                                                      {hasNumberFilter && (
-                                                        <button
-                                                          onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            clearColumnFilter(columnKey)
-                                                          }}
-                                                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
-                                                        >
-                                                          Clear
-                                                        </button>
-                                                      )}
                                                     </div>
 
                                                     {/* Operator Dropdown */}
@@ -5254,7 +5251,9 @@ const Client2Page = () => {
                                                     <div>
                                                       <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                                                       <input
-                                                        type={columnType === 'date' ? 'date' : 'number'}
+                                                        type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                        inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                        pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                         step={columnType === 'date' ? undefined : 'any'}
                                                         placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                         value={tempFilter.value1}
@@ -5262,7 +5261,6 @@ const Client2Page = () => {
                                                         onKeyDown={(e) => {
                                                           if (e.key === 'Enter') {
                                                             e.preventDefault()
-                                                            applyNumberFilter(columnKey)
                                                           }
                                                         }}
                                                         className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -5274,7 +5272,9 @@ const Client2Page = () => {
                                                       <div>
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                                                         <input
-                                                          type={columnType === 'date' ? 'date' : 'number'}
+                                                          type={columnType === 'date' ? 'date' : (columnKey === 'phone' ? 'text' : 'number')}
+                                                          inputMode={columnType === 'date' ? undefined : 'numeric'}
+                                                          pattern={columnType === 'date' ? undefined : '[0-9+ ]*'}
                                                           step={columnType === 'date' ? undefined : 'any'}
                                                           placeholder={columnType === 'date' ? 'Select date' : 'Enter value'}
                                                           value={tempFilter.value2}
@@ -5282,7 +5282,6 @@ const Client2Page = () => {
                                                           onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                               e.preventDefault()
-                                                              applyNumberFilter(columnKey)
                                                             }
                                                           }}
                                                           className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"

@@ -142,7 +142,11 @@ const PositionsPage = () => {
   const displayMenuRef = useRef(null)
   const displayButtonRef = useRef(null)
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
+  const [showDateFilterMenu, setShowDateFilterMenu] = useState(false)
+  const dateFilterMenuRef = useRef(null)
+  const dateFilterButtonRef = useRef(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     position: false,
     time: true,
@@ -244,16 +248,13 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const filterDropdownRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
   // Date filter states
   const [dateFilter, setDateFilter] = useState(null) // null, 3, 5, or 7 for days
-  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
-  const [hasPendingDateChanges, setHasPendingDateChanges] = useState(false)
-  const [pendingDateDraft, setPendingDateDraft] = useState(null)
-  const dateFilterRef = useRef(null)
   
   // Sorting states for ALL positions view
   const [sortColumn, setSortColumn] = useState(null)
@@ -418,7 +419,12 @@ const PositionsPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    // Treat filters as text-based for string columns (e.g., symbol, action, reason, comment)
+    // and for explicit text operators regardless of column type.
+    const textOperators = ['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain']
+    const isTextColumn = isStringColumn(customFilterColumn)
+    const isExplicitTextOp = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    const isTextFilter = isTextColumn && textOperators.includes(customFilterType) || isExplicitTextOp
     
     const filterConfig = {
       type: customFilterType,
@@ -449,12 +455,16 @@ const PositionsPage = () => {
     
     const { type, value1, value2 } = filterConfig
 
-    // Handle text filters
-    if (['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
+    // Handle text filters (including equal/notEqual for text comparison)
+    if (['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
       const strValue = String(value || '').toLowerCase()
       const searchValue = String(value1 || '').toLowerCase()
       
       switch (type) {
+        case 'equal':
+          return strValue === searchValue
+        case 'notEqual':
+          return strValue !== searchValue
         case 'startsWith':
           return strValue.startsWith(searchValue)
         case 'endsWith':
@@ -468,25 +478,24 @@ const PositionsPage = () => {
       }
     }
 
-    // Handle number filters
+    // Handle number filters only (lessThan, greaterThan, between, etc.)
     const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
+    const numValue1 = parseFloat(value1)
+    if (isNaN(numValue) || isNaN(numValue1)) return false
 
     switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
       case 'lessThan':
-        return numValue < value1
+        return numValue < numValue1
       case 'lessThanOrEqual':
-        return numValue <= value1
+        return numValue <= numValue1
       case 'greaterThan':
-        return numValue > value1
+        return numValue > numValue1
       case 'greaterThanOrEqual':
-        return numValue >= value1
-      case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
+        return numValue >= numValue1
+      case 'between': {
+        const numValue2 = parseFloat(value2)
+        return !isNaN(numValue2) && numValue >= numValue1 && numValue <= numValue2
+      }
       default:
         return true
     }
@@ -522,45 +531,6 @@ const PositionsPage = () => {
   }
   const hasInitialLoad = useRef(false)
   const prevPositionsRef = useRef([])
-  const [progressActive, setProgressActive] = useState(false)
-
-  // Sync top header loader with positions fetch
-  const progressStartRef = useRef(0)
-  const progressTimerRef = useRef(null)
-  useEffect(() => {
-    const active = !!loading?.positions || isRefreshing
-    if (active) {
-      progressStartRef.current = Date.now()
-      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
-      setProgressActive(true)
-    } else {
-      const MIN_SHOW_MS = 500
-      const HIDE_DELAY_MS = 150
-      const elapsed = Date.now() - (progressStartRef.current || 0)
-      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
-      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
-      progressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
-    }
-    return () => {
-      if (progressTimerRef.current) { clearTimeout(progressTimerRef.current); progressTimerRef.current = null }
-    }
-  }, [loading?.positions, isRefreshing])
-
-  // Handle click outside to close date filter modal
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target)) {
-        setIsDateFilterOpen(false)
-      }
-    }
-
-    if (isDateFilterOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside)
-      }
-    }
-  }, [isDateFilterOpen])
 
     useEffect(() => {
     if (!isAuthenticated) {
@@ -581,7 +551,7 @@ const PositionsPage = () => {
       try {
         flashTimeouts.current.forEach((to) => clearTimeout(to))
         flashTimeouts.current.clear()
-      } catch {}
+      } catch { /* no-op */ }
     }
   },  [isAuthenticated])
 
@@ -666,6 +636,7 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       if (event.key === 'Escape') {
         if (showDisplayMenu) setShowDisplayMenu(false)
+        if (showDateFilterMenu) setShowDateFilterMenu(false)
         if (showColumnSelector) setShowColumnSelector(false)
         if (netShowSuggestions) setNetShowSuggestions(false)
         if (clientNetShowSuggestions) setClientNetShowSuggestions(false)
@@ -676,7 +647,7 @@ const PositionsPage = () => {
       }
     }
 
-    if (showDisplayMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
+    if (showDisplayMenu || showDateFilterMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside, true)
       document.addEventListener('keydown', handleKeyDown)
       return () => {
@@ -684,7 +655,7 @@ const PositionsPage = () => {
         document.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [showDisplayMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
+  }, [showDisplayMenu, showDateFilterMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -784,7 +755,7 @@ const PositionsPage = () => {
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
       // Split on first dot or hyphen to collapse variants like XAUUSD.f, XAUUSD-z, etc.
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -995,7 +966,7 @@ const PositionsPage = () => {
     return positionsToSearch.filter(position => {
       // Search through all primitive fields
       for (const key in position) {
-        if (position.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(position, key)) {
           const value = position[key]
           
           // Handle action field specially (0=Buy, 1=Sell)
@@ -1204,8 +1175,14 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       
       // Check if clicking outside main filter dropdown
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (showFilterDropdown) {
+        const filterButton = filterRefs.current[showFilterDropdown]
+        const filterDropdown = filterDropdownRefs.current[showFilterDropdown]
+        
+        const clickedInButton = filterButton && filterButton.contains(event.target)
+        const clickedInDropdown = filterDropdown && filterDropdown.contains(event.target)
+        
+        if (!clickedInButton && !clickedInDropdown) {
           setShowFilterDropdown(null)
           setShowNumberFilterDropdown(null)
         }
@@ -1313,7 +1290,7 @@ const PositionsPage = () => {
   const handleNetItemsPerPageChange = (v) => {
     const next = v === 'All' ? 'All' : parseInt(v)
     setNetItemsPerPage(next)
-    try { localStorage.setItem('net_items_per_page', String(next)) } catch {}
+    try { localStorage.setItem('net_items_per_page', String(next)) } catch { /* no-op */ }
     setNetCurrentPage(1)
   }
 
@@ -1326,7 +1303,7 @@ const PositionsPage = () => {
     const loginMap = new Map()
     const getBaseSymbol = (s) => {
       if (!s || typeof s !== 'string') return s
-      const parts = s.split(/[\.\-]/)
+      const parts = s.split(/[.-]/)
       return parts[0] || s
     }
 
@@ -1494,7 +1471,7 @@ const PositionsPage = () => {
   const handleClientNetItemsPerPageChange = (v) => {
     const next = v === 'All' ? 'All' : parseInt(v)
     setClientNetItemsPerPage(next)
-    try { localStorage.setItem('client_net_items_per_page', String(next)) } catch {}
+    try { localStorage.setItem('client_net_items_per_page', String(next)) } catch { /* no-op */ }
     setClientNetCurrentPage(1)
   }
 
@@ -1751,7 +1728,12 @@ const PositionsPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div 
+                ref={el => {
+                  if (!filterDropdownRefs.current) filterDropdownRefs.current = {}
+                  filterDropdownRefs.current[columnKey] = el
+                }}
+                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999]" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -1759,83 +1741,30 @@ const PositionsPage = () => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // w-64 in pixels
+                    const dropdownWidth = 280 // unified with Client2 module
                     const offset = 30 // Offset to the right to keep filter icon visible
                     const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
                       : `${rect.left + offset}px`
-                  })()
+                  })(),
+                  width: '280px',
+                  overflow: 'visible'
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-700">Text Filters</span>
+                    <span className="text-xs font-bold text-gray-700">Text Filters</span>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowFilterDropdown(null)
-                      }}
-                      className="text-gray-400 hover:text-gray-600"
+                      onClick={() => clearColumnFilter(columnKey)}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      Clear
                     </button>
                   </div>
-                </div>
-
-                {/* Sort Options */}
-                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSort(columnKey, 'asc')
-                      setShowFilterDropdown(null)
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
-                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                    </svg>
-                    Sort A to Z
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSort(columnKey, 'desc')
-                      setShowFilterDropdown(null)
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
-                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-                    </svg>
-                    Sort Z to A
-                  </button>
-                </div>
-
-                {/* Clear Filter Button */}
-                <div className="px-3 py-2 border-b border-gray-200">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      clearColumnFilter(columnKey)
-                    }}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Clear Filter
-                  </button>
                 </div>
                 <div className="border-b border-slate-200 py-1">
                   <button
@@ -1844,7 +1773,7 @@ const PositionsPage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -1857,7 +1786,7 @@ const PositionsPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
@@ -1888,7 +1817,7 @@ const PositionsPage = () => {
                           setCustomFilterValue2('')
                         }
                       }}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
                       <svg 
@@ -1901,7 +1830,7 @@ const PositionsPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -1916,12 +1845,12 @@ const PositionsPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
-                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'calc(100% + 8px)'
-                            const dropdownWidth = 256 // 16rem in pixels
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -1929,12 +1858,13 @@ const PositionsPage = () => {
                           right: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'auto'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 280
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                           })(),
-                          zIndex: 10000001
+                          zIndex: 10000001,
+                          width: '280px'
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -2061,17 +1991,8 @@ const PositionsPage = () => {
                             </div>
                           )}
 
-                          {/* Actions */}
+                          {/* Apply Button */}
                           <div className="flex gap-2 pt-2 border-t border-gray-200">
-                            <button
-                              onClick={() => {
-                                setShowNumberFilterDropdown(null)
-                                setShowCustomFilterModal(false)
-                              }}
-                              className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                            >
-                              Close
-                            </button>
                             <button
                               onClick={() => {
                                 applyCustomNumberFilter()
@@ -2079,7 +2000,7 @@ const PositionsPage = () => {
                                 setShowCustomFilterModal(false)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -2113,7 +2034,7 @@ const PositionsPage = () => {
                             setCustomFilterValue2('')
                           }
                         }}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
                         <svg 
@@ -2126,7 +2047,7 @@ const PositionsPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -2141,12 +2062,12 @@ const PositionsPage = () => {
                       {showNumberFilterDropdown === columnKey && (
                         <div
                           data-number-filter
-                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 256 // 16rem in pixels
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -2154,12 +2075,13 @@ const PositionsPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 280
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
                             })(),
-                            zIndex: 10000001
+                            zIndex: 10000001,
+                            width: '280px'
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -2202,17 +2124,8 @@ const PositionsPage = () => {
                               />
                             </div>
 
-                            {/* Actions */}
+                            {/* Apply Button */}
                             <div className="flex gap-2 pt-2 border-t border-gray-200">
-                              <button
-                                onClick={() => {
-                                  setShowNumberFilterDropdown(null)
-                                  setShowCustomFilterModal(false)
-                                }}
-                                className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                              >
-                                Close
-                              </button>
                               <button
                                 onClick={() => {
                                   applyCustomNumberFilter()
@@ -2220,7 +2133,7 @@ const PositionsPage = () => {
                                   setShowCustomFilterModal(false)
                                 }}
                                 disabled={!customFilterValue1}
-                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -2247,7 +2160,7 @@ const PositionsPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -2256,7 +2169,7 @@ const PositionsPage = () => {
                 </div>
 
                 {/* Select All / Deselect All */}
-                <div className="px-3 py-1.5 border-b border-slate-200 bg-slate-50">
+                <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
                   <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
@@ -2270,15 +2183,15 @@ const PositionsPage = () => {
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <span className="text-[11px] font-medium text-slate-700">Select All</span>
+                    <span className="text-xs font-bold text-gray-700">Select visible ({getUniqueColumnValues(columnKey).length})</span>
                   </label>
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-40 overflow-y-auto">
-                  <div className="p-2 space-y-1">
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="px-3 py-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-3 py-2 text-center text-[11px] text-slate-500">
                         No items found
@@ -2316,21 +2229,19 @@ const PositionsPage = () => {
                       e.stopPropagation()
                       setShowFilterDropdown(null)
                     }}
-                    className={(showNumberFilterDropdown === columnKey ? 'w-full' : 'flex-1') + " px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"}
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
                     Close
                   </button>
-                  {showNumberFilterDropdown !== columnKey && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowFilterDropdown(null)
-                      }}
-                      className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-                    >
-                      OK
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(null)
+                    }}
+                    className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                  >
+                    OK
+                  </button>
                 </div>
               </div>
             )}
@@ -2342,6 +2253,11 @@ const PositionsPage = () => {
 
   // Only show local loading inside cards/tables; keep the page chrome interactive
   const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
+
+  // Sync top header loader with any positions fetch and manual refreshes
+  useEffect(() => {
+    setProgressActive(!!loading?.positions || isRefreshing)
+  }, [loading?.positions, isRefreshing])
 
   // Early return for mobile - render mobile component
   if (isMobile) {
@@ -2362,18 +2278,11 @@ const PositionsPage = () => {
 
       {/* YouTube-style Loading Bar - Outside main to span full width */}
       {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
-          <style>{`
-            @keyframes topHeaderTrackPositions {
-              0% { left: -30%; }
-              100% { left: 100%; }
-            }
-          `}</style>
-          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
-            width: '30%',
-            left: '-30%',
-            animation: 'topHeaderTrackPositions 0.9s linear infinite'
-          }} />
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+            width: '40%',
+            animation: 'loading 1.5s ease-in-out infinite'
+          }}></div>
         </div>
       )}
 
@@ -2439,10 +2348,11 @@ const PositionsPage = () => {
                 Client Net
               </button>
 
-              {/* Date Filter Button */}
-              <div className="relative" ref={dateFilterRef}>
+              {/* Date Filter Dropdown */}
+              <div className="relative">
                 <button
-                  onClick={() => setIsDateFilterOpen(true)}
+                  ref={dateFilterButtonRef}
+                  onClick={() => setShowDateFilterMenu(!showDateFilterMenu)}
                   className={`h-8 px-2.5 rounded-md border shadow-sm transition-colors inline-flex items-center gap-1.5 text-xs font-medium ${
                     dateFilter 
                       ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700' 
@@ -2455,23 +2365,57 @@ const PositionsPage = () => {
                   </svg>
                   {dateFilter ? `${dateFilter} Days` : 'Date Filter'}
                 </button>
-                
-                {/* Date Filter Modal - Desktop dropdown */}
-                {isDateFilterOpen && (
-                  <DateFilterModal
-                    isOpen={isDateFilterOpen}
-                    onClose={() => setIsDateFilterOpen(false)}
-                    onApply={(days) => {
-                      setDateFilter(days)
-                      setIsDateFilterOpen(false)
-                    }}
-                    currentFilter={dateFilter}
-                    onPendingChange={(hasPending, draft) => {
-                      setHasPendingDateChanges(hasPending)
-                      setPendingDateDraft(draft)
-                    }}
-                    isMobile={false}
-                  />
+                {showDateFilterMenu && (
+                  <>
+                  {/* Click-away overlay */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDateFilterMenu(false)}></div>
+                  <div
+                    ref={dateFilterMenuRef}
+                    className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-48"
+                  >
+                    <div className="px-3 py-2 border-b border-[#F3F4F6]">
+                      <p className="text-xs font-semibold text-[#1F2937]">Date Filter</p>
+                    </div>
+                    <div className="px-3 py-2 space-y-2">
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 3}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 3 ? null : 3)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>3 Days</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 5}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 5 ? null : 5)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>5 Days</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-[#374151] hover:bg-gray-50 p-2 rounded cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={dateFilter === 7}
+                          onChange={() => {
+                            setDateFilter(dateFilter === 7 ? null : 7)
+                            setShowDateFilterMenu(false)
+                          }}
+                          className="w-3.5 h-3.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <span>7 Days</span>
+                      </label>
+                    </div>
+                  </div>
+                  </>
                 )}
               </div>
 
@@ -2489,6 +2433,9 @@ const PositionsPage = () => {
                   %
                 </button>
                 {showDisplayMenu && (
+                  <>
+                  {/* Click-away overlay to ensure closing on outside click */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowDisplayMenu(false)}></div>
                   <div
                     ref={displayMenuRef}
                     className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
@@ -2532,6 +2479,7 @@ const PositionsPage = () => {
                       </label>
                     </div>
                   </div>
+                  </>
                 )}
               </div>
 
@@ -2847,15 +2795,19 @@ const PositionsPage = () => {
                           Card Filter
                         </button>
                         {netCardFilterOpen && (
-                          <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
-                            <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
-                            {Object.entries(netCardsVisible).map(([k,v]) => (
-                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                                <input type="checkbox" checked={v} onChange={()=>setNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                <span className="text-[11px] text-gray-700">{k==='netSymbols'?'NET Symbols':k==='totalNetVolume'?'Total NET Volume':k==='totalNetPL'?'Total NET P/L':'Total Logins'}</span>
-                              </label>
-                            ))}
-                          </div>
+                          <>
+                            {/* Click-away overlay to close when clicking anywhere outside */}
+                            <div className="fixed inset-0 z-40" onClick={() => setNetCardFilterOpen(false)}></div>
+                            <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
+                              <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
+                              {Object.entries(netCardsVisible).map(([k,v]) => (
+                                <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                  <input type="checkbox" checked={v} onChange={()=>setNetCardsVisible(prev=>({...prev,[k]:!prev[k]}))} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                  <span className="text-[11px] text-gray-700">{k==='netSymbols'?'NET Symbols':k==='totalNetVolume'?'Total NET Volume':k==='totalNetPL'?'Total NET P/L':'Total Logins'}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                       
@@ -2880,15 +2832,19 @@ const PositionsPage = () => {
                           <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                         </button>
                         {netShowColumnSelector && (
-                          <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
-                            <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
-                            {Object.keys(netVisibleColumns).map(k => (
-                              <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
-                                <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                <span className="text-[11px] text-gray-700">{netColumnLabels[k] || k}</span>
-                              </label>
-                            ))}
-                          </div>
+                          <>
+                            {/* Click-away overlay to close when clicking anywhere outside */}
+                            <div className="fixed inset-0 z-40" onClick={() => setNetShowColumnSelector(false)}></div>
+                            <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
+                              <p className="text-[10px] font-semibold text-gray-600 mb-1">NET Columns</p>
+                              {Object.keys(netVisibleColumns).map(k => (
+                                <label key={k} className="flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-blue-50 cursor-pointer">
+                                  <input type="checkbox" checked={netVisibleColumns[k]} onChange={()=>toggleNetColumn(k)} className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                  <span className="text-[11px] text-gray-700">{netColumnLabels[k] || k}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
@@ -2985,7 +2941,7 @@ const PositionsPage = () => {
                         <tr>
                           {netVisibleColumns.symbol && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('symbol')}
                             >
                               <div className="flex items-center gap-1">
@@ -3014,7 +2970,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.netType && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('netType')}
                             >
                               <div className="flex items-center gap-1">
@@ -3033,7 +2989,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.netVolume && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('netVolume')}
                             >
                               <div className="flex items-center gap-1">
@@ -3052,7 +3008,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.avgPrice && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('avgPrice')}
                             >
                               <div className="flex items-center gap-1">
@@ -3071,7 +3027,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.totalProfit && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('totalProfit')}
                             >
                               <div className="flex items-center gap-1">
@@ -3090,7 +3046,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.totalStorage && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('totalStorage')}
                             >
                               <div className="flex items-center gap-1">
@@ -3109,7 +3065,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.totalCommission && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('totalCommission')}
                             >
                               <div className="flex items-center gap-1">
@@ -3128,7 +3084,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.loginCount && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('loginCount')}
                             >
                               <div className="flex items-center gap-1">
@@ -3147,7 +3103,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.totalPositions && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('totalPositions')}
                             >
                               <div className="flex items-center gap-1">
@@ -3166,7 +3122,7 @@ const PositionsPage = () => {
                           )}
                           {netVisibleColumns.variantCount && (
                             <th 
-                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
+                              className="px-2 py-2 text-left text-[11px] font-bold text-white uppercase tracking-wider cursor-pointer transition-all select-none group"
                               onClick={() => handleNetSort('variantCount')}
                             >
                               <div className="flex items-center gap-1">
@@ -3186,7 +3142,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
 
-                      {/* Removed below-table loading bar to keep only header loader */}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {netDisplayedPositions.map((netPos, idx) => (
@@ -3398,6 +3354,9 @@ const PositionsPage = () => {
                         Card Filter
                       </button>
                       {clientNetCardFilterOpen && (
+                        <>
+                        {/* Click-away overlay to close when clicking anywhere outside */}
+                        <div className="fixed inset-0 z-40" onClick={() => setClientNetCardFilterOpen(false)}></div>
                         <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-48">
                           <p className="text-[10px] font-semibold text-gray-600 mb-1">Summary Cards</p>
                           {Object.entries(clientNetCardsVisible).map(([k,v]) => (
@@ -3411,6 +3370,7 @@ const PositionsPage = () => {
                             </label>
                           ))}
                         </div>
+                        </>
                       )}
                     </div>
                     
@@ -3435,6 +3395,9 @@ const PositionsPage = () => {
                         <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
                       </button>
                       {clientNetShowColumnSelector && (
+                        <>
+                        {/* Click-away overlay to close dropdown when clicking anywhere */}
+                        <div className="fixed inset-0 z-40" onClick={() => setClientNetShowColumnSelector(false)}></div>
                         <div className="absolute left-0 top-full mt-2 bg-white rounded shadow-lg border border-gray-200 p-2 z-50 w-56 max-h-72 overflow-y-auto">
                           <p className="text-[10px] font-semibold text-gray-600 mb-1">Client NET Columns</p>
                           {Object.keys(clientNetVisibleColumns).map(k => (
@@ -3451,6 +3414,7 @@ const PositionsPage = () => {
                             </label>
                           ))}
                         </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -3553,6 +3517,25 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Login</span>
+                                {clientNetSortColumn === 'login' ? (
+                                  <svg
+                                    className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3563,6 +3546,25 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Symbol</span>
+                                {clientNetSortColumn === 'symbol' ? (
+                                  <svg
+                                    className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="w-3 h-3 opacity-0 group-hover:opacity-30"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3573,6 +3575,15 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Type</span>
+                                {clientNetSortColumn === 'netType' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3583,6 +3594,15 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Volume</span>
+                                {clientNetSortColumn === 'netVolume' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3593,6 +3613,15 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Avg Price</span>
+                                {clientNetSortColumn === 'avgPrice' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3603,6 +3632,15 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Total Profit</span>
+                                {clientNetSortColumn === 'totalProfit' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
@@ -3613,13 +3651,22 @@ const PositionsPage = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span>Positions</span>
+                                {clientNetSortColumn === 'totalPositions' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                         </tr>
                       </thead>
 
-                      {/* Removed below-table loading bar to keep only header loader */}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {clientNetDisplayedPositions.map((row, idx) => {
@@ -3899,7 +3946,7 @@ const PositionsPage = () => {
                     </tr>
                   </thead>
 
-                  {/* Removed below-table loading bar to keep only header loader */}
+                  {/* Top header loader replaces inline shimmer */}
 
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.length === 0 && !isInitialPositionsLoading ? (
@@ -4051,7 +4098,6 @@ const PositionsPage = () => {
         />
       )}
 
-      {/* Date Filter Modal moved inside button container for desktop positioning */}
     </div>
   )
 }

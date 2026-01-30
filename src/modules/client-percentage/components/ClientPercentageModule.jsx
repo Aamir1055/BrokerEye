@@ -64,6 +64,7 @@ export default function ClientPercentageModule() {
     updatedAt: false,
     actions: true
   })
+  const [progressActive, setProgressActive] = useState(false)
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false)
@@ -85,6 +86,10 @@ export default function ClientPercentageModule() {
     clearIBSelection()
     setActiveGroupFilter('clientpercentage', null)
     setSearchInput('')
+    // Brief top loader on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -119,6 +124,18 @@ export default function ClientPercentageModule() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchInput, sortColumn, sortDirection, hasCustomFilter])
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (selectedClientForDetails) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [selectedClientForDetails])
 
   // Fetch data when page changes or on initial mount
   useEffect(() => {
@@ -185,10 +202,12 @@ export default function ClientPercentageModule() {
       })
       
       setLoading(false)
+      setProgressActive(false)
     } catch (err) {
       console.error('Error fetching client percentages:', err)
       setError('Failed to load client percentages')
       setLoading(false)
+      setProgressActive(false)
     }
   }
 
@@ -270,6 +289,8 @@ export default function ClientPercentageModule() {
   }, [ibFilteredData, searchInput])
 
   const handleSort = (columnKey) => {
+    // Show top loader for sort-triggered fetch
+    setProgressActive(true)
     if (sortColumn === columnKey) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
@@ -510,6 +531,11 @@ export default function ClientPercentageModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F5F7FA] overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
+          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }} />
+        </div>
+      )}
       {/* Error Message */}
       {error && (
         <div className="fixed top-4 right-4 bg-red-50 border-l-4 border-red-500 rounded-r p-4 shadow-lg z-50 max-w-md">

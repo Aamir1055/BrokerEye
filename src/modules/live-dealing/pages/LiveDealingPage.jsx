@@ -1196,18 +1196,17 @@ const LiveDealingPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999]" 
                 style={{
+                  width: '280px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
-                    // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // w-64 in pixels
-                    const offset = 30 // Offset to the right to keep filter icon visible
+                    const dropdownWidth = 280
+                    const offset = 30
                     const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
-                    // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
                       : `${rect.left + offset}px`
@@ -1218,17 +1217,15 @@ const LiveDealingPage = () => {
                 {/* Header */}
                 <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-700">Filter Menu</span>
+                    <span className="text-[11px] text-gray-700">Text Filters</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowFilterDropdown(null)
+                        clearColumnFilter(columnKey)
                       }}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-[11px] text-red-600 hover:underline"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      Clear
                     </button>
                   </div>
                 </div>
@@ -1241,7 +1238,7 @@ const LiveDealingPage = () => {
                       handleSort(columnKey)
                       setSortDirection('asc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -1254,7 +1251,7 @@ const LiveDealingPage = () => {
                       handleSort(columnKey)
                       setSortDirection('desc')
                     }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-[11px] hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
@@ -1263,21 +1260,7 @@ const LiveDealingPage = () => {
                   </button>
                 </div>
 
-                {/* Quick Clear Filter */}
-                <div className="border-b border-slate-200 py-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      clearColumnFilter(columnKey)
-                    }}
-                    className="w-full px-3 py-1.5 text-left text-[11px] font-semibold hover:bg-slate-50 flex items-center gap-2 text-red-600 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Clear Filter
-                  </button>
-                </div>
+                {/* Quick Clear Filter removed; Clear is in header */}
 
                 {/* Number Filters (only for numeric columns) */}
                 {!isStringColumn(columnKey) && (
@@ -1297,7 +1280,7 @@ const LiveDealingPage = () => {
                           setCustomFilterValue2('')
                         }
                       }}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                     >
                       <span>Number Filters</span>
                       <svg 
@@ -1320,8 +1303,9 @@ const LiveDealingPage = () => {
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
-                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
+                          width: '280px',
                           ...((['price', 'profit', 'profitPercentage', 'commission', 'commissionPercentage', 'storage', 'storagePercentage', 'appliedPercentage', 'entry'].includes(columnKey))
                             ? { right: 'calc(100% + 8px)', left: 'auto' }
                             : { left: 'calc(100% + 8px)', right: 'auto' }
@@ -1456,7 +1440,7 @@ const LiveDealingPage = () => {
                                 setShowCustomFilterModal(false)
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -1486,7 +1470,7 @@ const LiveDealingPage = () => {
                             setCustomFilterValue2('')
                           }
                         }}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
                         <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{
@@ -1499,8 +1483,9 @@ const LiveDealingPage = () => {
                       {showNumberFilterDropdown === columnKey && (
                         <div
                           data-number-filter
-                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          className="absolute top-0 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
+                            width: '280px',
                             ...((['entry'].includes(columnKey))
                               ? { right: 'calc(100% + 8px)', left: 'auto' }
                               : { left: 'calc(100% + 8px)', right: 'auto' }
@@ -1553,7 +1538,7 @@ const LiveDealingPage = () => {
                                   setShowCustomFilterModal(false)
                                 }}
                                 disabled={!customFilterValue1}
-                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -1580,7 +1565,7 @@ const LiveDealingPage = () => {
                         }))
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full pl-8 pr-3 py-1.5 text-[11px] font-medium border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
+                      className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 bg-white text-slate-700 placeholder:text-slate-400"
                     />
                     <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1605,7 +1590,7 @@ const LiveDealingPage = () => {
                       onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
                     />
-                    <span className="text-[11px] font-medium text-gray-700">Select All</span>
+                    <span className="text-[11px] font-semibold text-gray-700">Select visible ({getUniqueColumnValues(columnKey).length})</span>
                   </label>
                 </div>
 
