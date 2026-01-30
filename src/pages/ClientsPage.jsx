@@ -3118,32 +3118,21 @@ const ClientsPage = () => {
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={(e) => { if (e.key === 'Enter') setShowSuggestions(false) }}
                     placeholder="Search login, name, email..."
-                    className="pl-3 pr-24 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
+                    className="pl-10 pr-9 py-2 text-xs font-medium border border-slate-300 rounded-md bg-white text-slate-700 placeholder:text-slate-400 hover:border-slate-400 hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 w-64 transition-all"
                   />
-                  {/* Clear button shows only when input has text */}
-                  {searchInput.trim().length > 0 && (
+                  <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchInput && (
                     <button
                       onClick={() => { setSearchInput(''); setSearchQuery(''); setShowSuggestions(false) }}
-                      className="absolute right-14 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
-                      title="Clear search"
-                      aria-label="Clear search"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-0.5 rounded hover:bg-slate-100"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
-                  {/* Right search button (neutral, not blue) */}
-                  <button
-                    onClick={() => setShowSuggestions(false)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-md bg-white border border-slate-300 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-colors"
-                    title="Search"
-                    aria-label="Search"
-                  >
-                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" />
-                    </svg>
-                  </button>
                 </div>
                 {showSuggestions && getSuggestions(filteredClients).length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-slate-200 py-2 z-50 max-h-80 overflow-y-auto">
